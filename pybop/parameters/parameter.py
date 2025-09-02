@@ -746,7 +746,8 @@ class Parameters:
         ParameterDict
             Dictionary mapping parameter names to values
         """
-        values = values or "current"
+        if values is None:
+            values = "current"
         params = self._parameters.items()
 
         if isinstance(values, str):
@@ -763,22 +764,18 @@ class Parameters:
                 )
             return dict(zip(self._parameters.keys(), values_array, strict=False))
 
-    def to_pybamm_multiprocessing(self) -> list:
+    def to_inputs(self, values: np.ndarray | list[np.ndarray]) -> Inputs | list[Inputs]:
         """
-        Return parameter values as a list of dictionaries in the format
-        required for pybamm multiprocessing.
+        Return parameter values as a list of dictionaries, as required for multiprocessing.
         """
-        param_dict = self.to_dict()
+        values = np.asarray(values)
+        if values.ndim == 1:
+            return [self.to_dict(values=values)]
 
-        if self.get_values().ndim == 1:
-            return [param_dict]
-
-        # Construct a list of single value dicts
-        array_length = len(next(iter(param_dict.values())))
-        return [
-            {key: float(values[i]) for key, values in param_dict.items()}
-            for i in range(array_length)
-        ]
+        inputs_list = []
+        for val in values:
+            inputs_list.append(self.to_dict(values=val))
+        return inputs_list
 
     def reset_to_initial(self, names: Sequence[str] | None = None) -> None:
         """Reset parameters to initial values."""

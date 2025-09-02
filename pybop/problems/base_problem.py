@@ -15,6 +15,7 @@ class Problem:
             self._param_names = []
         self._params = pybop_params
         self._param_names = pybop_params.keys()
+        self._n_params = len(pybop_params)
         self._has_sensitivities = False
 
     def get_finite_initial_cost(self):
@@ -69,15 +70,83 @@ class Problem:
         """
         return sensitivity_analysis(problem=self, n_samples=n_samples)
 
-    def run(self, p) -> np.ndarray:
+    def run(self, values: np.ndarray) -> np.ndarray:
         """
         Evaluates the underlying simulation and cost function.
+
+        Parameters
+        ----------
+        values : np.ndarray or list[np.ndarray]
+            Either one candidate parameter set (a 1D numpy array), a list of candidate parameter sets
+            or a 2D array of candidate parameter sets.
+
+        Returns
+        -------
+        costs : np.ndarray
+            A 1D array of either a single cost value or a set of cost values.
+        """
+        return self._compute_costs(values)
+
+    def run_with_sensitivities(
+        self, values: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Evaluates the underlying simulation and cost function, returns the cost and sensitivities.
+
+        Parameters
+        ----------
+        values : np.ndarray or list[np.ndarray]
+            Either one candidate parameter set (a 1D numpy array), a list of candidate parameter sets
+            or a 2D array of candidate parameter sets.
+
+        Returns
+        -------
+        costs : np.ndarray
+            A 1D array of either a single cost value or a set of cost values.
+        sensitivities : np.ndarray
+            Either a 1D array of the gradients of the cost with respect to each parameter, or a
+            2D array of sets of gradients with shape (number of candidates, number of parameters).
+        """
+        costs, sens = self._compute_costs_and_sensitivities(values)
+
+        if np.asarray(values).ndim == 1:
+            return costs, sens.reshape(-1)
+        return costs, sens
+
+    def _compute_costs(self, values: np.ndarray | list[np.ndarray]) -> np.ndarray:
+        """
+        Evaluates the underlying simulation and cost function.
+
+        Parameters
+        ----------
+        values : np.ndarray or list[np.ndarray]
+            Either one candidate parameter set (a 1D numpy array), a list of candidate parameter sets
+            or a 2D array of candidate parameter sets.
+
+        Returns
+        -------
+        costs : np.ndarray
+            A 1D array of cost values with length (number of candidates).
         """
         raise NotImplementedError
 
-    def run_with_sensitivities(self, p) -> tuple[np.ndarray, np.ndarray]:
+    def _compute_costs_and_sensitivities(
+        self, values: np.ndarray | list[np.ndarray]
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
-        Evaluates the underlying simulation and cost function, returns
-        the cost and sensitivities.
+        Evaluates the underlying simulation and cost function, returns the cost and sensitivities.
+
+        Parameters
+        ----------
+        values : np.ndarray or list[np.ndarray]
+            Either one candidate parameter set (a 1D numpy array), a list of candidate parameter sets
+            or a 2D array of candidate parameter sets.
+
+        Returns
+        -------
+        costs : np.ndarray
+            A 1D array of cost values with length (number of candidates).
+        sensitivities : np.ndarray
+            A 2D array of sets of gradients with shape (number of candidates, number of parameters).
         """
         raise NotImplementedError

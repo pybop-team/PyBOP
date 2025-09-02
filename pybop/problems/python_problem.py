@@ -69,7 +69,7 @@ class PythonProblem(Problem):
         self._has_sensitivities = True if funs_with_sens is not None else False
         self._weights = np.asarray(weights) if weights is not None else None
 
-    def run(self, p) -> np.ndarray:
+    def _compute_costs(self, values: np.ndarray | list[np.ndarray]) -> np.ndarray:
         """
         Execute all standard functions with current parameters and return weighted sum.
 
@@ -78,38 +78,33 @@ class PythonProblem(Problem):
 
         Returns
         -------
-        np.ndarray
-            value (np.ndarray): Weighted sum of function values as a 1D array
+        weighted_costs : np.ndarray
+            Weighted sum of function values as a 1D array.
 
         Raises
         ------
         RuntimeError
             If no standard functions are available (i.e., only sensitivity functions exist)
         """
-        self._params.update(values=np.asarray(p))
-
         if self._funs is None:
             raise RuntimeError(
                 "No standard functions configured. This problem uses sensitivity functions. "
                 "Use run_with_sensitivities() instead."
             )
 
-        xs = self.params.get_values().T
-        try:
-            if xs.ndim == 1:
-                results = np.asarray([func(xs) for func in self._funs])
-                cost = np.dot(self._weights, results)
-            else:
-                cost = []
-                for x in xs:
-                    results = np.asarray([func(x) for func in self._funs])
-                    cost.append(np.dot(self._weights, results))
-        except (TypeError, ValueError) as e:
-            raise RuntimeError(f"function evaluation failed: {e}") from e
+        inputs = self._params.to_inputs(values)
 
-        return cost
+        weighted_costs = np.empty(len(inputs))
+        for i, x in enumerate(inputs):
+            val = list(x.values())
+            costs = np.asarray([float(func(val)) for func in self._funs])
+            weighted_costs[i] = np.dot(self._weights, costs)
 
-    def run_with_sensitivities(self, p) -> tuple[np.ndarray, np.ndarray]:
+        return weighted_costs
+
+    def _compute_costs_and_sensitivities(
+        self, values: np.ndarray | list[np.ndarray]
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Execute all sensitivity functions and return weighted results with gradients.
 
@@ -130,8 +125,6 @@ class PythonProblem(Problem):
         RuntimeError
             If no sensitivity functions are available or if function evaluation fails
         """
-        self._params.update(values=np.asarray(p))
-
         if self._funs_with_sens is None:
             raise RuntimeError(
                 "No sensitivity functions configured. This problem uses standard functions. "
@@ -140,20 +133,17 @@ class PythonProblem(Problem):
 
         # Pre-allocate arrays
         n_funs = len(self._funs_with_sens)
-        values = np.empty(n_funs, dtype=np.float64)
+        costs = np.empty(n_funs, dtype=np.float64)
         gradients = []
 
         # Evaluate funcs and collect results
-        try:
-            for i, func in enumerate(self._funs_with_sens):
-                val, grad = func(self.params.get_values())
-                values[i] = float(val)  # Ensure scalar
-                gradients.append(np.asarray(grad, dtype=np.float64))
-        except (TypeError, ValueError, AttributeError) as e:
-            raise RuntimeError(f"Sensitivity function evaluation failed: {e}") from e
+        for i, func in enumerate(self._funs_with_sens):
+            cost, grad = func(values)
+            costs[i] = float(cost)  # Ensure scalar
+            gradients.append(np.asarray(grad, dtype=np.float64))
 
         # Compute weighted results
-        weighted_value = np.dot(values, self._weights[:, np.newaxis])
+        weighted_costs = np.dot(costs, self._weights[:, np.newaxis])
 
         # Stack and weight gradients
         if gradients:
@@ -162,4 +152,4 @@ class PythonProblem(Problem):
         else:
             weighted_gradient = np.array([])
 
-        return weighted_value, weighted_gradient
+        return weighted_costs, weighted_gradient

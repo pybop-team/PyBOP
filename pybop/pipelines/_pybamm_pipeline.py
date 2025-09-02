@@ -171,7 +171,7 @@ class PybammPipeline:
                 self._solve = self._solve_in_time_with_rebuild
 
     def solve(
-        self, calculate_sensitivities: bool = False
+        self, inputs: Inputs | list[Inputs], calculate_sensitivities: bool = False
     ) -> list[pybamm.Solution | FailedSolution]:
         """
         Run the simulation using the built model and solver.
@@ -186,7 +186,8 @@ class PybammPipeline:
         solution : list[pybamm.Solution | pybop.FailedSolution]
             The pybamm solution object.
         """
-        inputs_list = self._pybop_parameters.to_pybamm_multiprocessing()
+        # Convert and standardise inputs as a list of candidate dictionaries
+        inputs_list = inputs if isinstance(inputs, list) else [inputs]
         self._calculate_sensitivities = calculate_sensitivities
 
         # The underlying solve method is one of four methods set during initialisation
@@ -234,24 +235,25 @@ class PybammPipeline:
         self._solver = self._solver.copy()  # reset solver for new model
 
     def _solve_in_time_without_rebuild(
-        self, inputs_list: list[Inputs]
+        self, inputs: list[Inputs]
     ) -> list[pybamm.Solution]:
         """Solve in time without rebuilding the PyBaMM model."""
-        solutions = self._pybamm_solve(inputs_list)
-        return solutions if isinstance(solutions, list) else [solutions]
+        if len(inputs) == 1:
+            return [self._pybamm_solve(inputs=inputs[0])]
+        return self._pybamm_solve(inputs=inputs)
 
     def _solve_in_time_with_rebuild(
-        self, inputs_list: list[Inputs]
+        self, inputs: list[Inputs]
     ) -> list[pybamm.Solution]:
         """Solve in time, rebuilding the model for each set of inputs."""
         solutions = []
-        for inputs in inputs_list:
-            self.rebuild(inputs)
-            solutions.append(self._pybamm_solve(None))
+        for x in inputs:
+            self.rebuild(x)
+            solutions.append(self._pybamm_solve(inputs=None))
         return solutions
 
     def _pybamm_solve(
-        self, inputs: Inputs | list | None
+        self, inputs: Inputs | list[Inputs] | None
     ) -> pybamm.Solution | list[pybamm.Solution]:
         """A function that runs the simulation using the built model."""
         return self._solver.solve(
@@ -279,25 +281,23 @@ class PybammPipeline:
         )
 
     def _simulate_experiment_without_rebuild(
-        self, inputs_list: list[Inputs]
+        self, inputs: list[Inputs]
     ) -> list[pybamm.Solution]:
         """Simulate an experiment without rebuilding the PyBaMM model."""
         solutions = []
-        for inputs in inputs_list:
-            sol = self._sim_experiment.solve(
-                inputs=inputs, initial_soc=self._initial_state
-            )
+        for x in inputs:
+            sol = self._sim_experiment.solve(inputs=x, initial_soc=self._initial_state)
             solutions.append(sol)
         return solutions
 
     def _simulate_experiment_with_rebuild(
-        self, inputs_list: list[Inputs]
+        self, inputs: list[Inputs]
     ) -> list[pybamm.Solution]:
         """Simulate an experiment, rebuilding the simulation for each set of inputs."""
         solutions = []
-        for inputs in inputs_list:
+        for x in inputs:
             # Update parameters and create new simulation
-            self._parameter_values.update(inputs)
+            self._parameter_values.update(x)
             sim = self._create_experiment_simulation()
             solutions.append(sim.solve(initial_soc=self._initial_state))
         return solutions
