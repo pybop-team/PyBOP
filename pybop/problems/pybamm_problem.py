@@ -60,9 +60,10 @@ class PybammProblem(Problem):
 
         # Add optional prior contribution
         if self.is_posterior:
-            log_prior = np.empty(len(inputs))
-            for i, x in enumerate(inputs):
-                log_prior[i] = self._priors.logpdf(list(x.values()))
+            batch_values = np.asarray(
+                [np.fromiter(x.values(), dtype=np.floating) for x in inputs]
+            ).T  # note the required transpose
+            log_prior = self._priors.logpdf(batch_values)  # Shape: (n_inputs,)
             return costs - log_prior
 
         return costs
@@ -93,12 +94,12 @@ class PybammProblem(Problem):
 
         # Subtract optional prior contribution and derivatives from negative log-likelihood
         if self.is_posterior:
-            log_prior = np.empty(len(inputs))
-            log_prior_sens = np.empty((len(inputs), self._n_params))
-            for i, x in enumerate(inputs):
-                log_prior[i], log_prior_sens[i, :] = self._priors.logpdfS1(
-                    list(x.values())
-                )
+            batch_values = np.asarray(
+                [np.fromiter(x.values(), dtype=np.floating) for x in inputs]
+            ).T  # note the required transpose
+            out = self._priors.logpdfS1(batch_values)
+            log_prior = out[0]  # Shape: (n_inputs,)
+            log_prior_sens = out[1]  # Shape: (n_inputs, n_params)
             return costs - log_prior, sens - log_prior_sens
 
         return costs, sens
