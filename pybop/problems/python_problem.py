@@ -136,7 +136,7 @@ class PythonProblem(Problem):
 
         # Evaluate funcs and collect results
         values = np.fromiter(
-            inputs[0].values(), dtype=np.floating
+            inputs[0].values(), dtype=np.float64
         )  # todo: update for multiple inputs
         for i, func in enumerate(self._funs_with_sens):
             cost, grad = func(values)

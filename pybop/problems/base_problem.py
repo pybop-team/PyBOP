@@ -95,7 +95,7 @@ class Problem:
         # Add optional prior contribution
         if self.is_posterior:
             batch_values = np.asarray(
-                [np.fromiter(x.values(), dtype=np.floating) for x in inputs]
+                [np.fromiter(x.values(), dtype=np.float64) for x in inputs]
             ).T  # note the required transpose
             log_prior = self._priors.logpdf(batch_values)  # Shape: (n_inputs,)
             return costs - log_prior
@@ -129,7 +129,7 @@ class Problem:
         # Subtract optional prior contribution and derivatives from negative log-likelihood
         if self.is_posterior:
             batch_values = np.asarray(
-                [np.fromiter(x.values(), dtype=np.floating) for x in inputs]
+                [np.fromiter(x.values(), dtype=np.float64) for x in inputs]
             ).T  # note the required transpose
             log_prior, log_prior_sens = self._priors.logpdfS1(batch_values)
             costs -= log_prior  # Shape: (n_inputs,)
