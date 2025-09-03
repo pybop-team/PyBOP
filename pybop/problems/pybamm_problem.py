@@ -1,14 +1,15 @@
 import numpy as np
 from pybamm import Solution
 
-from pybop import JointLogPrior, Parameters
+from pybop import JointLogPrior
+from pybop.parameters.parameter import Inputs, Parameters
 from pybop.pipelines._pybamm_pipeline import PybammPipeline
 from pybop.problems.base_problem import Problem
 
 
 class PybammProblem(Problem):
     """
-    Defines a problem that uses a PyBaMM model as the simulation + cost function to evaluate
+    Defines a problem that uses a PyBaMM model as the simulation + cost function to evaluate.
     """
 
     def __init__(
@@ -19,7 +20,7 @@ class PybammProblem(Problem):
         cost_weights: list | np.ndarray = None,
         is_posterior: bool = False,
     ):
-        super().__init__(pybop_params=pybop_params)
+        super().__init__(pybop_params=pybop_params, is_posterior=is_posterior)
         self._pipeline = pybamm_pipeline
         self._cost_names = cost_names or []
         self._cost_weights = (
@@ -28,7 +29,6 @@ class PybammProblem(Problem):
             else np.ones(len(self._cost_names))
         )
         self._domain = "Time [s]"
-        self.is_posterior = is_posterior
         self._has_sensitivities = (
             False if pybamm_pipeline.initial_state is not None else True
         )
@@ -39,7 +39,7 @@ class PybammProblem(Problem):
         else:
             self._priors = None
 
-    def _compute_costs(self, values: np.ndarray | list[np.ndarray]) -> np.ndarray:
+    def _compute_costs(self, inputs: list[Inputs]) -> np.ndarray:
         """
         Evaluates the underlying simulation and cost function.
 
@@ -53,23 +53,12 @@ class PybammProblem(Problem):
             Weighted sum of cost variables for each proposal.
             The dimensionality is np.ndarray(M,) to match the number of proposals.
         """
-        inputs = self._params.to_inputs(values)
-
         sols = self._pipeline.solve(inputs=inputs)
-        costs = self._get_pybamm_cost(sols)
 
-        # Add optional prior contribution
-        if self.is_posterior:
-            batch_values = np.asarray(
-                [np.fromiter(x.values(), dtype=np.floating) for x in inputs]
-            ).T  # note the required transpose
-            log_prior = self._priors.logpdf(batch_values)  # Shape: (n_inputs,)
-            return costs - log_prior
-
-        return costs
+        return self._get_pybamm_cost(sols)
 
     def _compute_costs_and_sensitivities(
-        self, values: np.ndarray | list[np.ndarray]
+        self, inputs: list[Inputs]
     ) -> tuple[np.ndarray | np.ndarray]:
         """
         Evaluates the simulation and cost function with parameter sensitivities.
@@ -86,23 +75,9 @@ class PybammProblem(Problem):
             - cost ( np.ndarray(M,) ): Weighted sum of cost values for each proposal.
             - sensitivities ( np.ndarray(M, n_params) ): Weighted sum of parameter gradients for each proposal.
         """
-        inputs = self._params.to_inputs(values)
-
         sols = self._pipeline.solve(inputs=inputs, calculate_sensitivities=True)
-        costs = self._get_pybamm_cost(sols)
-        sens = self._get_pybamm_sensitivities(sols)
 
-        # Subtract optional prior contribution and derivatives from negative log-likelihood
-        if self.is_posterior:
-            batch_values = np.asarray(
-                [np.fromiter(x.values(), dtype=np.floating) for x in inputs]
-            ).T  # note the required transpose
-            out = self._priors.logpdfS1(batch_values)
-            log_prior = out[0]  # Shape: (n_inputs,)
-            log_prior_sens = out[1]  # Shape: (n_inputs, n_params)
-            return costs - log_prior, sens - log_prior_sens
-
-        return costs, sens
+        return self._get_pybamm_cost(sols), self._get_pybamm_sensitivities(sols)
 
     def _get_pybamm_cost(self, solution: list[Solution]) -> np.ndarray:
         """Compute the cost function value from a list of solutions."""

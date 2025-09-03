@@ -1,7 +1,6 @@
 import numpy as np
 
-from pybop import Parameters
-from pybop.parameters.parameter import Inputs
+from pybop.parameters.parameter import Inputs, Parameters
 from pybop.pipelines._pybamm_eis_pipeline import PybammEISPipeline
 from pybop.problems.base_problem import Problem
 
@@ -28,7 +27,7 @@ class PybammEISProblem(Problem):
             np.asarray(cost_weights) if cost_weights is not None else None
         )
 
-    def _compute_costs(self, values: np.ndarray | list[np.ndarray]) -> np.ndarray:
+    def _compute_costs(self, inputs: list[Inputs]) -> np.ndarray:
         """
         Evaluates the underlying simulation and cost function.
 
@@ -37,7 +36,6 @@ class PybammEISProblem(Problem):
         cost : np.ndarray
             A 1D array containing the weighted sum of cost variables for each proposal.
         """
-        inputs = self._params.to_inputs(values)
         cost_matrix = np.empty((len(self._costs), len(inputs)))
 
         for i, x in enumerate(inputs):

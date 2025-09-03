@@ -2,7 +2,7 @@ from collections.abc import Callable, Sequence
 
 import numpy as np
 
-from pybop import Parameters
+from pybop.parameters.parameter import Inputs, Parameters
 from pybop.problems.base_problem import Problem
 
 
@@ -69,7 +69,7 @@ class PythonProblem(Problem):
         self._has_sensitivities = True if funs_with_sens is not None else False
         self._weights = np.asarray(weights) if weights is not None else None
 
-    def _compute_costs(self, values: np.ndarray | list[np.ndarray]) -> np.ndarray:
+    def _compute_costs(self, inputs: list[Inputs]) -> np.ndarray:
         """
         Execute all standard functions with current parameters and return weighted sum.
 
@@ -92,8 +92,6 @@ class PythonProblem(Problem):
                 "Use run_with_sensitivities() instead."
             )
 
-        inputs = self._params.to_inputs(values)
-
         weighted_costs = np.empty(len(inputs))
         for i, x in enumerate(inputs):
             val = list(x.values())
@@ -103,7 +101,7 @@ class PythonProblem(Problem):
         return weighted_costs
 
     def _compute_costs_and_sensitivities(
-        self, values: np.ndarray | list[np.ndarray]
+        self, inputs: list[Inputs]
     ) -> tuple[np.ndarray, np.ndarray]:
         """
         Execute all sensitivity functions and return weighted results with gradients.
@@ -137,6 +135,9 @@ class PythonProblem(Problem):
         gradients = []
 
         # Evaluate funcs and collect results
+        values = np.fromiter(
+            inputs[0].values(), dtype=np.floating
+        )  # todo: update for multiple inputs
         for i, func in enumerate(self._funs_with_sens):
             cost, grad = func(values)
             costs[i] = float(cost)  # Ensure scalar
