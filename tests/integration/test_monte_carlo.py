@@ -29,11 +29,8 @@ class Test_Sampling_SPM:
         )
 
     @pytest.fixture
-    def model(self):
-        return pybamm.lithium_ion.SPM()
-
-    @pytest.fixture
-    def parameter_values(self):
+    def model_and_parameter_values(self):
+        model = pybamm.lithium_ion.SPM()
         parameter_values = pybamm.ParameterValues("Chen2020")
         x = self.ground_truth
         parameter_values.update(
@@ -42,7 +39,12 @@ class Test_Sampling_SPM:
                 "Positive electrode active material volume fraction": x[1],
             }
         )
-        return parameter_values
+
+        # Fix the total lithium concentration to simplify the fitting problem
+        model.param.Q_Li_particles_init = parameter_values.evaluate(
+            model.param.Q_Li_particles_init
+        )
+        return model, parameter_values
 
     @pytest.fixture
     def parameters(self):
@@ -65,7 +67,8 @@ class Test_Sampling_SPM:
         return data + np.random.normal(0, sigma, len(data))
 
     @pytest.fixture
-    def dataset(self, model, parameter_values):
+    def dataset(self, model_and_parameter_values):
+        model, parameter_values = model_and_parameter_values
         experiment = pybamm.Experiment(
             [
                 "Rest for 1 second",
@@ -89,7 +92,8 @@ class Test_Sampling_SPM:
         return dataset
 
     @pytest.fixture
-    def problem(self, model, parameters, parameter_values, dataset):
+    def problem(self, model_and_parameter_values, parameters, dataset):
+        model, parameter_values = model_and_parameter_values
         builder = pybop.Pybamm()
         builder.set_simulation(model, parameter_values=parameter_values)
         builder.set_dataset(dataset)

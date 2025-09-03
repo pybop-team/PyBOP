@@ -429,7 +429,6 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
         # Enable vectorisation. Differential evolution proposes candidates as an
         # array of size (N, S) amd expects to receive a set of costs of size (S,)
         self._options_dict["updating"] = "deferred"
-        self._options_dict["vectorized"] = True
         pop_evaluator = PopulationEvaluator(
             problem=self.problem,
             minimise=True,
