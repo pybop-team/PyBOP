@@ -4,7 +4,7 @@ import pybop
 from pybop import Parameter as PybopParameter
 from pybop.builders.base import BaseBuilder
 from pybop.builders.utils import cell_mass, set_formation_concentrations
-from pybop.costs.pybamm import BaseLikelihood, DesignCost, PybammCost
+from pybop.costs.pybamm import BaseLikelihood, DesignCost, PybammVariable
 from pybop.pipelines._pybamm_pipeline import PybammPipeline
 
 
@@ -21,7 +21,7 @@ class Pybamm(BaseBuilder):
         self._parameter_values: pybamm.ParameterValues | None = None
         self._initial_state: float | str | None = None
         self._experiment: pybamm.Experiment | None = None
-        self._costs: list[PybammCost] = []
+        self._costs: list[PybammVariable] = []
         self._cost_weights: list[float] = []
         self.domain = "Time [s]"
         self.is_posterior = False
@@ -91,7 +91,7 @@ class Pybamm(BaseBuilder):
 
         return self
 
-    def add_cost(self, cost: PybammCost, weight: float = 1.0) -> "Pybamm":
+    def add_cost(self, cost: PybammVariable, weight: float = 1.0) -> "Pybamm":
         """
         Adds a cost to the problem with optional weighting.
         """

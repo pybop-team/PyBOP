@@ -31,7 +31,7 @@ class PybammParameterMetadata:
     default_value: float
 
 
-class PybammCost:
+class PybammVariable:
     def __init__(self):
         self._metadata = None
         self._data_name = None
@@ -76,7 +76,7 @@ class PybammCost:
     ):
         # if dataset is provided, must contain time data
         if dataset is not None and "Time [s]" not in dataset:
-            raise ValueError("Dataset must contain time data for PybammCost.")
+            raise ValueError("Dataset must contain time data for PybammVariable.")
         self._metadata = self.variable_expression(model, dataset)
         model.variables[self._metadata.variable_name] = self._metadata.expression
         for parameter_name, parameter_metadata in self._metadata.parameters.items():
@@ -132,7 +132,7 @@ class PybammCost:
         return self._data_name
 
 
-class BaseLikelihood(PybammCost):
+class BaseLikelihood(PybammVariable):
     """
     A base class for likelihood functions.
     These functions should be implemented as negative likelihoods for

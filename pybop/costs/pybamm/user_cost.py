@@ -3,12 +3,12 @@ import pybamm
 from pybop import Dataset
 from pybop import Parameter as PybopParameter
 from pybop.costs.pybamm.base_cost import (
-    PybammCost,
     PybammExpressionMetadata,
+    PybammVariable,
 )
 
 
-class UserCost(PybammCost):
+class UserCost(PybammVariable):
     """
     A user-defined cost function for PyBaMM models.
     This class allows users to define custom cost functions
@@ -40,7 +40,7 @@ def custom(
     variable_name: str,
     expression: pybamm.Symbol,
     parameters: dict[str, pybamm.Parameter],
-) -> PybammCost:
+) -> PybammVariable:
     """
     Creates a custom user-defined cost function for PyBaMM models.
 

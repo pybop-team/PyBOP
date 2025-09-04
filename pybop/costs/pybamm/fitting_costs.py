@@ -5,12 +5,12 @@ from pybop import Dataset
 from pybop import Parameter as PybopParameter
 from pybop.costs.pybamm.base_cost import (
     BaseLikelihood,
-    PybammCost,
     PybammExpressionMetadata,
+    PybammVariable,
 )
 
 
-class SumSquaredError(PybammCost):
+class SumSquaredError(PybammVariable):
     """
     A SumSquaredError cost implementation within Pybamm.
     """
@@ -46,7 +46,7 @@ class SumSquaredError(PybammCost):
         return "Sum Squared Error"
 
 
-class MeanAbsoluteError(PybammCost):
+class MeanAbsoluteError(PybammVariable):
     """
     Mean absolute error (MAE) cost function.
 
@@ -89,7 +89,7 @@ class MeanAbsoluteError(PybammCost):
         return "Mean Absolute Error"
 
 
-class MeanSquaredError(PybammCost):
+class MeanSquaredError(PybammVariable):
     """
     Mean square error (MSE) cost function.
 
@@ -127,7 +127,7 @@ class MeanSquaredError(PybammCost):
         return "Mean Squared Error"
 
 
-class RootMeanSquaredError(PybammCost):
+class RootMeanSquaredError(PybammVariable):
     """
     Root mean square error (RMSE) cost function.
 
@@ -166,7 +166,7 @@ class RootMeanSquaredError(PybammCost):
         return "Root Mean Squared Error"
 
 
-class Minkowski(PybammCost):
+class Minkowski(PybammVariable):
     """
     The Minkowski distance is a generalisation of several distance metrics,
     including the Euclidean and Manhattan distances. It is defined as:
@@ -220,7 +220,7 @@ class Minkowski(PybammCost):
         return f"Minkowski distance (p = {self.p})"
 
 
-class SumOfPower(PybammCost):
+class SumOfPower(PybammVariable):
     """
     The Sum of Power [1] is a generalised cost function based on the p-th power
     of absolute differences between two vectors. It is defined as:
@@ -346,7 +346,7 @@ class NegativeGaussianLogLikelihood(BaseLikelihood):
         )
 
 
-class ScaledCost(PybammCost):
+class ScaledCost(PybammVariable):
     """
     This class scales a BaseCost class by the number of observations.
     The scaling factor is given below:
@@ -360,7 +360,7 @@ class ScaledCost(PybammCost):
 
     def __init__(
         self,
-        cost: PybammCost,
+        cost: PybammVariable,
     ):
         super().__init__()
         self._cost = cost
