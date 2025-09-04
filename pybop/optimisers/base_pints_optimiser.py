@@ -10,9 +10,9 @@ from pints import strfloat as PintsStrFloat
 
 import pybop
 from pybop import OptimisationResult, PopulationEvaluator, SequentialEvaluator
+from pybop._logging import Logger
 from pybop.optimisers._adamw import AdamWImpl
 from pybop.optimisers._gradient_descent import GradientDescentImpl
-from pybop._logging import Logger
 from pybop.problems.base_problem import Problem
 
 
