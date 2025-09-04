@@ -63,8 +63,12 @@ class PybammVariable:
         Add the variable and any additional parameters to the model.
         """
         if dataset is not None and "Time [s]" not in dataset:
-            raise ValueError("Dataset must contain time data for PybammVariable.")
+            raise ValueError('Dataset must contain "Time [s]" for a PybammVariable.')
         self._metadata = self.symbolic_expression(model, dataset)
+        if self._metadata.variable_name in model.variables.keys():
+            raise ValueError(
+                "The variable {self._metadata._variable_name} already exists in the model."
+            )
         model.variables[self._metadata.variable_name] = self._metadata.expression
         for parameter_name, parameter_metadata in self._metadata.parameters.items():
             param.update(
