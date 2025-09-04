@@ -5,7 +5,7 @@ from typing import Any
 import numpy as np
 from scipy.interpolate import griddata
 
-from pybop import BaseOptimiser, Problem
+from pybop import OptimisationResult, Problem
 from pybop.plot.plotly_manager import PlotlyManager
 
 
@@ -38,9 +38,9 @@ class ContourPlotter:
     A class for contour plots.
     """
 
-    def __init__(self, problem: Problem, optim: BaseOptimiser = None):
+    def __init__(self, problem: Problem, result: OptimisationResult = None):
         self.problem = problem
-        self.optim = optim
+        self.result = result
         self.params = self.problem.params
         self.parameter_names = list(self.params.keys())
         self._additional_params = []
@@ -114,11 +114,11 @@ class ContourPlotter:
         self, x_values: np.ndarray, y_values: np.ndarray, costs: np.ndarray, steps: int
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Interpolate cost surface using optimisation log data."""
-        if self.optim is None or not hasattr(self.optim, "log"):
+        if self.result is None:
             return x_values, y_values, costs
 
         # Pre-allocate arrays
-        param_log = np.asarray(self.optim.log.x_model)
+        param_log = np.asarray(self.result.x_model)
 
         # Create a meshgrid
         x_indices, y_indices = np.meshgrid(
@@ -128,10 +128,10 @@ class ContourPlotter:
         flat_y = y_values[y_indices.ravel()]
         flat_costs = costs.ravel()
 
-        # Concatenate with the optimiser log
+        # Concatenate with the optimisation log
         combined_x = np.concatenate([flat_x, param_log[:, 0]])
         combined_y = np.concatenate([flat_y, param_log[:, 1]])
-        combined_costs = np.concatenate([flat_costs, self.optim.log.cost])
+        combined_costs = np.concatenate([flat_costs, self.result.cost])
 
         # Create a mesh for interpolating costs
         unique_x = np.unique(combined_x)
@@ -191,7 +191,7 @@ class ContourPlotter:
         )  # Column-major reshape
 
         # Apply optimisation log interpolation if requested
-        if config.use_optim_log and self.optim is not None:
+        if config.use_optim_log and self.result is not None:
             x_values, y_values, costs = self._interpolate_with_optimisation_log(
                 x_values, y_values, costs, config.steps
             )
@@ -270,26 +270,18 @@ class ContourPlotter:
 
     def _extract_optimisation_data(self) -> tuple:
         """Extract optimisation data once for reuse."""
-        if self.optim is None or not hasattr(self.optim, "log"):
+        if self.result is None:
             return None, None, None
 
-        log = self.optim.log
-
         # Extract trace data
-        trace_data = None
-        if hasattr(log, "x_model") and log.x_model:
-            trace_array = np.asarray([item[:2] for item in log.x_model])
-            trace_data = trace_array.reshape(-1, 2)
+        trace_array = np.asarray([item[:2] for item in self.result.x_model])
+        trace_data = trace_array.reshape(-1, 2)
 
         # Extract initial guess
-        initial_guess = None
-        if hasattr(log, "x0") and log.x0 is not None:
-            initial_guess = np.array(log.x0[:2])
+        initial_guess = np.array(self.result.x0[:2])
 
         # Extract final values
-        final_values = None
-        if hasattr(log, "last_x_model_best") and log.last_x_model_best is not None:
-            final_values = np.array(log.last_x_model_best[:2])
+        final_values = np.array(self.result.x[:2])
 
         return trace_data, initial_guess, final_values
 
@@ -467,7 +459,7 @@ class ContourPlotter:
 
 
 def contour(
-    call_object: Problem | BaseOptimiser,
+    call_object: Problem | OptimisationResult,
     gradient: bool = False,
     bounds: np.ndarray | None = None,
     apply_transform: bool = False,
@@ -484,9 +476,9 @@ def contour(
 
     Parameters
     ----------
-    call_object : Problem | BaseOptimiser
-        Either a pybop.Problem object or a pybop.BaseOptimiser object which provides
-        a specific optimisation trace overlaid on the cost landscape.
+    call_object : Problem | OptimisationResult
+        Either a pybop.Problem or a pybop.OptimisationResult result containing the cost function and
+        optimisation log which provides a specific optimisation trace overlaid on the cost landscape.
     gradient : bool, optional
         If True, gradient plots are also generated (default: False).
     bounds : np.ndarray, optional
@@ -517,15 +509,15 @@ def contour(
         If the problem has fewer than 2 parameters or if steps <= 0.
     """
     # Extract problem and optimiser from call_object
-    if isinstance(call_object, BaseOptimiser):
+    if isinstance(call_object, OptimisationResult):
         problem = call_object.problem
-        optimiser = call_object
+        result = call_object
     elif isinstance(call_object, Problem):
         problem = call_object
-        optimiser = None
+        result = None
     else:
         raise TypeError(
-            "call_object must be a pybop.Problem or pybop.BaseOptimiser instance."
+            "call_object must be a pybop.Problem or pybop.OptimisationResult instance."
         )
 
     # Create configuration
@@ -539,5 +531,5 @@ def contour(
     )
 
     # Create plotter and generate plot
-    plotter = ContourPlotter(problem, optimiser)
+    plotter = ContourPlotter(problem=problem, result=result)
     return plotter.create_contour_plot(config, **layout_kwargs)

@@ -1,11 +1,9 @@
 import numpy as np
 
 from pybop import OptimisationResult
-from pybop.problems.base_problem import Problem
 
 
 def classify_using_hessian(
-    problem: Problem,
     result: OptimisationResult,
     dx=None,
     cost_tolerance: float | None = 1e-5,
@@ -17,7 +15,7 @@ def classify_using_hessian(
     Parameters
     ---------
     result : OptimisationResult
-        The PyBOP optimisation results.
+        The optimisation result.
     dx : array-like, optional
         An array of small positive values used to check proximity to the parameter
         bounds and as the perturbation distance in the finite difference calculations.
@@ -27,6 +25,7 @@ def classify_using_hessian(
     x = result.x
     dx = np.asarray(dx) if dx is not None else np.maximum(x, 1e-40) * 1e-2
     best_cost = result.best_cost
+    problem = result.problem
 
     def cost(x):
         problem.set_params(x)
