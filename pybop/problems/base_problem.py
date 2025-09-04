@@ -17,7 +17,6 @@ class Problem:
             self._param_names = []
         self._params = pybop_params
         self._param_names = pybop_params.keys()
-        self._has_sensitivities = False
 
     def get_finite_initial_cost(self):
         """
@@ -83,7 +82,7 @@ class Problem:
 
     @property
     def has_sensitivities(self) -> bool:
-        return self._has_sensitivities
+        return NotImplementedError
 
     def sensitivity_analysis(self, n_samples: int = 256) -> dict:
         """

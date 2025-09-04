@@ -66,7 +66,6 @@ class PythonProblem(Problem):
         self._funs_with_sens = (
             tuple(funs_with_sens) if funs_with_sens is not None else None
         )
-        self._has_sensitivities = True if funs_with_sens is not None else False
         self._weights = np.asarray(weights) if weights is not None else None
 
     def run(self) -> np.ndarray:
@@ -171,3 +170,7 @@ class PythonProblem(Problem):
             Array of parameter values
         """
         self.check_and_store_params(p)
+
+    @property
+    def has_sensitivities(self):
+        return True if self._funs_with_sens is not None else False
