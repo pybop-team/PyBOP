@@ -1,11 +1,12 @@
 from .base_cost import (
     PybammVariable,
-    BaseLikelihood,
-    PybammExpressionMetadata,
+    PybammVariableMetadata,
     PybammParameterMetadata,
 )
 from .user_cost import UserCost, custom
 from .fitting_costs import (
+    PybammFittingCost,
+    BaseLikelihood,
     SumOfPower,
     Minkowski,
     RootMeanSquaredError,

@@ -4,14 +4,13 @@ from uuid import uuid4
 import pybamm
 
 from pybop import Dataset
-from pybop import Parameter as PybopParameter
 
 
 @dataclass
-class PybammExpressionMetadata:
+class PybammVariableMetadata:
     """
-    Metadata for a PyBaMM cost function. This includes the variable name, expression,
-    and any parameters that are needed to evaluate the cost function.
+    Metadata for a PyBaMM variable. This includes its name and symbolic expression as well
+    as any additional parameters that are needed to evaluate the expression.
     """
 
     variable_name: str
@@ -22,9 +21,8 @@ class PybammExpressionMetadata:
 @dataclass
 class PybammParameterMetadata:
     """
-    Metadata for a PyBaMM parameter. This includes the
-    pybamm parameter and the default value to use if the parameter is not
-    set explicitly.
+    Metadata for a PyBaMM parameter. This includes the pybamm.Parameter and the default
+    value to use if the parameter is not set explicitly.
     """
 
     parameter: pybamm.Parameter
@@ -34,23 +32,22 @@ class PybammParameterMetadata:
 class PybammVariable:
     def __init__(self):
         self._metadata = None
-        self._variable_name = None
         self._sigma = None
 
-    def metadata(self) -> PybammExpressionMetadata:
+    def metadata(self) -> PybammVariableMetadata:
         """
-        Returns the metadata for the cost function. This includes the variable name,
-        expression, and any parameters that are needed to evaluate the cost function.
+        Returns the metadata for the variable, including its name and symbolic expression
+        as well as any additional parameters that are needed to evaluate the expression.
         """
         if self._metadata is None:
-            raise ValueError("Cost function has not been added to model yet.")
+            raise ValueError("Variable has not been added to model yet.")
         return self._metadata
 
     @classmethod
     def make_unique_cost_name(cls) -> str:
         """
-        Make a unique name for the cost function variable using the name of the class
-        and a UUID. This is used to avoid name collisions in the pybamm model.
+        Make a unique name for the variable using the name of the class and a UUID.
+        This is used to avoid name collisions in the pybamm model.
         """
         return f"{cls.__name__}_{uuid4()}"
 
@@ -58,12 +55,10 @@ class PybammVariable:
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
-    ) -> PybammExpressionMetadata:
+    ) -> PybammVariableMetadata:
         """
-        Defines the variable expression for the cost function, returning a
-        PybammExpressionMetadata object. This should be implemented in the
-        subclass. The metadata object contains the variable name, expression,
-        and any parameters that are needed to evaluate the cost function.
+        Defines the variable expression, returning a PybammVariableMetadata object.
+        This should be implemented in the subclass.
         """
         raise NotImplementedError()
 
@@ -73,7 +68,9 @@ class PybammVariable:
         param: pybamm.ParameterValues,
         dataset: Dataset | None = None,
     ):
-        # if dataset is provided, must contain time data
+        """
+        Add the variable and any additional parameters to the model.
+        """
         if dataset is not None and "Time [s]" not in dataset:
             raise ValueError("Dataset must contain time data for PybammVariable.")
         self._metadata = self.symbolic_expression(model, dataset)
@@ -83,57 +80,3 @@ class PybammVariable:
                 {parameter_name: parameter_metadata.default_value},
                 check_already_exists=False,
             )
-
-    def _construct_discrete_time_node(self, dataset, model, name):
-        """
-        Constructs the pybamm DiscreteTimeData node in the expression tree
-        """
-        times = dataset["Time [s]"]
-        values = dataset[self._variable_name]
-        data = pybamm.DiscreteTimeData(times, values, f"{name}_data")
-        var = model.variables[self._variable_name]
-        return data, var
-
-    def _check_state(self, dataset, model, name) -> None:
-        # dataset must be provided and contain the data
-        if dataset is None:
-            raise ValueError(f"Dataset must be provided for {name}.")
-        if self._variable_name not in dataset:
-            raise ValueError(f"Dataset must contain {self._variable_name} for {name}.")
-        # model must contain the variable
-        if self._variable_name not in model.variables:
-            raise ValueError(f"Model must contain {self._variable_name} for {name}.")
-
-    def _get_sigma_parameter(self, cost_name, parameters) -> pybamm.Parameter:
-        """
-        Returns the sigma node, either fixed or as an estimated parameter.
-        Updates metadata if sigma is estimated.
-        """
-
-        if isinstance(self._sigma, PybopParameter) or self._sigma is None:
-            sigma_name = self._sigma.name if self._sigma else f"sigma_{cost_name}"
-            sigma = pybamm.Parameter(sigma_name)
-            parameters[sigma_name] = PybammParameterMetadata(
-                parameter=sigma,
-                default_value=self._sigma.current_value
-                if self._sigma
-                else 1e-2,  # Initial guess w/ ~ low noise
-            )
-        elif isinstance(self._sigma, float | int):
-            sigma = pybamm.Scalar(self._sigma)
-        else:
-            sigma = self._sigma  # Assume pybamm.Parameter
-
-        return sigma
-
-    @property
-    def variable_name(self) -> str:
-        return self._variable_name
-
-
-class BaseLikelihood(PybammVariable):
-    """
-    A base class for likelihood functions.
-    These functions should be implemented as negative likelihoods for
-    use within the pybop optimisation and sampling framework.
-    """

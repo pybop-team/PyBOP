@@ -2,8 +2,8 @@ import pybamm
 
 from pybop import Dataset
 from pybop.costs.pybamm.base_cost import (
-    PybammExpressionMetadata,
     PybammVariable,
+    PybammVariableMetadata,
 )
 
 
@@ -38,8 +38,8 @@ class GravimetricEnergyDensity(DesignCost):
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
-    ) -> PybammExpressionMetadata:
-        # Check args
+    ) -> PybammVariableMetadata:
+        """Construct the variable metadata."""
         name = GravimetricEnergyDensity.make_unique_cost_name()
         expression = (
             -1
@@ -49,7 +49,7 @@ class GravimetricEnergyDensity(DesignCost):
             / pybamm.Parameter("Cell mass [kg]")
         )
         parameters = {}
-        return PybammExpressionMetadata(
+        return PybammVariableMetadata(
             variable_name=name,
             expression=pybamm.ExplicitTimeIntegral(expression, pybamm.Scalar(0.0)),
             parameters=parameters,
@@ -78,8 +78,8 @@ class VolumetricEnergyDensity(DesignCost):
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
-    ) -> PybammExpressionMetadata:
-        # Check args
+    ) -> PybammVariableMetadata:
+        """Construct the variable metadata."""
         name = VolumetricEnergyDensity.make_unique_cost_name()
         expression = (
             -model.variables["Voltage [V]"]
@@ -87,7 +87,7 @@ class VolumetricEnergyDensity(DesignCost):
             / (model.param.V_cell * 3600)
         )
 
-        return PybammExpressionMetadata(
+        return PybammVariableMetadata(
             variable_name=name,
             expression=pybamm.ExplicitTimeIntegral(
                 expression, pybamm.Scalar(0.0)
@@ -117,8 +117,8 @@ class GravimetricPowerDensity(DesignCost):
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
-    ) -> PybammExpressionMetadata:
-        # Check args
+    ) -> PybammVariableMetadata:
+        """Construct the variable metadata."""
         name = GravimetricPowerDensity.make_unique_cost_name()
         expression = (
             -model.variables["Voltage [V]"]
@@ -127,7 +127,7 @@ class GravimetricPowerDensity(DesignCost):
         )
 
         parameters = {}
-        return PybammExpressionMetadata(
+        return PybammVariableMetadata(
             variable_name=name,
             expression=pybamm.ExplicitTimeIntegral(
                 expression, pybamm.Scalar(0.0)
@@ -157,8 +157,8 @@ class VolumetricPowerDensity(DesignCost):
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
-    ) -> PybammExpressionMetadata:
-        # Check args
+    ) -> PybammVariableMetadata:
+        """Construct the variable metadata."""
         name = VolumetricPowerDensity.make_unique_cost_name()
         expression = (
             -model.variables["Voltage [V]"]
@@ -166,7 +166,7 @@ class VolumetricPowerDensity(DesignCost):
             / (model.param.V_cell)
         )
 
-        return PybammExpressionMetadata(
+        return PybammVariableMetadata(
             variable_name=name,
             expression=pybamm.ExplicitTimeIntegral(expression, pybamm.Scalar(0.0)),
             parameters={},

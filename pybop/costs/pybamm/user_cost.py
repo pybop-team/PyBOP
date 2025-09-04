@@ -3,8 +3,8 @@ import pybamm
 from pybop import Dataset
 from pybop import Parameter as PybopParameter
 from pybop.costs.pybamm.base_cost import (
-    PybammExpressionMetadata,
     PybammVariable,
+    PybammVariableMetadata,
 )
 
 
@@ -22,14 +22,13 @@ class UserCost(PybammVariable):
         parameters: dict[str, PybopParameter],
     ):
         super().__init__()
-        self._metadata = PybammExpressionMetadata(name, expression, parameters)
-        self._variable_name = name
+        self._metadata = PybammVariableMetadata(name, expression, parameters)
 
     def symbolic_expression(
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
-    ) -> PybammExpressionMetadata:
+    ) -> PybammVariableMetadata:
         """
         Returns the expression metadata for the cost function.
         """
@@ -37,7 +36,7 @@ class UserCost(PybammVariable):
 
 
 def custom(
-    variable_name: str,
+    name: str,
     expression: pybamm.Symbol,
     parameters: dict[str, pybamm.Parameter],
 ) -> PybammVariable:
@@ -46,8 +45,8 @@ def custom(
 
     Parameters
     ----------
-    variable_name : str
-        The name of the variable for the cost function, this must be unique within the variables of the model.
+    name : str
+        The name of the variable, must be unique within the variables of the model.
     expression : pybamm.Symbol
         The PyBaMM expression that defines the cost function.
     parameters : dict[str, pybamm.Parameter]
@@ -75,4 +74,4 @@ def custom(
     >>> builder.add_cost(custom_cost)
     >>> problem_custom = builder.build()
     """
-    return UserCost(variable_name, expression, parameters)
+    return UserCost(name, expression, parameters)
