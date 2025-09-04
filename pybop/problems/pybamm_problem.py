@@ -29,9 +29,6 @@ class PybammProblem(Problem):
             else np.ones(len(self._cost_names))
         )
         self._domain = "Time [s]"
-        self._has_sensitivities = (
-            False if pybamm_pipeline.initial_state is not None else True
-        )
 
         # Set up priors if we're using the posterior
         if self.is_posterior and pybop_params is not None:
@@ -113,3 +110,7 @@ class PybammProblem(Problem):
     @property
     def cost_names(self):
         return self._cost_names
+
+    @property
+    def has_sensitivities(self):
+        return False if self._pipeline.initial_state is not None else True

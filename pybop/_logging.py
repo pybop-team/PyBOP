@@ -11,6 +11,22 @@ class Logger:
         If True, the optimisation progress and results are printed.
     verbose_print_rate : int
         The distance between iterations to print verbose output.
+    iteration : int
+        The current iteration number.
+    x_model : list[np.ndarray]
+        The history of model parameters.
+    x_search : list[np.ndarray]
+        The history of search parameters.
+    cost : list[float]
+        The history of the cost value.
+    iteration_number : list[int]
+        The history of the iteration number.
+    evaluations : int
+        The current number of evaluations.
+    x_model_best : list[np.ndarray]
+        The current best model parameters.
+    cost_best : list[float]
+        The current best cost value.
     """
 
     def __init__(self, verbose: bool = False, verbose_print_rate: int = 50):

@@ -56,3 +56,7 @@ class PybammEISProblem(Problem):
     @property
     def fitting_data(self):
         return self._fitting_data
+
+    @property
+    def has_sensitivities(self):
+        return False
