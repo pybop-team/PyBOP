@@ -77,7 +77,7 @@ print(f"Idenitified Parameters: {results.x}")
 identified_parameter_values = results.parameter_values
 
 # Plot the cost landscape with optimisation path
-optim.plot_surface()
+results.plot_surface()
 
 # Compare the fit to the data
 pybop.plot.validation(results.x, problem=problem, dataset=dataset)

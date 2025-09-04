@@ -95,7 +95,7 @@ results = optim.run()
 print(results)
 
 # Plot the cost landscape with optimisation path
-optim.plot_surface()
+results.plot_surface()
 
 # Compare to known values
 print("True parameters:", [parameter_values[p.name] for p in parameters])

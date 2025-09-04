@@ -83,7 +83,7 @@ results = optim.run()
 print(results)
 
 # Plot the parameter traces
-optim.plot_parameters()
+results.plot_parameters()
 
 # Compare to known values
 print("True parameters:", [parameter_values[p.name] for p in parameters])

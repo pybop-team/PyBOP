@@ -65,11 +65,11 @@ optim.optimiser.b2 = 0.925
 results = optim.run()
 
 # Plot convergence
-optim.plot_convergence()
+results.plot_convergence()
 
 # Plot the parameter traces
-optim.plot_parameters()
+results.plot_parameters()
 
 # Plot the cost landscape with optimisation path
 bounds = np.asarray([[0.6, 0.9], [0.5, 0.8]])
-optim.plot_surface(bounds=bounds)
+results.plot_surface(bounds=bounds)

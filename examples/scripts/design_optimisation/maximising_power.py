@@ -76,7 +76,7 @@ print(f"Initial volumetric power density: {-results.initial_cost:.2f} W.m-3")
 print(f"Optimised volumetric power density: {-results.best_cost:.2f} W.m-3")
 
 # Plot the cost landscape with optimisation path
-optim.plot_surface()
+results.plot_surface()
 
 # Obtain the optimised pybamm.ParameterValues object for use with PyBaMM classes
 optimised_values = results.parameter_values

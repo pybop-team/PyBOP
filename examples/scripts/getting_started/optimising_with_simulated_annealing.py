@@ -68,10 +68,10 @@ optim.optimiser.cooling_rate = 0.85
 results = optim.run()
 
 # Plot convergence
-optim.plot_convergence()
+results.plot_convergence()
 
 # Plot the parameter traces
-optim.plot_parameters()
+results.plot_parameters()
 
 # Plot the cost landscape with optimisation path
-optim.plot_surface()
+results.plot_surface()

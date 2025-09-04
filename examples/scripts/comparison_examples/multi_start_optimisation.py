@@ -75,8 +75,8 @@ print(f"The total optimisation time:{results.time} seconds")
 identified_parameter_values = results.parameter_values
 
 # Plot the parameter traces
-optim.plot_parameters()
+results.plot_parameters()
 
 # Plot the cost landscape with optimisation path
 bounds = np.asarray([[0.5, 0.8], [0.4, 0.7]])
-optim.plot_surface(bounds=bounds)
+results.plot_surface(bounds=bounds)
