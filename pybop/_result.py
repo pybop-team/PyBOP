@@ -1,7 +1,7 @@
 import numpy as np
 from pybamm import ParameterValues
 
-from pybop import Problem, PybammEISProblem, PybammProblem
+from pybop import Logger, Problem, PybammEISProblem, PybammProblem
 
 
 class OptimisationResult:
@@ -10,14 +10,14 @@ class OptimisationResult:
 
     Attributes
     ----------
-    problem: pybop.Problem
-        The optimisation object used to generate the results.
-    x : ndarray
-        The solution of the optimisation (in model space)
-    best_cost : float
-        The cost associated with the solution x.
-    n_iterations : int
-        Number of iterations performed by the optimiser.
+    problem : pybop.Problem
+        The optimisation problem.
+    logger : pybop.Logger
+        The log of the optimisation process.
+    time : float
+        The time taken.
+    optim_name : str
+        The name of the optimiser.
     message : str
         The reason for stopping given by the optimiser.
     scipy_result : scipy.optimize.OptimizeResult, optional
@@ -27,32 +27,32 @@ class OptimisationResult:
     def __init__(
         self,
         problem: Problem,
-        x: np.ndarray,
-        best_cost: float,
-        initial_cost: float,
-        n_iterations: int,
-        n_evaluations: int,
+        logger: Logger,
         time: float,
+        optim_name: str | None = None,
         message: str | None = None,
+        scipy_result=None,
     ):
         self._problem = problem
+        self.optim_name = optim_name
         self.n_runs = 0
         self._best_run = None
-        self._x = [x]
-        self._best_cost = [best_cost]
-        self._initial_cost = [initial_cost]
-        self._n_iterations = [n_iterations]
-        self._n_evaluations = [n_evaluations]
+        self._parameter_values = None
+        self._x = [logger.x_model_best]
+        self._x_model = [logger.x_model]
+        self._x0 = [logger.x0]
+        self._best_cost = [logger.cost_best]
+        self._cost = [logger.cost_convergence]
+        self._initial_cost = [logger.cost[0]]
+        self._n_iterations = [logger.iteration]
+        self._iteration_number = [logger.iteration_number]
+        self._n_evaluations = [logger.evaluations]
         self._message = [message]
         self._time = [time]
-        self._parameter_values = self._set_optimal_parameter_values()
-
-        x0 = self._problem.params.get_initial_values()
-        self._x0 = [x0]
 
         # Calculate Fisher Information if available
         try:
-            fisher = self._problem.observed_fisher(x)
+            fisher = self._problem.observed_fisher(logger.x_model_best)
             diag_fish = np.diag(fisher) if fisher is not None else None
         except NotImplementedError:
             diag_fish = None
@@ -79,12 +79,14 @@ class OptimisationResult:
             raise ValueError("No results to combine.")
         ret = results[0]
         ret._x = [x for result in results for x in result._x]  # noqa: SLF001
-        ret._parameter_values = [result._parameter_values for result in results]  # noqa: SLF001
+        ret._x_model = [x for result in results for x in result._x_model]  # noqa: SLF001
+        ret._x0 = [x for result in results for x in result._x0]  # noqa: SLF001
         ret._best_cost = [  # noqa: SLF001
             x
             for result in results
             for x in result._best_cost  # noqa: SLF001
         ]
+        ret._cost = [x for result in results for x in result._cost]  # noqa: SLF001
         ret._initial_cost = [  # noqa: SLF001
             x
             for result in results
@@ -95,6 +97,11 @@ class OptimisationResult:
             x
             for result in results
             for x in result._n_iterations  # noqa: SLF001
+        ]
+        ret._iteration_number = [  # noqa: SLF001
+            x
+            for result in results
+            for x in result._iteration_number  # noqa: SLF001
         ]
         ret._n_evaluations = [  # noqa: SLF001
             x
@@ -107,12 +114,18 @@ class OptimisationResult:
             for x in result._message  # noqa: SLF001
         ]
         ret._time = [x for result in results for x in result._time]  # noqa: SLF001
-        ret._x0 = [x for result in results for x in result._x0]  # noqa: SLF001
+
         ret._best_run = None  # noqa: SLF001
         ret.n_runs = len(results)
         ret._validate()  #  noqa: SLF001
 
         return ret
+
+    def _validate(self):
+        """Check that there is a finite cost and update best run."""
+        self._check_for_finite_cost()
+        self._best_run = self._best_cost.index(min(self._best_cost))
+        self._parameter_values = self._set_optimal_parameter_values()
 
     def _set_optimal_parameter_values(self) -> ParameterValues | dict:
         if isinstance(self._problem, PybammProblem | PybammEISProblem):
@@ -122,11 +135,6 @@ class OptimisationResult:
             return pybamm_params
 
         return {}
-
-    def _validate(self):
-        # Check that there is a finite cost and update best run
-        self._check_for_finite_cost()
-        self._best_run = self._best_cost.index(min(self._best_cost))
 
     def _check_for_finite_cost(self) -> None:
         """
@@ -184,9 +192,9 @@ class OptimisationResult:
         return self._get_single_or_all("_x")
 
     @property
-    def parameter_values(self) -> ParameterValues | dict:
-        """The parameter values from the optimisation."""
-        return self._get_single_or_all("_parameter_values")
+    def x_model(self) -> np.ndarray:
+        """The log of the evaluated parameters (in model space)."""
+        return self._get_single_or_all("_x_model")
 
     @property
     def x0(self) -> np.ndarray:
@@ -197,6 +205,11 @@ class OptimisationResult:
     def best_cost(self) -> float:
         """The best cost value(s)."""
         return self._get_single_or_all("_best_cost")
+
+    @property
+    def cost(self) -> np.ndarray:
+        """The log of the cost values."""
+        return self._get_single_or_all("_cost")
 
     @property
     def initial_cost(self) -> float:
@@ -214,16 +227,31 @@ class OptimisationResult:
         return self._get_single_or_all("_n_iterations")
 
     @property
+    def iteration_number(self) -> np.ndarray | None:
+        """The number of iterations."""
+        return self._get_single_or_all("_iteration_number")
+
+    @property
     def n_evaluations(self) -> int:
         """The number of evaluations."""
         return self._get_single_or_all("_n_evaluations")
 
     @property
+    def problem(self) -> Problem:
+        """The optimisation problem."""
+        return self._problem
+
+    @property
+    def parameter_values(self) -> ParameterValues | dict:
+        """The best parameter values from the optimisation."""
+        return self._parameter_values
+
+    @property
     def message(self) -> str | None:
-        """The optimization termination message(s)."""
+        """The optimisation termination message(s)."""
         return self._get_single_or_all("_message")
 
     @property
     def time(self) -> float | None:
-        """The optimization time(s)."""
+        """The optimisation time(s)."""
         return self.total_runtime()

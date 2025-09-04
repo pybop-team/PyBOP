@@ -1,15 +1,15 @@
-from pybop import BaseOptimiser
+from pybop import OptimisationResult
 from pybop.plot.standard_plots import StandardSubplot
 
 
-def parameters(optim: BaseOptimiser, show=True, **layout_kwargs):
+def parameters(result: OptimisationResult, show=True, **layout_kwargs):
     """
-    Plot the evolution of parameters during the optimization process using Plotly.
+    Plot the evolution of parameters during the optimisation process using Plotly.
 
     Parameters
     ----------
-    optim : pybop.BaseOptimiser
-        Optimisation object containing the history of parameter values and associated cost.
+    result : pybop.OptimisationResult
+        Optimisation result containing the cost function and optimisation log.
     show : bool, optional
         If True, the figure is shown upon creation (default: True).
     **layout_kwargs : optional
@@ -24,9 +24,9 @@ def parameters(optim: BaseOptimiser, show=True, **layout_kwargs):
     """
 
     # Extract parameters and log from the optimisation object
-    parameters = optim.problem.params
-    x = list(range(len(optim.log.x_model)))
-    y = [list(item) for item in zip(*optim.log.x_model, strict=False)]
+    parameters = result.problem.params
+    x = list(range(len(result.x_model)))
+    y = [list(item) for item in zip(*result.x_model, strict=False)]
 
     # Create lists of axis titles and trace names
     axis_titles = []

@@ -92,14 +92,20 @@ class PythonProblem(Problem):
                 "Use run_with_sensitivities() instead."
             )
 
+        xs = self.params.get_values().T
         try:
-            results = np.asarray(
-                [func(self.params.get_values().T) for func in self._funs]
-            )
+            if xs.ndim == 1:
+                results = np.asarray([func(xs) for func in self._funs])
+                cost = np.dot(self._weights, results)
+            else:
+                cost = []
+                for x in xs:
+                    results = np.asarray([func(x) for func in self._funs])
+                    cost.append(np.dot(self._weights, results))
         except (TypeError, ValueError) as e:
             raise RuntimeError(f"function evaluation failed: {e}") from e
 
-        return np.dot(self._weights, results)
+        return cost
 
     def run_with_sensitivities(self) -> tuple[np.ndarray, np.ndarray]:
         """

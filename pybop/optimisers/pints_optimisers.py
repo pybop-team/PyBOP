@@ -306,7 +306,7 @@ class CMAES(BasePintsOptimiser):
         problem: Problem,
         options: pybop.PintsOptions | None = None,
     ):
-        if len(problem.params) == 1:
+        if isinstance(problem, Problem) and len(problem.params) == 1:
             raise ValueError(
                 "CMAES requires optimisation of >= 2 parameters at once. "
                 "Please choose another optimiser."
