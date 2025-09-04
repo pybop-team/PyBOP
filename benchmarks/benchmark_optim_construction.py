@@ -72,9 +72,7 @@ class BenchmarkOptimisationConstruction:
                 initial_value=0.51,
             )
         )
-        builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
-        )
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
 
         # Build the problem
         self.problem = builder.build()
