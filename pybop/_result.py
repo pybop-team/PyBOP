@@ -1,7 +1,7 @@
 import numpy as np
 from pybamm import ParameterValues
 
-from pybop import Logger, Problem, PybammEISProblem, PybammProblem
+from pybop import Logger, Problem, PybammEISProblem, PybammProblem, plot
 
 
 class OptimisationResult:
@@ -255,3 +255,73 @@ class OptimisationResult:
     def time(self) -> float | None:
         """The optimisation time(s)."""
         return self.total_runtime()
+
+    def plot_convergence(self, **kwargs):
+        """
+        Plot the evolution of the best cost during the optimisation.
+
+        Parameters
+        ----------
+        show : bool, optional
+            If True, the figure is shown upon creation (default: True).
+        **layout_kwargs : optional
+            Valid Plotly layout keys and their values.
+        """
+        return plot.convergence(self, **kwargs)
+
+    def plot_parameters(self, **kwargs):
+        """
+        Plot the evolution of parameter values during the optimisation.
+
+        Parameters
+        ----------
+        show : bool, optional
+            If True, the figure is shown upon creation (default: True).
+        **layout_kwargs : optional
+            Valid Plotly layout keys and their values.
+        """
+        return plot.parameters(self, **kwargs)
+
+    def plot_surface(self, **kwargs):
+        """
+        Plot a 2D representation of the Voronoi diagram with color-coded regions.
+
+        Parameters
+        ----------
+        bounds : numpy.ndarray, optional
+            A 2x2 array specifying the [min, max] bounds for each parameter.
+        normalise : bool, optional
+            If True, the voronoi regions are computed using the Euclidean distance between
+            points normalised with respect to the bounds (default: True).
+        resolution : int, optional
+            Resolution of the plot (default: 500).
+        show : bool, optional
+            If True, the figure is shown upon creation (default: True).
+        **layout_kwargs : optional
+            Valid Plotly layout keys and their values.
+        """
+        return plot.surface(self, **kwargs)
+
+    def plot_contour(self, **kwargs):
+        """
+        Generate and plot a 2D visualisation of the cost landscape with the optimisation trace.
+
+        Parameters
+        ----------
+        gradient : bool, optional
+            If True, gradient plots are also generated (default: False).
+        bounds : np.ndarray, optional
+            A 2x2 array specifying the [min, max] bounds for each parameter.
+        apply_transform : bool, optional
+            Uses the transformed parameter values, as seen by the optimiser (default: False).
+        steps : int, optional
+            The number of grid points to divide the parameter space into along each dimension
+            (default: 10).
+        show : bool, optional
+            If True, the figure is shown upon creation (default: True).
+        use_optim_log : bool, optional
+            If True, the optimisation log is used to inform the cost landscape (default: False).
+        **layout_kwargs : optional
+            Valid Plotly layout keys and their values.
+        """
+        return plot.contour(self, **kwargs)

@@ -1,12 +1,15 @@
 import warnings
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from scipy.interpolate import griddata
 
-from pybop import OptimisationResult, Problem
 from pybop.plot.plotly_manager import PlotlyManager
+from pybop.problems.base_problem import Problem
+
+if TYPE_CHECKING:
+    from pybop._result import OptimisationResult
 
 
 @dataclass
@@ -38,7 +41,7 @@ class ContourPlotter:
     A class for contour plots.
     """
 
-    def __init__(self, problem: Problem, result: OptimisationResult = None):
+    def __init__(self, problem: Problem, result: "OptimisationResult" = None):
         self.problem = problem
         self.result = result
         self.params = self.problem.params
@@ -459,7 +462,7 @@ class ContourPlotter:
 
 
 def contour(
-    call_object: Problem | OptimisationResult,
+    call_object: "Problem | OptimisationResult",
     gradient: bool = False,
     bounds: np.ndarray | None = None,
     apply_transform: bool = False,
@@ -509,16 +512,17 @@ def contour(
         If the problem has fewer than 2 parameters or if steps <= 0.
     """
     # Extract problem and optimiser from call_object
-    if isinstance(call_object, OptimisationResult):
-        problem = call_object.problem
-        result = call_object
-    elif isinstance(call_object, Problem):
+    if isinstance(call_object, Problem):
         problem = call_object
         result = None
     else:
-        raise TypeError(
-            "call_object must be a pybop.Problem or pybop.OptimisationResult instance."
-        )
+        try:
+            problem = call_object.problem
+            result = call_object
+        except AttributeError:
+            raise TypeError(
+                "call_object must be a pybop.Problem or pybop.OptimisationResult instance."
+            ) from None
 
     # Create configuration
     config = ContourConfig(

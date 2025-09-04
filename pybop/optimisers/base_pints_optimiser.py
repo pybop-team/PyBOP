@@ -8,7 +8,6 @@ from pints import Optimiser as PintsOptimiser
 from pints import RectangularBoundaries as PintsRectangularBoundaries
 from pints import strfloat as PintsStrFloat
 
-import pybop
 from pybop import (
     AdamWImpl,
     GradientDescentImpl,
@@ -17,11 +16,12 @@ from pybop import (
     SequentialEvaluator,
 )
 from pybop._logging import Logger
+from pybop.optimisers.base_optimiser import BaseOptimiser, OptimiserOptions
 from pybop.problems.base_problem import Problem
 
 
 @dataclass
-class PintsOptions(pybop.OptimiserOptions):
+class PintsOptions(OptimiserOptions):
     """
     A class to hold PINTS options for the optimisation process.
 
@@ -82,7 +82,7 @@ class PintsOptions(pybop.OptimiserOptions):
             )
 
 
-class BasePintsOptimiser(pybop.BaseOptimiser):
+class BasePintsOptimiser(BaseOptimiser):
     """
     A base class for defining optimisation methods from the PINTS library.
 
