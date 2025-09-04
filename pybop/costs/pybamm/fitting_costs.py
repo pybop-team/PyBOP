@@ -44,6 +44,16 @@ class PybammFittingCost(PybammVariable):
         var = model.variables[self._signal]
         return data, var
 
+    def _make_name(self):
+        cost_name = self.__name__().capitalize()
+        if len(self._signal) > 1 and self._signal[1].isupper():
+            # Variable name starts with a capitalised acronym
+            signal_name = self._signal
+        else:
+            # Make the first letter of the variable name lower case
+            signal_name = self._signal[0].lower() + self._signal[1:]
+        return f"{cost_name} in {signal_name}"
+
     @property
     def signal(self) -> str | None:
         return self._signal
@@ -64,7 +74,7 @@ class SumSquaredError(PybammFittingCost):
         dataset: Dataset | None = None,
     ) -> PybammVariableMetadata:
         """Construct the variable metadata."""
-        name = SumSquaredError.make_unique_cost_name()
+        name = self._make_name()
 
         data, var = self._construct_discrete_time_node(dataset, model, name)
         sum_expr = (var - data) ** 2
@@ -100,9 +110,9 @@ class MeanAbsoluteError(PybammFittingCost):
         dataset: Dataset | None = None,
     ) -> PybammVariableMetadata:
         """Construct the variable metadata."""
-        name = MeanAbsoluteError.make_unique_cost_name()
-        data, var = self._construct_discrete_time_node(dataset, model, name)
+        name = self._make_name()
 
+        data, var = self._construct_discrete_time_node(dataset, model, name)
         sum_expr = pybamm.AbsoluteValue(var - data) / len(data.y)
 
         return PybammVariableMetadata(
@@ -130,7 +140,7 @@ class MeanSquaredError(PybammFittingCost):
         dataset: Dataset | None = None,
     ) -> PybammVariableMetadata:
         """Construct the variable metadata."""
-        name = MeanSquaredError.make_unique_cost_name()
+        name = self._make_name()
 
         data, var = self._construct_discrete_time_node(dataset, model, name)
         squared_error = (var - data) ** 2
@@ -161,7 +171,7 @@ class RootMeanSquaredError(PybammFittingCost):
         dataset: Dataset | None = None,
     ) -> PybammVariableMetadata:
         """Construct the variable metadata."""
-        name = RootMeanSquaredError.make_unique_cost_name()
+        name = self._make_name()
 
         data, var = self._construct_discrete_time_node(dataset, model, name)
         squared_error = (var - data) ** 2
@@ -211,7 +221,7 @@ class Minkowski(PybammFittingCost):
         dataset: Dataset | None = None,
     ) -> PybammVariableMetadata:
         """Construct the variable metadata."""
-        name = Minkowski.make_unique_cost_name()
+        name = self._make_name()
 
         data, var = self._construct_discrete_time_node(dataset, model, name)
         diff = var - data
@@ -225,7 +235,7 @@ class Minkowski(PybammFittingCost):
         )
 
     def __name__(self):
-        return f"Minkowski distance (p = {self.p})"
+        return f"Minkowski distance (p = {self._p})"
 
 
 class SumOfPower(PybammFittingCost):
@@ -268,7 +278,7 @@ class SumOfPower(PybammFittingCost):
         dataset: Dataset | None = None,
     ) -> PybammVariableMetadata:
         """Construct the variable metadata."""
-        name = SumOfPower.make_unique_cost_name()
+        name = self._make_name()
 
         data, var = self._construct_discrete_time_node(dataset, model, name)
         diff = var - data
@@ -356,7 +366,7 @@ class NegativeGaussianLogLikelihood(BaseLikelihood):
         dataset: Dataset | None = None,
     ) -> PybammVariableMetadata:
         """Construct the variable metadata."""
-        name = NegativeGaussianLogLikelihood.make_unique_cost_name()
+        name = self._make_name()
 
         data, var = self._construct_discrete_time_node(dataset, model, name)
         sum_expr = pybamm.DiscreteTimeSum((data - var) ** 2.0)
@@ -376,6 +386,9 @@ class NegativeGaussianLogLikelihood(BaseLikelihood):
             parameters=parameters,
         )
 
+    def __name__(self):
+        return "Negative Gaussian log likelihood"
+
 
 class ScaledCost(PybammFittingCost):
     """
@@ -390,7 +403,7 @@ class ScaledCost(PybammFittingCost):
     """
 
     def __init__(self, cost: PybammVariable):
-        super().__init__()
+        super().__init__(signal=cost.signal)
         self._cost = cost
 
     def symbolic_expression(
@@ -399,7 +412,7 @@ class ScaledCost(PybammFittingCost):
         dataset: Dataset | None = None,
     ) -> PybammVariableMetadata:
         """Construct the variable metadata."""
-        name = ScaledCost.make_unique_cost_name()
+        name = self._make_name()
 
         cost_metadata = self._cost.symbolic_expression(model, dataset)
 
@@ -407,7 +420,7 @@ class ScaledCost(PybammFittingCost):
             variable_name=name,
             expression=cost_metadata.expression
             * pybamm.Scalar(1.0)
-            / len(dataset[self._cost.signal]),
+            / len(dataset[self._signal]),
             parameters=cost_metadata.parameters,
         )
 

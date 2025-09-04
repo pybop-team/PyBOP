@@ -40,7 +40,7 @@ class GravimetricEnergyDensity(DesignCost):
         dataset: Dataset | None = None,
     ) -> PybammVariableMetadata:
         """Construct the variable metadata."""
-        name = GravimetricEnergyDensity.make_unique_cost_name()
+        name = "Negative gravimetric energy density [Wh.kg-1]"
         expression = (
             -1
             / 3600
@@ -80,7 +80,7 @@ class VolumetricEnergyDensity(DesignCost):
         dataset: Dataset | None = None,
     ) -> PybammVariableMetadata:
         """Construct the variable metadata."""
-        name = VolumetricEnergyDensity.make_unique_cost_name()
+        name = "Negative volumetric energy density [Wh.m-3]"
         expression = (
             -model.variables["Voltage [V]"]
             * model.variables["Current [A]"]
@@ -119,7 +119,7 @@ class GravimetricPowerDensity(DesignCost):
         dataset: Dataset | None = None,
     ) -> PybammVariableMetadata:
         """Construct the variable metadata."""
-        name = GravimetricPowerDensity.make_unique_cost_name()
+        name = "Negative time-averaged gravimetric power density [W.kg-1]"
         expression = (
             -model.variables["Voltage [V]"]
             * model.variables["Current [A]"]
@@ -159,7 +159,7 @@ class VolumetricPowerDensity(DesignCost):
         dataset: Dataset | None = None,
     ) -> PybammVariableMetadata:
         """Construct the variable metadata."""
-        name = VolumetricPowerDensity.make_unique_cost_name()
+        name = "Negative time-averaged volumetric power density [W.m-3]"
         expression = (
             -model.variables["Voltage [V]"]
             * model.variables["Current [A]"]

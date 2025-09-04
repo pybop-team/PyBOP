@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from uuid import uuid4
 
 import pybamm
 
@@ -42,14 +41,6 @@ class PybammVariable:
         if self._metadata is None:
             raise ValueError("Variable has not been added to model yet.")
         return self._metadata
-
-    @classmethod
-    def make_unique_cost_name(cls) -> str:
-        """
-        Make a unique name for the variable using the name of the class and a UUID.
-        This is used to avoid name collisions in the pybamm model.
-        """
-        return f"{cls.__name__}_{uuid4()}"
 
     def symbolic_expression(
         self,
