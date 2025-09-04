@@ -55,7 +55,7 @@ class PybammVariable:
         """
         return f"{cls.__name__}_{uuid4()}"
 
-    def variable_expression(
+    def symbolic_expression(
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
@@ -77,7 +77,7 @@ class PybammVariable:
         # if dataset is provided, must contain time data
         if dataset is not None and "Time [s]" not in dataset:
             raise ValueError("Dataset must contain time data for PybammVariable.")
-        self._metadata = self.variable_expression(model, dataset)
+        self._metadata = self.symbolic_expression(model, dataset)
         model.variables[self._metadata.variable_name] = self._metadata.expression
         for parameter_name, parameter_metadata in self._metadata.parameters.items():
             param.update(

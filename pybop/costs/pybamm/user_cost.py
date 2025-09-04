@@ -25,7 +25,7 @@ class UserCost(PybammVariable):
         self._metadata = PybammExpressionMetadata(name, expression, parameters)
         self._variable_name = name
 
-    def variable_expression(
+    def symbolic_expression(
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,

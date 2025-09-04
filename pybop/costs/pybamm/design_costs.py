@@ -34,7 +34,7 @@ class GravimetricEnergyDensity(DesignCost):
 
     """
 
-    def variable_expression(
+    def symbolic_expression(
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
@@ -74,7 +74,7 @@ class VolumetricEnergyDensity(DesignCost):
     Inherits all parameters and attributes from ``DesignCost``.
     """
 
-    def variable_expression(
+    def symbolic_expression(
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
@@ -113,7 +113,7 @@ class GravimetricPowerDensity(DesignCost):
 
     """
 
-    def variable_expression(
+    def symbolic_expression(
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
@@ -153,7 +153,7 @@ class VolumetricPowerDensity(DesignCost):
 
     """
 
-    def variable_expression(
+    def symbolic_expression(
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,

@@ -24,7 +24,7 @@ class SumSquaredError(PybammVariable):
         self._variable_name = variable_name
         self._data_name = data_name
 
-    def variable_expression(
+    def symbolic_expression(
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
@@ -66,7 +66,7 @@ class MeanAbsoluteError(PybammVariable):
         self._variable_name = variable_name
         self._data_name = data_name
 
-    def variable_expression(
+    def symbolic_expression(
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
@@ -103,7 +103,7 @@ class MeanSquaredError(PybammVariable):
         self._variable_name = variable_name
         self._data_name = data_name
 
-    def variable_expression(
+    def symbolic_expression(
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
@@ -141,7 +141,7 @@ class RootMeanSquaredError(PybammVariable):
         self._variable_name = variable_name
         self._data_name = data_name
 
-    def variable_expression(
+    def symbolic_expression(
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
@@ -195,7 +195,7 @@ class Minkowski(PybammVariable):
         self._data_name = data_name
         self._p = p
 
-    def variable_expression(
+    def symbolic_expression(
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
@@ -256,7 +256,7 @@ class SumOfPower(PybammVariable):
         self._data_name = data_name
         self._p = float(p)
 
-    def variable_expression(
+    def symbolic_expression(
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
@@ -319,7 +319,7 @@ class NegativeGaussianLogLikelihood(BaseLikelihood):
         self._data_name = data_name
         self._log2pi = np.log(2 * np.pi)
 
-    def variable_expression(
+    def symbolic_expression(
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
@@ -365,14 +365,14 @@ class ScaledCost(PybammVariable):
         super().__init__()
         self._cost = cost
 
-    def variable_expression(
+    def symbolic_expression(
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
     ) -> PybammExpressionMetadata:
         # Check args
         name = ScaledCost.make_unique_cost_name()
-        cost_metadata = self._cost.variable_expression(model, dataset)
+        cost_metadata = self._cost.symbolic_expression(model, dataset)
 
         return PybammExpressionMetadata(
             variable_name=name,
