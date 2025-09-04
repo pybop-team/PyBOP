@@ -151,7 +151,7 @@ class Problem:
         Returns
         -------
         costs : np.ndarray
-            A 1D array of cost values with length (number of candidates).
+            A 1D array of cost values of length `len(inputs)`.
         """
         raise NotImplementedError
 
@@ -169,8 +169,8 @@ class Problem:
         Returns
         -------
         costs : np.ndarray
-            A 1D array of cost values with length (number of candidates).
+            A 1D array of cost values of length `len(inputs)`.
         sensitivities : np.ndarray
-            A 2D array of sets of gradients with shape (number of candidates, number of parameters).
+            A 2D array of sets of gradients with shape (`len(inputs)`, number of parameters).
         """
         raise NotImplementedError
