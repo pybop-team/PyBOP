@@ -664,6 +664,36 @@ class Parameters:
         bounds = self.get_bounds(transformed=apply_transform)
         return np.column_stack([bounds["lower"], bounds["upper"]])
 
+    def get_sigma0(self, transformed: bool = False) -> list:
+        """
+        Get the standard deviation, for either all or no parameters.
+
+        Parameters
+        ----------
+        transformed : bool
+            If True, the transformation is applied to the output (default: False).
+        """
+        sigma0 = []
+
+        for param in self._parameters.values():
+            sig = None
+            if hasattr(param.prior, "sigma"):
+                sig = param.prior.sigma
+            elif param.bounds is not None:
+                lower, upper = param.bounds
+                if np.isfinite(upper - lower):
+                    sig = 0.05 * (upper - lower)
+
+            if transformed and sig is not None and param.transformation is not None:
+                sig = np.ndarray.item(
+                    param.transformation.convert_standard_deviation(
+                        sig, param.transformation.to_search(param.initial_value)[0]
+                    )
+                )
+
+            sigma0.extend([sig or 0.05])
+        return sigma0
+
     def _construct_transformation(self) -> Transformation:
         """
         Create a ComposedTransformation object from the individual parameter transformations.

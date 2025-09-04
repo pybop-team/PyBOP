@@ -58,6 +58,7 @@ class TestProblem:
         builder.set_simulation(
             model,
             parameter_values=parameter_values,
+            solver=pybamm.IDAKLUSolver(atol=1e-6, rtol=1e-6),
         )
         builder.add_parameter(
             pybop.Parameter(
@@ -95,7 +96,24 @@ class TestProblem:
         assert costs.shape == (5,)
         assert costs_sens[0].shape == (5,)
         assert costs_sens[1].shape == (5, 2)
-        np.testing.assert_allclose(costs, costs_sens[0], atol=1e-2)
+        np.testing.assert_allclose(costs, costs_sens[0], rtol=1e-5)
+
+        # Test sensitivity values against finite difference approximation of the gradient
+        x_model = p[0]
+        numerical_grad = []
+        for i in range(len(x_model)):
+            delta = 1e-6 * x_model[i]
+            x_model[i] += delta / 2
+            problem.set_params(x_model)
+            cost_right = problem.run()
+            x_model[i] -= delta
+            problem.set_params(x_model)
+            cost_left = problem.run()
+            x_model[i] += delta / 2
+            assert np.abs(cost_right - cost_left) > 0
+            numerical_grad.append((cost_right - cost_left) / delta)
+        numerical_grad = np.asarray(numerical_grad).reshape(-1)
+        np.testing.assert_allclose(costs_sens[1][0], numerical_grad, rtol=5e-5)
 
         # Add rebuild parameter
         builder.add_parameter(

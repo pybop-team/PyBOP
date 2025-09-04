@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.spatial import Voronoi, cKDTree
 
-from pybop import BaseOptimiser
+from pybop import OptimisationResult
 from pybop.plot.plotly_manager import PlotlyManager
 
 
@@ -224,7 +224,7 @@ def assign_nearest_value(x, y, f, xi, yi):
 
 
 def surface(
-    optim: BaseOptimiser,
+    result: OptimisationResult,
     bounds=None,
     normalise=True,
     resolution=250,
@@ -236,8 +236,8 @@ def surface(
 
     Parameters:
     -----------
-    optim : pybop.BaseOptimiser
-        Solved optimisation object
+    result : pybop.OptimisationResult
+        Optimisation result containing the cost function and optimisation log.
     bounds : numpy.ndarray, optional
         A 2x2 array specifying the [min, max] bounds for each parameter. If None, uses
         `parameters.bounds_as_numpy`.
@@ -255,19 +255,19 @@ def surface(
     """
 
     # Append the optimisation trace to the data
-    points = optim.log.x_model
+    points = result.x_model
 
     if points[0].shape[0] != 2:
         raise ValueError("This plot method requires two parameters.")
 
     x_optim, y_optim = map(list, zip(*points, strict=False))
-    f = optim.log.cost
+    f = result.cost
 
     # Translate bounds, taking only the first two elements
     xlim, ylim = (
         bounds
         if bounds is not None
-        else [param.bounds for param in optim.problem.params]
+        else [param.bounds for param in result.problem.params]
     )[:2]
 
     # Create a grid for plot
@@ -367,11 +367,11 @@ def surface(
     )
 
     # Plot the initial guess
-    if optim.log.x0 is not None:
+    if result.x0 is not None:
         fig.add_trace(
             go.Scatter(
-                x=[optim.log.x0[0]],
-                y=[optim.log.x0[1]],
+                x=[result.x0[0]],
+                y=[result.x0[1]],
                 mode="markers",
                 marker_symbol="x",
                 marker=dict(
@@ -386,11 +386,11 @@ def surface(
         )
 
         # Plot optimised value
-        if optim.log.last_x_model_best is not None:
+        if result.x is not None:
             fig.add_trace(
                 go.Scatter(
-                    x=[optim.log.last_x_model_best[0]],
-                    y=[optim.log.last_x_model_best[1]],
+                    x=[result.x[0]],
+                    y=[result.x[1]],
                     mode="markers",
                     marker_symbol="cross",
                     marker=dict(
@@ -404,7 +404,7 @@ def surface(
                 )
             )
 
-    names = list(optim.problem.params.keys())
+    names = list(result.problem.params.keys())
     fig.update_layout(
         title="Voronoi Cost Landscape",
         title_x=0.5,
@@ -420,3 +420,5 @@ def surface(
     fig.update_layout(**layout_kwargs)
     if show:
         fig.show()
+
+    return fig

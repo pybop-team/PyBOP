@@ -39,7 +39,7 @@ class BaseSampler:
 
     Parameters
     ----------
-    problem : Problem
+    problem : pybop.Problem
         The problem representing the negative unnormalised posterior distribution.
     options : SamplerOptions, optional
         Options for the sampler, by default SamplerOptions().
@@ -51,7 +51,7 @@ class BaseSampler:
         options: SamplerOptions | None = None,
     ):
         self._problem = problem
-        self._options = options or SamplerOptions()
+        self._options = options or self.default_options()
         self._options.validate()
 
         # Get initial conditions
@@ -67,12 +67,7 @@ class BaseSampler:
 
     @staticmethod
     def default_options() -> SamplerOptions:
-        """
-        Get the default options for the sampler.
-
-        Returns:
-            SamplerOptions: Default options for the sampler.
-        """
+        """Get the default options for the sampler."""
         return SamplerOptions()
 
     @property

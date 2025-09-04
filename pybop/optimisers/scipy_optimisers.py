@@ -6,7 +6,13 @@ import numpy as np
 from scipy.optimize import Bounds, OptimizeResult, differential_evolution, minimize
 
 import pybop
-from pybop import BaseOptimiser, OptimisationResult, SciPyEvaluator
+from pybop import (
+    BaseOptimiser,
+    OptimisationResult,
+    PopulationEvaluator,
+    ScalarEvaluator,
+)
+from pybop._logging import Logger
 from pybop.problems.base_problem import Problem
 
 
@@ -16,46 +22,22 @@ class BaseSciPyOptimiser(BaseOptimiser):
 
     Parameters
     ----------
-    x0 : array_like
-        Initial position from which optimisation will start.
-    bounds : dict, sequence or scipy.optimize.Bounds, optional
-        Bounds for variables as supported by the selected method.
-    **optimiser_kwargs : optional
+    problem : pybop.Problem
+        The problem to optimise.
+    options : pybop.OptimiserOptions
         Valid SciPy option keys and their values.
+    needs_sensitivities : bool
+        Indicates whether the optimiser needs sensitivities.
     """
 
     def __init__(
         self,
         problem: Problem,
+        options: pybop.OptimiserOptions | None,
         needs_sensitivities: bool,
-        options: pybop.OptimiserOptions,
     ):
         self._needs_sensitivities = needs_sensitivities
-        self._intermediate_x_search = []
-        self._intermediate_x_model = []
-        self._intermediate_cost = []
         super().__init__(problem, options=options)
-
-    def store_intermediate_results(
-        self,
-        x_search: np.ndarray,
-        x_model: np.ndarray,
-        cost: np.ndarray,
-    ):
-        self._intermediate_x_search.append(x_search)
-        self._intermediate_x_model.append(x_model)
-        self._intermediate_cost.extend(cost.tolist())
-
-    def get_and_reset_intermediate_results(self):
-        ret = (
-            self._intermediate_x_search,
-            self._intermediate_x_model,
-            self._intermediate_cost,
-        )
-        self._intermediate_x_search = []
-        self._intermediate_x_model = []
-        self._intermediate_cost = []
-        return ret
 
     def scipy_bounds(self) -> Bounds:
         bounds = self.problem.params.get_bounds(transformed=True)
@@ -69,48 +51,37 @@ class BaseSciPyOptimiser(BaseOptimiser):
                 "Bounds provided must be either type dict or SciPy.optimize.bounds object."
             )
 
-    def needs_sensitivities(self) -> bool:
-        """
-        Returns whether the optimiser needs sensitivities.
+    def _set_callback(self):
+        """Add a callback to record the iteration number."""
 
-        Returns
-        -------
-        bool
-            True if the optimiser needs sensitivities, False otherwise.
-        """
-        return self._needs_sensitivities
+        def base_callback(intermediate_result: OptimizeResult | np.ndarray):
+            """
+            Update the iteration number. Depending on the optimisation method, intermediate_result
+            may be either an OptimizeResult or an array of the current parameter values.
+            """
+            self._logger.iteration += 1
 
-    def evaluator(self) -> SciPyEvaluator:
-        """
-        Internal method to run the optimisation using a PyBOP optimiser.
-
-        Returns
-        -------
-        result : pybop.Result
-            The result of the optimisation including the optimised parameter values and cost.
-        """
-
-        # Choose method to evaluate
-        if self._needs_sensitivities:
-
-            def fun(x):
-                self.problem.set_params(x)
-                return self.problem.run_with_sensitivities()
-
+        user_callback = self._options_dict.pop("callback", None)
+        if user_callback is not None:
+            self._options_dict["callback"] = (
+                lambda x: user_callback(base_callback(x))
+                if self._options_dict.get("method", None) != "trust-constr"
+                else lambda x, intermediate_result: user_callback(
+                    base_callback(intermediate_result)
+                )
+            )
         else:
-
-            def fun(x):
-                self.problem.set_params(x)
-                return self.problem.run()
-
-        # Create evaluator object
-        return SciPyEvaluator(fun)
+            self._options_dict["callback"] = (
+                base_callback
+                if self._options_dict.get("method", None) != "trust-constr"
+                else lambda x, intermediate_result: base_callback(intermediate_result)
+            )
 
 
 @dataclass
 class ScipyMinimizeOptions(pybop.OptimiserOptions):
     """
-    Options for the SciPy minimization method.
+    Options for the SciPy minimize method.
 
     Attributes
     ----------
@@ -188,7 +159,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
     problem : pybop.Problem
         The problem to be optimised.
     options: ScipyMinizeOptions, optional
-        Options for the SciPy minimisation method. Default is None.
+        Options for the SciPy minimize method. Default is None.
 
     See Also
     --------
@@ -205,43 +176,44 @@ class SciPyMinimize(BaseSciPyOptimiser):
         problem: Problem,
         options: ScipyMinimizeOptions | None = None,
     ):
-        options = options or ScipyMinimizeOptions()
-        self._options_dict = options.to_dict()
-        self._iteration = 0
-        self._evaluations = 0
+        options = options or self.default_options()
         super().__init__(
             problem=problem, options=options, needs_sensitivities=options.jac
         )
-        self._evaluator = self.evaluator()
-        self._cost0 = 1.0
 
     @staticmethod
     def default_options() -> ScipyMinimizeOptions:
-        """
-        Returns the default options for the optimiser.
-
-        Returns
-        -------
-        ScipyMinimizeOptions
-            The default options for the optimiser.
-        """
+        """Returns the default options for the optimiser."""
         return ScipyMinimizeOptions()
 
     def _set_up_optimiser(self):
         """
         Parse optimiser options.
         """
+        self._options_dict = self._options.to_dict()
+
+        self._cost0 = self.problem.get_finite_initial_cost()
+        self._x0 = self.problem.params.get_initial_values(transformed=True)
         self._scipy_bounds = self.scipy_bounds()
-        self._evaluator = self.evaluator()
+
+        # Create logger and evaluator objects
+        self._logger = Logger(
+            verbose=self.verbose, verbose_print_rate=self.verbose_print_rate
+        )
+        self._evaluator = ScalarEvaluator(
+            problem=self.problem,
+            minimise=True,
+            with_sensitivities=self._needs_sensitivities,
+            logger=self._logger,
+        )
+        self._set_callback()
 
     def cost_wrapper(self, x):
         """
-        Scale the cost function, preserving the sign convention, and eliminate nan values
+        Scale the cost function, preserving the sign, and eliminate nan values.
         """
-        x_model = self.problem.params.transformation.to_model(x)
         if not self._options_dict["jac"]:
-            cost = self._evaluator.evaluate(x_model)
-            self.store_intermediate_results(x_search=x, x_model=x_model, cost=cost)
+            cost = self._evaluator.evaluate(x)
             scaled_cost = cost / self._cost0
             if np.isinf(scaled_cost):
                 self.inf_count += 1
@@ -250,8 +222,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
                 )  # for fake finite gradient
             return scaled_cost
 
-        L, dl = self._evaluator.evaluate(x_model)
-        self.store_intermediate_results(x_search=x, x_model=x_model, cost=L)
+        L, dl = self._evaluator.evaluate(x)
         return (L[0] / self._cost0, dl / self._cost0)
 
     def _run(self):
@@ -263,87 +234,34 @@ class SciPyMinimize(BaseSciPyOptimiser):
         result : scipy.optimize.OptimizeResult
             The result of the optimisation including the optimised parameter values and cost.
         """
-        self.inf_count = 0
-        self._iteration = 0
-        self._evaluations = 0
-
-        # Add callback storing history of parameter values
-        def base_callback(intermediate_result: OptimizeResult | np.ndarray):
-            """
-            Log intermediate optimisation solutions. Depending on the
-            optimisation algorithm, intermediate_result may be either
-            an OptimizeResult or an array of parameter values, with a
-            try/except ensuring both cases are handled correctly.
-            """
-            if isinstance(intermediate_result, OptimizeResult):
-                x_best = intermediate_result.x
-                cost_best = intermediate_result.fun * self._cost0
-            else:
-                x_best = intermediate_result
-                result = self._evaluator.evaluate(x_best)[0]
-                cost_best = result[0] if self._needs_sensitivities else result
-
-            x_model_best = self.problem.params.transformation.to_model(x_best)
-
-            (x_search, x_model, cost) = self.get_and_reset_intermediate_results()
-            self._evaluations += len(x_search)
-            self._iteration += 1
-
-            self.logger.log_update(
-                iterations=self._iteration,
-                evaluations=self._evaluations,
-                x_search_best=x_best,
-                x_model_best=x_model_best,
-                cost_best=cost_best,
-                x_search=x_search,
-                x_model=x_model,
-                cost=cost,
-            )
-
-        callback = (
-            base_callback
-            if self._options_dict["method"] != "trust-constr"
-            else lambda x, intermediate_result: base_callback(intermediate_result)
-        )
-
-        x0 = self.problem.params.get_initial_values(transformed=True)
-        if self.needs_sensitivities():
-            self._cost0 = self._evaluator.evaluate(x0)[0][0]
-        else:
-            self._cost0 = self._evaluator.evaluate(x0)[0]
-
         start_time = time()
+
+        # Set counters
+        self.inf_count = 0
+        self._logger.iteration = 1
+
         result: OptimizeResult = minimize(
-            self.cost_wrapper,
-            self.problem.params.transformation.to_model(x0),
+            fun=self.cost_wrapper,
+            x0=self._x0,
             bounds=self._scipy_bounds,
-            callback=callback,
             **self._options_dict,
         )
-        base_callback(result)  # Log final result
+
         total_time = time() - start_time
 
-        try:
-            nit = result.nit
-        except AttributeError:
-            nit = -1
-
-        try:
-            nfev = result.nfev
-        except AttributeError:
-            nfev = -1
+        # Log the optimised result as the final evaluation
+        self._evaluator.evaluate(result.x)
 
         return OptimisationResult(
-            best_cost=result.fun * self._cost0,
-            initial_cost=self.logger.cost[0] * self._cost0,
-            n_iterations=nit,
-            n_evaluations=nfev,
-            problem=self.problem,
-            x=self.problem.params.transformation.to_model(result.x),
+            problem=self._problem,
+            logger=self._logger,
             time=total_time,
+            optim_name=self.name,
             message=result.message,
+            scipy_result=result,
         )
 
+    @property
     def name(self):
         """Provides the name of the optimisation strategy."""
         return "SciPyMinimize"
@@ -417,8 +335,6 @@ class SciPyDifferentialEvolutionOptions(pybop.OptimiserOptions):
     polish: bool | None = None
     init: str | np.ndarray | None = None
     atol: float | None = None
-    updating: str | None = None
-    workers: int | Callable | None = None
 
     def to_dict(self) -> dict:
         """
@@ -444,8 +360,6 @@ class SciPyDifferentialEvolutionOptions(pybop.OptimiserOptions):
             "polish",
             "init",
             "atol",
-            "updating",
-            "workers",
         ]
         for key in optional_keys:
             if getattr(self, key) is not None:
@@ -464,8 +378,6 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
     ----------
     problem : pybop.Problem
         The problem to be optimised.
-    multistart : int, optional
-        Number of independent runs of the optimisation algorithm. Default is 1.
     options: SciPyDifferentialEvolutionOptions, optional
         Options for the SciPy differential evolution method. Default is None.
 
@@ -488,105 +400,93 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
         problem: Problem,
         options: SciPyDifferentialEvolutionOptions | None = None,
     ):
-        options = options or SciPyDifferentialEvolutionOptions()
-        self._options_dict = options.to_dict()
+        options = options or self.default_options()
         super().__init__(problem=problem, options=options, needs_sensitivities=False)
-        self._evaluator = self.evaluator()
-        self._iteration = 0
-        self._evaluations = 0
 
     @staticmethod
     def default_options() -> SciPyDifferentialEvolutionOptions:
-        """
-        Returns the default options for the optimiser.
-
-        Returns
-        -------
-        SciPyDifferentialEvolutionOptions
-            The default options for the optimiser.
-        """
+        """Returns the default options for the optimiser."""
         return SciPyDifferentialEvolutionOptions()
 
     def _set_up_optimiser(self):
         """
         Parse optimiser options.
         """
-        self._scipy_bounds = self.scipy_bounds()
-        self._evaluator = self.evaluator()
+        self._options_dict = self._options.to_dict()
 
         # Check bounds
+        self._scipy_bounds = self.scipy_bounds()
         if self._scipy_bounds is None:
             raise ValueError("Bounds must be specified for differential_evolution.")
         else:
             bnds = self._scipy_bounds
             if not (np.isfinite(bnds.lb).all() and np.isfinite(bnds.ub).all()):
-                raise ValueError("Bounds must be specified for differential_evolution.")
+                raise ValueError("Bounds must be finite for differential_evolution.")
+
+        # Create logger and evaluator objects
+        self._logger = Logger(
+            verbose=self.verbose, verbose_print_rate=self.verbose_print_rate
+        )
+        self._evaluator = ScalarEvaluator(
+            problem=self.problem,
+            minimise=True,
+            with_sensitivities=self._needs_sensitivities,
+            logger=self._logger,
+        )
+        self._set_callback()
+
+        # Enable vectorisation. Differential evolution proposes candidates as an
+        # array of size (N, S) amd expects to receive a set of costs of size (S,)
+        self._options_dict["updating"] = "deferred"
+        pop_evaluator = PopulationEvaluator(
+            problem=self.problem,
+            minimise=True,
+            with_sensitivities=self._needs_sensitivities,
+            logger=self._logger,
+        )
+
+        def map_function(func, positions):
+            # Use the PopulationEvaluator instead of the ScalarEvaluator for multiprocessing
+            return pop_evaluator.evaluate(positions)
+
+        self._options_dict["workers"] = map_function
 
     def _run(self):
         """
-        Executes the optimization process using SciPy's differential_evolution function.
+        Executes the optimisation process using SciPy's differential_evolution function.
 
         Returns
         -------
         result : scipy.optimize.OptimizeResult
             The result of the optimisation including the optimised parameter values and cost.
         """
-        self._iteration = 0
-        self._evaluations = 0
-
-        # Add callback storing history of parameter values
-        def callback(intermediate_result: OptimizeResult):
-            (x_search, x_model, cost) = self.get_and_reset_intermediate_results()
-            self._iteration += 1
-            self._evaluations += len(x_search)
-            self.logger.log_update(
-                iterations=self._iteration,
-                evaluations=self._evaluations,
-                x_search_best=intermediate_result.x,
-                x_model_best=self.problem.params.transformation.to_model(
-                    intermediate_result.x
-                ),
-                cost_best=intermediate_result.fun,
-                x_search=x_search,
-                x_model=x_model,
-                cost=cost,
-            )
-
-        def cost_wrapper(x):
-            x_model = self.problem.params.transformation.to_model(x)
-            cost = self._evaluator.evaluate(x_model)
-            self.store_intermediate_results(x_search=x, x_model=x_model, cost=cost)
-            return cost
-
         start_time = time()
+
+        # Set counters
+        self._logger.iteration = 1
+
         result = differential_evolution(
-            cost_wrapper,
-            self._scipy_bounds,
-            callback=callback,
+            func=self._evaluator.evaluate,
+            bounds=self._scipy_bounds,
             **self._options_dict,
         )
+        self._logger.iteration -= 1  # undo the final callback
+
         total_time = time() - start_time
 
-        try:
-            nit = result.nit
-        except AttributeError:
-            nit = -1
-        try:
-            nfev = result.nfev
-        except AttributeError:
-            nfev = -1
+        # Log the optimised result as the final evaluation
+        self._evaluator.evaluate(result.x)
 
         return OptimisationResult(
-            best_cost=result.fun,
-            initial_cost=self.logger.cost[0],
-            n_evaluations=nfev,
-            problem=self.problem,
-            x=result.x,
-            n_iterations=nit,
+            problem=self._problem,
+            logger=self._logger,
             time=total_time,
+            optim_name=self.name,
             message=result.message,
+            scipy_result=result,
         )
 
+    @property
     def name(self):
         """Provides the name of the optimisation strategy."""
         return "SciPyDifferentialEvolution"

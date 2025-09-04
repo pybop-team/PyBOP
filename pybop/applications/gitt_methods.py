@@ -45,45 +45,39 @@ class GITTPulseFit(BaseApplication):
         self.optimiser_options = optimiser_options
         self.verbose = verbose
 
-        # Create parameters
-        self.parameters = self._create_parameters()
-
         # Create model
         self.model = pybop.lithium_ion.SPDiffusion(build=True)
+        self.parameters = self._create_parameters()
+        self.inverse_ocp = pybop.InverseOCV(
+            self.parameter_values["Electrode OCP [V]"],
+            optimiser=pybop.NelderMead,
+            optimiser_options=pybop.PintsOptions(max_unchanged_iterations=50),
+        )
 
         # Create state variables
         self.optim = None
         self.results = None
 
     def _create_parameters(self) -> list[pybop.Parameter]:
-        """Create optimisation parameters with log transformations."""
-        log_transform = pybop.LogTransformation()
-        bounds = [0, np.inf]
-
+        """Create optimisation parameters."""
+        param = self.parameter_values
         return [
             pybop.Parameter(
                 "Particle diffusion time scale [s]",
-                initial_value=self.parameter_values[
-                    "Particle diffusion time scale [s]"
-                ],
-                transformation=log_transform,
-                bounds=bounds,
+                initial_value=param["Particle diffusion time scale [s]"],
+                transformation=pybop.LogTransformation(),
+                bounds=[0, np.inf],
             ),
             pybop.Parameter(
                 "Series resistance [Ohm]",
-                initial_value=self.parameter_values["Series resistance [Ohm]"],
-                transformation=log_transform,
-                bounds=bounds,
+                initial_value=param["Series resistance [Ohm]"],
+                bounds=[0, np.inf],
             ),
         ]
 
     def _set_initial_state(self, initial_voltage: float) -> None:
         """Set initial stoichiometry from initial voltage using inverse OCP."""
-        initial_state = pybop.InverseOCV(
-            self.parameter_values["Electrode OCP [V]"],
-            optimiser=pybop.NelderMead,
-            optimiser_options=pybop.PintsOptions(max_unchanged_iterations=50),
-        )(initial_voltage)
+        initial_state = self.inverse_ocp(initial_voltage)
         self.parameter_values["Initial stoichiometry"] = initial_state
 
     def _build_problem(self, gitt_pulse: pybop.Dataset) -> pybop.Problem:

@@ -94,27 +94,26 @@ class TestClassification:
         x0 = np.clip(x, bounds["lower"], bounds["upper"])
         problem.set_params(x0)
         best_cost = problem.run()
+        logger = pybop.Logger()
+        logger.iteration = 1
+        logger.extend_log(x_model=[x0], x_search=[x0], cost=[best_cost])
         results = pybop.OptimisationResult(
             problem=problem,
-            x=x0,
-            best_cost=best_cost,
-            initial_cost=1,
-            n_iterations=1,
-            n_evaluations=1,
+            logger=logger,
             time=0.1,
         )
 
         if np.all(x == np.asarray([0.05, 0.05])):
-            message = pybop.classify_using_hessian(problem, results)
+            message = pybop.classify_using_hessian(results)
             assert message == "The optimiser has located a minimum."
         elif np.all(x == np.asarray([0.1, 0.05])):
-            message = pybop.classify_using_hessian(problem, results)
+            message = pybop.classify_using_hessian(results)
             assert message == (
                 "The optimiser has not converged to a stationary point."
                 " The result is near the upper bound of R0 [Ohm]."
             )
         elif np.all(x == np.asarray([0.05, 0.01])):
-            message = pybop.classify_using_hessian(problem, results)
+            message = pybop.classify_using_hessian(results)
             assert message == (
                 "The optimiser has not converged to a stationary point."
                 " The result is near the lower bound of R1 [Ohm]."
@@ -178,17 +177,18 @@ class TestClassification:
 
             problem.set_params(true_values)
             best_cost = problem.run()
+            logger = pybop.Logger()
+            logger.iteration = 1
+            logger.extend_log(
+                x_model=[true_values], x_search=[true_values], cost=[best_cost]
+            )
             results = pybop.OptimisationResult(
                 problem=problem,
-                x=true_values,
-                best_cost=best_cost,
-                initial_cost=1,
-                n_iterations=1,
-                n_evaluations=1,
+                logger=logger,
                 time=0.1,
             )
 
-            message = pybop.classify_using_hessian(problem, results)
+            message = pybop.classify_using_hessian(results)
             assert message in [
                 (
                     "The cost variation is too small to classify with certainty."
@@ -200,17 +200,13 @@ class TestClassification:
                 ),
             ]
 
-            message = pybop.classify_using_hessian(
-                problem, results, dx=[0.0001, 0.0001]
-            )
+            message = pybop.classify_using_hessian(results, dx=[0.0001, 0.0001])
             assert message == (
                 "The optimiser has located a minimum."
                 " There may be a correlation between these parameters."
             )
 
-            message = pybop.classify_using_hessian(
-                problem, results, cost_tolerance=1e-2
-            )
+            message = pybop.classify_using_hessian(results, cost_tolerance=1e-2)
             assert message == (
                 "The cost variation is smaller than the cost tolerance: 0.01."
             )

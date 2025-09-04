@@ -111,47 +111,44 @@ class TestPlots:
         pybop.plot.contour(problem, bounds=np.array([[0.5, 0.8], [0.4, 0.7]]), steps=5)
 
     @pytest.fixture
-    def optim(self, problem):
+    def result(self, problem):
         # Define and run an example optimisation
         options = pybop.XNES.default_options()
         options.max_iterations = 20
         optim = pybop.XNES(problem, options)
-        optim.run()
-        return optim
+        return optim.run()
 
-    def test_optim_plots(self, optim):
+    def test_optim_plots(self, result):
         bounds = np.asarray([[0.5, 0.8], [0.4, 0.7]])
 
         # Plot convergence
-        optim.plot_convergence()
-        optim.invert_cost = True
-        optim.plot_convergence()
+        result.plot_convergence()
 
         # Plot the parameter traces
-        optim.plot_parameters()
+        result.plot_parameters()
 
         # Plot the cost landscape with optimisation path
-        optim.plot_contour(steps=3)
+        result.plot_contour(steps=3)
 
-        # Plot the cost landscape w/ optim & bounds
-        optim.plot_contour(steps=3, bounds=bounds)
+        # Plot the cost landscape with optim trace and bounds
+        result.plot_contour(steps=3, bounds=bounds)
 
         # Plot the cost landscape using optimisation path
-        optim.plot_contour(steps=3, use_optim_log=True)
+        result.plot_contour(steps=3, use_optim_log=True)
 
         # Plot gradient cost landscape
-        optim.plot_contour(gradient=True, steps=5)
+        result.plot_contour(gradient=True, steps=5)
 
         # Plot voronoi
-        optim.plot_surface(normalise=False)
+        result.plot_surface(normalise=False)
 
         # Plot voronoi w/ bounds
-        optim.plot_surface(bounds=bounds)
+        result.plot_surface(bounds=bounds)
 
         with pytest.raises(
             ValueError, match="Lower bounds must be strictly less than upper bounds."
         ):
-            optim.plot_surface(bounds=[[0.5, 0.8], [0.7, 0.4]])
+            result.plot_surface(bounds=[[0.5, 0.8], [0.7, 0.4]])
 
     @pytest.fixture
     def posterior_summary(self, likelihood_problem):
@@ -175,24 +172,24 @@ class TestPlots:
         # Plot summary table
         posterior_summary.summary_table()
 
-    def test_with_ipykernel(self, dataset, problem, optim):
+    def test_with_ipykernel(self, dataset, problem, result):
         import ipykernel
 
         assert version.parse(ipykernel.__version__) >= version.parse("0.6")
         pybop.plot.dataset(dataset, signal=["Voltage [V]"])
         pybop.plot.contour(problem, gradient=True, steps=5)
-        pybop.plot.convergence(optim)
-        pybop.plot.parameters(optim)
-        pybop.plot.contour(optim, steps=5)
+        pybop.plot.convergence(result)
+        pybop.plot.parameters(result)
+        pybop.plot.contour(result, steps=5)
 
     def test_gaussianloglikelihood_plots(self, likelihood_problem):
         options = pybop.CMAES.default_options()
         options.max_iterations = 5
         optim = pybop.CMAES(likelihood_problem, options)
-        optim.run()
+        result = optim.run()
 
         # Plot parameters
-        pybop.plot.parameters(optim)
+        pybop.plot.parameters(result)
 
     def test_contour_incorrect_number_of_parameters(self, model, dataset):
         builder = pybop.Pybamm()
