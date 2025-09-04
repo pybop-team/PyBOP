@@ -89,8 +89,8 @@ class TestDecayModel:
     def test_decay_builder(self, dataset, model_config, parameters):
         """Test decay model with voltage-based cost functions."""
         builder = self.create_pybamm_builder(dataset, model_config, parameters)
-        builder.add_cost(pybop.costs.pybamm.SumSquaredError("y_0", "y_0"))
-        builder.add_cost(pybop.costs.pybamm.MeanAbsoluteError("y_0", "y_0"))
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("y_0"))
+        builder.add_cost(pybop.costs.pybamm.MeanAbsoluteError("y_0"))
 
         problem = builder.build()
 

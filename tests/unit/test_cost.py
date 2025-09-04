@@ -84,9 +84,7 @@ class TestCosts:
         builder.set_simulation(model)
         builder.set_dataset(dataset)
         builder.add_parameter(one_parameter)
-        builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
-        )
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
         problem = builder.build()
 
         assert problem_custom.run(np.array([0.55])) == problem.run(np.array([0.55]))
@@ -106,7 +104,7 @@ class TestCosts:
         builder.set_simulation(model)
         builder.set_dataset(dataset)
         builder.add_parameter(one_parameter)
-        builder.add_cost(pybamm_costs("Voltage [V]", "Voltage [V]"))
+        builder.add_cost(pybamm_costs("Voltage [V]"))
         problem = builder.build()
 
         higher_cost = problem.run(np.array([0.55]))
@@ -174,7 +172,7 @@ class TestCosts:
         builder.set_simulation(model)
         builder.set_dataset(dataset)
         builder.add_parameter(one_parameter)
-        builder.add_cost(pybamm_costs("Voltage [V]", "Voltage [V]"))
+        builder.add_cost(pybamm_costs("Voltage [V]"))
         problem = builder.build()
 
         higher_cost = problem.run(np.array([0.55, 0.01]))
@@ -187,7 +185,7 @@ class TestCosts:
         builder.set_simulation(model)
         builder.set_dataset(dataset)
         builder.add_parameter(one_parameter)
-        cost = pybop.costs.pybamm.SumOfPower("Voltage [V]", "Voltage [V]")
+        cost = pybop.costs.pybamm.SumOfPower("Voltage [V]")
         builder.add_cost(pybop.costs.pybamm.ScaledCost(cost))
         problem = builder.build()
 
@@ -203,11 +201,11 @@ class TestCosts:
             builder.set_dataset(dataset)
             builder.add_parameter(one_parameter)
             builder.add_cost(
-                pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]", "Voltage [V]"),
+                pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]"),
                 weight=weights[0],
             )
             builder.add_cost(
-                pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]", "Voltage [V]"),
+                pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]"),
                 weight=weights[1],
             )
             return builder.build()
@@ -256,12 +254,12 @@ class TestCosts:
     def test_minkowski(self):
         # Incorrect order
         with pytest.raises(ValueError, match="The order of the Minkowski distance"):
-            pybop.costs.pybamm.Minkowski("Voltage [V]", "Voltage [V]", p=-1)
+            pybop.costs.pybamm.Minkowski("Voltage [V]", p=-1)
         with pytest.raises(
             ValueError,
             match="For p = infinity, an implementation of the Chebyshev distance is required.",
         ):
-            pybop.costs.pybamm.Minkowski("Voltage [V]", "Voltage [V]", p=np.inf)
+            pybop.costs.pybamm.Minkowski("Voltage [V]", p=np.inf)
 
     def test_sumofpower(self):
         # Incorrect order
@@ -269,10 +267,10 @@ class TestCosts:
             ValueError,
             match="The order of the Minkowski distance must be greater than 0.",
         ):
-            pybop.costs.pybamm.Minkowski("Voltage [V]", "Voltage [V]", p=-1)
+            pybop.costs.pybamm.Minkowski("Voltage [V]", p=-1)
 
         with pytest.raises(
             ValueError,
             match="For p = infinity, an implementation of the Chebyshev distance is required.",
         ):
-            pybop.costs.pybamm.Minkowski("Voltage [V]", "Voltage [V]", p=np.inf)
+            pybop.costs.pybamm.Minkowski("Voltage [V]", p=np.inf)

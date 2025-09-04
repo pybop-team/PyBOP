@@ -106,12 +106,8 @@ class TestGITTModels:
     def test_build(self, dataset, model_config, parameters):
         """Test model with voltage-based cost functions."""
         builder = self.create_pybamm_builder(dataset, model_config, parameters)
-        builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
-        )
-        builder.add_cost(
-            pybop.costs.pybamm.MeanAbsoluteError("Voltage [V]", "Voltage [V]")
-        )
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
+        builder.add_cost(pybop.costs.pybamm.MeanAbsoluteError("Voltage [V]"))
 
         problem = builder.build()
 

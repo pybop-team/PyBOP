@@ -38,9 +38,7 @@ class TestClassifier:
                 bounds=[1e-4, 1e-3],
             )
         )
-        builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
-        )
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
         return builder.build()
 
     def test_classify_using_hessian_invalid(self, problem):

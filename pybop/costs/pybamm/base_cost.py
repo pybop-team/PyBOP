@@ -34,7 +34,6 @@ class PybammParameterMetadata:
 class PybammVariable:
     def __init__(self):
         self._metadata = None
-        self._data_name = None
         self._variable_name = None
         self._sigma = None
 
@@ -90,7 +89,7 @@ class PybammVariable:
         Constructs the pybamm DiscreteTimeData node in the expression tree
         """
         times = dataset["Time [s]"]
-        values = dataset[self._data_name]
+        values = dataset[self._variable_name]
         data = pybamm.DiscreteTimeData(times, values, f"{name}_data")
         var = model.variables[self._variable_name]
         return data, var
@@ -99,8 +98,8 @@ class PybammVariable:
         # dataset must be provided and contain the data
         if dataset is None:
             raise ValueError(f"Dataset must be provided for {name}.")
-        if self._data_name not in dataset:
-            raise ValueError(f"Dataset must contain {self._data_name} for {name}.")
+        if self._variable_name not in dataset:
+            raise ValueError(f"Dataset must contain {self._variable_name} for {name}.")
         # model must contain the variable
         if self._variable_name not in model.variables:
             raise ValueError(f"Model must contain {self._variable_name} for {name}.")
@@ -128,8 +127,8 @@ class PybammVariable:
         return sigma
 
     @property
-    def data_name(self) -> str:
-        return self._data_name
+    def variable_name(self) -> str:
+        return self._variable_name
 
 
 class BaseLikelihood(PybammVariable):

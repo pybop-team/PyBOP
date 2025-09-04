@@ -15,14 +15,9 @@ class SumSquaredError(PybammVariable):
     A SumSquaredError cost implementation within Pybamm.
     """
 
-    def __init__(
-        self,
-        variable_name: str,
-        data_name: str,
-    ):
+    def __init__(self, variable_name: str):
         super().__init__()
         self._variable_name = variable_name
-        self._data_name = data_name
 
     def symbolic_expression(
         self,
@@ -61,10 +56,9 @@ class MeanAbsoluteError(PybammVariable):
         measure. Options: "equal"(default), "domain", or a custom numpy array.
     """
 
-    def __init__(self, variable_name: str, data_name: str):
+    def __init__(self, variable_name: str):
         super().__init__()
         self._variable_name = variable_name
-        self._data_name = data_name
 
     def symbolic_expression(
         self,
@@ -98,10 +92,9 @@ class MeanSquaredError(PybammVariable):
     observed values.
     """
 
-    def __init__(self, variable_name: str, data_name: str):
+    def __init__(self, variable_name: str):
         super().__init__()
         self._variable_name = variable_name
-        self._data_name = data_name
 
     def symbolic_expression(
         self,
@@ -136,10 +129,9 @@ class RootMeanSquaredError(PybammVariable):
     observed values.
     """
 
-    def __init__(self, variable_name: str, data_name: str):
+    def __init__(self, variable_name: str):
         super().__init__()
         self._variable_name = variable_name
-        self._data_name = data_name
 
     def symbolic_expression(
         self,
@@ -181,7 +173,7 @@ class Minkowski(PybammVariable):
     * p = 2: Euclidean distance
     """
 
-    def __init__(self, variable_name: str, data_name: str, p: float = 2.0):
+    def __init__(self, variable_name: str, p: float = 2.0):
         super().__init__()
         if p <= 0:
             raise ValueError(
@@ -192,7 +184,6 @@ class Minkowski(PybammVariable):
                 "For p = infinity, an implementation of the Chebyshev distance is required."
             )
         self._variable_name = variable_name
-        self._data_name = data_name
         self._p = p
 
     def symbolic_expression(
@@ -246,14 +237,13 @@ class SumOfPower(PybammVariable):
     [1]: https://mathworld.wolfram.com/PowerSum.html
     """
 
-    def __init__(self, variable_name: str, data_name: str, p: float = 2.0):
+    def __init__(self, variable_name: str, p: float = 2.0):
         super().__init__()
         if p < 0:
             raise ValueError("The order of 'p' must be greater than 0.")
         elif not np.isfinite(p):
             raise ValueError("p = np.inf is not yet supported.")
         self._variable_name = variable_name
-        self._data_name = data_name
         self._p = float(p)
 
     def symbolic_expression(
@@ -310,13 +300,11 @@ class NegativeGaussianLogLikelihood(BaseLikelihood):
     def __init__(
         self,
         variable_name: str,
-        data_name: str,
         sigma: float | PybopParameter | None = None,
     ):
         super().__init__()
         self._sigma = sigma
         self._variable_name = variable_name
-        self._data_name = data_name
         self._log2pi = np.log(2 * np.pi)
 
     def symbolic_expression(
@@ -378,7 +366,7 @@ class ScaledCost(PybammVariable):
             variable_name=name,
             expression=cost_metadata.expression
             * pybamm.Scalar(1.0)
-            / len(dataset[self._cost.data_name]),
+            / len(dataset[self._cost.variable_name]),
             parameters=cost_metadata.parameters,
         )
 

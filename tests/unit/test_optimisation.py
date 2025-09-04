@@ -93,9 +93,7 @@ class TestOptimisation:
         builder.set_simulation(model, parameter_values=model.default_parameter_values)
         builder.set_dataset(dataset)
         builder.add_parameter(one_parameter)
-        builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
-        )
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
         return builder.build()
 
     @pytest.fixture
@@ -105,9 +103,7 @@ class TestOptimisation:
         builder.set_dataset(dataset)
         for p in two_parameters:
             builder.add_parameter(p)
-        builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
-        )
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
         return builder.build()
 
     @pytest.fixture
@@ -117,9 +113,7 @@ class TestOptimisation:
         builder.set_dataset(dataset)
         for p in two_parameters_no_bounds:
             builder.add_parameter(p)
-        builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
-        )
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
         return builder.build()
 
     @pytest.mark.parametrize(
