@@ -1,6 +1,6 @@
-from .base_cost import (
-    PybammVariable,
-    PybammVariableMetadata,
+from .output_variable import (
+    PybammOutputVariable,
+    PybammExpressionMetadata,
     PybammParameterMetadata,
 )
 from .user_cost import UserCost, custom

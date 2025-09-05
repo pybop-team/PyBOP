@@ -167,16 +167,17 @@ class TestBuilder:
         np.testing.assert_allclose(value2s, value2, rtol=5e-4)
 
         # Test with estimated sigma
+        builder.remove_costs()
         builder.add_cost(
             pybop.costs.pybamm.NegativeGaussianLogLikelihood("Voltage [V]")
         )
         problem2 = builder.build()
         value3 = problem2.run(np.array([0.5, 0.5, 1e-2]))
-        np.testing.assert_allclose(2 * value1, value3)
+        np.testing.assert_allclose(value1, value3)
 
         # Different sigma
         value4 = problem2.run(np.array([0.5, 0.5, 1e-3]))
-        assert np.not_equal(2 * value1, value4)
+        assert np.not_equal(value1, value4)
 
     def test_builder_posterior(self, model_and_params, dataset):
         model, parameter_values = model_and_params

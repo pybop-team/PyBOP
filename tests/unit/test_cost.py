@@ -195,19 +195,20 @@ class TestCosts:
         assert higher_cost > lower_cost
 
     def test_multi_cost_weighting(self, model, dataset, one_parameter):
+        builder = pybop.builders.Pybamm()
+        builder.set_simulation(model)
+        builder.set_dataset(dataset)
+        builder.add_parameter(one_parameter)
+
         def problem(weights):
-            builder = pybop.builders.Pybamm()
-            builder.set_simulation(model)
-            builder.set_dataset(dataset)
-            builder.add_parameter(one_parameter)
+            builder.remove_costs()
             builder.add_cost(
                 pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]"),
                 weight=weights[0],
             )
-            builder.add_cost(
-                pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]"),
-                weight=weights[1],
-            )
+            duplicate_cost = pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]")
+            duplicate_cost.name = lambda: "Duplicate RMSE in the voltage [V]"
+            builder.add_cost(duplicate_cost, weight=weights[1])
             return builder.build()
 
         problem1 = problem([1, 1])

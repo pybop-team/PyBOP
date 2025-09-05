@@ -1,13 +1,13 @@
 import pybamm
 
 from pybop import Dataset
-from pybop.costs.pybamm.base_cost import (
-    PybammVariable,
-    PybammVariableMetadata,
+from pybop.costs.pybamm.output_variable import (
+    PybammExpressionMetadata,
+    PybammOutputVariable,
 )
 
 
-class DesignCost(PybammVariable):
+class DesignCost(PybammOutputVariable):
     """
     Base Class for Design Costs.
     """
@@ -38,7 +38,7 @@ class GravimetricEnergyDensity(DesignCost):
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
-    ) -> PybammVariableMetadata:
+    ) -> PybammExpressionMetadata:
         """Construct the variable metadata."""
         name = "Negative gravimetric energy density [Wh.kg-1]"
         expression = (
@@ -49,7 +49,7 @@ class GravimetricEnergyDensity(DesignCost):
             / pybamm.Parameter("Cell mass [kg]")
         )
         parameters = {}
-        return PybammVariableMetadata(
+        return PybammExpressionMetadata(
             variable_name=name,
             expression=pybamm.ExplicitTimeIntegral(expression, pybamm.Scalar(0.0)),
             parameters=parameters,
@@ -78,7 +78,7 @@ class VolumetricEnergyDensity(DesignCost):
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
-    ) -> PybammVariableMetadata:
+    ) -> PybammExpressionMetadata:
         """Construct the variable metadata."""
         name = "Negative volumetric energy density [Wh.m-3]"
         expression = (
@@ -87,7 +87,7 @@ class VolumetricEnergyDensity(DesignCost):
             / (model.param.V_cell * 3600)
         )
 
-        return PybammVariableMetadata(
+        return PybammExpressionMetadata(
             variable_name=name,
             expression=pybamm.ExplicitTimeIntegral(
                 expression, pybamm.Scalar(0.0)
@@ -117,7 +117,7 @@ class GravimetricPowerDensity(DesignCost):
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
-    ) -> PybammVariableMetadata:
+    ) -> PybammExpressionMetadata:
         """Construct the variable metadata."""
         name = "Negative time-averaged gravimetric power density [W.kg-1]"
         expression = (
@@ -127,7 +127,7 @@ class GravimetricPowerDensity(DesignCost):
         )
 
         parameters = {}
-        return PybammVariableMetadata(
+        return PybammExpressionMetadata(
             variable_name=name,
             expression=pybamm.ExplicitTimeIntegral(
                 expression, pybamm.Scalar(0.0)
@@ -157,7 +157,7 @@ class VolumetricPowerDensity(DesignCost):
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
-    ) -> PybammVariableMetadata:
+    ) -> PybammExpressionMetadata:
         """Construct the variable metadata."""
         name = "Negative time-averaged volumetric power density [W.m-3]"
         expression = (
@@ -166,7 +166,7 @@ class VolumetricPowerDensity(DesignCost):
             / (model.param.V_cell)
         )
 
-        return PybammVariableMetadata(
+        return PybammExpressionMetadata(
             variable_name=name,
             expression=pybamm.ExplicitTimeIntegral(expression, pybamm.Scalar(0.0)),
             parameters={},

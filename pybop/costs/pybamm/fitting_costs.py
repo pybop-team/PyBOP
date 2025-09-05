@@ -3,14 +3,14 @@ import pybamm
 
 from pybop import Dataset
 from pybop import Parameter as PybopParameter
-from pybop.costs.pybamm.base_cost import (
+from pybop.costs.pybamm.output_variable import (
+    PybammExpressionMetadata,
+    PybammOutputVariable,
     PybammParameterMetadata,
-    PybammVariable,
-    PybammVariableMetadata,
 )
 
 
-class PybammFittingCost(PybammVariable):
+class PybammFittingCost(PybammOutputVariable):
     """
     A base class for error measure implementations within Pybamm.
     """
@@ -45,18 +45,21 @@ class PybammFittingCost(PybammVariable):
         return data, var
 
     def _make_name(self):
-        cost_name = self.__name__().capitalize()
+        cost_name = self.name()
         if len(self._signal) > 1 and self._signal[1].isupper():
             # Variable name starts with a capitalised acronym
             signal_name = self._signal
         else:
             # Make the first letter of the variable name lower case
             signal_name = self._signal[0].lower() + self._signal[1:]
-        return f"{cost_name} in {signal_name}"
+        return f"{cost_name} in the {signal_name}"
 
     @property
     def signal(self) -> str | None:
         return self._signal
+
+    def name(self) -> str:
+        return NotImplementedError
 
 
 class SumSquaredError(PybammFittingCost):
@@ -72,21 +75,21 @@ class SumSquaredError(PybammFittingCost):
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
-    ) -> PybammVariableMetadata:
+    ) -> PybammExpressionMetadata:
         """Construct the variable metadata."""
         name = self._make_name()
 
         data, var = self._construct_discrete_time_node(dataset, model, name)
         sum_expr = (var - data) ** 2
 
-        return PybammVariableMetadata(
+        return PybammExpressionMetadata(
             variable_name=name,
             expression=pybamm.DiscreteTimeSum(sum_expr),
             parameters={},
         )
 
-    def __name__(self):
-        return "Sum Squared Error"
+    def name(self):
+        return "Sum squared error"
 
 
 class MeanAbsoluteError(PybammFittingCost):
@@ -108,21 +111,21 @@ class MeanAbsoluteError(PybammFittingCost):
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
-    ) -> PybammVariableMetadata:
+    ) -> PybammExpressionMetadata:
         """Construct the variable metadata."""
         name = self._make_name()
 
         data, var = self._construct_discrete_time_node(dataset, model, name)
         sum_expr = pybamm.AbsoluteValue(var - data) / len(data.y)
 
-        return PybammVariableMetadata(
+        return PybammExpressionMetadata(
             variable_name=name,
             expression=pybamm.DiscreteTimeSum(sum_expr),
             parameters={},
         )
 
-    def __name__(self):
-        return "Mean Absolute Error"
+    def name(self):
+        return "Mean absolute error"
 
 
 class MeanSquaredError(PybammFittingCost):
@@ -138,7 +141,7 @@ class MeanSquaredError(PybammFittingCost):
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
-    ) -> PybammVariableMetadata:
+    ) -> PybammExpressionMetadata:
         """Construct the variable metadata."""
         name = self._make_name()
 
@@ -146,14 +149,14 @@ class MeanSquaredError(PybammFittingCost):
         squared_error = (var - data) ** 2
         sum_expr = squared_error / len(data.y)
 
-        return PybammVariableMetadata(
+        return PybammExpressionMetadata(
             variable_name=name,
             expression=pybamm.DiscreteTimeSum(sum_expr),
             parameters={},
         )
 
-    def __name__(self):
-        return "Mean Squared Error"
+    def name(self):
+        return "Mean squared error"
 
 
 class RootMeanSquaredError(PybammFittingCost):
@@ -169,7 +172,7 @@ class RootMeanSquaredError(PybammFittingCost):
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
-    ) -> PybammVariableMetadata:
+    ) -> PybammExpressionMetadata:
         """Construct the variable metadata."""
         name = self._make_name()
 
@@ -178,14 +181,14 @@ class RootMeanSquaredError(PybammFittingCost):
         mean_squared_error = squared_error / len(data.y)
         sum_expr = pybamm.sqrt(mean_squared_error)
 
-        return PybammVariableMetadata(
+        return PybammExpressionMetadata(
             variable_name=name,
             expression=pybamm.DiscreteTimeSum(sum_expr),
             parameters={},
         )
 
-    def __name__(self):
-        return "Root Mean Squared Error"
+    def name(self):
+        return "Root mean squared error"
 
 
 class Minkowski(PybammFittingCost):
@@ -219,7 +222,7 @@ class Minkowski(PybammFittingCost):
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
-    ) -> PybammVariableMetadata:
+    ) -> PybammExpressionMetadata:
         """Construct the variable metadata."""
         name = self._make_name()
 
@@ -228,13 +231,13 @@ class Minkowski(PybammFittingCost):
         abs_diff = pybamm.AbsoluteValue(diff)
         expression = pybamm.DiscreteTimeSum(abs_diff**self._p) ** (1 / self._p)
 
-        return PybammVariableMetadata(
+        return PybammExpressionMetadata(
             variable_name=name,
             expression=expression,
             parameters={},
         )
 
-    def __name__(self):
+    def name(self):
         return f"Minkowski distance (p = {self._p})"
 
 
@@ -276,7 +279,7 @@ class SumOfPower(PybammFittingCost):
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
-    ) -> PybammVariableMetadata:
+    ) -> PybammExpressionMetadata:
         """Construct the variable metadata."""
         name = self._make_name()
 
@@ -285,14 +288,14 @@ class SumOfPower(PybammFittingCost):
         abs_diff = pybamm.AbsoluteValue(diff)
         sum_expr = abs_diff**self._p
 
-        return PybammVariableMetadata(
+        return PybammExpressionMetadata(
             variable_name=name,
             expression=pybamm.DiscreteTimeSum(sum_expr),
             parameters={},
         )
 
-    def __name__(self):
-        return f"Sum of Power (p = {self._p})"
+    def name(self):
+        return f"Sum of power (p = {self._p})"
 
 
 class BaseLikelihood(PybammFittingCost):
@@ -364,7 +367,7 @@ class NegativeGaussianLogLikelihood(BaseLikelihood):
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
-    ) -> PybammVariableMetadata:
+    ) -> PybammExpressionMetadata:
         """Construct the variable metadata."""
         name = self._make_name()
 
@@ -380,13 +383,13 @@ class NegativeGaussianLogLikelihood(BaseLikelihood):
             + sum_expr / (2.0 * sigma**2.0)
         )
 
-        return PybammVariableMetadata(
+        return PybammExpressionMetadata(
             variable_name=name,
             expression=nll,
             parameters=parameters,
         )
 
-    def __name__(self):
+    def name(self):
         return "Negative Gaussian log likelihood"
 
 
@@ -402,7 +405,7 @@ class ScaledCost(PybammFittingCost):
     BaseCost, which can improve optimiser convergence in certain cases.
     """
 
-    def __init__(self, cost: PybammVariable):
+    def __init__(self, cost: PybammOutputVariable):
         super().__init__(signal=cost.signal)
         self._cost = cost
 
@@ -410,13 +413,13 @@ class ScaledCost(PybammFittingCost):
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
-    ) -> PybammVariableMetadata:
+    ) -> PybammExpressionMetadata:
         """Construct the variable metadata."""
         name = self._make_name()
 
         cost_metadata = self._cost.symbolic_expression(model, dataset)
 
-        return PybammVariableMetadata(
+        return PybammExpressionMetadata(
             variable_name=name,
             expression=cost_metadata.expression
             * pybamm.Scalar(1.0)
@@ -424,5 +427,5 @@ class ScaledCost(PybammFittingCost):
             parameters=cost_metadata.parameters,
         )
 
-    def __name__(self):
-        return f"Scaled {self._cost.__name__()}"
+    def name(self):
+        return f"Scaled {self._cost.name}"

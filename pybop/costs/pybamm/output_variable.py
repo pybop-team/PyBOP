@@ -6,7 +6,7 @@ from pybop import Dataset
 
 
 @dataclass
-class PybammVariableMetadata:
+class PybammExpressionMetadata:
     """
     Metadata for a PyBaMM variable. This includes its name and symbolic expression as well
     as any additional parameters that are needed to evaluate the expression.
@@ -28,12 +28,12 @@ class PybammParameterMetadata:
     default_value: float
 
 
-class PybammVariable:
+class PybammOutputVariable:
     def __init__(self):
         self._metadata = None
         self._sigma = None
 
-    def metadata(self) -> PybammVariableMetadata:
+    def metadata(self) -> PybammExpressionMetadata:
         """
         Returns the metadata for the variable, including its name and symbolic expression
         as well as any additional parameters that are needed to evaluate the expression.
@@ -46,9 +46,9 @@ class PybammVariable:
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
-    ) -> PybammVariableMetadata:
+    ) -> PybammExpressionMetadata:
         """
-        Defines the variable expression, returning a PybammVariableMetadata object.
+        Defines the variable expression, returning a PybammExpressionMetadata object.
         This should be implemented in the subclass.
         """
         raise NotImplementedError()
@@ -63,11 +63,13 @@ class PybammVariable:
         Add the variable and any additional parameters to the model.
         """
         if dataset is not None and "Time [s]" not in dataset:
-            raise ValueError('Dataset must contain "Time [s]" for a PybammVariable.')
+            raise ValueError(
+                'Dataset must contain "Time [s]" for a PybammOutputVariable.'
+            )
         self._metadata = self.symbolic_expression(model, dataset)
         if self._metadata.variable_name in model.variables.keys():
             raise ValueError(
-                "The variable {self._metadata._variable_name} already exists in the model."
+                f"The variable {self._metadata.variable_name} already exists in the model."
             )
         model.variables[self._metadata.variable_name] = self._metadata.expression
         for parameter_name, parameter_metadata in self._metadata.parameters.items():
