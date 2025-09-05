@@ -174,6 +174,12 @@ class PybammEISPipeline:
 
         return model
 
+    def rebuild(self, inputs: Inputs) -> None:
+        """Update the parameter values and rebuild the PyBaMM EIS pipeline."""
+        if self._pybamm_pipeline.requires_rebuild:
+            self._pybamm_pipeline.rebuild(inputs=inputs)
+        self.initialise_eis_pipeline(inputs=inputs)
+
     def initialise_eis_pipeline(self, inputs: Inputs) -> None:
         """
         Initialise the electrochemical impedance spectroscopy (EIS) simulation.
@@ -208,6 +214,36 @@ class PybammEISPipeline:
         self.b = np.zeros(y0.shape)
         self.b[-1] = -1
 
+    def solve(
+        self, inputs: Inputs, calculate_sensitivities: bool = False
+    ) -> np.ndarray:
+        """
+        Run the EIS simulation to calculate impedance at all specified frequencies.
+
+        Parameters
+        ---------
+        calculate_sensitivities : bool, optional
+            Whether to calculate sensitivities or not. Default is False.
+            Currently not implemented for EIS.
+
+        Returns
+        -------
+        np.ndarray
+            Complex array containing the impedance values with corresponding frequencies.
+        """
+        if calculate_sensitivities:
+            warnings.warn(
+                "Sensitivity calculation not implemented for EIS simulations",
+                stacklevel=2,
+            )
+
+        # Always run initialise_eis_pipeline, after rebuilding the model if necessary
+        self.rebuild(inputs)
+
+        zs = [self.calculate_impedance(frequency) for frequency in self._f_eval]
+
+        return np.asarray(zs) * self.z_scale
+
     def calculate_impedance(self, frequency):
         """
         Calculate the impedance for a given frequency.
@@ -235,31 +271,6 @@ class PybammEISPipeline:
         # Calculate the impedance (voltage / current)
         return -x[-2] / x[-1]
 
-    def solve(self, calculate_sensitivities: bool = False) -> np.ndarray:
-        """
-        Run the EIS simulation to calculate impedance at all specified frequencies.
-
-        Parameters
-        ---------
-        calculate_sensitivities : bool, optional
-            Whether to calculate sensitivities or not. Default is False.
-            Currently not implemented for EIS.
-
-        Returns
-        -------
-        np.ndarray
-            Complex array containing the impedance values with corresponding frequencies.
-        """
-        if calculate_sensitivities:
-            warnings.warn(
-                "Sensitivity calculation not implemented for EIS simulations",
-                stacklevel=2,
-            )
-
-        zs = [self.calculate_impedance(frequency) for frequency in self._f_eval]
-
-        return np.asarray(zs) * self.z_scale
-
     @property
     def pybamm_pipeline(self):
         return self._pybamm_pipeline
@@ -271,15 +282,3 @@ class PybammEISPipeline:
     @property
     def pybop_parameters(self):
         return self._pybamm_pipeline.pybop_parameters
-
-    @property
-    def requires_rebuild(self):
-        return self._pybamm_pipeline.requires_rebuild
-
-    def rebuild(self, params: Inputs) -> None:
-        """Update the parameter values and rebuild the PyBaMM EIS pipeline."""
-        self._pybamm_pipeline.rebuild(params)
-
-    def build(self) -> None:
-        """Build the PyBaMM EIS pipeline."""
-        self._pybamm_pipeline.build()

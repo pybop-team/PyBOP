@@ -1,38 +1,38 @@
 import numpy as np
 
-from pybop import Parameters
 from pybop.analysis.sensitivity_analysis import sensitivity_analysis
+from pybop.parameters.parameter import Inputs, Parameters
 
 
 class Problem:
     """
-    Defines a callable function `f(x)` that returns the evaluation
-    of a cost function. The input `x` is a set of parameters that are
-    passed via the `set_params` method. The cost function is evaluated
-    using the `run` method.
+    Defines a `run` method that takes candidate parameter sets and returns the corresponding
+    values of the cost and sensitivities if needed.
     """
 
-    def __init__(self, pybop_params: Parameters | None = None):
+    def __init__(
+        self, pybop_params: Parameters | None = None, is_posterior: bool = False
+    ):
         if pybop_params is None:
             self._param_names = []
         self._params = pybop_params
         self._param_names = pybop_params.keys()
+        self._n_params = len(pybop_params)
+        self.is_posterior = is_posterior
 
     def get_finite_initial_cost(self):
         """
         Compute the absolute initial cost, resampling the initial parameters if needed.
         """
         x0 = self._params.get_initial_values()
-        self.set_params(x0)
-        cost0 = np.abs(self.run())
+        cost0 = np.abs(self.run(x0))
         nsamples = 0
         while np.isinf(cost0) and nsamples < 10:
             x0 = self._params.sample_from_priors()
             if x0 is None:
                 break
 
-            self.set_params(x0)
-            cost0 = np.abs(self.run())
+            cost0 = np.abs(self.run(x0))
             nsamples += 1
         if nsamples > 0:
             self._params.update(initial_values=x0)
@@ -40,31 +40,6 @@ class Problem:
         if np.isinf(cost0):
             raise ValueError("The initial parameter values return an infinite cost.")
         return cost0
-
-    def check_and_store_params(self, p: np.ndarray) -> None:
-        """
-        Checks if the parameters are valid. p should be a numpy array of one dimensions,
-        with length equal to the number of parameters in the model.
-        """
-        if not isinstance(p, np.ndarray | list):
-            raise TypeError("Parameters must be a numpy array or list")
-        if isinstance(p, list):
-            try:
-                p = np.asarray(p)
-            except TypeError as e:
-                raise TypeError(
-                    "Parameters cannot be converted to a numpy array."
-                ) from e
-        self._params.update(values=p)
-
-    def check_set_params_called(self) -> None:
-        """
-        Checks if the parameters have been set.
-        """
-        if self._params is None:
-            raise ValueError(
-                "Parameters have not been set. Call `set_params` before running the simulation."
-            )
 
     @property
     def params(self) -> Parameters:
@@ -97,28 +72,104 @@ class Problem:
         """
         return sensitivity_analysis(problem=self, n_samples=n_samples)
 
-    def run(self) -> np.ndarray:
+    def run(self, values: np.ndarray) -> np.ndarray:
         """
-        Evaluates the underlying simulation and cost function using the
-        parameters set in the previous call to `set_params`.
+        Evaluates the underlying simulation and cost function.
+
+        Parameters
+        ----------
+        values : np.ndarray or list[np.ndarray]
+            Either one candidate parameter set (a 1D numpy array), a list of candidate parameter sets
+            or a 2D array of candidate parameter sets.
+
+        Returns
+        -------
+        costs : np.ndarray
+            A 1D array of either a single cost value or a set of cost values.
         """
-        raise NotImplementedError
+        inputs = self._params.to_inputs(values)
+
+        costs = self._compute_costs(inputs=inputs)
+
+        # Add optional prior contribution
+        if self.is_posterior:
+            batch_values = np.asarray(
+                [np.fromiter(x.values(), dtype=np.float64) for x in inputs]
+            ).T  # note the required transpose
+            log_prior = self._priors.logpdf(batch_values)  # Shape: (n_inputs,)
+            return costs - log_prior
+
+        return costs
 
     def run_with_sensitivities(
-        self,
+        self, values: np.ndarray
     ) -> tuple[np.ndarray, np.ndarray]:
         """
-        Evaluates the underlying simulation and cost function using the
-        parameters set in the previous call to `set_params`, returns
-        the cost and sensitivities.
+        Evaluates the underlying simulation and cost function, returns the cost and sensitivities.
+
+        Parameters
+        ----------
+        values : np.ndarray or list[np.ndarray]
+            Either one candidate parameter set (a 1D numpy array), a list of candidate parameter sets
+            or a 2D array of candidate parameter sets.
+
+        Returns
+        -------
+        costs : np.ndarray
+            A 1D array of either a single cost value or a set of cost values.
+        sensitivities : np.ndarray
+            Either a 1D array of the gradients of the cost with respect to each parameter, or a
+            2D array of sets of gradients with shape (number of candidates, number of parameters).
+        """
+        inputs = self._params.to_inputs(values)
+
+        costs, sens = self._compute_costs_and_sensitivities(inputs=inputs)
+
+        # Subtract optional prior contribution and derivatives from negative log-likelihood
+        if self.is_posterior:
+            batch_values = np.asarray(
+                [np.fromiter(x.values(), dtype=np.float64) for x in inputs]
+            ).T  # note the required transpose
+            log_prior, log_prior_sens = self._priors.logpdfS1(batch_values)
+            costs -= log_prior  # Shape: (n_inputs,)
+            sens -= log_prior_sens  # Shape: (n_inputs, n_params)
+
+        if np.asarray(values).ndim == 1:
+            return costs, sens.reshape(-1)
+        return costs, sens
+
+    def _compute_costs(self, inputs: list[Inputs]) -> np.ndarray:
+        """
+        Evaluates the underlying simulation and cost function.
+
+        Parameters
+        ----------
+        inputs : list[Inputs]
+            A list of input dictionaries.
+
+        Returns
+        -------
+        costs : np.ndarray
+            A 1D array of cost values of length `len(inputs)`.
         """
         raise NotImplementedError
 
-    def set_params(self, p: np.ndarray) -> None:
+    def _compute_costs_and_sensitivities(
+        self, inputs: list[Inputs]
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
-        Sets the parameters for the simulation and cost function.
-        The arg `p` is a numpy array of parameters in the model space.
-        Hint: use `to_search` and `from_search` to convert between model and
-        search space.
+        Evaluates the underlying simulation and cost function, returns the cost and sensitivities.
+
+        Parameters
+        ----------
+        inputs : list[Inputs]
+            A list of input dictionaries.
+
+        Returns
+        -------
+        costs : np.ndarray
+            A 1D array of cost values of length `len(inputs)`.
+        sensitivities : np.ndarray
+            A 2D array of sets of gradients with shape (`len(inputs)`, number of parameters).
         """
         raise NotImplementedError

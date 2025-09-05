@@ -35,7 +35,6 @@ def sensitivity_analysis(problem, n_samples: int = 256) -> dict:
 
     # Create samples, compute cost
     param_values = sample(salib_dict, n_samples)
-    problem.set_params(param_values)
-    costs = problem.run()
+    costs = problem.run(param_values)
 
     return sobol.analyze(salib_dict, costs, calc_second_order=False)

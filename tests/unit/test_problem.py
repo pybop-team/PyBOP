@@ -84,9 +84,8 @@ class TestProblem:
         # Batch candidates
         vals = np.linspace(0.5, 0.6, 5)
         p = np.stack((vals, vals), axis=1)
-        problem.set_params(p)
-        costs = problem.run()
-        costs_sens = problem.run_with_sensitivities()
+        costs = problem.run(p)
+        costs_sens = problem.run_with_sensitivities(p)
 
         assert costs.shape == (5,)
         assert costs_sens[0].shape == (5,)
@@ -99,11 +98,9 @@ class TestProblem:
         for i in range(len(x_model)):
             delta = 1e-6 * x_model[i]
             x_model[i] += delta / 2
-            problem.set_params(x_model)
-            cost_right = problem.run()
+            cost_right = problem.run(x_model)
             x_model[i] -= delta
-            problem.set_params(x_model)
-            cost_left = problem.run()
+            cost_left = problem.run(x_model)
             x_model[i] += delta / 2
             assert np.abs(cost_right - cost_left) > 0
             numerical_grad.append((cost_right - cost_left) / delta)
@@ -124,8 +121,7 @@ class TestProblem:
         particle_vals = np.linspace(4.6e-06, 5.2e-06, 3)
         vals = np.linspace(0.5, 0.6, 3)
         p = np.stack((vals, vals, particle_vals), axis=1)
-        problem.set_params(p)
-        vals = problem.run()
+        vals = problem.run(p)
         assert vals.shape == (3,)
 
     def _create_eis_problem(
@@ -155,13 +151,11 @@ class TestProblem:
     def _test_eis_problem_pipeline(self, problem):
         """Helper method to test the EIS problem pipeline with different parameter sets."""
         # Test first parameter set
-        problem.set_params(np.array([0.75, 0.665]))
-        sol1 = problem.run()
+        sol1 = problem.run(np.array([0.75, 0.665]))
         assert isinstance(sol1, np.ndarray)
 
         # Test second parameter set
-        problem.set_params(np.array([0.7, 0.7]))
-        sol2 = problem.run()
+        sol2 = problem.run(np.array([0.7, 0.7]))
 
         # Assert difference in solution
         assert not np.allclose(sol1, sol2)
@@ -188,14 +182,13 @@ class TestProblem:
         problem_with_initial_state = self._create_eis_problem(
             model, parameter_values, eis_dataset, parameters, "equal", initial_state=0.5
         )
-        problem_with_initial_state.set_params(np.array([0.75, 0.665]))
-        sol3 = problem_with_initial_state.run()
+        sol3 = problem_with_initial_state.run(np.array([0.75, 0.665]))
 
         # Test solutions
         assert not np.allclose(sol1, sol3)
 
         # Test run
-        val = problem.run()
+        val = problem.run(np.array([0.75, 0.665]))
         assert val.shape == (1,)
 
     def test_eis_rebuild_parameters_problem(self, model, parameter_values, eis_dataset):
@@ -219,8 +212,7 @@ class TestProblem:
             "domain",
             initial_state=0.5,
         )
-        problem_with_initial_state.set_params(np.array([7e-5, 6e-5]))
-        sol3 = problem_with_initial_state.run()
+        sol3 = problem_with_initial_state.run(np.array([7e-5, 6e-5]))
 
         # Assertion for differing SoC's
         assert not np.allclose(sol1, sol3)

@@ -1,17 +1,9 @@
-from copy import copy, deepcopy
-from enum import Enum
+from copy import deepcopy
 
 import numpy as np
 import pybamm
 
 from pybop import FailedSolution, Inputs, Parameters, RecommendedSolver
-
-
-class OperatingMode(Enum):
-    """Enum-like class for operating modes."""
-
-    WITHOUT_EXPERIMENT = "without experiment"
-    WITH_EXPERIMENT = "with experiment"
 
 
 class PybammPipeline:
@@ -114,130 +106,116 @@ class PybammPipeline:
         # State
         self._built_model = None
         self._sim_experiment = None
+        self._solve = None
+        self._calculate_sensitivities = False
 
         # Setup
         self.requires_rebuild = self._determine_rebuild_requirement(build_on_eval)
-        self._setup_operating_mode_and_solver()
-
-        # Build if only building once, otherwise build on evalution
-        if not self.requires_rebuild:
-            self.build()
+        self._set_up_solution_method()
 
     def _determine_rebuild_requirement(self, build_on_eval: bool | None) -> bool:
         """Determine if model needs rebuilding on each evaluation."""
-        has_geometric_parameters = self._check_geometric_parameters()
 
-        if self._experiment is None and self._initial_state is not None:
-            return True
-        if has_geometric_parameters:
-            return True
-        return build_on_eval
-
-    def _setup_operating_mode_and_solver(self) -> None:
-        """Setup operating mode and related configurations."""
-        if self._experiment is not None:
-            self._operating_mode = OperatingMode.WITH_EXPERIMENT
-        else:
-            self._operating_mode = OperatingMode.WITHOUT_EXPERIMENT
-            # Remove all voltage-based events when not using an experiment
-            self._model.events = [e for e in self._model.events if "[V]" not in e.name]
-
-        if self._operating_mode == OperatingMode.WITH_EXPERIMENT:
-            # Create the experiment simulation
-            self._sim_experiment = self._create_experiment_simulation()
-
-        elif self._solver.output_variables == []:
-            # We can speed up the simulations using output_variables
-            """DISABLE until PyBaMM PR 5118 is resolved"""
-            # self._solver.output_variables = self._cost_names or []
-            pass
-
-    def _create_experiment_simulation(self) -> pybamm.Simulation:
-        """Create a simulation with current configuration and an experiment."""
-        return pybamm.Simulation(
-            self._model,
-            parameter_values=self._parameter_values,
-            experiment=self._experiment,
-            solver=self._solver,
-            geometry=self._geometry,
-            submesh_types=self._submesh_types,
-            var_pts=self._var_pts,
-            spatial_methods=self._spatial_methods,
-            discretisation_kwargs=self._discretisation_kwargs,
-        )
-
-    def _check_geometric_parameters(self) -> bool:
-        """Check if parameters require model rebuilding."""
+        # If there are no optimisation parameters, model does not needed rebuilding
         if not self._pybop_parameters:
             return False
 
-        model = self._model.new_copy()
-        geometry = deepcopy(self._geometry)
-        parameter_values = self._parameter_values.copy()
-
-        # Set placeholder values for parameters
-        for param in self._pybop_parameters:
-            parameter_values.update({param.name: "[input]"})
-
-        try:
-            parameter_values.process_geometry(geometry=geometry)
-            parameter_values.process_model(unprocessed_model=model)
-            self._validate_geometric_parameters(geometry)
-            self._parameter_values = parameter_values  # Update params w/ inputs
-            return False
-        except ValueError:
+        # All non-experiment protocols with an initial state require model rebuilding
+        if self._experiment is None and self._initial_state is not None:
             return True
 
-    def _validate_geometric_parameters(self, geometry) -> None:
-        """
-        Validate that geometry parameters are scalars.
-        Credit: PyBaMM Team
-        """
-        for domain in geometry:
-            for spatial_variable, spatial_limits in geometry[domain].items():
-                # process tab information if using 1 or 2D current collectors
-                if spatial_variable == "tabs":
-                    for _, position_info in spatial_limits.items():
-                        for _, sym in position_info.items():
-                            self._validate_parameter_symbol(sym)
-                else:
-                    for _, sym in spatial_limits.items():
-                        self._validate_parameter_symbol(sym)
+        # Test whether the model needs rebuilding by marking parameters as inputs
+        unmodified_parameter_values = self._parameter_values.copy()
+        for param in self._pybop_parameters:
+            self._parameter_values.update({param.name: "[input]"})
 
-    def _validate_parameter_symbol(self, sym) -> None:
-        """
-        Validate a single parameter symbol.
-        Credit: PyBaMM Team
-        """
-        processed_sym = self._parameter_values.process_symbol(sym)
-        leaves = processed_sym.post_order(filter=lambda node: len(node.children) == 0)
+        # If the model builds successfully with inputs, it does not need rebuilding
+        try:
+            self.build()
+            requires_rebuild = False
+        except (ValueError, TypeError):
+            self._built_model = None
+            requires_rebuild = True
 
-        for leaf in leaves:
-            if not isinstance(leaf, pybamm.Scalar):
-                raise ValueError("Geometry parameters must be Scalars")
+        if requires_rebuild or build_on_eval:
+            self._parameter_values = unmodified_parameter_values  # reset
+            return True
+        return False
 
-    def rebuild(self, params: Inputs) -> None:
+    def _set_up_solution_method(self) -> None:
+        """Configure the mode of operation."""
+
+        if self._experiment is not None:
+            # Build if only building once, otherwise build on evalution
+            if not self.requires_rebuild:
+                self._sim_experiment = self._create_experiment_simulation()
+                self._solve = self._simulate_experiment_without_rebuild
+            else:
+                self._solve = self._simulate_experiment_with_rebuild
+
+        else:
+            # Remove all voltage-based events when not using an experiment
+            self._model.events = [e for e in self._model.events if "[V]" not in e.name]
+
+            # Speed up the solver with output_variables when not using an experiment
+            if self._solver.output_variables == []:
+                """DISABLE until PyBaMM PR 5118 is resolved"""
+                # self._solver.output_variables = self._cost_names or []
+                pass
+
+            # Build if only building once, otherwise build on evalution
+            if not self.requires_rebuild:
+                self.build()
+                self._solve = self._solve_in_time_without_rebuild
+            else:
+                self._solve = self._solve_in_time_with_rebuild
+
+    def solve(
+        self, inputs: Inputs | list[Inputs], calculate_sensitivities: bool = False
+    ) -> list[pybamm.Solution | FailedSolution]:
+        """
+        Run the simulation using the built model and solver.
+
+        Parameters
+        ---------
+        calculate_sensitivities : bool
+            Whether to calculate sensitivities or not.
+
+        Returns
+        -------
+        solution : list[pybamm.Solution | pybop.FailedSolution]
+            The pybamm solution object.
+        """
+        # Convert and standardise inputs as a list of candidate dictionaries
+        inputs_list = inputs if isinstance(inputs, list) else [inputs]
+        self._calculate_sensitivities = calculate_sensitivities
+
+        # The underlying solve method is one of four methods set during initialisation
+        solutions = self._solve(inputs_list)
+
+        return self._process_solutions(solutions)
+
+    """ ______ ______ ATTRIBUTES FOR SOLVING IN TIME, WITHOUT AN EXPERIMENT ______ ______  """
+
+    def rebuild(self, inputs: Inputs) -> None:
         """Build the PyBaMM pipeline using the given parameter_values."""
         # if there are no parameters to build, just return
         if self._built_model is not None and not self.requires_rebuild:
             return
 
         # we need to rebuild, so make sure we've got the right number of parameters
-        # and set them in the parameters object
-        if len(params) != len(self._pybop_parameters):
+        if len(inputs) != len(self._pybop_parameters):
             raise ValueError(
-                f"Expected {len(self._pybop_parameters)} parameters, but got {len(params)}."
+                f"Expected {len(self._pybop_parameters)} parameters, but got {len(inputs)}."
             )
 
-        for key, value in params.items():
-            self._parameter_values[key] = value
-
+        self._parameter_values.update(inputs)
         self.build()
 
     def build(self) -> None:
         """Build the PyBaMM pipeline using the given parameter_values."""
         model = self._model.new_copy()
-        geometry = copy(self._geometry)
+        geometry = deepcopy(self._geometry)
 
         if self._experiment is None and self._initial_state is not None:
             self._parameter_values.set_initial_state(
@@ -256,94 +234,75 @@ class PybammPipeline:
         self._built_model = model
         self._solver = self._solver.copy()  # reset solver for new model
 
-    def solve(
-        self, calculate_sensitivities: bool = False
-    ) -> list[pybamm.Solution | FailedSolution]:
-        """
-        Run the simulation using the built model and solver.
-
-        Parameters
-        ---------
-        calculate_sensitivities : bool
-            Whether to calculate sensitivities or not.
-
-        Returns
-        -------
-        solution : list[pybamm.Solution | pybop.FailedSolution]
-            The pybamm solution object.
-        """
-        inputs = self._pybop_parameters.to_pybamm_multiprocessing()
-
-        if self._operating_mode == OperatingMode.WITHOUT_EXPERIMENT:
-            solutions = self._solve_without_experiment(inputs, calculate_sensitivities)
-        else:
-            solutions = self._solve_with_experiment(inputs)
-
-        return self._process_solutions(solutions)
-
-    def _solve_without_experiment(
-        self, inputs: list, calculate_sensitivities: bool
+    def _solve_in_time_without_rebuild(
+        self, inputs: list[Inputs]
     ) -> list[pybamm.Solution]:
-        """Solve without an experiment."""
-        if self.requires_rebuild:
-            return self._solve_with_rebuild(inputs)
+        """Solve in time without rebuilding the PyBaMM model."""
+        if len(inputs) == 1:
+            return [self._pybamm_solve(inputs=inputs[0])]
+        return self._pybamm_solve(inputs=inputs)
 
-        solutions = self._pybamm_solve(inputs, calculate_sensitivities)
-        return solutions if isinstance(solutions, list) else [solutions]
-
-    def _solve_with_rebuild(self, inputs: list) -> list[pybamm.Solution]:
-        """Solve with model rebuilding for each parameter set."""
+    def _solve_in_time_with_rebuild(
+        self, inputs: list[Inputs]
+    ) -> list[pybamm.Solution]:
+        """Solve in time, rebuilding the model for each set of inputs."""
         solutions = []
-        for params in inputs:
-            self.rebuild(params)
-            solution = self._pybamm_solve(params, False)
-            solutions.append(solution)
-        return solutions
-
-    def _solve_with_experiment(self, inputs: list) -> list[pybamm.Solution]:
-        """Solve with an experiment."""
-        if self.requires_rebuild:
-            return self._solve_experiment_with_rebuild(inputs)
-        else:
-            return self._solve_experiment_without_rebuild(inputs)
-
-    def _solve_experiment_with_rebuild(self, inputs: list) -> list[pybamm.Solution]:
-        """Solve by rebuilding simulation for each parameter set."""
-        solutions = []
-
-        for params in inputs:
-            # Update parameters and create new simulation
-            self._parameter_values.update(params)
-
-            sim = self._create_experiment_simulation()
-            solutions.append(sim.solve(initial_soc=self._initial_state))
-
-        return solutions
-
-    def _solve_experiment_without_rebuild(self, inputs: list) -> list[pybamm.Solution]:
-        """Solve using existing simulation with different input parameters."""
-        solutions = []
-
-        for params in inputs:
-            solution = self._sim_experiment.solve(
-                inputs=params, initial_soc=self._initial_state
-            )
-            solutions.append(solution)
-
+        for x in inputs:
+            self.rebuild(x)
+            solutions.append(self._pybamm_solve(inputs=None))
         return solutions
 
     def _pybamm_solve(
-        self, inputs: Inputs | list, calculate_sensitivities: bool
-    ) -> list[pybamm.Solution]:
+        self, inputs: Inputs | list[Inputs] | None
+    ) -> pybamm.Solution | list[pybamm.Solution]:
         """A function that runs the simulation using the built model."""
-
         return self._solver.solve(
             model=self._built_model,
             inputs=inputs,
             t_eval=self._t_eval,
             t_interp=self._t_interp,
-            calculate_sensitivities=calculate_sensitivities,
+            calculate_sensitivities=self._calculate_sensitivities,
         )
+
+    """ ______ ______ ______ ATTRIBUTES FOR SIMULATING AN EXPERIMENT ______ ______ ______  """
+
+    def _create_experiment_simulation(self) -> pybamm.Simulation:
+        """Create a simulation with current configuration and an experiment."""
+        return pybamm.Simulation(
+            self._model,
+            parameter_values=self._parameter_values,
+            experiment=self._experiment,
+            solver=self._solver,
+            geometry=self._geometry,
+            submesh_types=self._submesh_types,
+            var_pts=self._var_pts,
+            spatial_methods=self._spatial_methods,
+            discretisation_kwargs=self._discretisation_kwargs,
+        )
+
+    def _simulate_experiment_without_rebuild(
+        self, inputs: list[Inputs]
+    ) -> list[pybamm.Solution]:
+        """Simulate an experiment without rebuilding the PyBaMM model."""
+        solutions = []
+        for x in inputs:
+            sol = self._sim_experiment.solve(inputs=x, initial_soc=self._initial_state)
+            solutions.append(sol)
+        return solutions
+
+    def _simulate_experiment_with_rebuild(
+        self, inputs: list[Inputs]
+    ) -> list[pybamm.Solution]:
+        """Simulate an experiment, rebuilding the simulation for each set of inputs."""
+        solutions = []
+        for x in inputs:
+            # Update parameters and create new simulation
+            self._parameter_values.update(x)
+            sim = self._create_experiment_simulation()
+            solutions.append(sim.solve(initial_soc=self._initial_state))
+        return solutions
+
+    """ ______ ______ ______ ______ GENERAL ATTRIBUTES ______ ______ ______ ______ ______  """
 
     def _process_solutions(
         self, solutions: list[pybamm.Solution]

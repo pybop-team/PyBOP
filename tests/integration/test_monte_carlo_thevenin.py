@@ -233,6 +233,7 @@ class TestSamplingThevenin:
             n_chains=2, cov=self.cov, warm_up_iterations=0, max_iterations=300
         )
         no_warmup_sampler = sampler_class(problem, options=no_warmup_options)
+        np.random.seed(8)
         no_warmup_chains = no_warmup_sampler.run()
         no_warmup_summary = pybop.PosteriorSummary(no_warmup_chains)
 
@@ -241,6 +242,7 @@ class TestSamplingThevenin:
             n_chains=2, cov=self.cov, warm_up_iterations=100, max_iterations=300
         )
         warmup_sampler = sampler_class(problem, options=warmup_options)
+        np.random.seed(8)
         warmup_chains = warmup_sampler.run()
         warmup_summary = pybop.PosteriorSummary(warmup_chains)
 

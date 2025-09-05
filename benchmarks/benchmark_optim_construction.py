@@ -99,5 +99,4 @@ class BenchmarkOptimisationConstruction:
             parameter_values (str): The name of the parameter (unused).
             optimiser (pybop.Optimiser): The optimiser class (unused).
         """
-        self.problem.set_params(np.array([0.63, 0.51]))
-        self.problem.run()
+        self.problem.run(np.array([0.63, 0.51]))

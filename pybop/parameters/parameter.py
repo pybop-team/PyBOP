@@ -21,7 +21,6 @@ NumericValue = float | int | np.number
 ArrayLike = Sequence[NumericValue] | NDArray[np.floating]
 ParameterValue = NumericValue | ArrayLike | None
 BoundsPair = list[float]
-ParameterDict = dict[str, Any]
 Inputs = dict[str, float]
 
 
@@ -454,8 +453,8 @@ class Parameters:
     def update(
         self,
         *,
-        values: ArrayLike | ParameterDict | None = None,
-        initial_values: ArrayLike | ParameterDict | None = None,
+        values: ArrayLike | Inputs | None = None,
+        initial_values: ArrayLike | Inputs | None = None,
         bounds: Sequence[BoundsPair] | dict[str, BoundsPair] | None = None,
         **individual_updates: dict[str, Any],
     ) -> None:
@@ -495,7 +494,7 @@ class Parameters:
         if bounds is not None:
             self._bulk_update_bounds(bounds)
 
-    def _bulk_update_values(self, values: ArrayLike | ParameterDict) -> None:
+    def _bulk_update_values(self, values: ArrayLike | Inputs) -> None:
         """Update current values in bulk."""
         if isinstance(values, dict):
             for name, value in values.items():
@@ -507,7 +506,7 @@ class Parameters:
             for param, value in zip(param_list, values_array.T, strict=False):
                 param.update_value(value)
 
-    def _bulk_update_initial_values(self, values: ArrayLike | ParameterDict) -> None:
+    def _bulk_update_initial_values(self, values: ArrayLike | Inputs) -> None:
         """Update initial values in bulk."""
         if isinstance(values, dict):
             for name, value in values.items():
@@ -732,21 +731,22 @@ class Parameters:
 
         return np.column_stack(all_samples)
 
-    def to_dict(self, values: str | ArrayLike | None = None) -> ParameterDict:
+    def to_dict(self, values: str | ArrayLike | None = None) -> Inputs:
         """
         Convert to parameter dictionary.
 
         Parameters
         ----------
         values : str or array-like, optional
-            Which values to use ('current', 'initial') or custom array
+            Which values to use ('current', 'initial') or custom array. Default is "current".
 
         Returns
         -------
-        ParameterDict
+        Inputs
             Dictionary mapping parameter names to values
         """
-        values = values or "current"
+        if values is None:
+            values = "current"
         params = self._parameters.items()
 
         if isinstance(values, str):
@@ -763,22 +763,18 @@ class Parameters:
                 )
             return dict(zip(self._parameters.keys(), values_array, strict=False))
 
-    def to_pybamm_multiprocessing(self) -> list:
+    def to_inputs(self, values: np.ndarray | list[np.ndarray]) -> list[Inputs]:
         """
-        Return parameter values as a list of dictionaries in the format
-        required for pybamm multiprocessing.
+        Return parameter values as a list of dictionaries, as required for multiprocessing.
         """
-        param_dict = self.to_dict()
+        values = np.asarray(values)
+        if values.ndim == 1:
+            return [self.to_dict(values=values)]
 
-        if self.get_values().ndim == 1:
-            return [param_dict]
-
-        # Construct a list of single value dicts
-        array_length = len(next(iter(param_dict.values())))
-        return [
-            {key: float(values[i]) for key, values in param_dict.items()}
-            for i in range(array_length)
-        ]
+        inputs_list = []
+        for val in values:
+            inputs_list.append(self.to_dict(values=val))
+        return inputs_list
 
     def reset_to_initial(self, names: Sequence[str] | None = None) -> None:
         """Reset parameters to initial values."""
