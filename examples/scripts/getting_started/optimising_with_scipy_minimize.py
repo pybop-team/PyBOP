@@ -48,7 +48,7 @@ builder = (
     pybop.builders.Pybamm()
     .set_dataset(dataset)
     .set_simulation(model, parameter_values=parameter_values)
-    .add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]"))
+    .add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
 )
 for param in parameters:
     builder.add_parameter(param)

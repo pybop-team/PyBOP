@@ -30,7 +30,7 @@ builder = (
     pybop.builders.Pybamm()
     .set_dataset(dataset)
     .set_simulation(model, parameter_values=parameter_values)
-    .add_cost(pybop.costs.pybamm.MeanSquaredError("y_0", "y_0"))
+    .add_cost(pybop.costs.pybamm.MeanSquaredError("y_0"))
 )
 for param in parameters:
     builder.add_parameter(param)

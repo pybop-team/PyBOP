@@ -63,7 +63,7 @@ builder = (
     pybop.builders.Pybamm()
     .set_dataset(datasets[0])
     .set_simulation(model, parameter_values=parameter_values)
-    .add_cost(pybop.costs.pybamm.MeanSquaredError("Voltage [V]", "Voltage [V]"))
+    .add_cost(pybop.costs.pybamm.MeanSquaredError("Voltage [V]"))
 )
 for param in parameters:
     builder.add_parameter(param)

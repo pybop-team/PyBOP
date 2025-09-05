@@ -48,19 +48,15 @@ builder.add_parameter(
         initial_value=0.6,
     )
 )
-builder.add_cost(
-    pybop.costs.pybamm.NegativeGaussianLogLikelihood("Voltage [V]", "Voltage [V]")
-)
+builder.add_cost(pybop.costs.pybamm.NegativeGaussianLogLikelihood("Voltage [V]"))
 
 # Build the problem
 problem = builder.build()
 
 # Run
-problem.set_params(np.array([0.6, 0.6, 1e-3]))
-cost = problem.run()
+cost = problem.run(np.array([0.6, 0.6, 1e-3]))
 print(f"The likelihood value is: {cost[0]}")
 
 # Run with sensitivities
-problem.set_params(np.array([0.6, 0.6, 1e-3]))
-cost, grad = problem.run_with_sensitivities()
+cost, grad = problem.run_with_sensitivities(np.array([0.6, 0.6, 1e-3]))
 print(f"The gradient is: {grad}")

@@ -49,9 +49,7 @@ builder = (
     .set_dataset(dataset)
     .set_simulation(model, parameter_values=parameter_values)
     # We leave sigma non-defined in the below cost as we want to estimate it alongside the parameters
-    .add_cost(
-        pybop.costs.pybamm.NegativeGaussianLogLikelihood("Voltage [V]", "Voltage [V]")
-    )
+    .add_cost(pybop.costs.pybamm.NegativeGaussianLogLikelihood("Voltage [V]"))
 )
 for param in parameters:
     builder.add_parameter(param)
