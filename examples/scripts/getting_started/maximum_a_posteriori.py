@@ -50,6 +50,11 @@ dataset = pybop.Dataset(
     }
 )
 
+# Fix the total lithium concentration to simplify the fitting problem
+model.param.Q_Li_particles_init = parameter_values.evaluate(
+    model.param.Q_Li_particles_init
+)
+
 # Construct the problem builder with a negative Gaussian log-likelihood (NLL) function.
 # Since we have not provided a `sigma` value to the NLL, this will be estimated from
 # the data. `sigma` is the standard deviation of the measurement noise in the dataset.
