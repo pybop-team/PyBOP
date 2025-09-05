@@ -8,14 +8,10 @@ from pints import Optimiser as PintsOptimiser
 from pints import RectangularBoundaries as PintsRectangularBoundaries
 from pints import strfloat as PintsStrFloat
 
-from pybop import (
-    AdamWImpl,
-    GradientDescentImpl,
-    OptimisationResult,
-    PopulationEvaluator,
-    SequentialEvaluator,
-)
+from pybop import OptimisationResult, PopulationEvaluator, SequentialEvaluator
 from pybop._logging import Logger
+from pybop.optimisers._adamw import AdamWImpl
+from pybop.optimisers._gradient_descent import GradientDescentImpl
 from pybop.optimisers.base_optimiser import BaseOptimiser, OptimiserOptions
 from pybop.problems.base_problem import Problem
 

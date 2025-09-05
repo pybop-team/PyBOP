@@ -41,6 +41,7 @@ docs = [
     "sphinx>=6",
     "sphinx-autobuild",
     "sphinx-autoapi",
+    "sphinx-automodapi",
     "sphinx_copybutton",
     "sphinx_favicon",
     "sphinx_design",
