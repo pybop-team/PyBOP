@@ -73,41 +73,6 @@ class TestEvaluation:
         builder.add_cost(cost_class("Voltage [V]"))
         return builder.build()
 
-    # def test_evaluator_transformations(self, problem):
-    #     for minimise in [True, False]:
-    #         # Test the transformed cost and sensitivities
-    #         logger = pybop.Logger()
-    #         evaluator = pybop.ScalarEvaluator(
-    #             problem=problem,
-    #             minimise=minimise,
-    #             with_sensitivities=False,
-    #             logger=logger,
-    #         )
-    #         cost1 = evaluator.evaluate(self.x_search)
-
-    #         numerical_grad = []
-    #         for i in range(len(self.x_search)):
-    #             delta = 1e-2 * self.x_search[i]
-    #             self.x_search[i] += delta / 2
-    #             cost_right = evaluator.evaluate(self.x_search)
-    #             self.x_search[i] -= delta
-    #             cost_left = evaluator.evaluate(self.x_search)
-    #             self.x_search[i] += delta / 2
-    #             assert np.abs(cost_right - cost_left) > 0
-    #             numerical_grad.append((cost_right - cost_left) / delta)
-    #         numerical_grad = np.asarray(numerical_grad).reshape(-1)
-
-    #         evaluator_ws = pybop.ScalarEvaluator(
-    #             problem=problem,
-    #             minimise=minimise,
-    #             with_sensitivities=True,
-    #             logger=logger,
-    #         )
-    #         cost2, grad2 = evaluator_ws.evaluate(self.x_search)
-
-    #         np.testing.assert_allclose(cost2, cost1, rtol=3e-5)
-    #         np.testing.assert_allclose(grad2, numerical_grad, rtol=6e-4)
-
     def test_evaluator_transformations(self, problem):
         # First compute the cost and sensitivities in the model space
         cost1 = problem.run(self.x_model)
