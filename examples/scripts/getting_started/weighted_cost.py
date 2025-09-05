@@ -56,11 +56,7 @@ builder = (
     .set_simulation(model, parameter_values=parameter_values)
     .add_cost(pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]"))
     .add_cost(
-        pybop.costs.pybamm.SumOfPower(
-            "X-averaged cell temperature [K]",
-            "X-averaged cell temperature [K]",
-            p=np.sqrt(2),
-        ),
+        pybop.costs.pybamm.SumOfPower("X-averaged cell temperature [K]", p=np.sqrt(2)),
         weight=1 / 273.15,
     )
 )
