@@ -92,9 +92,7 @@ class TestHalfCell:
             model_config["model"],
             parameter_values=model_config["parameter_values"],
         )
-        builder.add_cost(
-            pybop.costs.pybamm.MeanAbsoluteError("Voltage [V]", "Voltage [V]")
-        )
+        builder.add_cost(pybop.costs.pybamm.MeanAbsoluteError("Voltage [V]"))
         fitting_problem = builder.build()
 
         initial_cost = fitting_problem.run(fitting_problem.params.get_initial_values())

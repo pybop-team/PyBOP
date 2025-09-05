@@ -89,9 +89,7 @@ class TestTransformation:
         builder.set_dataset(dataset)
         for p in parameters:
             builder.add_parameter(p)
-        builder.add_cost(
-            pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]", "Voltage [V]")
-        )
+        builder.add_cost(pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]"))
         return builder.build()
 
     @pytest.mark.parametrize(

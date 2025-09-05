@@ -70,7 +70,7 @@ class TestEvaluation:
     )
     def problem(self, builder, request):
         cost_class = request.param
-        builder.add_cost(cost_class("Voltage [V]", "Voltage [V]"))
+        builder.add_cost(cost_class("Voltage [V]"))
         return builder.build()
 
     def test_evaluator_transformations(self, problem):
