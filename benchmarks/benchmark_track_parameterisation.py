@@ -86,9 +86,7 @@ class BenchmarkTrackParameterisation:
                 bounds=[0.375, 0.7],
             )
         )
-        builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
-        )
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
 
         # Build the problem
         problem = builder.build()

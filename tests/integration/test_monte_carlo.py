@@ -99,8 +99,7 @@ class Test_Sampling_SPM:
         builder.set_dataset(dataset)
         for p in parameters:
             builder.add_parameter(p)
-        signal = "Voltage [V]"
-        cost = pybop.costs.pybamm.NegativeGaussianLogLikelihood(signal, signal, 1e-3)
+        cost = pybop.costs.pybamm.NegativeGaussianLogLikelihood("Voltage [V]", 1e-3)
         builder.add_cost(cost)
         return builder.build()
 

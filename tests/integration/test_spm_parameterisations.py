@@ -121,11 +121,11 @@ class Test_SPM_Parameterisation:
             builder.add_parameter(p)
         signal = "Voltage [V]"
         if cost_cls is pybop.costs.pybamm.NegativeGaussianLogLikelihood:
-            cost = cost_cls(signal, signal)
+            cost = cost_cls(signal)
         elif cost_cls in [pybop.SumOfPower, pybop.Minkowski]:
-            cost = cost_cls(signal, signal, p=2.5)
+            cost = cost_cls(signal, p=2.5)
         else:
-            cost = cost_cls(signal, signal)
+            cost = cost_cls(signal)
         builder.add_cost(cost)
         problem = builder.build()
         return problem
@@ -157,7 +157,7 @@ class Test_SPM_Parameterisation:
         x0 = optim.problem.params.get_initial_values()
 
         # Add sigma0 to ground truth for GaussianLogLikelihood
-        if cost_cls in (pybop.costs.pybamm.NegativeGaussianLogLikelihood,):
+        if cost_cls in [pybop.costs.pybamm.NegativeGaussianLogLikelihood]:
             self.ground_truth = np.concatenate(
                 (self.ground_truth, np.asarray([self.sigma0]))
             )
@@ -198,8 +198,7 @@ class Test_SPM_Parameterisation:
         builder.set_dataset(dataset)
         for p in parameters:
             builder.add_parameter(p)
-        signal = "Voltage [V]"
-        builder.add_cost(pybop.costs.pybamm.SumSquaredError(signal, signal))
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
         problem = builder.build()
         options = pybop.PintsOptions(
             max_iterations=100,

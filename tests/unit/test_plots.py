@@ -83,9 +83,7 @@ class TestPlots:
         builder.set_dataset(dataset)
         for p in parameters:
             builder.add_parameter(p)
-        builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
-        )
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
         return builder.build()
 
     @pytest.fixture
@@ -96,9 +94,7 @@ class TestPlots:
         for p in parameters:
             builder.add_parameter(p)
         builder.add_cost(
-            pybop.costs.pybamm.NegativeGaussianLogLikelihood(
-                "Voltage [V]", "Voltage [V]", sigma=1e-3
-            )
+            pybop.costs.pybamm.NegativeGaussianLogLikelihood("Voltage [V]", sigma=1e-3)
         )
         return builder.build()
 
@@ -202,9 +198,7 @@ class TestPlots:
                 bounds=[0.5, 0.8],
             )
         )
-        builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
-        )
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
         fitting_problem = builder.build()
         with pytest.raises(
             ValueError, match="This problem takes fewer than 2 parameters."

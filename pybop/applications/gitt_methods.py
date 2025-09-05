@@ -89,7 +89,7 @@ class GITTPulseFit(BaseApplication):
         for parameter in self.parameters:
             builder.add_parameter(parameter)
 
-        builder.add_cost(self.cost("Voltage [V]", "Voltage [V]"))
+        builder.add_cost(self.cost("Voltage [V]"))
         return builder.build()
 
     def __call__(self, gitt_pulse: pybop.Dataset) -> pybop.OptimisationResult:
