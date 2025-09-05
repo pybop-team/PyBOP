@@ -100,14 +100,13 @@ class ContourPlotter:
         self, coordinates: np.ndarray, compute_gradients: bool
     ) -> tuple[np.ndarray, list[np.ndarray] | None]:
         """Evaluate the cost function over the parameter grid."""
-        self.problem.set_params(coordinates)
 
         # Todo: transform gradient with corresponding parameter transformations
         if compute_gradients:
-            costs, grad = self.problem.run_with_sensitivities()
+            costs, grad = self.problem.run_with_sensitivities(coordinates)
             return costs, grad
         else:
-            costs = self.problem.run()
+            costs = self.problem.run(coordinates)
             return costs, None
 
     def _interpolate_with_optimisation_log(

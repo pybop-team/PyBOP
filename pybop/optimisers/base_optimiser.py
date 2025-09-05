@@ -67,7 +67,12 @@ class BaseOptimiser:
         self.verbose = options.verbose
         self.verbose_print_rate = options.verbose_print_rate
         self._multistart = options.multistart
+        self._needs_sensitivities = None  # to be overridden during set_up_optimiser
         self._set_up_optimiser()
+        if self._needs_sensitivities and not self._problem.has_sensitivities:
+            raise ValueError(
+                "This optimiser needs sensitivities, but they are not available from this problem."
+            )
 
     @staticmethod
     def default_options() -> OptimiserOptions:

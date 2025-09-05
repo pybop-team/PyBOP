@@ -423,13 +423,13 @@ class TestParameters:
         ):
             params.to_dict(values=[1.0])  # Only one value for two parameters
 
-    def test_to_pybamm_multiprocessing_multidimensional(self):
-        """Test to_pybamm_multiprocessing with multidimensional values."""
-        param1 = pybop.Parameter("param1", initial_value=np.array([1.0, 2.0]))
-        param2 = pybop.Parameter("param2", initial_value=np.array([3.0, 4.0]))
+    def test_to_inputs_multidimensional(self):
+        """Test to_inputs with multidimensional values."""
+        param1 = pybop.Parameter("param1", initial_value=1.0)
+        param2 = pybop.Parameter("param2", initial_value=2.0)
         params = pybop.Parameters([param1, param2])
 
-        result = params.to_pybamm_multiprocessing()
+        result = params.to_inputs(np.asarray([[1.0, 3.0], [2.0, 4.0]]))
 
         # Should return list of dicts for each array index
         assert isinstance(result, list)

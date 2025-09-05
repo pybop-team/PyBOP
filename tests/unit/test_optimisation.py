@@ -1,5 +1,4 @@
 import io
-import multiprocessing
 import re
 import sys
 
@@ -128,7 +127,7 @@ class TestOptimisation:
     @pytest.mark.parametrize(
         "optimiser, expected_name, sensitivities",
         [
-            (pybop.SciPyMinimize, "SciPyMinimize", False),
+            (pybop.SciPyMinimize, "SciPyMinimize", True),
             (pybop.SciPyDifferentialEvolution, "SciPyDifferentialEvolution", False),
             (pybop.GradientDescent, "Gradient descent", True),
             (pybop.AdamW, "AdamW", True),
@@ -246,7 +245,7 @@ class TestOptimisation:
         optim = optimiser(two_param_problem, options=options)
         results = optim.run()
         if issubclass(optimiser, pybop.BaseSciPyOptimiser):
-            assert results.total_iterations() == options.maxiter * options.multistart
+            assert results.total_iterations() <= options.maxiter * options.multistart
         else:
             assert (
                 results.total_iterations()
@@ -339,7 +338,6 @@ class TestOptimisation:
 
         # Test parallelism
         assert optim._parallel is True
-        assert optim._problem.pipeline._n_threads == multiprocessing.cpu_count()
 
         #  Optimiser without parallelism
         optim = pybop.GradientDescent(one_param_problem)
@@ -408,13 +406,6 @@ class TestOptimisation:
         optim = pybop.SciPyMinimize(one_param_problem, options=options)
         optim.run()
 
-        with pytest.raises(
-            ValueError,
-            match="jac must be a boolean value.",
-        ):
-            options.jac = "Invalid string"
-            pybop.SciPyMinimize(one_param_problem, options=options)
-
     def test_incorrect_optimiser_class(self, one_param_problem):
         class RandomClass:
             pass
@@ -453,7 +444,6 @@ class TestOptimisation:
             f"  Best result from {results.n_runs} run(s).\n"
             f"  Initial parameters: {results.x0}\n"
             f"  Optimised parameters: {results.x}\n"
-            f"  Diagonal Fisher Information entries: {None}\n"
             f"  Best cost: {results.best_cost}\n"
             f"  Optimisation time: {results.time} seconds\n"
             f"  Number of iterations: {results.n_iterations}\n"
@@ -519,7 +509,6 @@ class TestOptimisation:
         assert results.optim_name == "Test name"
         assert results.x[0] == 1e-3
         assert results.n_iterations == 1
-        assert results.fisher is None
         assert results.message == "Test message"
 
         # Test list-like functionality with "best" properties
@@ -603,10 +592,6 @@ class TestOptimisation:
         options = pybop.ScipyMinimizeOptions()
         with pytest.raises(ValueError, match="tol must be a positive float."):
             options.tol = -1.0
-            options.validate()
-        options = pybop.ScipyMinimizeOptions()
-        with pytest.raises(ValueError, match="jac must be a boolean value."):
-            options.jac = "Invalid string"
             options.validate()
 
         options = pybop.ScipyMinimizeOptions(solver_options={"eps": 0.01})

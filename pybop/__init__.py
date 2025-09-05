@@ -25,8 +25,7 @@ script_path = path.dirname(__file__)
 #
 # Utilities
 #
-from ._utils import add_spaces, FailedVariable, FailedSolution, SymbolReplacer
-
+from ._utils import add_spaces, FailedVariable, FailedSolution, SymbolReplacer, RecommendedSolver
 
 #
 # Dataset class
@@ -163,9 +162,9 @@ from .samplers.pints_samplers import (
 )
 
 #
-# Classification classes
+# Analysis
 #
-from ._classification import classify_using_hessian
+from .analysis.classification import classify_using_hessian
 
 #
 # Applications

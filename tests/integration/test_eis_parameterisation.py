@@ -4,7 +4,7 @@ import pybammeis
 import pytest
 
 import pybop
-import pybop._pybamm_eis_pipeline
+import pybop.pipelines._pybamm_eis_pipeline
 
 
 class TestEISParameterisation:
@@ -113,7 +113,7 @@ class TestEISParameterisation:
     @pytest.fixture
     def problem(self, model, parameters, cost, init_soc, parameter_values, dataset):
         builder = pybop.PybammEIS()
-        builder.set_simulation(model, parameter_values)
+        builder.set_simulation(model, parameter_values=parameter_values)
         builder.set_dataset(dataset)
         for p in parameters:
             builder.add_parameter(p)

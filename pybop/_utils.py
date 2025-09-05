@@ -1,3 +1,5 @@
+import multiprocessing as mp
+import platform
 import re
 from dataclasses import dataclass, field
 
@@ -311,3 +313,21 @@ class SymbolReplacer:
 
         # Return leaf
         return symbol
+
+
+class RecommendedSolver(pybamm.IDAKLUSolver):
+    """A shortcut for creating the PyBaMM solver recommended for optimisation."""
+
+    def __init__(self, output_variables: list[str] | None = None):
+        solver_options = {}
+
+        if platform.system() != "Windows":
+            solver_options["num_threads"] = max(1, mp.cpu_count())
+
+        super().__init__(
+            on_failure="ignore",
+            atol=1e-6,
+            rtol=1e-6,
+            options=solver_options,
+            output_variables=output_variables,
+        )

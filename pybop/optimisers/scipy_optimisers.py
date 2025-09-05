@@ -31,17 +31,13 @@ class BaseSciPyOptimiser(BaseOptimiser):
         The problem to optimise.
     options : pybop.OptimiserOptions
         Valid SciPy option keys and their values.
-    needs_sensitivities : bool
-        Indicates whether the optimiser needs sensitivities.
     """
 
     def __init__(
         self,
         problem: Problem,
         options: pybop.OptimiserOptions | None,
-        needs_sensitivities: bool,
     ):
-        self._needs_sensitivities = needs_sensitivities
         super().__init__(problem, options=options)
 
     def scipy_bounds(self) -> Bounds:
@@ -91,9 +87,9 @@ class ScipyMinimizeOptions(pybop.OptimiserOptions):
     Attributes
     ----------
     method : str, optional
-        The optimisation method to use. Default is 'Nelder-Mead'.
+        The optimisation method to use. Default is None.
     jac : bool, optional
-        Method for computing the gradient vector. Default is False.
+        Method for computing the gradient vector. Default is None.
     tol : float, optional
         Tolerance for termination. Default is None.
     maxiter : int, optional
@@ -107,8 +103,8 @@ class ScipyMinimizeOptions(pybop.OptimiserOptions):
 
     """
 
-    method: str = "Nelder-Mead"
-    jac: bool = False
+    method: str | None = None
+    jac: bool | None = None
     tol: float | None = None
     maxiter: int = 1000
     disp: bool = False
@@ -121,8 +117,6 @@ class ScipyMinimizeOptions(pybop.OptimiserOptions):
             raise ValueError("maxiter must be a positive integer.")
         if self.tol is not None and self.tol <= 0:
             raise ValueError("tol must be a positive float.")
-        if not isinstance(self.jac, bool):
-            raise ValueError("jac must be a boolean value.")
 
     def to_dict(self) -> dict:
         """
@@ -141,12 +135,8 @@ class ScipyMinimizeOptions(pybop.OptimiserOptions):
             if getattr(self, key) is not None:
                 solver_options[key] = getattr(self, key)
 
-        ret = {
-            "method": self.method,
-            "jac": self.jac,
-            "options": solver_options,
-        }
-        for key in ["tol", "constraints"]:
+        ret = {"options": solver_options}
+        for key in ["method", "jac", "tol", "constraints"]:
             if getattr(self, key) is not None:
                 ret[key] = getattr(self, key)
         return ret
@@ -180,9 +170,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         options: ScipyMinimizeOptions | None = None,
     ):
         options = options or self.default_options()
-        super().__init__(
-            problem=problem, options=options, needs_sensitivities=options.jac
-        )
+        super().__init__(problem=problem, options=options)
 
     @staticmethod
     def default_options() -> ScipyMinimizeOptions:
@@ -197,7 +185,13 @@ class SciPyMinimize(BaseSciPyOptimiser):
 
         self._cost0 = self.problem.get_finite_initial_cost()
         self._x0 = self.problem.params.get_initial_values(transformed=True)
-        self._scipy_bounds = self.scipy_bounds()
+        self._options_dict["x0"] = self._x0
+        self._options_dict["bounds"] = self.scipy_bounds()
+
+        # If the problem has sensitivities, enable the Jacobian by default
+        if self._options_dict.get("jac", None) is None:
+            self._options_dict["jac"] = self.problem.has_sensitivities
+        self._needs_sensitivities = True if self._options_dict["jac"] else False
 
         # Create logger and evaluator objects
         self._logger = Logger(
@@ -215,7 +209,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         """
         Scale the cost function, preserving the sign, and eliminate nan values.
         """
-        if not self._options_dict["jac"]:
+        if not self._needs_sensitivities:
             cost = self._evaluator.evaluate(x)
             scaled_cost = cost / self._cost0
             if np.isinf(scaled_cost):
@@ -243,12 +237,8 @@ class SciPyMinimize(BaseSciPyOptimiser):
         self.inf_count = 0
         self._logger.iteration = 1
 
-        result: OptimizeResult = minimize(
-            fun=self.cost_wrapper,
-            x0=self._x0,
-            bounds=self._scipy_bounds,
-            **self._options_dict,
-        )
+        result: OptimizeResult = minimize(fun=self.cost_wrapper, **self._options_dict)
+        self._logger.iteration = result.nit  # undo final callback depending on method
 
         total_time = time() - start_time
 
@@ -402,7 +392,7 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
         options: SciPyDifferentialEvolutionOptions | None = None,
     ):
         options = options or self.default_options()
-        super().__init__(problem=problem, options=options, needs_sensitivities=False)
+        super().__init__(problem=problem, options=options)
 
     @staticmethod
     def default_options() -> SciPyDifferentialEvolutionOptions:
@@ -414,15 +404,16 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
         Parse optimiser options.
         """
         self._options_dict = self._options.to_dict()
+        self._needs_sensitivities = False
 
         # Check bounds
-        self._scipy_bounds = self.scipy_bounds()
-        if self._scipy_bounds is None:
+        bounds = self.scipy_bounds()
+        if bounds is None:
             raise ValueError("Bounds must be specified for differential_evolution.")
         else:
-            bnds = self._scipy_bounds
-            if not (np.isfinite(bnds.lb).all() and np.isfinite(bnds.ub).all()):
+            if not (np.isfinite(bounds.lb).all() and np.isfinite(bounds.ub).all()):
                 raise ValueError("Bounds must be finite for differential_evolution.")
+        self._options_dict["bounds"] = bounds
 
         # Create logger and evaluator objects
         self._logger = Logger(
@@ -467,9 +458,7 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
         self._logger.iteration = 1
 
         result = differential_evolution(
-            func=self._evaluator.evaluate,
-            bounds=self._scipy_bounds,
-            **self._options_dict,
+            func=self._evaluator.evaluate, **self._options_dict
         )
         self._logger.iteration -= 1  # undo the final callback
 

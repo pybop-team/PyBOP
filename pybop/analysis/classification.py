@@ -28,8 +28,7 @@ def classify_using_hessian(
     problem = result.problem
 
     def cost(x):
-        problem.set_params(x)
-        return problem.run()
+        return problem.run(x)
 
     parameters = problem.params
 
