@@ -72,9 +72,7 @@ class TestPintsSamplers:
         for p in parameters:
             builder.add_parameter(p)
         builder.add_cost(
-            pybop.costs.pybamm.NegativeGaussianLogLikelihood(
-                "Voltage [V]", "Voltage [V]", sigma=0.01
-            )
+            pybop.costs.pybamm.NegativeGaussianLogLikelihood("Voltage [V]", sigma=0.01)
         )
         return builder.build()
 
@@ -168,9 +166,7 @@ class TestPintsSamplers:
         builder.set_dataset(dataset)
         builder.add_parameter(p)
         builder.add_cost(
-            pybop.costs.pybamm.NegativeGaussianLogLikelihood(
-                "Voltage [V]", "Voltage [V]", sigma=0.01
-            )
+            pybop.costs.pybamm.NegativeGaussianLogLikelihood("Voltage [V]", sigma=0.01)
         )
         problem = builder.build()
 

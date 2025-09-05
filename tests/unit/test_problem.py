@@ -74,9 +74,7 @@ class TestProblem:
             )
         )
 
-        builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
-        )
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
 
         # Build the problem
         problem = builder.build()
@@ -236,9 +234,7 @@ class TestProblem:
             )
         )
         builder.add_cost(
-            pybop.costs.pybamm.NegativeGaussianLogLikelihood(
-                "Voltage [V]", "Voltage [V]", 1e-2
-            )
+            pybop.costs.pybamm.NegativeGaussianLogLikelihood("Voltage [V]", 1e-2)
         )
         problem = builder.build()
 

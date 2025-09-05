@@ -149,7 +149,7 @@ class TestArbitraryModels:
             pybop.Parameter("a", initial_value=0.1, bounds=[0, np.inf])
         )
 
-        builder.add_cost(pybop.costs.pybamm.SumSquaredError("u at x=0.5", "u at x=0.5"))
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("u at x=0.5"))
 
         # Build the problem
         problem = builder.build()
@@ -192,8 +192,8 @@ class TestArbitraryModels:
             )
         )
 
-        builder.add_cost(pybop.costs.pybamm.SumSquaredError("u", "u"))
-        builder.add_cost(pybop.costs.pybamm.SumSquaredError("v", "v"))
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("u"))
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("v"))
 
         # Build the problem
         problem = builder.build()
@@ -249,8 +249,8 @@ class TestArbitraryModels:
             )
         )
 
-        builder.add_cost(pybop.costs.pybamm.SumSquaredError("u", "u"))
-        builder.add_cost(pybop.costs.pybamm.SumSquaredError("v", "v"))
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("u"))
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("v"))
 
         # Build the problem
         problem = builder.build()

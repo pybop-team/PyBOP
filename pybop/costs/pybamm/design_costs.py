@@ -1,13 +1,13 @@
 import pybamm
 
 from pybop import Dataset
-from pybop.costs.pybamm.base_cost import (
-    PybammCost,
+from pybop.costs.pybamm.output_variable import (
     PybammExpressionMetadata,
+    PybammOutputVariable,
 )
 
 
-class DesignCost(PybammCost):
+class DesignCost(PybammOutputVariable):
     """
     Base Class for Design Costs.
     """
@@ -34,13 +34,13 @@ class GravimetricEnergyDensity(DesignCost):
 
     """
 
-    def variable_expression(
+    def symbolic_expression(
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
     ) -> PybammExpressionMetadata:
-        # Check args
-        name = GravimetricEnergyDensity.make_unique_cost_name()
+        """Construct the variable metadata."""
+        name = "Negative gravimetric energy density [Wh.kg-1]"
         expression = (
             -1
             / 3600
@@ -74,13 +74,13 @@ class VolumetricEnergyDensity(DesignCost):
     Inherits all parameters and attributes from ``DesignCost``.
     """
 
-    def variable_expression(
+    def symbolic_expression(
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
     ) -> PybammExpressionMetadata:
-        # Check args
-        name = VolumetricEnergyDensity.make_unique_cost_name()
+        """Construct the variable metadata."""
+        name = "Negative volumetric energy density [Wh.m-3]"
         expression = (
             -model.variables["Voltage [V]"]
             * model.variables["Current [A]"]
@@ -113,13 +113,13 @@ class GravimetricPowerDensity(DesignCost):
 
     """
 
-    def variable_expression(
+    def symbolic_expression(
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
     ) -> PybammExpressionMetadata:
-        # Check args
-        name = GravimetricPowerDensity.make_unique_cost_name()
+        """Construct the variable metadata."""
+        name = "Negative time-averaged gravimetric power density [W.kg-1]"
         expression = (
             -model.variables["Voltage [V]"]
             * model.variables["Current [A]"]
@@ -153,13 +153,13 @@ class VolumetricPowerDensity(DesignCost):
 
     """
 
-    def variable_expression(
+    def symbolic_expression(
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
     ) -> PybammExpressionMetadata:
-        # Check args
-        name = VolumetricPowerDensity.make_unique_cost_name()
+        """Construct the variable metadata."""
+        name = "Negative time-averaged volumetric power density [W.m-3]"
         expression = (
             -model.variables["Voltage [V]"]
             * model.variables["Current [A]"]

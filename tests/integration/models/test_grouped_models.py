@@ -134,12 +134,8 @@ class TestGroupedModels:
         """Test grouped SPMe model with voltage-based cost functions."""
         # Build problem with multiple cost functions
         builder = self.create_pybamm_builder(dataset, model_config, parameters)
-        builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
-        )
-        builder.add_cost(
-            pybop.costs.pybamm.MeanAbsoluteError("Voltage [V]", "Voltage [V]")
-        )
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
+        builder.add_cost(pybop.costs.pybamm.MeanAbsoluteError("Voltage [V]"))
 
         fitting_problem = builder.build()
 

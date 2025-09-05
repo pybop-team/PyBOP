@@ -2,13 +2,13 @@ import pybamm
 
 from pybop import Dataset
 from pybop import Parameter as PybopParameter
-from pybop.costs.pybamm.base_cost import (
-    PybammCost,
+from pybop.costs.pybamm.output_variable import (
     PybammExpressionMetadata,
+    PybammOutputVariable,
 )
 
 
-class UserCost(PybammCost):
+class UserCost(PybammOutputVariable):
     """
     A user-defined cost function for PyBaMM models.
     This class allows users to define custom cost functions
@@ -23,9 +23,8 @@ class UserCost(PybammCost):
     ):
         super().__init__()
         self._metadata = PybammExpressionMetadata(name, expression, parameters)
-        self._variable_name = name
 
-    def variable_expression(
+    def symbolic_expression(
         self,
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
@@ -37,17 +36,17 @@ class UserCost(PybammCost):
 
 
 def custom(
-    variable_name: str,
+    name: str,
     expression: pybamm.Symbol,
     parameters: dict[str, pybamm.Parameter],
-) -> PybammCost:
+) -> PybammOutputVariable:
     """
     Creates a custom user-defined cost function for PyBaMM models.
 
     Parameters
     ----------
-    variable_name : str
-        The name of the variable for the cost function, this must be unique within the variables of the model.
+    name : str
+        The name of the variable, must be unique within the variables of the model.
     expression : pybamm.Symbol
         The PyBaMM expression that defines the cost function.
     parameters : dict[str, pybamm.Parameter]
@@ -75,4 +74,4 @@ def custom(
     >>> builder.add_cost(custom_cost)
     >>> problem_custom = builder.build()
     """
-    return UserCost(variable_name, expression, parameters)
+    return UserCost(name, expression, parameters)

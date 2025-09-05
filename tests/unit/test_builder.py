@@ -100,12 +100,8 @@ class TestBuilder:
                 "Positive electrode active material volume fraction", initial_value=0.5
             )
         )
-        builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
-        )
-        builder.add_cost(
-            pybop.costs.pybamm.MeanAbsoluteError("Voltage [V]", "Voltage [V]")
-        )
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
+        builder.add_cost(pybop.costs.pybamm.MeanAbsoluteError("Voltage [V]"))
         problem = builder.build()
 
         assert problem is not None
@@ -133,7 +129,7 @@ class TestBuilder:
             .add_parameter(
                 pybop.Parameter("Negative particle radius [m]", initial_value=5e-6)
             )
-            .add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]"))
+            .add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
         )
 
         builder.build()
@@ -154,9 +150,7 @@ class TestBuilder:
             )
         )
         builder.add_cost(
-            pybop.costs.pybamm.NegativeGaussianLogLikelihood(
-                "Voltage [V]", "Voltage [V]", 1e-2
-            )
+            pybop.costs.pybamm.NegativeGaussianLogLikelihood("Voltage [V]", 1e-2)
         )
         problem = builder.build()
 
@@ -173,19 +167,17 @@ class TestBuilder:
         np.testing.assert_allclose(value2s, value2, rtol=5e-4)
 
         # Test with estimated sigma
+        builder.remove_costs()
         builder.add_cost(
-            pybop.costs.pybamm.NegativeGaussianLogLikelihood(
-                "Voltage [V]",
-                "Voltage [V]",
-            )
+            pybop.costs.pybamm.NegativeGaussianLogLikelihood("Voltage [V]")
         )
         problem2 = builder.build()
         value3 = problem2.run(np.array([0.5, 0.5, 1e-2]))
-        np.testing.assert_allclose(2 * value1, value3)
+        np.testing.assert_allclose(value1, value3)
 
         # Different sigma
         value4 = problem2.run(np.array([0.5, 0.5, 1e-3]))
-        assert np.not_equal(2 * value1, value4)
+        assert np.not_equal(value1, value4)
 
     def test_builder_posterior(self, model_and_params, dataset):
         model, parameter_values = model_and_params
@@ -207,9 +199,7 @@ class TestBuilder:
             )
         )
         builder.add_cost(
-            pybop.costs.pybamm.NegativeGaussianLogLikelihood(
-                "Voltage [V]", "Voltage [V]", 1e-2
-            )
+            pybop.costs.pybamm.NegativeGaussianLogLikelihood("Voltage [V]", 1e-2)
         )
         problem = builder.build()
 
@@ -234,12 +224,8 @@ class TestBuilder:
         builder.add_parameter(
             pybop.Parameter("Positive particle radius [m]", initial_value=1e-5)
         )
-        builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
-        )
-        builder.add_cost(
-            pybop.costs.pybamm.MeanAbsoluteError("Voltage [V]", "Voltage [V]")
-        )
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
+        builder.add_cost(pybop.costs.pybamm.MeanAbsoluteError("Voltage [V]"))
         problem = builder.build()
 
         value1 = problem.run(np.array([5e-5, 0.5e-6]))
@@ -355,9 +341,7 @@ class TestBuilder:
         )
 
         # Add cost without a sigma parameter
-        builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
-        )
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
         problem = builder.build()
 
         value1 = problem.run(np.array([0.5, 0.5]))
@@ -419,12 +403,8 @@ class TestBuilder:
         builder.set_simulation(model, parameter_values=parameter_values)
         builder.add_parameter(pybop.Parameter("R0 [Ohm]", initial_value=1e-3))
         builder.add_parameter(pybop.Parameter("R1 [Ohm]", initial_value=3e-3))
-        builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
-        )
-        builder.add_cost(
-            pybop.costs.pybamm.MeanAbsoluteError("Voltage [V]", "Voltage [V]")
-        )
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
+        builder.add_cost(pybop.costs.pybamm.MeanAbsoluteError("Voltage [V]"))
         problem = builder.build()
 
         value1 = problem.run(np.array([1e-3, 3e-3]))
@@ -497,9 +477,7 @@ class TestBuilder:
                 "Positive electrode active material volume fraction", initial_value=0.5
             )
         )
-        builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
-        )
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
         problem = builder.build()
         assert problem.pipeline.requires_rebuild is True
 
@@ -537,9 +515,7 @@ class TestBuilder:
                 "Positive particle diffusivity [m2.s-1]", initial_value=1e-15
             )
         )
-        builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
-        )
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
         problem1 = builder.build()
         assert not problem1.pipeline.requires_rebuild
         value1 = problem1.run(np.array([4e-15]))
@@ -594,9 +570,7 @@ class TestBuilder:
                 "Positive electrode active material volume fraction", initial_value=0.6
             )
         )
-        builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
-        )
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
         problem = builder.build()
         problem2 = builder.build()
 

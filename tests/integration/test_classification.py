@@ -83,9 +83,7 @@ class TestClassification:
         builder.set_dataset(dataset)
         for p in parameters:
             builder.add_parameter(p)
-        builder.add_cost(
-            pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]", "Voltage [V]")
-        )
+        builder.add_cost(pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]"))
         return builder.build()
 
     def test_classify_using_hessian(self, problem):
@@ -169,9 +167,7 @@ class TestClassification:
             builder.set_dataset(dataset)
             for p in parameters:
                 builder.add_parameter(p)
-            builder.add_cost(
-                pybop.costs.pybamm.SumOfPower("Voltage [V]", "Voltage [V]", p=1)
-            )
+            builder.add_cost(pybop.costs.pybamm.SumOfPower("Voltage [V]", p=1))
             problem = builder.build()
 
             best_cost = problem.run(true_values)
