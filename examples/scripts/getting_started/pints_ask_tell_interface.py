@@ -65,8 +65,7 @@ f_best = []
 # Run optimisation
 for i in range(70):
     x = optim.optimiser.ask()
-    problem.set_params(x)
-    f = [problem.run_with_sensitivities()]
+    f = optim._evaluator.evaluate(x)  # noqa: SLF001
     optim.optimiser.tell(f)
 
     # Store best solution so far

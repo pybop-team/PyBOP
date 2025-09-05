@@ -41,7 +41,5 @@ builder.add_cost(pybop.SumSquaredError())
 problem = builder.build()
 
 # Test the cost for a given parameter proposal
-inputs = np.asarray([80e-6, 4.5e-6])
-problem.set_params(inputs)
-cost = problem.run()
+cost = problem.run(np.asarray([80e-6, 4.5e-6]))
 print("The cost value is:", cost)
