@@ -9,6 +9,8 @@ import pytest
 
 import pybop
 import pybop.builders
+from pybop.optimisers._adamw import AdamWImpl
+from pybop.optimisers._irprop_plus import IRPropPlusImpl
 
 OPTIMISER_LIST = [
     pybop.SciPyMinimize,
@@ -377,7 +379,7 @@ class TestOptimisation:
 
     def test_adamw_impl_bounds(self):
         with pytest.warns(UserWarning, match="Boundaries ignored by AdamW"):
-            pybop.AdamWImpl(
+            AdamWImpl(
                 x0=np.array([0.1]),
                 sigma0=None,
                 boundaries=pints.RectangularBoundaries(lower=[0.0], upper=[0.2]),
@@ -385,9 +387,7 @@ class TestOptimisation:
 
     def test_irprop_plus_impl_incorrect_steps(self):
         with pytest.raises(ValueError, match="Minimum step size"):
-            optim = pybop.IRPropPlusImpl(
-                x0=np.array([0.1]), sigma0=None, boundaries=None
-            )
+            optim = IRPropPlusImpl(x0=np.array([0.1]), sigma0=None, boundaries=None)
             optim.step_max = 1e-8
             optim.ask()
 
