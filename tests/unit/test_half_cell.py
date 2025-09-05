@@ -89,7 +89,8 @@ class TestHalfCell:
             builder.add_parameter(parameter)
         builder.set_dataset(dataset)
         builder.set_simulation(
-            model_config["model"], parameter_values=model_config["parameter_values"]
+            model_config["model"],
+            parameter_values=model_config["parameter_values"],
         )
         builder.add_cost(
             pybop.costs.pybamm.MeanAbsoluteError("Voltage [V]", "Voltage [V]")
@@ -121,7 +122,9 @@ class TestHalfCell:
         for parameter in parameters:
             builder.add_parameter(parameter)
         builder.set_simulation(
-            model, parameter_values=parameter_values, experiment=experiment
+            model,
+            parameter_values=parameter_values,
+            experiment=experiment,
         )
         builder.add_cost(pybop.costs.pybamm.GravimetricEnergyDensity())
         design_problem = builder.build()

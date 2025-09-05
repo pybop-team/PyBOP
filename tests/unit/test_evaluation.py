@@ -57,11 +57,7 @@ class TestEvaluation:
 
     @pytest.fixture
     def builder(self, model, parameters, dataset):
-        builder = (
-            pybop.builders.Pybamm()
-            .set_simulation(model, solver=pybamm.IDAKLUSolver(atol=1e-6, rtol=1e-6))
-            .set_dataset(dataset)
-        )
+        builder = pybop.builders.Pybamm().set_simulation(model).set_dataset(dataset)
         for parameter in parameters:
             builder.add_parameter(parameter)
         return builder

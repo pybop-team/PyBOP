@@ -170,3 +170,7 @@ class PythonProblem(Problem):
             Array of parameter values
         """
         self.check_and_store_params(p)
+
+    @property
+    def has_sensitivities(self):
+        return True if self._funs_with_sens is not None else False

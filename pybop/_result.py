@@ -50,14 +50,6 @@ class OptimisationResult:
         self._message = [message]
         self._time = [time]
 
-        # Calculate Fisher Information if available
-        try:
-            fisher = self._problem.observed_fisher(logger.x_model_best)
-            diag_fish = np.diag(fisher) if fisher is not None else None
-        except NotImplementedError:
-            diag_fish = None
-        self._fisher = [diag_fish]
-
         self._validate()
 
     @staticmethod
@@ -92,7 +84,6 @@ class OptimisationResult:
             for result in results
             for x in result._initial_cost  # noqa: SLF001
         ]
-        ret._fisher = [x for result in results for x in result._fisher]  # noqa: SLF001
         ret._n_iterations = [  # noqa: SLF001
             x
             for result in results
@@ -160,7 +151,6 @@ class OptimisationResult:
             f"  Best result from {self.n_runs} run(s).\n"
             f"  Initial parameters: {self.x0}\n"
             f"  Optimised parameters: {self.x}\n"
-            f"  Diagonal Fisher Information entries: {self.fisher}\n"
             f"  Best cost: {self.best_cost}\n"
             f"  Optimisation time: {self.time} seconds\n"
             f"  Number of iterations: {self.total_iterations()}\n"
@@ -215,11 +205,6 @@ class OptimisationResult:
     def initial_cost(self) -> float:
         """The initial cost value(s)."""
         return self._get_single_or_all("_initial_cost")
-
-    @property
-    def fisher(self) -> np.ndarray | None:
-        """The Fisher information matrix diagonal."""
-        return self._get_single_or_all("_fisher")
 
     @property
     def n_iterations(self) -> int:

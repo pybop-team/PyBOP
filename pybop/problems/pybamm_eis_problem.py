@@ -1,8 +1,8 @@
 import numpy as np
 
 from pybop import Parameters
-from pybop._pybamm_eis_pipeline import PybammEISPipeline
 from pybop.parameters.parameter import Inputs
+from pybop.pipelines._pybamm_eis_pipeline import PybammEISPipeline
 from pybop.problems.base_problem import Problem
 
 
@@ -76,3 +76,7 @@ class PybammEISProblem(Problem):
     @property
     def fitting_data(self):
         return self._fitting_data
+
+    @property
+    def has_sensitivities(self):
+        return False

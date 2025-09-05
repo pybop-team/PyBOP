@@ -2,7 +2,6 @@ import numpy as np
 import pybamm
 import pybammeis
 import pytest
-from pybamm import IDAKLUSolver
 
 import pybop
 
@@ -55,11 +54,7 @@ class TestProblem:
         # Create the builder
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
-        builder.set_simulation(
-            model,
-            parameter_values=parameter_values,
-            solver=pybamm.IDAKLUSolver(atol=1e-6, rtol=1e-6),
-        )
+        builder.set_simulation(model, parameter_values=parameter_values)
         builder.add_parameter(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
@@ -146,7 +141,9 @@ class TestProblem:
         builder = pybop.builders.PybammEIS()
         builder.set_dataset(eis_dataset)
         builder.set_simulation(
-            model, parameter_values=parameter_values, initial_state=initial_state
+            model,
+            parameter_values=parameter_values,
+            initial_state=initial_state,
         )
 
         for param in parameters:
@@ -222,7 +219,7 @@ class TestProblem:
             "domain",
             initial_state=0.5,
         )
-        problem_with_initial_state.set_params(np.array([0.75, 0.665]))
+        problem_with_initial_state.set_params(np.array([7e-5, 6e-5]))
         sol3 = problem_with_initial_state.run()
 
         # Assertion for differing SoC's
@@ -231,11 +228,7 @@ class TestProblem:
     def test_parameter_sensitivities(self, model, parameter_values, dataset):
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
-        builder.set_simulation(
-            model,
-            parameter_values=parameter_values,
-            solver=IDAKLUSolver(atol=1e-6, rtol=1e-6),
-        )
+        builder.set_simulation(model, parameter_values=parameter_values)
         builder.add_parameter(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",

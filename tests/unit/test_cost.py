@@ -154,7 +154,9 @@ class TestCosts:
         )
         builder = pybop.Pybamm()
         builder.set_simulation(
-            model, parameter_values=parameter_values, experiment=experiment
+            model,
+            parameter_values=parameter_values,
+            experiment=experiment,
         )
         builder.add_parameter(one_parameter)
         builder.add_cost(pybamm_costs())

@@ -2,7 +2,7 @@ import numpy as np
 from pybamm import Solution
 
 from pybop import JointLogPrior, Parameters
-from pybop._pybamm_pipeline import PybammPipeline
+from pybop.pipelines._pybamm_pipeline import PybammPipeline
 from pybop.problems.base_problem import Problem
 
 
@@ -154,3 +154,7 @@ class PybammProblem(Problem):
     @property
     def cost_names(self):
         return self._cost_names
+
+    @property
+    def has_sensitivities(self):
+        return False if self._pipeline.initial_state is not None else True

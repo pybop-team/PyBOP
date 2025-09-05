@@ -1,12 +1,10 @@
-import multiprocessing as mp
-import platform
 from copy import copy, deepcopy
 from enum import Enum
 
 import numpy as np
 import pybamm
 
-from pybop import FailedSolution, Inputs, Parameters
+from pybop import FailedSolution, Inputs, Parameters, RecommendedSolver
 
 
 class OperatingMode(Enum):
@@ -25,156 +23,148 @@ class PybammPipeline:
     2. A pybamm model needs to be built multiple times with different parameter values,
         for the case where some of the parameters are geometric parameters which change the mesh
 
-    To enable 2., you can pass a list of parameter names to the constructor, these parameters will be set
-    before the model is built each time (using the `build` method).
-    To enable 1, you can just pass an empty list. The model will be built once and subsequent calls
-    to the `build` method will not change the model.
+    The logic for (1) and (2) happens automatically. To override this logic, the argument `build_on_eval`
+    can be set to `True` which will force (2) to occur.
     """
 
     def __init__(
         self,
         model: pybamm.BaseModel,
-        parameter_values: pybamm.ParameterValues | None = None,
+        cost_names: list[str] = None,
         pybop_parameters: Parameters | None = None,
-        solver: pybamm.BaseSolver | None = None,
-        experiment: pybamm.Experiment = None,
-        t_eval: np.ndarray = None,
-        t_interp: np.ndarray | None = None,
-        var_pts: dict | None = None,
+        parameter_values: pybamm.ParameterValues | None = None,
         initial_state: float | str | None = None,
-        build_on_eval: bool | None = None,
-        cost_names: list = None,
-        n_threads: int = None,
+        t_eval: np.ndarray | None = None,
+        t_interp: np.ndarray | None = None,
+        experiment: pybamm.Experiment | None = None,
+        solver: pybamm.BaseSolver | None = None,
+        geometry: pybamm.Geometry | None = None,
+        submesh_types: dict | None = None,
+        var_pts: dict | None = None,
+        spatial_methods: dict | None = None,
+        discretisation_kwargs: dict | None = None,
+        build_on_eval: bool = False,
     ):
         """
         Parameters
-        ---------
+        ----------
         model : pybamm.BaseModel
             The PyBaMM model to be used.
-        parameter_values : pybamm.ParameterValues
+        cost_names : list[str]
+            A list of the cost variable names.
+        pybop_parameters : pybop.Parameters
+            The parameters to optimise.
+        parameter_values : pybamm.ParameterValues, optional
             The parameters to be used in the model.
-        solver : pybamm.BaseSolver
-            The solver to be used. If None, the idaklu solver will be used with multithreading.
-        t_eval : np.ndarray
-            The time points to stop the solver at. These points should be used to inform the
-            solver of discontinuities in the solution.
-        t_interp : np.ndarray
+        initial_state : float | str, optional
+            The initial state of charge or voltage for the battery model. If float, it will be
+            represented as SoC and must be in range 0 to 1. If str, it will be represented as voltage and
+            needs to be in the format: "3.4 V".
+        t_eval : np.ndarray, optional
+            The time points to stop the solver at. These points should be used to inform the solver of
+            discontinuities in the solution.
+        t_interp : np.ndarray, optional
             The time points at which to interpolate the solution. If None, no interpolation will be done.
-        initial_state: float | str
-            The initial state of charge or voltage for the battery model. If float, it will be represented
-            as SoC and must be in range 0 to 1. If str, it will be represented as voltage and needs to be in
-            the format: "3.4 V".
-        build_on_eval : bool
-            Boolean to determine if the model will be rebuilt every evaluation. If `initial_state` is provided,
-            the model will be rebuilt every evaluation unless `build_on_eval` is `False`, in which case the model
-            is built with the parameter values from construction only.
+        experiment : pybamm.Experiment | string | list, optional
+            The experimental conditions under which to solve the model. If a string is passed, the
+            experiment is constructed as `pybamm.Experiment([experiment])`. If a list is passed, the
+            experiment is constructed as `pybamm.Experiment(experiment)`.
+        solver : pybamm.BaseSolver, optional
+            The solver to use to solve the model. If None, uses `pybop.RecommendedSolver`.
+        geometry : pybamm.Geometry, optional
+            The geometry upon which to solve the model.
+        submesh_types : dict, optional
+            A dictionary of the types of submesh to use on each subdomain.
+        var_pts : dict, optional
+            A dictionary of the number of points used by each spatial variable.
+        spatial_methods : dict, optional
+            A dictionary of the types of spatial method to use on each domain (e.g. pybamm.FiniteVolume).
+        discretisation_kwargs : dict, optional
+            Any keyword arguments to pass to the Discretisation class.
+            See :class:`pybamm.Discretisation` for details.
+        build_on_eval : bool, optional
+            If True, the model will be rebuilt every evaluation. Otherwise, the need to rebuild will be
+            determined automatically.
         """
         # Core
         self._model = model
-        self._parameter_values = parameter_values or model.default_parameter_values
+        self._cost_names = cost_names
         self._pybop_parameters = pybop_parameters or Parameters([])
-        self._parameter_names = self.pybop_parameters.keys()
-
-        # Configuration
-        self._geometry = model.default_geometry
-        self._var_pts = var_pts or model.default_var_pts
-        self._spatial_methods = model.default_spatial_methods  # allow user input
-        self._submesh_types = model.default_submesh_types  # allow user input
-        self._n_threads = n_threads or self.get_avaliable_thread_count()
+        self._parameter_names = self._pybop_parameters.keys()
+        self._parameter_values = (
+            parameter_values.copy()
+            if parameter_values is not None
+            else model.default_parameter_values
+        )
 
         # Simulation Params
-        self._t_eval = t_eval
-        self._t_interp = t_interp
         self._initial_state = initial_state
-        self._cost_names = cost_names
+        self._t_eval = [t_eval[0], t_eval[-1]] if t_eval is not None else None
+        self._t_interp = t_interp
+        self._experiment = experiment
+
+        # Configuration
+        self._solver = solver.copy() if solver is not None else RecommendedSolver()
+        self._geometry = geometry or model.default_geometry
+        self._submesh_types = submesh_types or model.default_submesh_types
+        self._var_pts = var_pts or model.default_var_pts
+        self._spatial_methods = spatial_methods or model.default_spatial_methods
+        self._discretisation_kwargs = discretisation_kwargs or {"check_model": True}
 
         # State
-        self._built_model = self._model
-        self._built_initial_state = None
+        self._built_model = None
         self._sim_experiment = None
 
         # Setup
         self.requires_rebuild = self._determine_rebuild_requirement(build_on_eval)
-        self._setup_operating_mode_and_solver(experiment, solver)
+        self._setup_operating_mode_and_solver()
 
-    def _setup_operating_mode_and_solver(self, experiment, solver) -> None:
-        """Setup operating mode, solver, and related configurations."""
-        if experiment is not None:
-            self._setup_experiment_mode(experiment)
-        else:
-            self._setup_non_experiment_mode()
-
-        # Create solver (dependent on operating mode)
-        self._solver = self._create_solver(solver)
-
-        # Create the experiment simulation (dependent on solver)
-        if self._operating_mode == OperatingMode.WITH_EXPERIMENT:
-            self._sim_experiment = self._create_experiment_simulation(
-                self._parameter_values
-            )
-
-    def _setup_experiment_mode(self, experiment) -> None:
-        """Configure for experiment-based operation."""
-        self._experiment = experiment
-        self._operating_mode = OperatingMode.WITH_EXPERIMENT
-
-    def _setup_non_experiment_mode(self) -> None:
-        """Configure for non-experiment operation."""
-        self._experiment = None
-        self._operating_mode = OperatingMode.WITHOUT_EXPERIMENT
-        self._model.events = []  # Turn off events
+        # Build if only building once, otherwise build on evalution
+        if not self.requires_rebuild:
+            self.build()
 
     def _determine_rebuild_requirement(self, build_on_eval: bool | None) -> bool:
         """Determine if model needs rebuilding on each evaluation."""
-        if build_on_eval is not None:
-            return build_on_eval
-        if self._initial_state is not None:
+        has_geometric_parameters = self._check_geometric_parameters()
+
+        if self._experiment is None and self._initial_state is not None:
             return True
-        return self._check_geometric_parameters()
+        if has_geometric_parameters:
+            return True
+        return build_on_eval
 
-    def _create_solver(self, solver: pybamm.BaseSolver | None) -> pybamm.BaseSolver:
-        """Create and configure the solver."""
-        if solver is not None:
-            return solver
+    def _setup_operating_mode_and_solver(self) -> None:
+        """Setup operating mode and related configurations."""
+        if self._experiment is not None:
+            self._operating_mode = OperatingMode.WITH_EXPERIMENT
+        else:
+            self._operating_mode = OperatingMode.WITHOUT_EXPERIMENT
+            # Remove all voltage-based events when not using an experiment
+            self._model.events = [e for e in self._model.events if "[V]" not in e.name]
 
-        solver_options = {}
-        if platform.system() != "Windows":
-            solver_options["num_threads"] = self._n_threads
+        if self._operating_mode == OperatingMode.WITH_EXPERIMENT:
+            # Create the experiment simulation
+            self._sim_experiment = self._create_experiment_simulation()
 
-        output_vars = (
-            self._cost_names
-            if self._operating_mode == OperatingMode.WITHOUT_EXPERIMENT
-            else None
-        )
+        elif self._solver.output_variables == []:
+            # We can speed up the simulations using output_variables
+            """DISABLE until PyBaMM PR 5118 is resolved"""
+            # self._solver.output_variables = self._cost_names or []
+            pass
 
-        return pybamm.IDAKLUSolver(
-            on_failure="ignore",
-            atol=1e-6,
-            rtol=1e-6,
-            options=solver_options,
-            output_variables=output_vars,
-        )
-
-    def _create_experiment_simulation(
-        self, parameter_values: pybamm.ParameterValues
-    ) -> pybamm.Simulation:
+    def _create_experiment_simulation(self) -> pybamm.Simulation:
         """Create a simulation with current configuration and an experiment."""
         return pybamm.Simulation(
             self._model,
-            parameter_values=parameter_values,
+            parameter_values=self._parameter_values,
             experiment=self._experiment,
+            solver=self._solver,
+            geometry=self._geometry,
             submesh_types=self._submesh_types,
             var_pts=self._var_pts,
-            geometry=self._geometry,
             spatial_methods=self._spatial_methods,
-            solver=self._solver,
-            output_variables=self._cost_names,
+            discretisation_kwargs=self._discretisation_kwargs,
         )
-
-    @staticmethod
-    def get_avaliable_thread_count():
-        """Get the number of available threads for multiprocessing."""
-        return max(1, mp.cpu_count())
 
     def _check_geometric_parameters(self) -> bool:
         """Check if parameters require model rebuilding."""
@@ -182,16 +172,16 @@ class PybammPipeline:
             return False
 
         model = self._model.new_copy()
-        parameter_values = self._parameter_values.copy()
         geometry = deepcopy(self._geometry)
+        parameter_values = self._parameter_values.copy()
 
         # Set placeholder values for parameters
         for param in self._pybop_parameters:
             parameter_values.update({param.name: "[input]"})
 
         try:
-            parameter_values.process_geometry(geometry)
-            parameter_values.process_model(model)
+            parameter_values.process_geometry(geometry=geometry)
+            parameter_values.process_model(unprocessed_model=model)
             self._validate_geometric_parameters(geometry)
             self._parameter_values = parameter_values  # Update params w/ inputs
             return False
@@ -229,7 +219,7 @@ class PybammPipeline:
     def rebuild(self, params: Inputs) -> None:
         """Build the PyBaMM pipeline using the given parameter_values."""
         # if there are no parameters to build, just return
-        if not self.requires_rebuild:
+        if self._built_model is not None and not self.requires_rebuild:
             return
 
         # we need to rebuild, so make sure we've got the right number of parameters
@@ -247,16 +237,20 @@ class PybammPipeline:
     def build(self) -> None:
         """Build the PyBaMM pipeline using the given parameter_values."""
         model = self._model.new_copy()
-
-        if self._initial_state is not None:
-            self._set_initial_state(model, self._initial_state)
-
         geometry = copy(self._geometry)
+
+        if self._experiment is None and self._initial_state is not None:
+            self._parameter_values.set_initial_state(
+                self._initial_state, param=model.param, options=model.options
+            )
+
         self._parameter_values.process_geometry(geometry)
         self._parameter_values.process_model(model)
 
         mesh = pybamm.Mesh(geometry, self._submesh_types, self._var_pts)
-        disc = pybamm.Discretisation(mesh, self._spatial_methods, check_model=True)
+        disc = pybamm.Discretisation(
+            mesh, self._spatial_methods, **self._discretisation_kwargs
+        )
         disc.process_model(model)
 
         self._built_model = model
@@ -321,8 +315,8 @@ class PybammPipeline:
             # Update parameters and create new simulation
             self._parameter_values.update(params)
 
-            sim = self._create_experiment_simulation(self._parameter_values)
-            solutions.append(sim.solve())
+            sim = self._create_experiment_simulation()
+            solutions.append(sim.solve(initial_soc=self._initial_state))
 
         return solutions
 
@@ -331,7 +325,9 @@ class PybammPipeline:
         solutions = []
 
         for params in inputs:
-            solution = self._sim_experiment.solve(inputs=params)
+            solution = self._sim_experiment.solve(
+                inputs=params, initial_soc=self._initial_state
+            )
             solutions.append(solution)
 
         return solutions
@@ -344,7 +340,7 @@ class PybammPipeline:
         return self._solver.solve(
             model=self._built_model,
             inputs=inputs,
-            t_eval=[self._t_eval[0], self._t_eval[-1]],
+            t_eval=self._t_eval,
             t_interp=self._t_interp,
             calculate_sensitivities=calculate_sensitivities,
         )
@@ -364,36 +360,6 @@ class PybammPipeline:
                 processed_solutions.append(solution)
 
         return processed_solutions
-
-    def _set_initial_state(self, model, initial_state) -> None:
-        """Sets the initial state of the model."""
-
-        options = model.options
-        param = model.param
-        if options["open-circuit potential"] == "MSMR":
-            self._parameter_values.set_initial_ocps(
-                initial_state, param=param, options=options
-            )
-        elif options["working electrode"] == "positive":
-            self._parameter_values.set_initial_stoichiometry_half_cell(
-                initial_state,
-                param=param,
-                options=options,
-                inputs=self._pybop_parameters.to_dict(),
-            )
-        else:
-            self._parameter_values.set_initial_stoichiometries(
-                initial_state,
-                param=param,
-                options=options,
-                inputs=self._pybop_parameters.to_dict(),
-            )
-
-        # Save solved initial SOC in case we need to re-build the model
-        self._built_initial_state = initial_state
-
-    def set_parameter_value(self, key, value) -> None:
-        self._parameter_values[key] = value
 
     @property
     def built_model(self):
@@ -416,9 +382,9 @@ class PybammPipeline:
         return self._parameter_values
 
     @property
-    def solver(self):
-        return self._solver
+    def initial_state(self):
+        return self._initial_state
 
     @property
-    def n_threads(self):
-        return self._n_threads
+    def solver(self):
+        return self._solver

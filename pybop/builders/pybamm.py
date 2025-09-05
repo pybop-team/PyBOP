@@ -2,10 +2,10 @@ import pybamm
 
 import pybop
 from pybop import Parameter as PybopParameter
-from pybop._pybamm_pipeline import PybammPipeline
 from pybop.builders.base import BaseBuilder
 from pybop.builders.utils import cell_mass, set_formation_concentrations
 from pybop.costs.pybamm import BaseLikelihood, DesignCost, PybammCost
+from pybop.pipelines._pybamm_pipeline import PybammPipeline
 
 
 class TIME_PARAMS:
@@ -19,7 +19,6 @@ class Pybamm(BaseBuilder):
         self._model: pybamm.BaseModel | None = None
         self._solver: pybamm.BaseSolver | None = None
         self._parameter_values: pybamm.ParameterValues | None = None
-        self._n_threads = None
         self._initial_state: float | str | None = None
         self._experiment: pybamm.Experiment | None = None
         self._costs: list[PybammCost] = []
@@ -28,24 +27,19 @@ class Pybamm(BaseBuilder):
         self.is_posterior = False
         super().__init__()
 
-    def set_n_threads(self, threads: int) -> "Pybamm":
-        """
-        Directly sets the number of threads to use for parallel computing.
-        If the number of threads is not set, the total number of CPU cores is
-        used.
-        """
-        self._n_threads = threads
-
-        return self
-
     def set_simulation(
         self,
         model: pybamm.BaseModel,
-        parameter_values: pybamm.ParameterValues = None,
-        experiment: pybamm.Experiment = None,
-        solver: pybamm.BaseSolver = None,
-        initial_state: float | str = None,
-        build_on_eval: bool = None,
+        parameter_values: pybamm.ParameterValues | None = None,
+        initial_state: float | str | None = None,
+        experiment: pybamm.Experiment | None = None,
+        solver: pybamm.BaseSolver | None = None,
+        geometry: pybamm.Geometry | None = None,
+        submesh_types: dict | None = None,
+        var_pts: dict | None = None,
+        spatial_methods: dict | None = None,
+        discretisation_kwargs: dict | None = None,
+        build_on_eval: bool = False,
     ) -> "Pybamm":
         """
         Adds a simulation for the optimisation problem.
@@ -56,29 +50,44 @@ class Pybamm(BaseBuilder):
             The PyBaMM model to be used.
         parameter_values : pybamm.ParameterValues
             The parameters to be used in the model.
-        experiment : pybamm.Experiment
-            The experiment to use.
-        solver : pybamm.BaseSolver
-            The solver to be used. If None, the idaklu solver will be used.
-        initial_state: float | str
+        initial_state : float | str
             The initial state of charge or voltage for the battery model. If float, it will be represented
             as SoC and must be in range 0 to 1. If str, it will be represented as voltage and needs to be in
             the format: "3.4 V".
-        build_on_eval : bool
-            Boolean to determine if the model will be rebuilt every evaluation. If `initial_state` is provided,
-            the model will be rebuilt every evaluation unless `build_on_eval` is `False`, in which case the model
-            is built with the parameter values from construction only.
+        experiment : pybamm.Experiment
+            The experiment to use.
+        solver : pybamm.BaseSolver
+            The solver to be used. If None, uses `pybop.RecommendedSolver`.
+        geometry : pybamm.Geometry, optional
+            The geometry upon which to solve the model.
+        submesh_types : dict, optional
+            A dictionary of the types of submesh to use on each subdomain.
+        var_pts : dict, optional
+            A dictionary of the number of points used by each spatial variable.
+        spatial_methods : dict, optional
+            A dictionary of the types of spatial method to use on each domain (e.g. pybamm.FiniteVolume).
+        discretisation_kwargs : dict, optional
+            Any keyword arguments to pass to the Discretisation class.
+            See :class:`pybamm.Discretisation` for details.
+        build_on_eval : bool, optional
+            If True, the model will be rebuilt every evaluation. Otherwise, the need to rebuild will be
+            determined automatically.
         """
         self._model = model.new_copy()
-        self._initial_state = initial_state
-        self._build_on_eval = build_on_eval
-        self._solver = solver
-        self._experiment = experiment
         self._parameter_values = (
             parameter_values.copy()
             if parameter_values
             else model.default_parameter_values
         )
+        self._initial_state = initial_state
+        self._experiment = experiment
+        self._solver = solver
+        self._geometry = geometry
+        self._submesh_types = submesh_types
+        self._var_pts = var_pts
+        self._spatial_methods = spatial_methods
+        self._discretisation_kwargs = discretisation_kwargs
+        self._build_on_eval = build_on_eval
 
         return self
 
@@ -171,20 +180,21 @@ class Pybamm(BaseBuilder):
         # Construct the pipeline
         pipeline = PybammPipeline(
             model,
-            pybamm_parameter_values,
-            pybop_parameters,
-            self._solver,
-            experiment=self._experiment,
+            cost_names=cost_names,
+            pybop_parameters=pybop_parameters,
+            parameter_values=pybamm_parameter_values,
+            initial_state=self._initial_state,
             t_eval=time_params["t_eval"],
             t_interp=time_params["t_interp"],
-            initial_state=self._initial_state,
+            experiment=self._experiment,
+            solver=self._solver,
+            geometry=self._geometry,
+            submesh_types=self._submesh_types,
+            var_pts=self._var_pts,
+            spatial_methods=self._spatial_methods,
+            discretisation_kwargs=self._discretisation_kwargs,
             build_on_eval=self._build_on_eval,
-            cost_names=cost_names,
-            n_threads=self._n_threads,
         )
-
-        # Build the pipeline
-        pipeline.build()
 
         return pybop.PybammProblem(
             pybamm_pipeline=pipeline,
