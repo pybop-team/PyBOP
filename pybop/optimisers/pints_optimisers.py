@@ -33,7 +33,7 @@ __all__: list[str] = [
 
 class GradientDescent(BasePintsOptimiser):
     """
-    Implements gradient descent, a canonical method that takes steps in the opposite direction
+    Adapter for gradient descent, a canonical method that takes steps in the opposite direction
     of the cost gradient with respect to the parameters (does not support boundary constraints).
 
     Gradient descent is designed to minimise a scalar function of one or more variables. Due to
@@ -66,7 +66,7 @@ class GradientDescent(BasePintsOptimiser):
 
 class AdamW(BasePintsOptimiser):
     """
-    Implements adaptive moment estimation with weight decay (AdamW), a variant of the Adam
+    Adapter for adaptive moment estimation with weight decay (AdamW), a variant of the Adam
     optimiser which does not support boundary constraints.
 
     This optimiser is designed to be more robust and stable for training deep neural networks,
@@ -129,7 +129,7 @@ class IRPropMin(BasePintsOptimiser):
 
 class IRPropPlus(BasePintsOptimiser):
     """
-    Implements improved resilient backpropagation with weight-backtracking, an optimisation
+    Adapter for improved resilient backpropagation with weight-backtracking, an optimisation
     algorithm designed to handle problems with large plateaus, noisy gradients, and local minima.
 
     Parameters
@@ -320,7 +320,7 @@ class CMAES(BasePintsOptimiser):
 
 class CuckooSearch(BasePintsOptimiser):
     """
-    Implements cuckoo search, a population-based optimisation algorithm inspired by the brood
+    Adapter for cuckoo search, a population-based optimisation algorithm inspired by the brood
     parasitism of some cuckoo species which is suitable for global optimisation problems.
 
     Cuckoo search is designed to be simple, efficient, and robust. It explores the search space by
@@ -353,7 +353,7 @@ class CuckooSearch(BasePintsOptimiser):
 
 class RandomSearch(BasePintsOptimiser):
     """
-    Implements random search, a simple algorithm which samples parameter values randomly and
+    Adapter for random search, a simple algorithm which samples parameter values randomly and
     stores the current best proposal based on fitness (not recommended for optimisation).
 
     This optimiser has been implemented for benchmarking and comparisons, convergence will be
@@ -385,7 +385,7 @@ class RandomSearch(BasePintsOptimiser):
 
 class SimulatedAnnealing(BasePintsOptimiser):
     """
-    Implements simulated annealing, a probabilistic optimisation method inspired by the annealing
+    Adapter for simulated annealing, a probabilistic optimisation method inspired by the annealing
     process in metallurgy which is suitable for global optimisation problems.
 
     It works by iteratively proposing new solutions and accepting them based on both their fitness
