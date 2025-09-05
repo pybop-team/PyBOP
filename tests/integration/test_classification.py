@@ -92,8 +92,7 @@ class TestClassification:
         x = self.ground_truth
         bounds = problem.params.get_bounds()
         x0 = np.clip(x, bounds["lower"], bounds["upper"])
-        problem.set_params(x0)
-        best_cost = problem.run()
+        best_cost = problem.run(x0)
         logger = pybop.Logger()
         logger.iteration = 1
         logger.extend_log(x_model=[x0], x_search=[x0], cost=[best_cost])
@@ -175,8 +174,7 @@ class TestClassification:
             )
             problem = builder.build()
 
-            problem.set_params(true_values)
-            best_cost = problem.run()
+            best_cost = problem.run(true_values)
             logger = pybop.Logger()
             logger.iteration = 1
             logger.extend_log(

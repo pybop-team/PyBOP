@@ -57,11 +57,7 @@ class TestEvaluation:
 
     @pytest.fixture
     def builder(self, model, parameters, dataset):
-        builder = (
-            pybop.builders.Pybamm()
-            .set_simulation(model, solver=pybamm.IDAKLUSolver(atol=1e-6, rtol=1e-6))
-            .set_dataset(dataset)
-        )
+        builder = pybop.builders.Pybamm().set_simulation(model).set_dataset(dataset)
         for parameter in parameters:
             builder.add_parameter(parameter)
         return builder
@@ -77,56 +73,20 @@ class TestEvaluation:
         builder.add_cost(cost_class("Voltage [V]", "Voltage [V]"))
         return builder.build()
 
-    # def test_evaluator_transformations(self, problem):
-    #     for minimise in [True, False]:
-    #         # Test the transformed cost and sensitivities
-    #         logger = pybop.Logger()
-    #         evaluator = pybop.ScalarEvaluator(
-    #             problem=problem,
-    #             minimise=minimise,
-    #             with_sensitivities=False,
-    #             logger=logger,
-    #         )
-    #         cost1 = evaluator.evaluate(self.x_search)
-
-    #         numerical_grad = []
-    #         for i in range(len(self.x_search)):
-    #             delta = 1e-2 * self.x_search[i]
-    #             self.x_search[i] += delta / 2
-    #             cost_right = evaluator.evaluate(self.x_search)
-    #             self.x_search[i] -= delta
-    #             cost_left = evaluator.evaluate(self.x_search)
-    #             self.x_search[i] += delta / 2
-    #             assert np.abs(cost_right - cost_left) > 0
-    #             numerical_grad.append((cost_right - cost_left) / delta)
-    #         numerical_grad = np.asarray(numerical_grad).reshape(-1)
-
-    #         evaluator_ws = pybop.ScalarEvaluator(
-    #             problem=problem,
-    #             minimise=minimise,
-    #             with_sensitivities=True,
-    #             logger=logger,
-    #         )
-    #         cost2, grad2 = evaluator_ws.evaluate(self.x_search)
-
-    #         np.testing.assert_allclose(cost2, cost1, rtol=3e-5)
-    #         np.testing.assert_allclose(grad2, numerical_grad, rtol=6e-4)
-
     def test_evaluator_transformations(self, problem):
         # First compute the cost and sensitivities in the model space
-        problem.set_params(self.x_model)
-        cost1 = problem.run()
-        cost1_ws, grad1_wrt_model_parameters = problem.run_with_sensitivities()
+        cost1 = problem.run(self.x_model)
+        cost1_ws, grad1_wrt_model_parameters = problem.run_with_sensitivities(
+            self.x_model
+        )
 
         numerical_grad1 = []
         for i in range(len(self.x_model)):
             delta = 1e-8 * self.x_model[i]
             self.x_model[i] += delta / 2
-            problem.set_params(self.x_model)
-            cost_right = problem.run()
+            cost_right = problem.run(self.x_model)
             self.x_model[i] -= delta
-            problem.set_params(self.x_model)
-            cost_left = problem.run()
+            cost_left = problem.run(self.x_model)
             self.x_model[i] += delta / 2
             assert np.abs(cost_right - cost_left) > 0
             numerical_grad1.append((cost_right - cost_left) / delta)

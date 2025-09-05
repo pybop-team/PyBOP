@@ -89,20 +89,16 @@ class TestHalfCell:
             builder.add_parameter(parameter)
         builder.set_dataset(dataset)
         builder.set_simulation(
-            model_config["model"], parameter_values=model_config["parameter_values"]
+            model_config["model"],
+            parameter_values=model_config["parameter_values"],
         )
         builder.add_cost(
             pybop.costs.pybamm.MeanAbsoluteError("Voltage [V]", "Voltage [V]")
         )
         fitting_problem = builder.build()
 
-        # Get initial cost
-        initial_cost = fitting_problem.run()
-
-        # Get ground truth cost
-        fitting_problem.set_params(np.asarray(self.ground_truth))
-        ground_truth_cost = fitting_problem.run()
-
+        initial_cost = fitting_problem.run(fitting_problem.params.get_initial_values())
+        ground_truth_cost = fitting_problem.run(np.asarray(self.ground_truth))
         assert initial_cost > ground_truth_cost
 
     def test_design(self, model_config, parameters):
@@ -121,16 +117,13 @@ class TestHalfCell:
         for parameter in parameters:
             builder.add_parameter(parameter)
         builder.set_simulation(
-            model, parameter_values=parameter_values, experiment=experiment
+            model,
+            parameter_values=parameter_values,
+            experiment=experiment,
         )
         builder.add_cost(pybop.costs.pybamm.GravimetricEnergyDensity())
         design_problem = builder.build()
 
-        # Get initial cost
-        initial_cost = design_problem.run()
-
-        # Get ground truth cost
-        design_problem.set_params(np.asarray(self.ground_truth))
-        ground_truth_cost = design_problem.run()
-
+        initial_cost = design_problem.run(design_problem.params.get_initial_values())
+        ground_truth_cost = design_problem.run(self.ground_truth)
         assert initial_cost < ground_truth_cost  # negative cost

@@ -79,7 +79,6 @@ class TestCosts:
         )
         builder.add_cost(custom_cost)
         problem_custom = builder.build()
-        problem_custom.set_params(np.array([0.55]))
 
         builder = pybop.Pybamm()
         builder.set_simulation(model)
@@ -89,9 +88,8 @@ class TestCosts:
             pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
         )
         problem = builder.build()
-        problem.set_params(np.array([0.55]))
 
-        assert problem_custom.run() == problem.run()
+        assert problem_custom.run(np.array([0.55])) == problem.run(np.array([0.55]))
 
     @pytest.mark.parametrize(
         "pybamm_costs",
@@ -111,10 +109,8 @@ class TestCosts:
         builder.add_cost(pybamm_costs("Voltage [V]", "Voltage [V]"))
         problem = builder.build()
 
-        problem.set_params(np.array([0.55]))
-        higher_cost = problem.run()
-        problem.set_params(np.array([0.52]))
-        lower_cost = problem.run()
+        higher_cost = problem.run(np.array([0.55]))
+        lower_cost = problem.run(np.array([0.52]))
 
         assert higher_cost > lower_cost
 
@@ -154,16 +150,16 @@ class TestCosts:
         )
         builder = pybop.Pybamm()
         builder.set_simulation(
-            model, parameter_values=parameter_values, experiment=experiment
+            model,
+            parameter_values=parameter_values,
+            experiment=experiment,
         )
         builder.add_parameter(one_parameter)
         builder.add_cost(pybamm_costs())
         problem = builder.build()
 
-        problem.set_params(np.array([0.55]))
-        lower_cost = problem.run()
-        problem.set_params(np.array([0.52]))
-        higher_cost = problem.run()
+        lower_cost = problem.run(np.array([0.55]))
+        higher_cost = problem.run(np.array([0.52]))
 
         assert higher_cost > lower_cost  # Optimising negative cost
 
@@ -181,10 +177,8 @@ class TestCosts:
         builder.add_cost(pybamm_costs("Voltage [V]", "Voltage [V]"))
         problem = builder.build()
 
-        problem.set_params(np.array([0.55, 0.01]))
-        higher_cost = problem.run()
-        problem.set_params(np.array([0.52, 0.01]))
-        lower_cost = problem.run()
+        higher_cost = problem.run(np.array([0.55, 0.01]))
+        lower_cost = problem.run(np.array([0.52, 0.01]))
 
         assert higher_cost > lower_cost
 
@@ -197,10 +191,8 @@ class TestCosts:
         builder.add_cost(pybop.costs.pybamm.ScaledCost(cost))
         problem = builder.build()
 
-        problem.set_params(np.array([0.55]))
-        higher_cost = problem.run()
-        problem.set_params(np.array([0.52]))
-        lower_cost = problem.run()
+        higher_cost = problem.run(np.array([0.55]))
+        lower_cost = problem.run(np.array([0.52]))
 
         assert higher_cost > lower_cost
 
@@ -223,10 +215,8 @@ class TestCosts:
         problem1 = problem([1, 1])
         problem2 = problem([1, 10])
 
-        problem2.set_params(np.array([0.55]))
-        val1 = problem1.run()
-        problem2.set_params(np.array([0.55]))
-        val2 = problem2.run()
+        val1 = problem1.run(np.array([0.55]))
+        val2 = problem2.run(np.array([0.55]))
 
         np.testing.assert_allclose(val2 / val1, 5.5)
 

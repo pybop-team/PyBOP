@@ -144,8 +144,10 @@ class TestArbitraryModels:
         # Create the builder
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
-        builder.set_simulation(model, parameter_values=model.default_parameter_values)
-        builder.add_parameter(pybop.Parameter("a", initial_value=0.1))
+        builder.set_simulation(model)
+        builder.add_parameter(
+            pybop.Parameter("a", initial_value=0.1, bounds=[0, np.inf])
+        )
 
         builder.add_cost(pybop.costs.pybamm.SumSquaredError("u at x=0.5", "u at x=0.5"))
 
@@ -156,7 +158,7 @@ class TestArbitraryModels:
         optim = pybop.SciPyMinimize(problem)
         results = optim.run()
 
-        np.testing.assert_allclose(results.x, [0.05], atol=1.5e-2)
+        np.testing.assert_allclose(results.x, [0.05], rtol=5e-3)
 
     def test_system_odes_exp(self):
         model = SystemODEs()
@@ -201,7 +203,7 @@ class TestArbitraryModels:
         optim = pybop.IRPropPlus(problem, options=options)
         results = optim.run()
 
-        np.testing.assert_allclose(results.x, [-1, -2], atol=1e-2)
+        np.testing.assert_allclose(results.x, [-1, -2], rtol=5e-3)
 
     def test_system_odes_trig(self):
         model = SystemODEs()
@@ -257,4 +259,4 @@ class TestArbitraryModels:
         optim = pybop.NelderMead(problem)
         results = optim.run()
 
-        np.testing.assert_allclose(results.x, [2, -2], atol=1e-2)
+        np.testing.assert_allclose(results.x, [2, -2], rtol=5e-3)
