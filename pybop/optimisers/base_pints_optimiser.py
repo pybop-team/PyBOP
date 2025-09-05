@@ -178,7 +178,11 @@ class BasePintsOptimiser(BaseOptimiser):
             )
 
         # Set the covariance / step size parameter
-        self._sigma0 = options.sigma or self.problem.params.get_sigma0(transformed=True)
+        self._sigma0 = (
+            options.sigma
+            if options.sigma is not None
+            else self.problem.params.get_sigma0(transformed=True)
+        )
 
         # Create an instance of the PINTS optimiser class
         if issubclass(self._pints_optimiser, PintsOptimiser):
