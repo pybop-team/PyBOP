@@ -362,7 +362,7 @@ class SciPyDifferentialEvolutionOptions(pybop.OptimiserOptions):
 
 class SciPyDifferentialEvolution(BaseSciPyOptimiser):
     """
-    Adapts SciPy's differential_evolution function for global optimisation, useful for problems
+    Adapter for SciPy's differential_evolution function for global optimisation, useful for problems
     involving continuous parameters and potentially multiple local minima.
 
     Parameters
