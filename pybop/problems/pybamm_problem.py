@@ -1,5 +1,6 @@
+from collections.abc import Callable
+
 import numpy as np
-from pybamm import Solution
 
 from pybop import JointLogPrior
 from pybop.parameters.parameter import Inputs, Parameters
@@ -16,18 +17,14 @@ class PybammProblem(Problem):
         self,
         pybamm_pipeline: PybammPipeline,
         pybop_params: Parameters = None,
-        cost_names: list[str] = None,
-        cost_weights: list | np.ndarray = None,
+        cost_function: Callable = None,
+        sensitivities: Callable | None = None,
         is_posterior: bool = False,
     ):
         super().__init__(pybop_params=pybop_params, is_posterior=is_posterior)
         self._pipeline = pybamm_pipeline
-        self._cost_names = cost_names or []
-        self._cost_weights = (
-            np.asarray(cost_weights)
-            if cost_weights is not None
-            else np.ones(len(self._cost_names))
-        )
+        self._get_cost = cost_function
+        self._get_sensitivities = sensitivities
         self._domain = "Time [s]"
 
         # Set up priors if we're using the posterior
@@ -52,7 +49,7 @@ class PybammProblem(Problem):
         """
         sols = self._pipeline.solve(inputs=inputs)
 
-        return self._get_pybamm_cost(sols)
+        return self._get_cost(sols)
 
     def _compute_costs_and_sensitivities(
         self, inputs: list[Inputs]
@@ -74,43 +71,17 @@ class PybammProblem(Problem):
         """
         sols = self._pipeline.solve(inputs=inputs, calculate_sensitivities=True)
 
-        return self._get_pybamm_cost(sols), self._get_pybamm_sensitivities(sols)
-
-    def _get_pybamm_cost(self, solution: list[Solution]) -> np.ndarray:
-        """Compute the cost function value from a list of solutions."""
-        cost_matrix = np.empty((len(self._cost_names), len(solution)))
-
-        # Extract each cost
-        for i, name in enumerate(self._cost_names):
-            cost_matrix[i, :] = [sol[name].data[0] for sol in solution]
-
-        # Apply the weighting
-        return self._cost_weights @ cost_matrix
-
-    def _get_pybamm_sensitivities(self, solution: list[Solution]) -> np.ndarray:
-        """Compute the cost function value and sensitivities from a list of solutions."""
-        sens_matrix = np.empty((len(solution), self._n_params))
-
-        # Extract each sensitivity and apply the weighting
-        for i, s in enumerate(solution):
-            weighted_sens = np.zeros(self._n_params)
-            for n in self._cost_names:
-                sens = np.asarray(s[n].sensitivities["all"])  # Shape: (1, n_params)
-                weighted_sens += np.sum(
-                    sens * self._cost_weights, axis=0
-                )  # Shape: (n_params,)
-            sens_matrix[i, :] = weighted_sens
-
-        return sens_matrix
+        return self._get_cost(sols), self._get_sensitivities(sols)
 
     @property
     def pipeline(self):
         return self._pipeline
 
     @property
-    def cost_names(self):
-        return self._cost_names
-
-    @property
     def has_sensitivities(self):
-        return False if self._pipeline.initial_state is not None else True
+        return (
+            False
+            if self._pipeline.initial_state is not None
+            or self._get_sensitivities is None
+            else True
+        )

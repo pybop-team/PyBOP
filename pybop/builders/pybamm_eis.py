@@ -70,10 +70,10 @@ class PybammEIS(builders.BaseBuilder):
         self._discretisation_kwargs = discretisation_kwargs
         self._build_on_eval = build_on_eval
 
-    def add_cost(
-        self, cost: Callable | CallableCost, weight: float = 1.0
-    ) -> "PybammEIS":
-        """Adds a cost to the problem."""
+    def set_cost(self, cost: Callable | CallableCost) -> "PybammEIS":
+        """
+        Adds a cost to the problem with optional weighting.
+        """
         if not isinstance(cost, CallableCost):
             if not isinstance(cost, Callable):
                 raise TypeError(

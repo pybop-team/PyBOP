@@ -1,4 +1,8 @@
+from collections.abc import Callable
+
+import numpy as np
 import pybamm
+from pybamm import Solution
 
 import pybop
 from pybop import Parameter as PybopParameter
@@ -21,8 +25,9 @@ class Pybamm(BaseBuilder):
         self._parameter_values: pybamm.ParameterValues | None = None
         self._initial_state: float | str | None = None
         self._experiment: pybamm.Experiment | None = None
-        self._costs: list[PybammOutputVariable] = []
+        self._cost_variables: list[PybammOutputVariable] = []
         self._cost_weights: list[float] = []
+        self._cost = None
         self.domain = "Time [s]"
         self.is_posterior = False
         super().__init__()
@@ -91,21 +96,32 @@ class Pybamm(BaseBuilder):
 
         return self
 
-    def add_cost(self, cost: PybammOutputVariable, weight: float = 1.0) -> "Pybamm":
+    def add_cost(self, variable: PybammOutputVariable, weight: float = 1.0) -> "Pybamm":
         """
-        Adds a cost to the problem with optional weighting.
+        Adds a cost variable to the problem with optional weighting.
         """
-        self._costs.append(cost)
+        self._cost_variables.append(variable)
         self._cost_weights.append(weight)
 
         return self
 
     def remove_costs(self) -> "Pybamm":
         """
-        Removes all costs and corresponding weights from the problem.
+        Removes all cost variables and corresponding weights from the problem.
         """
-        self._costs = []
+        self._cost_variables = []
         self._cost_weights = []
+
+        return self
+
+    def set_cost(
+        self, cost_function: Callable, sensitivities: Callable | None = None
+    ) -> "Pybamm":
+        """
+        An alternative to add_cost which can be used to employ a user-defined cost function.
+        """
+        self.remove_costs()
+        self._cost = (cost_function, sensitivities)
 
         return self
 
@@ -143,9 +159,9 @@ class Pybamm(BaseBuilder):
             self._set_control_variable(pybop_parameters)
             time_params = self._extract_time_parameters()
 
-        # add costs
+        # Add cost variables
         cost_names = []
-        for cost in self._costs:
+        for cost in self._cost_variables:
             cost.add_to_model(model, pybamm_parameter_values, self._dataset)
             cost_names.append(cost.metadata().variable_name)
 
@@ -196,11 +212,19 @@ class Pybamm(BaseBuilder):
             build_on_eval=self._build_on_eval,
         )
 
+        # Create the cost function and sensitivities if user adds costs by variable
+        if len(self._cost_variables) > 0:
+            cost_function, sensitivities = self._construct_cost_functions(
+                cost_names, self._cost_weights, n_params=len(pybop_parameters)
+            )
+        else:
+            cost_function, sensitivities = self._cost
+
         return pybop.PybammProblem(
             pybamm_pipeline=pipeline,
             pybop_params=pybop_parameters,
-            cost_names=cost_names,
-            cost_weights=self._cost_weights,
+            cost_function=cost_function,
+            sensitivities=sensitivities,
             is_posterior=self.is_posterior,
         )
 
@@ -214,13 +238,13 @@ class Pybamm(BaseBuilder):
 
     def _validate_build_requirements(self) -> None:
         """Validate all required components are set before building."""
-        if len(self._cost_weights) != len(self._costs):
+        if len(self._cost_weights) != len(self._cost_variables):
             raise ValueError("Number of cost weights and costs do not match")
 
         if self._model is None:
             raise ValueError("A Pybamm model needs to be provided before building")
 
-        if not self._costs:
+        if not self._cost_variables and not self._cost:
             raise ValueError("A cost must be provided before building")
 
         if self._experiment is None and self._dataset is None:
@@ -248,3 +272,45 @@ class Pybamm(BaseBuilder):
         # Handle special case for current
         param_key = "Current function [A]" if control == "Current [A]" else control
         self._parameter_values[param_key] = control_interpolant
+
+    def _construct_cost_functions(
+        self, cost_names: list[str], cost_weights: list[float] | None, n_params: int
+    ):
+        """
+        Constructs two functions, one to compute the cost and one to compute the sensitivities,
+        from a list of PyBaMM variable names and, optionally, a corresponding list of weights.
+        """
+        cost_weights = (
+            np.asarray(cost_weights)
+            if cost_weights is not None and len(cost_weights) > 0
+            else np.ones(len(cost_names))
+        )
+
+        def cost_function(solution: list[Solution]) -> np.ndarray:
+            """Compute the cost function value from a list of solutions."""
+            cost_matrix = np.empty((len(cost_names), len(solution)))
+
+            # Extract each cost
+            for i, name in enumerate(cost_names):
+                cost_matrix[i, :] = [sol[name].data[0] for sol in solution]
+
+            # Apply the weighting
+            return cost_weights @ cost_matrix
+
+        def sensitivities(solution: list[Solution]) -> np.ndarray:
+            """Compute the cost function value and sensitivities from a list of solutions."""
+            sens_matrix = np.empty((len(solution), n_params))
+
+            # Extract each sensitivity and apply the weighting
+            for i, s in enumerate(solution):
+                weighted_sens = np.zeros(n_params)
+                for n in cost_names:
+                    sens = np.asarray(s[n].sensitivities["all"])  # Shape: (1, n_params)
+                    weighted_sens += np.sum(
+                        sens * cost_weights, axis=0
+                    )  # Shape: (n_params,)
+                sens_matrix[i, :] = weighted_sens
+
+            return sens_matrix
+
+        return cost_function, sensitivities
