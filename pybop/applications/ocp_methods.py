@@ -171,16 +171,17 @@ class OCPAverage(BaseApplication):
             }
         )
 
-    def _create_cost_functions(
+    def _create_cost_function(
         self, voltage_charge, diff_cap_charge, interpolated_dataset, cost
     ):
         """Create voltage and differential capacity cost functions."""
 
         def voltage_fun(inputs):
             sto_transformed = (
-                inputs[1] * interpolated_dataset["Stoichiometry"] + inputs[0]
+                inputs["stretch"] * interpolated_dataset["Stoichiometry"]
+                + inputs["shift"]
                 if self.allow_stretching
-                else interpolated_dataset["Stoichiometry"] + inputs[0]
+                else interpolated_dataset["Stoichiometry"] + inputs["shift"]
             )
             residuals = (
                 1e3 * voltage_charge(sto_transformed)
@@ -190,9 +191,10 @@ class OCPAverage(BaseApplication):
 
         def diff_capacity_fun(inputs):
             sto_transformed = (
-                inputs[1] * interpolated_dataset["Stoichiometry"] + inputs[0]
+                inputs["stretch"] * interpolated_dataset["Stoichiometry"]
+                + inputs["shift"]
                 if self.allow_stretching
-                else interpolated_dataset["Stoichiometry"] + inputs[0]
+                else interpolated_dataset["Stoichiometry"] + inputs["shift"]
             )
             residuals = (
                 diff_cap_charge(sto_transformed)
@@ -200,7 +202,10 @@ class OCPAverage(BaseApplication):
             )
             return cost(residuals)
 
-        return voltage_fun, diff_capacity_fun
+        def cost_function(inputs):
+            return voltage_fun(inputs) + diff_capacity_fun(inputs)
+
+        return cost_function
 
     def __call__(self) -> pybop.Dataset:
         # Create interpolants
@@ -225,14 +230,13 @@ class OCPAverage(BaseApplication):
             self.parameters.append(pybop.Parameter("stretch", initial_value=1.0))
 
         # Create costs
-        voltage_fun, diff_capacity_fun = self._create_cost_functions(
+        cost_function = self._create_cost_function(
             voltage_charge, diff_cap_charge, interpolated_dataset, cost
         )
 
         # Build problem
         builder = pybop.builders.Python()
-        builder.add_fun(voltage_fun)
-        builder.add_fun(diff_capacity_fun)
+        builder.set_cost(cost_function)
         for parameter in self.parameters:
             builder.add_parameter(parameter)
         problem = builder.build()
@@ -341,14 +345,13 @@ class OCPCapacityToStoichiometry(BaseApplication):
         ]
 
         def fit_fun(inputs):
-            shift, stretch = inputs
-            transformed_capacity = (capacity - shift) / stretch
+            transformed_capacity = (capacity - inputs["shift"]) / inputs["stretch"]
             residuals = voltage - self.ocv_function(transformed_capacity)
             return cost(residuals)
 
         # Build problem
         builder = pybop.builders.Python()
-        builder.add_fun(fit_fun)
+        builder.set_cost(fit_fun)
         for parameter in self.parameters:
             builder.add_parameter(parameter)
         problem = builder.build()

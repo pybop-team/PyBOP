@@ -142,8 +142,8 @@ class InverseOCV:
             Objective function for optimisation.
         """
 
-        def ocv_root(x, **kwargs):
-            return np.abs(self.ocv_function(x[0]) - ocv_value)
+        def ocv_root(inputs, **kwargs):
+            return np.abs(self.ocv_function(inputs["SoC"]) - ocv_value)
 
         return ocv_root
 
@@ -162,8 +162,8 @@ class InverseOCV:
             Configured optimisation problem.
         """
         builder = pybop.builders.Python()
-        builder.add_parameter(pybop.Parameter("OCV root", initial_value=0.5))
-        builder.add_fun(ocv_root_func)
+        builder.add_parameter(pybop.Parameter("SoC", initial_value=0.5))
+        builder.set_cost(ocv_root_func)
         return builder.build()
 
     def __call__(self, ocv_value: float) -> float:
