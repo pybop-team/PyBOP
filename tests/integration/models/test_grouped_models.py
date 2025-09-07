@@ -168,7 +168,7 @@ class TestGroupedModels:
     def test_eis_fitting(self, eis_dataset, model_config, parameters):
         builder = self.create_eis_builder(eis_dataset, model_config, parameters)
 
-        builder.add_cost(pybop.MeanSquaredError(weighting="equal"))
+        builder.set_cost(pybop.MeanSquaredError(weighting="equal"))
 
         eis_problem = builder.build()
         assert eis_problem is not None, "EIS problem build failed"

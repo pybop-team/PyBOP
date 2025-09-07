@@ -117,7 +117,7 @@ class TestEISParameterisation:
         builder.set_dataset(dataset)
         for p in parameters:
             builder.add_parameter(p)
-        builder.add_cost(cost())
+        builder.set_cost(cost())
         problem = builder.build()
         return problem
 
