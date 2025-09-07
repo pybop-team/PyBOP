@@ -143,7 +143,7 @@ class TestProblem:
         for param in parameters:
             builder.add_parameter(param)
 
-        builder.add_cost(pybop.MeanSquaredError(weighting=cost_weighting))
+        builder.set_cost(pybop.MeanSquaredError(weighting=cost_weighting))
         return builder.build()
 
     def _test_eis_problem_pipeline(self, problem):

@@ -246,7 +246,7 @@ class TestPlots:
         builder.set_simulation(model)
         builder.set_dataset(dataset)
         builder.add_parameter(parameter)
-        builder.add_cost(pybop.costs.SumSquaredError())
+        builder.set_cost(pybop.costs.SumSquaredError())
         problem = builder.build()
 
         # Plot the nyquist

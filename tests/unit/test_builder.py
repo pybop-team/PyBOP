@@ -369,7 +369,7 @@ class TestBuilder:
                 "Positive electrode active material volume fraction", initial_value=0.5
             )
         )
-        builder.add_cost(pybop.MeanSquaredError(weighting="equal"))
+        builder.set_cost(pybop.MeanSquaredError(weighting="equal"))
         problem = builder.build()
 
         value1 = problem.run(np.array([0.55, 0.55]))
@@ -388,7 +388,7 @@ class TestBuilder:
         builder.add_parameter(
             pybop.Parameter("Positive particle radius [m]", initial_value=1e-5)
         )
-        builder.add_cost(pybop.MeanSquaredError(weighting="domain"))
+        builder.set_cost(pybop.MeanSquaredError(weighting="domain"))
         problem = builder.build()
 
         value1 = problem.run(np.asarray([80e-6, 4.5e-6]))
@@ -422,38 +422,38 @@ class TestBuilder:
             {"Time / s": np.linspace(0, 1, 10), "Output": np.ones(10)}
         )
 
-        def model(x: float | list):
-            output = x * dataset["Time / s"] ** 2
+        def cost(inputs: dict[str, float]):
+            output = inputs["x"] * dataset["Time / s"] ** 2
             sse = np.sum((output - dataset["Output"]) ** 2)
             return sse
 
         builder = pybop.builders.Python()
         builder.add_parameter(pybop.Parameter("x", initial_value=1))
-        builder.add_fun(model)
+        builder.set_cost(cost)
         problem = builder.build()
 
         value1 = problem.run(np.array([3.0]))
         assert value1 > 0
 
         # Test sensitivities
-        def model_with_sens(x: float | list):
-            output = x * dataset["Time / s"] ** 2
-            sens = 2 * x * dataset["Time / s"]
+        def cost_with_sens(inputs: dict[str, float]):
+            output = inputs["x"] * dataset["Time / s"] ** 2
+            sens = 2 * inputs["x"] * dataset["Time / s"]
             sse = np.sum((output - dataset["Output"]) ** 2)
             sse_grad = 2 * np.sum(output - dataset["Output"]) * np.sum(sens)
             return sse, sse_grad
 
         builder = pybop.builders.Python()
         builder.add_parameter(pybop.Parameter("x", initial_value=1))
-        builder.add_fun_with_sens(model_with_sens=model_with_sens)
+        builder.set_cost_with_sens(cost_with_sens=cost_with_sens)
         problem_sens = builder.build()
         val, sens = problem_sens.run_with_sensitivities(np.asarray([3.0]))
         assert val > 0
         assert sens > 0
 
         # Test incorrect model
-        with pytest.raises(TypeError, match="Model must be callable"):
-            builder.add_fun([2.0])
+        with pytest.raises(TypeError, match="Cost must be callable"):
+            builder.set_cost([2.0])
 
     def test_build_with_initial_state(self, model_and_params, dataset):
         model, parameter_values = model_and_params
@@ -536,7 +536,7 @@ class TestBuilder:
 
     def test_build_no_parameters(self, dataset):
         builder = pybop.builders.Python()
-        builder.add_fun(lambda x: x**2)
+        builder.set_cost(lambda inputs: inputs["x"] ** 2)
         with pytest.raises(
             ValueError, match="No parameters have been added to the builder."
         ):

@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 import numpy as np
 
 from pybop.parameters.parameter import Inputs, Parameters
@@ -15,17 +17,13 @@ class PybammEISProblem(Problem):
         self,
         eis_pipeline: PybammEISPipeline,
         pybop_params: Parameters | None = None,
-        costs: list | None = None,
-        cost_weights: list | np.ndarray | None = None,
+        cost_function: Callable = None,
         fitting_data: np.ndarray | None = None,
     ):
         super().__init__(pybop_params=pybop_params)
         self._pipeline = eis_pipeline
-        self._costs = costs
+        self._cost_function = cost_function
         self._fitting_data = fitting_data
-        self._cost_weights = (
-            np.asarray(cost_weights) if cost_weights is not None else None
-        )
 
     def _compute_costs(self, inputs: list[Inputs]) -> np.ndarray:
         """
@@ -34,17 +32,15 @@ class PybammEISProblem(Problem):
         Returns
         -------
         cost : np.ndarray
-            A 1D array containing the weighted sum of cost variables for each proposal.
+            A 1D array of cost values of length `len(inputs)`.
         """
-        cost_matrix = np.empty((len(self._costs), len(inputs)))
+        costs = np.empty(len(inputs))
 
         for i, x in enumerate(inputs):
-            res = self._pipeline.solve(x) - self._fitting_data
+            residual = self._pipeline.solve(x) - self._fitting_data
+            costs[i] = self._cost_function(residual)
 
-            # Weighted cost w/ new axis to ensure the returned object is np.ndarray
-            cost_matrix[:, i] = [cost(res) for cost in self._costs]
-
-        return self._cost_weights @ cost_matrix
+        return costs
 
     def simulate(self, inputs: Inputs | list[Inputs]) -> np.ndarray:
         return self._pipeline.solve(inputs)

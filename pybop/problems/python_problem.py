@@ -1,4 +1,4 @@
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 
 import numpy as np
 
@@ -14,146 +14,123 @@ class PythonProblem(Problem):
     on external simulation frameworks like PyBaMM. Designed to work with the Python
     builder pattern for progressive function composition.
 
-    The problem supports either standard funcs OR funcs with sensitivities, but not both
-    simultaneously.
+    The problem supports standard functions and functions with sensitivities.
 
     Parameters
     ----------
-    func : Sequence[Callable], optional
-        Sequence of functions that perform simulation. Each function should accept
-        parameter values and return a numeric result or dict of results.
-    func_with_sens : Sequence[Callable], optional
-        Sequence of functions that perform simulation and return sensitivities.
-        Each function should accept parameter values and return (results, gradients).
+    cost : Callable, optional
+        A cost function that accepts a list of inputs and return a 1D array of cost values
+        of length `len(inputs)`.
+    cost_with_sens : Callable, optional
+        A function that returns both the cost and sensitivities for a list of inputs. It
+        should return a tuple containing a 1D array of cost values of length `len(inputs)`
+        and a 2D array of sets of gradients with shape (`len(inputs)`, number of parameters).
     pybop_params : Parameters, optional
         Container for optimisation parameters defining the parameter space.
-    weights : Sequence[float], optional
-        Weights for each callable component. Length must match the number of functions.
 
     Raises
     ------
     ValueError
-        If both function types are provided, if neither is provided, or if weights
-        length doesn't match function count.
+        If no functions are provided.
 
     Examples
     --------
-    >>> def quadratic_func(params):
-    ...     return np.sum(params**2)
+    >>> def quadratic_func(inputs):
+    ...     return np.sum(inputs["x"]**2)
     >>>
     >>> problem = PythonProblem(
-    ...     func=[quadratic_func],
+    ...     cost=quadratic_func,
     ...     pybop_params=my_params,
-    ...     weights=[1.0]
     ... )
-    >>> result = problem.run(params)
+    >>> result = problem.run(1.5)
 
     Notes
     -----
-    This class is typically instantiated via the Python builder class rather
-    than directly, which provides a more convenient fluent interface.
+    This class can also be instantiated via the Python builder class.
     """
 
     def __init__(
         self,
-        funs: Sequence[Callable] | None = None,
-        funs_with_sens: Sequence[Callable] | None = None,
+        cost: Callable = None,
+        cost_with_sens: Callable | None = None,
+        vectorised: bool = False,
         pybop_params: Parameters | None = None,
-        weights: Sequence[float] | None = None,
     ):
         super().__init__(pybop_params=pybop_params)
-        self._funs = tuple(funs) if funs is not None else None
-        self._funs_with_sens = (
-            tuple(funs_with_sens) if funs_with_sens is not None else None
-        )
-        self._weights = np.asarray(weights) if weights is not None else None
+        self._cost = cost
+        self._cost_with_sens = cost_with_sens
+        self.vectorised = vectorised
 
     def _compute_costs(self, inputs: list[Inputs]) -> np.ndarray:
         """
-        Execute all standard functions with current parameters and return weighted sum.
-
-        This method evaluates each function with the current parameter values,
-        applies the corresponding weights, and returns the sum.
+        Evaluate the function (without sensitivities) for the given inputs and return the
+        cost values.
 
         Returns
         -------
-        weighted_costs : np.ndarray
-            Weighted sum of function values as a 1D array.
+        costs : np.ndarray
+            A 1D array of function values of length `len(inputs)`.
 
         Raises
         ------
         RuntimeError
             If no standard functions are available (i.e., only sensitivity functions exist)
         """
-        if self._funs is None:
+        if self._cost is None:
             raise RuntimeError(
                 "No standard functions configured. This problem uses sensitivity functions. "
                 "Use run_with_sensitivities() instead."
             )
 
-        weighted_costs = np.empty(len(inputs))
-        for i, x in enumerate(inputs):
-            val = list(x.values())
-            costs = np.asarray([float(func(val)) for func in self._funs])
-            weighted_costs[i] = np.dot(self._weights, costs)
+        if self.vectorised:
+            return self._cost(inputs)
 
-        return weighted_costs
+        costs = np.empty(len(inputs))
+        for i, x in enumerate(inputs):
+            costs[i] = float(self._cost(x))
+        return costs
 
     def _compute_costs_and_sensitivities(
         self, inputs: list[Inputs]
     ) -> tuple[np.ndarray, np.ndarray]:
         """
-        Execute all sensitivity functions and return weighted results with gradients.
-
-        This method evaluates each sensitivity function, which returns both
-        values and gradients, then computes weighted sums for both components.
+        Evaluate the function with sensitivities and return the cost and sensitivity values.
 
         Returns
         -------
         tuple[np.ndarray, np.ndarray]
             A tuple containing the cost and parameter sensitivities:
 
-            - value (np.ndarray): Weighted sum of function values as a 1D array
-            - sensitivities (np.ndarray): Weighted sum of parameter gradients
-              with shape (n_params,)
+            - costs (np.ndarray): A 1D array of function values of length `len(inputs)`.
+            - sensitivities (np.ndarray): A 2D array of function values and gradients with respect
+                to the input parameters with shape (`len(inputs)`, number of parameters)
 
         Raises
         ------
         RuntimeError
             If no sensitivity functions are available or if function evaluation fails
         """
-        if self._funs_with_sens is None:
+        if self._cost_with_sens is None:
             raise RuntimeError(
                 "No sensitivity functions configured. This problem uses standard functions. "
                 "Use run() instead."
             )
 
+        if self.vectorised:
+            return self._cost_with_sens(inputs)
+
         # Pre-allocate arrays
-        n_funs = len(self._funs_with_sens)
-        costs = np.empty(n_funs, dtype=np.float64)
-        gradients = []
+        costs = np.empty(len(inputs))
+        sens = np.empty((len(inputs), self._n_params))
 
-        # Evaluate funcs and collect results
-        values = np.fromiter(
-            inputs[0].values(), dtype=np.float64
-        )  # todo: update for multiple inputs
-        for i, func in enumerate(self._funs_with_sens):
-            cost, grad = func(values)
+        # Evaluate functions and collect results
+        for i, x in enumerate(inputs):
+            cost, grad = self._cost_with_sens(x)
             costs[i] = float(cost)  # Ensure scalar
-            gradients.append(np.asarray(grad, dtype=np.float64))
+            sens[i, :] = np.asarray(grad, dtype=np.float64)
 
-        # Compute weighted results
-        weighted_costs = np.dot(costs, self._weights[:, np.newaxis])
-
-        # Stack and weight gradients
-        if gradients:
-            grad_matrix = np.stack(gradients, axis=0)
-            weighted_gradient = np.dot(self._weights, grad_matrix)
-        else:
-            weighted_gradient = np.array([])
-
-        return weighted_costs, weighted_gradient
+        return costs, sens
 
     @property
     def has_sensitivities(self):
-        return True if self._funs_with_sens is not None else False
+        return True if self._cost_with_sens is not None else False

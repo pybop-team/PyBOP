@@ -11,9 +11,8 @@ from pybop.pipelines._pybamm_eis_pipeline import PybammEISPipeline
 class PybammEIS(builders.BaseBuilder):
     def __init__(self):
         super().__init__()
-        self.domain = "Frequency [Hz]"
-        self._costs: list[CallableCost] = []
-        self._cost_weights: list[float] = []
+        self.domain: str = "Frequency [Hz]"
+        self._cost: CallableCost | None = None
 
     def set_simulation(
         self,
@@ -72,7 +71,7 @@ class PybammEIS(builders.BaseBuilder):
 
     def set_cost(self, cost: Callable | CallableCost) -> "PybammEIS":
         """
-        Adds a cost to the problem with optional weighting.
+        Adds a cost to the problem.
         """
         if not isinstance(cost, CallableCost):
             if not isinstance(cost, Callable):
@@ -86,8 +85,7 @@ class PybammEIS(builders.BaseBuilder):
             cost.weighting, self._dataset, self.domain
         )
 
-        self._costs.append(cost)
-        self._cost_weights.append(weight)
+        self._cost = cost
 
         return self
 
@@ -108,15 +106,10 @@ class PybammEIS(builders.BaseBuilder):
         """
 
         # Checks
-        if not len(self._cost_weights) == len(self._costs):
-            raise ValueError(
-                "Number of cost weights and the number of costs do not match"
-            )
-
         if self._model is None:
             raise ValueError("A Pybamm model needs to be provided before building.")
 
-        if not self._costs:
+        if not self._cost:
             raise ValueError("A cost must be provided before building.")
 
         if self._dataset is None:
@@ -150,7 +143,6 @@ class PybammEIS(builders.BaseBuilder):
         return PybammEISProblem(
             eis_pipeline=pipeline,
             pybop_params=pybop_parameters,
-            costs=self._costs,
-            cost_weights=self._cost_weights,
+            cost_function=self._cost,
             fitting_data=self._dataset["Impedance"],
         )

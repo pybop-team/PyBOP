@@ -86,9 +86,9 @@ from .costs.error_measures import (
 # Problem Builder
 #
 from .builders.base import BaseBuilder
-from .builders.pybamm import Pybamm
-from .builders.pybamm_eis import PybammEIS
-from .builders.python import Python
+from .builders.pybamm_builder import Pybamm
+from .builders.pybamm_eis_builder import PybammEIS
+from .builders.python_builder import Python
 from .builders.multi_fitting import MultiFitting
 
 

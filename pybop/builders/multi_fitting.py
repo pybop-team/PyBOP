@@ -1,4 +1,6 @@
-from pybop import Parameters, Problem, PythonProblem
+import numpy as np
+
+from pybop import Inputs, Parameters, Problem, PythonProblem
 from pybop.builders.base import BaseBuilder
 
 
@@ -85,20 +87,36 @@ class MultiFitting(BaseBuilder):
         # Compare priors and initial conditions and select
         self._params = self._problems[0].params.copy()
 
-        funs = []
-        funs_with_sense = []
-        # Construct the list of callables
-        for problem in self._problems:
-            funs.append(lambda params, p=problem: p.run(params))
-            funs_with_sense.append(
-                lambda params, p=problem: p.run_with_sensitivities(params)
-            )
+        n_problems = len(self._problems)
+        weights = (
+            np.asarray(self._weights)
+            if self._weights is not None and len(self._weights) > 0
+            else np.ones(n_problems)
+        )
+
+        def cost(inputs: list[Inputs]) -> np.ndarray:
+            costs = np.empty((len(inputs), n_problems))
+            for i, problem in enumerate(self._problems):
+                costs[:, i] = problem._compute_costs([inputs])  # noqa: SLF001
+            return np.matmul(costs, weights)
+
+        cost_with_sens = None
+        if all([p.has_sensitivities for p in self._problems]):
+
+            def cost_with_sens(inputs: list[Inputs]) -> tuple[np.ndarray, np.ndarray]:
+                costs = np.empty((len(inputs), n_problems))
+                sens = np.empty((len(inputs), len(self._params), n_problems))
+                for i, problem in enumerate(self._problems):
+                    results = problem._compute_costs_and_sensitivities([inputs])  # noqa: SLF001
+                    costs[:, i] = results[0]
+                    sens[:, :, i] = results[1]
+                return np.matmul(costs, weights), np.matmul(sens, weights)
 
         return PythonProblem(
-            funs=funs,
-            funs_with_sens=funs_with_sense,
+            cost=cost,
+            cost_with_sens=cost_with_sens,
+            vectorised=True,
             pybop_params=self.build_parameters(),
-            weights=self._weights,
         )
 
     def __len__(self) -> int:
