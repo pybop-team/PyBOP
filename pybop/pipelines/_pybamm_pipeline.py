@@ -148,7 +148,7 @@ class PybammPipeline:
 
         if self._experiment is not None:
             # Build if only building once, otherwise build on evalution
-            if not self.requires_model_rebuild:
+            if not self._requires_model_rebuild:
                 self._sim_experiment = self._create_experiment_simulation()
                 self._solve = self._simulate_experiment_without_rebuild
             else:
@@ -165,7 +165,7 @@ class PybammPipeline:
                 pass
 
             # Build if only building once, otherwise build on evalution
-            if not self.requires_model_rebuild:
+            if not self._requires_model_rebuild:
                 self.build_model()
                 self._solve = self._solve_in_time_without_rebuild
             else:
@@ -208,7 +208,7 @@ class PybammPipeline:
 
     def rebuild_model(self, inputs: Inputs) -> None:
         """Update the parameter values and rebuild the model, if required."""
-        if not self.requires_model_rebuild:
+        if not self._requires_model_rebuild:
             # Parameter values will be passed to the solver as inputs
             return
 
@@ -348,3 +348,7 @@ class PybammPipeline:
     @property
     def solver(self):
         return self._solver
+
+    @property
+    def requires_model_rebuild(self):
+        return self._requires_model_rebuild
