@@ -5,12 +5,17 @@ import pybammeis
 
 import pybop
 
-parameter_values = pybamm.ParameterValues("Chen2020")
+"""
+Example demonstrating parameter estimation in the frequency domain using PyBaMM-EIS.
+"""
+
+# Define model and parameter values
 options = {"surface form": "differential", "contact resistance": "true"}
-model = pybamm.lithium_ion.DFN(options=options)
+dfn_model = pybamm.lithium_ion.DFN(options=options)
+parameter_values = pybamm.ParameterValues("Chen2020")
 
 # Using Pybamm-EIS to generate synthetic data
-eis_sim = pybammeis.EISSimulation(model, parameter_values=parameter_values)
+eis_sim = pybammeis.EISSimulation(dfn_model, parameter_values=parameter_values)
 frequencies = np.logspace(-4, 4, 60)
 sol = eis_sim.solve(frequencies)
 
@@ -26,18 +31,16 @@ parameters = [
     pybop.Parameter(
         "Negative electrode active material volume fraction",
         prior=pybop.Uniform(0.3, 0.9),
-        initial_value=pybop.Uniform(0.4, 0.75).rvs()[0],
         bounds=[0.375, 0.775],
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
         prior=pybop.Uniform(0.3, 0.9),
-        initial_value=pybop.Uniform(0.4, 0.75).rvs()[0],
         bounds=[0.375, 0.775],
     ),
 ]
 
-# Build an SPMe
+# Construct the problem builder using an SPMe
 spme_model = pybamm.lithium_ion.SPMe(options=options)
 builder = pybop.builders.PybammEIS()
 builder.set_dataset(dataset)
@@ -47,19 +50,26 @@ for param in parameters:
     builder.add_parameter(param)
 problem = builder.build()
 
-options = pybop.PintsOptions(verbose=True)
+# Set optimiser and options
+options = pybop.PintsOptions(max_iterations=250)
 optim = pybop.XNES(problem, options=options)
-results = optim.run()
 
-# Using the fully identified pybamm.ParameterValues object
-# we can plot the impedance fit
-identified_sim = pybammeis.EISSimulation(
-    model, parameter_values=results.parameter_values
-)
+# Run optimisation
+results = optim.run()
+print(results)
+
+# Compare to known values
+print("True parameters:", [parameter_values[p.name] for p in parameters])
+print(f"Idenitified Parameters: {results.x}")
+
+# Using the identified pybamm.ParameterValues object, we can plot the impedance fit
+identified_parameter_values = results.parameter_values
+identified_sim = pybammeis.EISSimulation(dfn_model, parameter_values=parameter_values)
 identified_sol = identified_sim.solve(frequencies)
 
-# Plot
+# Plot comparison
 fig, ax = plt.subplots()
-ax.plot(sol.real, -sol.imag)  # Synthetic
-ax.plot(identified_sol.real, -identified_sol.imag)  # Fit
+ax = pybammeis.nyquist_plot(sol, ax=ax, label="Target", alpha=0.7)
+ax = pybammeis.nyquist_plot(identified_sol, ax=ax, label="Fit", marker="x", alpha=0.7)
+ax.legend()
 plt.show()

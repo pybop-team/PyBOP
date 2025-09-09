@@ -4,16 +4,17 @@ from matplotlib import pyplot as plt
 
 import pybop
 
-# In this example, we describe the `pybop.OptimiserResults`
-# object, which provides an interface to investigate
-# the identification or optimisation performance
-# in additional to providing the final parameter values
-# in a usable python object.
+"""
+In this example, we describe the `pybop.OptimisationResult` object, which provides an interface
+to investigate the identification or optimisation performance, in addition to providing the
+final parameter values in a usable python object.
 
-# First, we will set up a simple optimisation workflow
+First, we will set up a simple optimisation workflow to obtain an optimisation result.
+"""
+
 # Define model and parameter values
-parameter_values = pybamm.ParameterValues("Chen2020")
 model = pybamm.lithium_ion.SPM()
+parameter_values = pybamm.ParameterValues("Chen2020")
 
 # Fitting parameters
 parameters = [
@@ -29,20 +30,18 @@ parameters = [
     ),
 ]
 
-# Generate the synthetic dataset
-sigma = 5e-3
+# Generate a synthetic dataset
+sim = pybamm.Simulation(model, parameter_values=parameter_values)
 t_eval = np.linspace(0, 500, 240)
-sim = pybamm.Simulation(
-    model=model,
-    parameter_values=parameter_values,
-)
-sol = sim.solve(t_eval=[t_eval[0], t_eval[-1]], t_interp=t_eval)
-corrupt_values = sol["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
+sol = sim.solve(t_eval=t_eval)
+
+sigma = 5e-3
+corrupt_values = sol["Voltage [V]"](t_eval) + np.random.normal(0, sigma, len(t_eval))
 dataset = pybop.Dataset(
     {
-        "Time [s]": sol.t,
+        "Time [s]": t_eval,
         "Voltage [V]": corrupt_values,
-        "Current function [A]": sol["Current [A]"].data,
+        "Current function [A]": sol["Current [A]"](t_eval),
     }
 )
 
@@ -51,7 +50,7 @@ builder = (
     pybop.builders.Pybamm()
     .set_dataset(dataset)
     .set_simulation(model, parameter_values=parameter_values)
-    .add_cost(pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]", "Voltage [V]"))
+    .add_cost(pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]"))
 )
 for param in parameters:
     builder.add_parameter(param)
@@ -59,32 +58,28 @@ problem = builder.build()
 
 # Set optimiser and options
 options = pybop.PintsOptions(
-    verbose=True,
-    max_iterations=60,
-    max_unchanged_iterations=15,
+    verbose=True, max_iterations=60, max_unchanged_iterations=15
 )
 optim = pybop.AdamW(problem, options=options)
+
+# Run optimisation
 results = optim.run()
 
-# Now we have a results object. The first thing we can
-# do is obtain the fully identified pybamm.ParameterValues object
-# These can then be used with normal Pybamm classes.
+# Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
 identified_parameter_values = results.parameter_values
 
-sim = pybamm.Simulation(model, parameter_values=identified_parameter_values)
-identified_sol = sim.solve(t_eval=[t_eval[0], t_eval[-1]], t_interp=t_eval)
-
 # Plot identified model vs dataset values
+sim = pybamm.Simulation(model, parameter_values=identified_parameter_values)
+identified_sol = sim.solve(t_eval=t_eval)
 fig, ax = plt.subplots()
 ax.plot(dataset["Time [s]"], dataset["Voltage [V]"])
-ax.plot(identified_sol.t, identified_sol["Voltage [V]"].data)
+ax.plot(t_eval, identified_sol["Voltage [V]"](t_eval))
 ax.set_xlabel("Time [s]")
 ax.set_ylabel("Voltage [V]")
 plt.show()
 
-# We can display more metrics, most of which are
-# also included in the `verbose` option within
-# the Pints' optimisers
+# We can display more metrics, most of which are also included in the `verbose` option
+# within the Pints' optimisers
 print(f"The starting position: {results.x0}")
 print(f"The best cost: {results.best_cost}")
 print(f"The identified parameter values: {results.x}")

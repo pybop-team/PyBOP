@@ -1,8 +1,12 @@
-from pybop import OptimisationResult
+from typing import TYPE_CHECKING
+
 from pybop.plot.standard_plots import StandardSubplot
 
+if TYPE_CHECKING:
+    from pybop._result import OptimisationResult
 
-def parameters(result: OptimisationResult, show=True, **layout_kwargs):
+
+def parameters(result: "OptimisationResult", show=True, **layout_kwargs):
     """
     Plot the evolution of parameters during the optimisation process using Plotly.
 

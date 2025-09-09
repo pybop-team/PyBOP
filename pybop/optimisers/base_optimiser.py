@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-import pybop
+from pybop._result import OptimisationResult
 from pybop.problems.base_problem import Problem
 
 
@@ -102,7 +102,7 @@ class BaseOptimiser:
         """
         raise NotImplementedError
 
-    def _run(self) -> pybop.OptimisationResult:
+    def _run(self) -> OptimisationResult:
         """
         Contains the logic for the optimisation algorithm.
 
@@ -126,7 +126,7 @@ class BaseOptimiser:
         """
         raise NotImplementedError  # pragma: no cover
 
-    def run(self) -> pybop.OptimisationResult:
+    def run(self) -> OptimisationResult:
         """
         Run the optimisation and return the optimised parameters and final cost.
 
@@ -145,7 +145,7 @@ class BaseOptimiser:
                 self._set_up_optimiser()
             results.append(self._run())
 
-        result = pybop.OptimisationResult.combine(results)
+        result = OptimisationResult.combine(results)
 
         self.problem.params.update(values=result.x)
 

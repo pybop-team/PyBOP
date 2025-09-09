@@ -3,7 +3,8 @@ from pybamm import Parameter
 
 import pybop
 
-# Define parameter set and additional parameters needed for the cost function
+# Define model, parameter values and additional parameters needed for the cost function
+model = pybamm.lithium_ion.SPM()
 parameter_values = pybamm.ParameterValues("Marquis2019")
 parameter_values.update(
     {
@@ -24,25 +25,19 @@ parameter_values.update(
     check_already_exists=False,
 )
 
-# Define model
-model = pybamm.lithium_ion.SPM()
-
-# Fitting parameters
+# Target parameters
 parameters = [
     pybop.Parameter(
         "Positive electrode thickness [m]",
         initial_value=9e-05,
-        transformation=pybop.LogTransformation(),
         bounds=[6.5e-05, 12e-05],
     ),
     pybop.Parameter(
         "Negative electrode thickness [m]",
         initial_value=9e-05,
-        transformation=pybop.LogTransformation(),
         bounds=[5e-05, 12e-05],
     ),
 ]
-
 
 # Define test protocol
 experiment = pybamm.Experiment(
@@ -60,35 +55,45 @@ builder = (
         experiment=experiment,
         initial_state=1.0,
     )
-    .add_cost(pybop.costs.pybamm.GravimetricPowerDensity())
-    .add_cost(pybop.costs.pybamm.VolumetricPowerDensity(), weight=1e-4)
+    .add_cost(pybop.costs.pybamm.VolumetricPowerDensity())
 )
 for param in parameters:
     builder.add_parameter(param)
 
 problem = builder.build()
 
-# Set optimiser and options
+# Set optimiser and options. Restrict the maximum number of iterations for speed
 options = pybop.SciPyDifferentialEvolutionOptions(
-    verbose=True,
     maxiter=5,
     polish=False,
 )
 optim = pybop.SciPyDifferentialEvolution(problem, options=options)
+
+# Run optimisation
 results = optim.run()
-
-# Obtain the fully identified pybamm.ParameterValues object
-# These can then be used with normal Pybamm classes
-identified_parameter_values = results.parameter_values
-
-# Plot convergence
-pybop.plot.convergence(optim)
-
-# Plot the parameter traces
-pybop.plot.parameters(optim)
+print(results)
+print(f"Initial volumetric power density: {-results.initial_cost:.2f} W.m-3")
+print(f"Optimised volumetric power density: {-results.best_cost:.2f} W.m-3")
 
 # Plot the cost landscape with optimisation path
-pybop.plot.surface(optim)
+results.plot_surface()
 
-print(f"Initial power density: {-results.initial_cost:.2f} Wh.kg-1")
-print(f"Optimised power density: {-results.best_cost:.2f} Wh.kg-1")
+# Obtain the optimised pybamm.ParameterValues object for use with PyBaMM classes
+optimised_values = results.parameter_values
+
+# Plot comparison
+sim_original = pybamm.Simulation(
+    model, parameter_values=parameter_values, experiment=experiment
+)
+sol_original = sim_original.solve(initial_soc=1.0)
+sim_optimised = pybamm.Simulation(
+    model, parameter_values=optimised_values, experiment=experiment
+)
+sol_optimised = sim_optimised.solve(initial_soc=1.0)
+pybop.plot.trajectories(
+    x=[sol_original.t, sol_optimised.t],
+    y=[sol_original["Voltage [V]"].data, sol_optimised["Voltage [V]"].data],
+    trace_names=["Original", "Optimised"],
+    xaxis_title="Time / s",
+    yaxis_title="Voltage / V",
+)

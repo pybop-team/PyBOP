@@ -9,3 +9,4 @@ from .convergence import convergence
 from .parameters import parameters
 from .nyquist import nyquist
 from .voronoi import surface
+from .validation import validation
