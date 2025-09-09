@@ -109,7 +109,7 @@ class PybammPipeline:
 
         # Build
         self._input_parameter_names = input_parameter_names
-        self.requires_model_rebuild = self._determine_rebuild_requirement(build_on_eval)
+        self._requires_model_rebuild = self._determine_rebuild_requirement(build_on_eval)
         self._set_up_solution_method()
 
     def _determine_rebuild_requirement(self, build_on_eval: bool | None) -> bool:
