@@ -1,8 +1,12 @@
-from pybop import OptimisationResult
+from typing import TYPE_CHECKING
+
 from pybop.plot.standard_plots import StandardPlot
 
+if TYPE_CHECKING:
+    from pybop._result import OptimisationResult
 
-def convergence(result: OptimisationResult, show: bool = True, **layout_kwargs):
+
+def convergence(result: "OptimisationResult", show: bool = True, **layout_kwargs):
     """
     Plot the convergence of the optimisation algorithm.
 

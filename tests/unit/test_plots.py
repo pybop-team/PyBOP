@@ -118,33 +118,33 @@ class TestPlots:
         bounds = np.asarray([[0.5, 0.8], [0.4, 0.7]])
 
         # Plot convergence
-        pybop.plot.convergence(result)
+        result.plot_convergence()
 
         # Plot the parameter traces
-        pybop.plot.parameters(result)
+        result.plot_parameters()
 
         # Plot the cost landscape with optimisation path
-        pybop.plot.contour(result, steps=3)
+        result.plot_contour(steps=3)
 
         # Plot the cost landscape with optim trace and bounds
-        pybop.plot.contour(result, steps=3, bounds=bounds)
+        result.plot_contour(steps=3, bounds=bounds)
 
         # Plot the cost landscape using optimisation path
-        pybop.plot.contour(result, steps=3, use_optim_log=True)
+        result.plot_contour(steps=3, use_optim_log=True)
 
         # Plot gradient cost landscape
-        pybop.plot.contour(result, gradient=True, steps=5)
+        result.plot_contour(gradient=True, steps=5)
 
         # Plot voronoi
-        pybop.plot.surface(result, normalise=False)
+        result.plot_surface(normalise=False)
 
         # Plot voronoi w/ bounds
-        pybop.plot.surface(result, bounds=bounds)
+        result.plot_surface(bounds=bounds)
 
         with pytest.raises(
             ValueError, match="Lower bounds must be strictly less than upper bounds."
         ):
-            pybop.plot.surface(result, bounds=[[0.5, 0.8], [0.7, 0.4]])
+            result.plot_surface(bounds=[[0.5, 0.8], [0.7, 0.4]])
 
     @pytest.fixture
     def posterior_summary(self, likelihood_problem):
@@ -258,3 +258,8 @@ class TestPlots:
 
         # Without inputs
         pybop.plot.nyquist(problem, title="Optimised Comparison")
+
+    def test_validation_plot(self, problem, dataset):
+        pybop.plot.validation(
+            problem.params.get_values(), problem=problem, dataset=dataset
+        )

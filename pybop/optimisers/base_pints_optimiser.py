@@ -8,16 +8,16 @@ from pints import Optimiser as PintsOptimiser
 from pints import RectangularBoundaries as PintsRectangularBoundaries
 from pints import strfloat as PintsStrFloat
 
-import pybop
 from pybop import OptimisationResult, PopulationEvaluator, SequentialEvaluator
 from pybop._logging import Logger
 from pybop.optimisers._adamw import AdamWImpl
 from pybop.optimisers._gradient_descent import GradientDescentImpl
+from pybop.optimisers.base_optimiser import BaseOptimiser, OptimiserOptions
 from pybop.problems.base_problem import Problem
 
 
 @dataclass
-class PintsOptions(pybop.OptimiserOptions):
+class PintsOptions(OptimiserOptions):
     """
     A class to hold PINTS options for the optimisation process.
 
@@ -78,7 +78,7 @@ class PintsOptions(pybop.OptimiserOptions):
             )
 
 
-class BasePintsOptimiser(pybop.BaseOptimiser):
+class BasePintsOptimiser(BaseOptimiser):
     """
     A base class for defining optimisation methods from the PINTS library.
 
@@ -174,7 +174,11 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
             )
 
         # Set the covariance / step size parameter
-        self._sigma0 = options.sigma or self.problem.params.get_sigma0(transformed=True)
+        self._sigma0 = (
+            options.sigma
+            if options.sigma is not None
+            else self.problem.params.get_sigma0(transformed=True)
+        )
 
         # Create an instance of the PINTS optimiser class
         if issubclass(self._pints_optimiser, PintsOptimiser):

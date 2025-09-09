@@ -1,52 +1,21 @@
 import numpy as np
+import pybamm
 
 import pybop
 
 """
-When fitting empirical models, the parameters we are able to identify
-will be constrained from the data that's available. For example, it's
-no good trying to fit an RC timescale of 0.1 s from data sampled at
-1 Hz! Likewise, an RC timescale of 100 s cannot be meaningfully fitted
-to just 10 s of data. To ensure the optimiser doesn't propose
-excessively long or short timescales - beyond what can reasonably be
-inferred from the data - it is common to apply nonlinear constraints
-on the parameter space. This script fits an RC pair with the
-constraint 0.5 <= R1 * C1 <= 1, to highlight a possible method for
-applying constraints on the timescales.
+When fitting empirical models, the parameters we are able to identify will be constrained
+from the data that's available. For example, it's no good trying to fit an RC timescale of
+0.1 s from data sampled at 1 Hz! Likewise, an RC timescale of 100 s cannot be meaningfully
+fitted to just 10 s of data. To ensure the optimiser doesn't propose excessively long or
+short timescales - beyond what can reasonably be inferred from the data - it is common to
+apply nonlinear constraints on the parameter space. This script fits an RC pair with the
+constraint 0.5 <= R1 * C1 <= 1, to highlight a possible method for applying constraints on
+the timescales.
 
-An alternative approach is given i the ecm_trust-constr notebook,
-which can lead to better results and higher optimisation efficiency
-when good timescale guesses are available.
+An alternative approach is given i the ecm_trust-constr notebook, which can lead to better
+results and higher optimisation efficiency when good timescale guesses are available.
 """
-
-# Define the initial parameter set
-parameter_set = pybop.ParameterSet("ECM_Example")
-parameter_set.update(
-    {
-        "Initial SoC": 0.75,
-        "Cell capacity [A.h]": 5,
-        "Nominal cell capacity [A.h]": 5,
-        "Current function [A]": 5,
-        "Upper voltage cut-off [V]": 4.2,
-        "Lower voltage cut-off [V]": 3.0,
-        "Open-circuit voltage [V]": pybop.empirical.Thevenin().default_parameter_values[
-            "Open-circuit voltage [V]"
-        ],
-        "R0 [Ohm]": 0.001,
-        "R1 [Ohm]": 0.0002,
-        "C1 [F]": 10000,
-        "Element-1 initial overpotential [V]": 0,
-    }
-)
-# Add definitions for R's, C's, and initial overpotentials for any additional RC elements
-parameter_set.update(
-    {
-        "R2 [Ohm]": 0.0003,
-        "C2 [F]": 5000,
-        "Element-2 initial overpotential [V]": 0,
-    },
-    check_already_exists=False,
-)
 
 
 def get_parameter_checker(
@@ -54,7 +23,8 @@ def get_parameter_checker(
     tau_maxs: float | list[float],
     fitted_rc_pair_indices: int | list[int],
 ):
-    """Returns a function to check parameters against given tau bounds.
+    """
+    Returns a function to check parameters against given tau bounds.
     The resulting check_params function will be sent off to PyBOP; the
     rest of the code does some light checking of the constraints.
 
@@ -96,7 +66,7 @@ def get_parameter_checker(
 
     def check_params(
         inputs: dict[str, float] = None,
-        parameter_set=None,
+        parameter_values=None,
         allow_infeasible_solutions: bool = False,
     ) -> bool:
         """Checks if the given inputs are within the tau bounds."""
@@ -117,16 +87,44 @@ def get_parameter_checker(
 
 
 # Define the model
-model = pybop.empirical.Thevenin(
-    parameter_set=parameter_set,
+model = pybamm.equivalent_circuit.Thevenin(
     check_params=get_parameter_checker(
         0, 3.0, 1
     ),  # Set the model up to automatically check parameters
     options={"number of rc elements": 2},
 )
 
+# Define the initial parameter values
+parameter_values = pybamm.ParameterValues("ECM_Example")
+parameter_values.update(
+    {
+        "Initial SoC": 0.75,
+        "Cell capacity [A.h]": 5,
+        "Nominal cell capacity [A.h]": 5,
+        "Current function [A]": 5,
+        "Upper voltage cut-off [V]": 4.2,
+        "Lower voltage cut-off [V]": 3.0,
+        "Open-circuit voltage [V]": pybamm.empirical.Thevenin().default_parameter_values[
+            "Open-circuit voltage [V]"
+        ],
+        "R0 [Ohm]": 0.001,
+        "Element-1 initial overpotential [V]": 0,
+        "R1 [Ohm]": 0.0002,
+        "C1 [F]": 10000,
+    }
+)
+# Add definitions for R's, C's, and initial overpotentials for any additional RC elements
+parameter_values.update(
+    {
+        "Element-2 initial overpotential [V]": 0,
+        "R2 [Ohm]": 0.0003,
+        "C2 [F]": 5000,
+    },
+    check_already_exists=False,
+)
+
 # Fitting parameters
-parameters = pybop.Parameters(
+parameters = [
     pybop.Parameter(
         "R0 [Ohm]",
         prior=pybop.Gaussian(0.0002, 0.0001),
@@ -142,7 +140,7 @@ parameters = pybop.Parameters(
         prior=pybop.Gaussian(10000, 2500),
         bounds=[2500, 5e4],
     ),
-)
+]
 
 sigma = 0.001
 t_eval = np.arange(0, 600, 3)
@@ -171,11 +169,11 @@ optim = pybop.XNES(
 
 results = optim.run()
 
-# Plot the timeseries output
-pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
-
 # Plot convergence
-pybop.plot.convergence(optim)
+results.plot_convergence()
 
 # Plot the parameter traces
-pybop.plot.parameters(optim)
+results.plot_parameters()
+
+# Compare the fit to the data
+pybop.plot.validation(results.x, problem=problem, dataset=dataset)
