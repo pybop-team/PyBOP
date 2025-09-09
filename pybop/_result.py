@@ -252,7 +252,7 @@ class OptimisationResult:
         **layout_kwargs : optional
             Valid Plotly layout keys and their values.
         """
-        return plot.convergence(self, **kwargs)
+        return plot.convergence(result=self, **kwargs)
 
     def plot_parameters(self, **kwargs):
         """
@@ -265,7 +265,7 @@ class OptimisationResult:
         **layout_kwargs : optional
             Valid Plotly layout keys and their values.
         """
-        return plot.parameters(self, **kwargs)
+        return plot.parameters(result=self, **kwargs)
 
     def plot_surface(self, **kwargs):
         """
@@ -285,7 +285,7 @@ class OptimisationResult:
         **layout_kwargs : optional
             Valid Plotly layout keys and their values.
         """
-        return plot.surface(self, **kwargs)
+        return plot.surface(result=self, **kwargs)
 
     def plot_contour(self, **kwargs):
         """
@@ -309,4 +309,4 @@ class OptimisationResult:
         **layout_kwargs : optional
             Valid Plotly layout keys and their values.
         """
-        return plot.contour(self, **kwargs)
+        return plot.contour(call_object=self, **kwargs)
