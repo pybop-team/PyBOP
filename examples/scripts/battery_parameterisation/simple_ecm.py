@@ -1,15 +1,21 @@
 import numpy as np
-import plotly.graph_objects as go
 import pybamm
 
 import pybop
 
-# Import the ECM parameter set from JSON
+"""
+Example of parameter estimation using an equivalent circuit model.
+"""
+
+# Define the model
+model = pybamm.equivalent_circuit.Thevenin(options={"number of rc elements": 2})
+
+# Import the ECM parameter values from a JSON file
 # parameter_values = pybamm.ParameterValues.create_from_bpx(
 #     "examples/parameters/initial_ecm_parameters.json"
 # )
 
-# Alternatively, define the initial parameter set with a dictionary
+# Alternatively, define the initial parameter values via a dictionary
 # Add definitions for R's, C's, and initial overpotentials for any additional RC elements
 parameter_values = pybamm.ParameterValues(
     {
@@ -26,50 +32,45 @@ parameter_values = pybamm.ParameterValues(
         "Cell-jig heat transfer coefficient [W/K]": 10,
         "Jig thermal mass [J/K]": 500,
         "Jig-air heat transfer coefficient [W/K]": 10,
-        "Open-circuit voltage [V]": pybamm.equivalent_circuit.Thevenin().default_parameter_values[
+        "Open-circuit voltage [V]": model.default_parameter_values[
             "Open-circuit voltage [V]"
         ],
+        "Entropic change [V/K]": 0.0004,
         "R0 [Ohm]": 0.001,
         "Element-1 initial overpotential [V]": 0,
+        "R1 [Ohm]": 0.002,
+        "R2 [Ohm]": 0.003,
         "Element-2 initial overpotential [V]": 0,
-        "R1 [Ohm]": 0.0002,
-        "R2 [Ohm]": 0.0003,
-        "C1 [F]": 10000,
-        "C2 [F]": 5000,
-        "Entropic change [V/K]": 0.0004,
+        "C1 [F]": 1000,
+        "C2 [F]": 500,
     }
 )
-
-# Define the model
-model = pybamm.equivalent_circuit.Thevenin(options={"number of rc elements": 2})
 
 # Fitting parameters
 parameters = [
     pybop.Parameter(
         "R0 [Ohm]",
-        prior=pybop.Gaussian(0.0002, 0.0001),
+        prior=pybop.Gaussian(0.002, 0.001),
         bounds=[1e-4, 1e-2],
     ),
     pybop.Parameter(
         "R1 [Ohm]",
-        prior=pybop.Gaussian(0.0001, 0.0001),
+        prior=pybop.Gaussian(0.001, 0.001),
         bounds=[1e-5, 1e-2],
     ),
 ]
 
-
-# Generate data
-sigma = 0.001
-t_eval = np.arange(0, 500, 3)
+# Generate a synthetic dataset
 sim = pybamm.Simulation(model, parameter_values=parameter_values)
-sol = sim.solve(t_eval=[t_eval[0], t_eval[-1]], t_interp=t_eval)
-corrupt_values = sol["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
+t_eval = np.arange(0, 500, 3)
+sol = sim.solve(t_eval=t_eval)
 
-# Form dataset
+sigma = 0.001
+corrupt_values = sol["Voltage [V]"](t_eval) + np.random.normal(0, sigma, len(t_eval))
 dataset = pybop.Dataset(
     {
-        "Time [s]": sol.t,
-        "Current function [A]": sol["Current [A]"].data,
+        "Time [s]": t_eval,
+        "Current function [A]": sol["Current [A]"](t_eval),
         "Voltage [V]": corrupt_values,
     }
 )
@@ -79,45 +80,26 @@ builder = (
     pybop.builders.Pybamm()
     .set_dataset(dataset)
     .set_simulation(model, parameter_values=parameter_values)
-    .add_cost(pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]", "Voltage [V]"))
+    .add_cost(pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]"))
 )
 for param in parameters:
     builder.add_parameter(param)
 problem = builder.build()
 
 # Construct optimiser with additional options
-options = pybop.PintsOptions(max_iterations=50)
+options = pybop.PintsOptions(max_iterations=250)
 optim = pybop.PSO(problem, options=options)
 
 # Run optimisation
 results = optim.run()
+print(results)
 
-# Obtain the fully identified pybamm.ParameterValues object
-# These can then be used with normal Pybamm classes
-identified_parameter_values = results.parameter_values
-sim = pybamm.Simulation(model, parameter_values=identified_parameter_values)
-sol = sim.solve(t_eval=[t_eval[0], t_eval[-1]], t_interp=t_eval)
+# Plot the cost landscape with optimisation path
+results.plot_surface()
 
-# Plot the timeseries output
-fig = go.Figure(layout=go.Layout(title="Time-domain comparison", width=800, height=600))
+# Compare to known values
+print("True parameters:", [parameter_values[p.name] for p in parameters])
+print(f"Idenitified Parameters: {results.x}")
 
-fig.add_trace(
-    go.Scatter(
-        x=dataset["Time [s]"],
-        y=dataset["Voltage [V]"],
-        mode="markers",
-        name="Reference",
-    )
-)
-
-fig.add_trace(go.Scatter(x=sol.t, y=sol["Voltage [V]"].data, mode="lines", name="Fit"))
-
-fig.update_layout(
-    xaxis_title="Time / s",
-    plot_bgcolor="white",
-    paper_bgcolor="white",
-)
-fig.show()
-
-# Plot the timeseries output
-pybop.plot.surface(optim)
+# Compare the fit to the data
+pybop.plot.validation(results.x, problem=problem, dataset=dataset)

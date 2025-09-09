@@ -1,8 +1,12 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
 from scipy.spatial import Voronoi, cKDTree
 
-from pybop import OptimisationResult
 from pybop.plot.plotly_manager import PlotlyManager
+
+if TYPE_CHECKING:
+    from pybop._result import OptimisationResult
 
 
 def _voronoi_regions(x, y, f, xlim, ylim):
@@ -224,7 +228,7 @@ def assign_nearest_value(x, y, f, xi, yi):
 
 
 def surface(
-    result: OptimisationResult,
+    result: "OptimisationResult",
     bounds=None,
     normalise=True,
     resolution=250,
