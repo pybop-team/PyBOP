@@ -6,7 +6,7 @@ import pybamm
 from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import spsolve
 
-from pybop import Inputs, Parameters, SymbolReplacer
+from pybop import Inputs, SymbolReplacer
 from pybop.pipelines._pybamm_pipeline import PybammPipeline
 
 
@@ -28,7 +28,7 @@ class PybammEISPipeline:
         self,
         model: pybamm.BaseModel,
         f_eval: np.ndarray | list[float],
-        pybop_parameters: Parameters | None = None,
+        input_parameter_names: list[str] | None = None,
         parameter_values: pybamm.ParameterValues | None = None,
         initial_state: float | str | None = None,
         solver: pybamm.BaseSolver | None = None,
@@ -46,16 +46,16 @@ class PybammEISPipeline:
             The PyBaMM model to be used.
         f_eval : list
             The frequencies at which to evaluate the impedance.
-        pybop_parameters : pybop.Parameters
-            The parameters to optimise.
-        parameter_values : pybamm.ParameterValues
-            The parameters to be used in the model.
-        initial_state : float | str
+        input_parameter_names : list[str], optional
+            A list of the input parameter names.
+        parameter_values : pybamm.ParameterValues, optional
+            The parameter values to be used in the model.
+        initial_state : float | str, optional
             The initial state of charge or voltage for the battery model. If float, it will be represented
             as SoC and must be in range 0 to 1. If str, it will be represented as voltage and needs to be in
             the format: "3.4 V".
-        solver : pybamm.BaseSolver
-            The solver to be used. If None, the idaklu solver will be used.
+        solver : pybamm.BaseSolver, optional
+            The solver to simulate the composed PybammPipeline. If None, uses `pybop.RecommendedSolver`.
         geometry : pybamm.Geometry, optional
             The geometry upon which to solve the model.
         submesh_types : dict, optional
@@ -78,10 +78,10 @@ class PybammEISPipeline:
         parameter_values = parameter_values or model.default_parameter_values
         parameter_values["Current function [A]"] = 0
 
-        # Create PyBaMM pipeline
+        # Build PyBaMM pipeline
         self._pybamm_pipeline = PybammPipeline(
             model,
-            pybop_parameters=pybop_parameters,
+            input_parameter_names=input_parameter_names,
             parameter_values=parameter_values,
             initial_state=initial_state,
             solver=solver,
@@ -174,13 +174,13 @@ class PybammEISPipeline:
 
         return model
 
-    def rebuild(self, inputs: Inputs) -> None:
-        """Update the parameter values and rebuild the PyBaMM EIS pipeline."""
-        if self._pybamm_pipeline.requires_rebuild:
-            self._pybamm_pipeline.rebuild(inputs=inputs)
-        self.initialise_eis_pipeline(inputs=inputs)
+    def _model_rebuild(self, inputs: Inputs) -> None:
+        """Update the parameter values and rebuild the EIS model."""
+        if self._pybamm_pipeline.requires_model_rebuild:
+            self._pybamm_pipeline.rebuild_model(inputs=inputs)
+        self._initialise_eis_pipeline(inputs=inputs)
 
-    def initialise_eis_pipeline(self, inputs: Inputs) -> None:
+    def _initialise_eis_pipeline(self, inputs: Inputs) -> None:
         """
         Initialise the electrochemical impedance spectroscopy (EIS) simulation.
         This method sets up the mass matrix and solver, converts inputs to the appropriate format,
@@ -238,7 +238,7 @@ class PybammEISPipeline:
             )
 
         # Always run initialise_eis_pipeline, after rebuilding the model if necessary
-        self.rebuild(inputs)
+        self._model_rebuild(inputs)
 
         zs = [self.calculate_impedance(frequency) for frequency in self._f_eval]
 
@@ -280,5 +280,5 @@ class PybammEISPipeline:
         return self._pybamm_pipeline.parameter_values
 
     @property
-    def pybop_parameters(self):
-        return self._pybamm_pipeline.pybop_parameters
+    def input_parameter_names(self):
+        return self._pybamm_pipeline.input_parameter_names

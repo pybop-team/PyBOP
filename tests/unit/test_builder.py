@@ -272,7 +272,7 @@ class TestBuilder:
         )
         builder.add_cost(pybop.costs.pybamm.GravimetricEnergyDensity())
         problem = builder.build()
-        assert problem.pipeline.requires_rebuild is False
+        assert problem.pipeline.requires_model_rebuild is False
 
         value1 = problem.run(np.array([0.6, 0.6]))
         value2 = problem.run(np.array([0.7, 0.7]))
@@ -317,7 +317,7 @@ class TestBuilder:
         )
         builder.add_cost(pybop.costs.pybamm.GravimetricEnergyDensity())
         problem = builder.build()
-        assert problem.pipeline.requires_rebuild is True
+        assert problem.pipeline.requires_model_rebuild is True
 
         value1 = problem.run(np.array([6e-6, 6e-6]))
         value2 = problem.run(np.array([7e-6, 7e-6]))
@@ -479,7 +479,7 @@ class TestBuilder:
         )
         builder.add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
         problem = builder.build()
-        assert problem.pipeline.requires_rebuild is True
+        assert problem.pipeline.requires_model_rebuild is True
 
         # First build
         value1 = problem.run(np.array([0.5, 0.5]))
@@ -517,7 +517,7 @@ class TestBuilder:
         )
         builder.add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
         problem1 = builder.build()
-        assert not problem1.pipeline.requires_rebuild
+        assert not problem1.pipeline.requires_model_rebuild
         value1 = problem1.run(np.array([4e-15]))
 
         # Second build w/ `build_on_eval`
@@ -528,7 +528,7 @@ class TestBuilder:
             build_on_eval=True,
         )
         problem2 = builder.build()
-        assert problem2.pipeline.requires_rebuild
+        assert problem2.pipeline.requires_model_rebuild
         value2 = problem2.run(np.array([4e-15]))
 
         # Assert results are the same

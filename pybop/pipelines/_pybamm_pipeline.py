@@ -3,7 +3,7 @@ from copy import deepcopy
 import numpy as np
 import pybamm
 
-from pybop import FailedSolution, Inputs, Parameters, RecommendedSolver
+from pybop import FailedSolution, Inputs, RecommendedSolver
 
 
 class PybammPipeline:
@@ -23,7 +23,7 @@ class PybammPipeline:
         self,
         model: pybamm.BaseModel,
         cost_names: list[str] = None,
-        pybop_parameters: Parameters | None = None,
+        input_parameter_names: list[str] | None = None,
         parameter_values: pybamm.ParameterValues | None = None,
         initial_state: float | str | None = None,
         t_eval: np.ndarray | None = None,
@@ -44,14 +44,14 @@ class PybammPipeline:
             The PyBaMM model to be used.
         cost_names : list[str]
             A list of the cost variable names.
-        pybop_parameters : pybop.Parameters
-            The parameters to optimise.
+        input_parameter_names : list[str], optional
+            A list of the input parameter names.
         parameter_values : pybamm.ParameterValues, optional
-            The parameters to be used in the model.
         initial_state : float | str, optional
             The initial state of charge or voltage for the battery model. If float, it will be
             represented as SoC and must be in range 0 to 1. If str, it will be represented as voltage and
             needs to be in the format: "3.4 V".
+            The parameter values to be used in the model.
         t_eval : np.ndarray, optional
             The time points to stop the solver at. These points should be used to inform the solver of
             discontinuities in the solution.
@@ -81,8 +81,6 @@ class PybammPipeline:
         # Core
         self._model = model
         self._cost_names = cost_names
-        self._pybop_parameters = pybop_parameters or Parameters([])
-        self._parameter_names = self._pybop_parameters.keys()
         self._parameter_values = (
             parameter_values.copy()
             if parameter_values is not None
@@ -109,15 +107,18 @@ class PybammPipeline:
         self._solve = None
         self._calculate_sensitivities = False
 
-        # Setup
-        self.requires_rebuild = self._determine_rebuild_requirement(build_on_eval)
+        # Build
+        self._input_parameter_names = input_parameter_names
+        self._requires_model_rebuild = self._determine_rebuild_requirement(
+            build_on_eval
+        )
         self._set_up_solution_method()
 
     def _determine_rebuild_requirement(self, build_on_eval: bool | None) -> bool:
         """Determine if model needs rebuilding on each evaluation."""
 
-        # If there are no optimisation parameters, model does not needed rebuilding
-        if not self._pybop_parameters:
+        # If there are no optimisation parameters, model does not need rebuilding
+        if not self._input_parameter_names:
             return False
 
         # All non-experiment protocols with an initial state require model rebuilding
@@ -126,18 +127,18 @@ class PybammPipeline:
 
         # Test whether the model needs rebuilding by marking parameters as inputs
         unmodified_parameter_values = self._parameter_values.copy()
-        for param in self._pybop_parameters:
-            self._parameter_values.update({param.name: "[input]"})
+        for param in self._input_parameter_names:
+            self._parameter_values.update({param: "[input]"})
 
         # If the model builds successfully with inputs, it does not need rebuilding
         try:
-            self.build()
-            requires_rebuild = False
+            self.build_model()
+            requires_model_rebuild = False
         except (ValueError, TypeError):
             self._built_model = None
-            requires_rebuild = True
+            requires_model_rebuild = True
 
-        if requires_rebuild or build_on_eval:
+        if requires_model_rebuild or build_on_eval:
             self._parameter_values = unmodified_parameter_values  # reset
             return True
         return False
@@ -147,7 +148,7 @@ class PybammPipeline:
 
         if self._experiment is not None:
             # Build if only building once, otherwise build on evalution
-            if not self.requires_rebuild:
+            if not self._requires_model_rebuild:
                 self._sim_experiment = self._create_experiment_simulation()
                 self._solve = self._simulate_experiment_without_rebuild
             else:
@@ -164,8 +165,8 @@ class PybammPipeline:
                 pass
 
             # Build if only building once, otherwise build on evalution
-            if not self.requires_rebuild:
-                self.build()
+            if not self._requires_model_rebuild:
+                self.build_model()
                 self._solve = self._solve_in_time_without_rebuild
             else:
                 self._solve = self._solve_in_time_with_rebuild
@@ -190,6 +191,14 @@ class PybammPipeline:
         inputs_list = inputs if isinstance(inputs, list) else [inputs]
         self._calculate_sensitivities = calculate_sensitivities
 
+        # Check for expected input parameters
+        if set(inputs_list[0].keys()) != set(self._input_parameter_names):
+            raise ValueError(
+                "The inputs do not contain the expected parameters. "
+                f"The inputs keys are {list(inputs_list[0].keys())}, "
+                f"but the expected inputs are {self._parameter_names}."
+            )
+
         # The underlying solve method is one of four methods set during initialisation
         solutions = self._solve(inputs_list)
 
@@ -197,23 +206,19 @@ class PybammPipeline:
 
     """ ______ ______ ATTRIBUTES FOR SOLVING IN TIME, WITHOUT AN EXPERIMENT ______ ______  """
 
-    def rebuild(self, inputs: Inputs) -> None:
-        """Build the PyBaMM pipeline using the given parameter_values."""
-        # if there are no parameters to build, just return
-        if self._built_model is not None and not self.requires_rebuild:
+    def rebuild_model(self, inputs: Inputs) -> None:
+        """Update the parameter values and rebuild the model, if required."""
+        if not self._requires_model_rebuild:
+            # Parameter values will be passed to the solver as inputs
             return
 
-        # we need to rebuild, so make sure we've got the right number of parameters
-        if len(inputs) != len(self._pybop_parameters):
-            raise ValueError(
-                f"Expected {len(self._pybop_parameters)} parameters, but got {len(inputs)}."
-            )
+        # Update the parameter values and build again
 
         self._parameter_values.update(inputs)
-        self.build()
+        self.build_model()
 
-    def build(self) -> None:
-        """Build the PyBaMM pipeline using the given parameter_values."""
+    def build_model(self) -> None:
+        """Build the model using the given parameter values."""
         model = self._model.new_copy()
         geometry = deepcopy(self._geometry)
 
@@ -248,7 +253,7 @@ class PybammPipeline:
         """Solve in time, rebuilding the model for each set of inputs."""
         solutions = []
         for x in inputs:
-            self.rebuild(x)
+            self.rebuild_model(x)
             solutions.append(self._pybamm_solve(inputs=None))
         return solutions
 
@@ -312,7 +317,7 @@ class PybammPipeline:
         for solution in solutions:
             if hasattr(solution, "termination") and solution.termination == "failure":
                 failed_solution = FailedSolution(
-                    self._cost_names, list(self._parameter_names)
+                    self._cost_names, list(self._input_parameter_names)
                 )
                 processed_solutions.append(failed_solution)
             else:
@@ -325,16 +330,12 @@ class PybammPipeline:
         return self._built_model
 
     @property
-    def parameter_names(self):
-        return self._parameter_names
+    def input_parameter_names(self):
+        return self._input_parameter_names
 
     @property
     def model(self):
         return self._model
-
-    @property
-    def pybop_parameters(self):
-        return self._pybop_parameters
 
     @property
     def parameter_values(self):
@@ -347,3 +348,7 @@ class PybammPipeline:
     @property
     def solver(self):
         return self._solver
+
+    @property
+    def requires_model_rebuild(self):
+        return self._requires_model_rebuild

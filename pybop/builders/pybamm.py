@@ -181,7 +181,7 @@ class Pybamm(BaseBuilder):
         pipeline = PybammPipeline(
             model,
             cost_names=cost_names,
-            pybop_parameters=pybop_parameters,
+            input_parameter_names=[p.name for p in pybop_parameters],
             parameter_values=pybamm_parameter_values,
             initial_state=self._initial_state,
             t_eval=time_params["t_eval"],
