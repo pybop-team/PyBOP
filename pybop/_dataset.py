@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 import numpy as np
 from pybamm import solvers
 
@@ -19,7 +17,7 @@ class Dataset:
         The domain of the dataset. Defaults to "Time [s]".
     """
 
-    def __init__(self, data_dictionary, domain: Optional[str] = None):
+    def __init__(self, data_dictionary, domain: str | None = None):
         """
         Initialise a Dataset instance with data and a set of names.
         """
@@ -80,7 +78,7 @@ class Dataset:
 
         return self.data[key]
 
-    def check(self, domain: str = None, signal: Union[str, list[str]] = None) -> bool:
+    def check(self, domain: str = None, signal: str | list[str] = None) -> bool:
         """
         Check the consistency of a PyBOP Dataset against the expected format.
 
@@ -146,7 +144,7 @@ class Dataset:
                     f"{self.domain} data and {s} data must be the same length."
                 )
 
-    def get_subset(self, index: Union[list, np.ndarray]):
+    def get_subset(self, index: list | np.ndarray):
         """
         Reduce the dataset to a subset defined by the list of indices.
         """

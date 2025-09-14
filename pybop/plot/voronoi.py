@@ -1,5 +1,3 @@
-from typing import Union
-
 import numpy as np
 from scipy.spatial import Voronoi, cKDTree
 
@@ -50,7 +48,7 @@ def _voronoi_regions(x, y, f, xlim, ylim):
 
     # Create regions
     regions = [set() for _ in range(len(x))]
-    for (p1, p2), (v1, v2) in zip(vor.ridge_points, vor.ridge_vertices):
+    for (p1, p2), (v1, v2) in zip(vor.ridge_points, vor.ridge_vertices, strict=False):
         v1, v2 = sorted([v1, v2])  # Sort the vertices
         x2 = vor.vertices[v2]
         y1, y2 = vor.points[p1], vor.points[p2]
@@ -226,7 +224,7 @@ def assign_nearest_value(x, y, f, xi, yi):
 
 
 def surface(
-    optim: Union[BaseOptimiser, Optimisation],
+    optim: BaseOptimiser | Optimisation,
     bounds=None,
     normalise=True,
     resolution=250,
@@ -262,7 +260,7 @@ def surface(
     if points[0].shape[0] != 2:
         raise ValueError("This plot method requires two parameters.")
 
-    x_optim, y_optim = map(list, zip(*points))
+    x_optim, y_optim = map(list, zip(*points, strict=False))
     f = optim.log.cost
 
     # Translate bounds, taking only the first two elements
@@ -334,7 +332,7 @@ def surface(
     )
 
     # Add Voronoi edges
-    for region, size in zip(regions, relative_sizes):
+    for region, size in zip(regions, relative_sizes, strict=False):
         x_region = region[:, 0].tolist() + [region[0, 0]]
         y_region = region[:, 1].tolist() + [region[0, 1]]
 

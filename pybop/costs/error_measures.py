@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 import numpy as np
 
 from pybop import FittingCost
@@ -17,8 +15,8 @@ class MeanSquaredError(FittingCost):
     def _error_measure(
         self,
         r: np.ndarray,
-        dy: Optional[np.ndarray] = None,
-    ) -> Union[float, tuple[float, np.ndarray]]:
+        dy: np.ndarray | None = None,
+    ) -> float | tuple[float, np.ndarray]:
         e = np.mean((np.abs(r) ** 2) * self.weighting)
 
         if dy is not None:
@@ -40,8 +38,8 @@ class RootMeanSquaredError(FittingCost):
     def _error_measure(
         self,
         r: np.ndarray,
-        dy: Optional[np.ndarray] = None,
-    ) -> Union[float, tuple[float, np.ndarray]]:
+        dy: np.ndarray | None = None,
+    ) -> float | tuple[float, np.ndarray]:
         e = np.sqrt(np.mean((np.abs(r) ** 2) * self.weighting))
 
         if dy is not None:
@@ -65,8 +63,8 @@ class MeanAbsoluteError(FittingCost):
     def _error_measure(
         self,
         r: np.ndarray,
-        dy: Optional[np.ndarray] = None,
-    ) -> Union[float, tuple[float, np.ndarray]]:
+        dy: np.ndarray | None = None,
+    ) -> float | tuple[float, np.ndarray]:
         e = np.mean(np.abs(r) * self.weighting)
 
         if dy is not None:
@@ -88,8 +86,8 @@ class SumSquaredError(FittingCost):
     def _error_measure(
         self,
         r: np.ndarray,
-        dy: Optional[np.ndarray] = None,
-    ) -> Union[float, tuple[float, np.ndarray]]:
+        dy: np.ndarray | None = None,
+    ) -> float | tuple[float, np.ndarray]:
         e = np.sum(np.abs(r) ** 2 * self.weighting)
 
         if dy is not None:
@@ -128,9 +126,7 @@ class Minkowski(FittingCost):
         The order of the Minkowski distance.
     """
 
-    def __init__(
-        self, problem, p: float = 2.0, weighting: Union[str, np.ndarray] = None
-    ):
+    def __init__(self, problem, p: float = 2.0, weighting: str | np.ndarray = None):
         super().__init__(problem, weighting=weighting)
         if p < 0:
             raise ValueError(
@@ -145,8 +141,8 @@ class Minkowski(FittingCost):
     def _error_measure(
         self,
         r: np.ndarray,
-        dy: Optional[np.ndarray] = None,
-    ) -> Union[float, tuple[float, np.ndarray]]:
+        dy: np.ndarray | None = None,
+    ) -> float | tuple[float, np.ndarray]:
         e = np.sum((np.abs(r) ** self.p) * self.weighting) ** (1 / self.p)
 
         if dy is not None:
@@ -190,9 +186,7 @@ class SumOfPower(FittingCost):
         The power order for Sum of Power.
     """
 
-    def __init__(
-        self, problem, p: float = 2.0, weighting: Union[str, np.ndarray] = None
-    ):
+    def __init__(self, problem, p: float = 2.0, weighting: str | np.ndarray = None):
         super().__init__(problem, weighting=weighting)
         if p < 0:
             raise ValueError("The order of 'p' must be greater than 0.")
@@ -203,8 +197,8 @@ class SumOfPower(FittingCost):
     def _error_measure(
         self,
         r: np.ndarray,
-        dy: Optional[np.ndarray] = None,
-    ) -> Union[float, tuple[float, np.ndarray]]:
+        dy: np.ndarray | None = None,
+    ) -> float | tuple[float, np.ndarray]:
         e = np.sum((np.abs(r) ** self.p) * self.weighting)
 
         if dy is not None:

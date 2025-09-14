@@ -1,7 +1,6 @@
 import logging
 import time
 from functools import partial
-from typing import Optional, Union
 
 import numpy as np
 from pints import (
@@ -48,7 +47,7 @@ class BasePintsSampler(BaseSampler):
 
     def __init__(
         self,
-        log_pdf: Union[LogPosterior, list[LogPosterior]],
+        log_pdf: LogPosterior | list[LogPosterior],
         sampler,
         chains: int = 1,
         warm_up=None,
@@ -124,7 +123,7 @@ class BasePintsSampler(BaseSampler):
         else:
             self._chain_processor = MultiChainProcessor(self)
 
-    def run(self) -> Optional[np.ndarray]:
+    def run(self) -> np.ndarray | None:
         """
         Executes the Monte Carlo sampling process and generates samples
         from the posterior distribution.

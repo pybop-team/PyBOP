@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 import numpy as np
 
 from pybop import BaseCost
@@ -26,7 +24,7 @@ class WeightedCost(BaseCost):
         individual cost evaluation is called.
     """
 
-    def __init__(self, *costs, weights: Optional[list[float]] = None):
+    def __init__(self, *costs, weights: list[float] | None = None):
         if not all(isinstance(cost, BaseCost) for cost in costs):
             raise TypeError("All costs must be instances of BaseCost.")
         self.costs = [cost for cost in costs]
@@ -73,8 +71,8 @@ class WeightedCost(BaseCost):
     def compute(
         self,
         y: dict,
-        dy: Optional[np.ndarray] = None,
-    ) -> Union[float, tuple[float, np.ndarray]]:
+        dy: np.ndarray | None = None,
+    ) -> float | tuple[float, np.ndarray]:
         """
         Computes the cost function for the given predictions.
 

@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Union
 
 import numpy as np
 
@@ -33,7 +32,7 @@ class Transformation(ABC):
         return jac_inv @ cov @ jac_inv.T
 
     def convert_standard_deviation(
-        self, std: Union[float, np.ndarray], q: np.ndarray
+        self, std: float | np.ndarray, q: np.ndarray
     ) -> np.ndarray:
         """
         Converts standard deviation `std`, either a scalar or a vector, from the model space
@@ -102,7 +101,7 @@ class Transformation(ABC):
         raise NotImplementedError("is_elementwise method must be implemented if used.")
 
     def verify_input(
-        self, inputs: Union[float, int, list[float], np.ndarray, dict[str, float]]
+        self, inputs: float | int | list[float] | np.ndarray | dict[str, float]
     ) -> np.ndarray:
         """Set and validate the transformation parameter."""
         if isinstance(inputs, (float, int)):

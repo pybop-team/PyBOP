@@ -2,7 +2,6 @@ import copy
 import json
 import types
 from numbers import Number
-from typing import Optional, Union
 
 import numpy as np
 from pybamm import (
@@ -37,9 +36,9 @@ class ParameterSet:
 
     def __init__(
         self,
-        parameter_set: Union[str, dict, ParameterValues] = None,
-        json_path: Optional[str] = None,
-        formation_concentrations: Optional[bool] = False,
+        parameter_set: str | dict | ParameterValues = None,
+        json_path: str | None = None,
+        formation_concentrations: bool | None = False,
     ):
         if parameter_set is not None and json_path is not None:
             raise ValueError(
@@ -68,7 +67,7 @@ class ParameterSet:
         return self.parameter_values[key]
 
     @staticmethod
-    def evaluate_symbol(symbol: Union[Symbol, Number], params: dict):
+    def evaluate_symbol(symbol: Symbol | Number, params: dict):
         """
         Evaluate a parameter in the parameter set.
 
@@ -117,7 +116,7 @@ class ParameterSet:
             params_dict, check_already_exists=check_already_exists
         )
 
-    def import_parameters(self, json_path: Optional[str] = None):
+    def import_parameters(self, json_path: str | None = None):
         """
         Imports parameters from a JSON file specified by the `json_path` attribute.
 

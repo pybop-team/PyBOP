@@ -1,5 +1,4 @@
 import warnings
-from typing import Optional, Union
 
 import numpy as np
 from pybamm import IDAKLUJax, SolverError
@@ -53,10 +52,10 @@ class FittingProblem(BaseProblem):
         parameters: Parameters,
         dataset: Dataset,
         check_model: bool = True,
-        signal: Optional[list[str]] = None,
-        domain: Optional[str] = None,
-        additional_variables: Optional[list[str]] = None,
-        initial_state: Optional[dict] = None,
+        signal: list[str] | None = None,
+        domain: str | None = None,
+        additional_variables: list[str] | None = None,
+        initial_state: dict | None = None,
     ):
         super().__init__(
             parameters=parameters,
@@ -95,7 +94,7 @@ class FittingProblem(BaseProblem):
             for param in self.parameters.keys()
         }
 
-    def set_initial_state(self, initial_state: Optional[dict] = None):
+    def set_initial_state(self, initial_state: dict | None = None):
         """
         Set the initial state to be applied for every problem evaluation.
 
@@ -121,10 +120,10 @@ class FittingProblem(BaseProblem):
 
     def evaluate(
         self, inputs: Inputs, eis=False
-    ) -> Union[
-        dict[str, np.ndarray],
-        tuple[dict[str, np.ndarray], dict[str, dict[str, np.ndarray]]],
-    ]:
+    ) -> (
+        dict[str, np.ndarray]
+        | tuple[dict[str, np.ndarray], dict[str, dict[str, np.ndarray]]]
+    ):
         """
         Evaluate the model with the given parameters and return the signal.
 
@@ -147,10 +146,10 @@ class FittingProblem(BaseProblem):
 
     def _evaluate(
         self, func, inputs, calculate_grad=False
-    ) -> Union[
-        dict[str, np.ndarray],
-        tuple[dict[str, np.ndarray], dict[str, dict[str, np.ndarray]]],
-    ]:
+    ) -> (
+        dict[str, np.ndarray]
+        | tuple[dict[str, np.ndarray], dict[str, dict[str, np.ndarray]]]
+    ):
         """
         Perform simulation using the specified method and handle exceptions.
 

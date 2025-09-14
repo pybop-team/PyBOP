@@ -1,5 +1,5 @@
 import warnings
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 import numpy as np
 from pybamm import Solution
@@ -35,13 +35,13 @@ class OptimisationResult:
     def __init__(
         self,
         optim: "BaseOptimiser",
-        x: Union[Inputs, np.ndarray] = None,
-        final_cost: Optional[float] = None,
-        sensitivities: Optional[dict] = None,
-        n_iterations: Optional[int] = None,
-        n_evaluations: Optional[int] = None,
-        time: Optional[float] = None,
-        message: Optional[str] = None,
+        x: Inputs | np.ndarray = None,
+        final_cost: float | None = None,
+        sensitivities: dict | None = None,
+        n_iterations: int | None = None,
+        n_evaluations: int | None = None,
+        time: float | None = None,
+        message: str | None = None,
         scipy_result=None,
     ):
         self.optim = optim
@@ -122,7 +122,7 @@ class OptimisationResult:
 
     def _extend(
         self,
-        x: Union[list[Inputs], list[np.ndarray]],
+        x: list[Inputs] | list[np.ndarray],
         final_cost: list[float],
         fisher: list,
         n_iterations: list[int],
@@ -210,7 +210,7 @@ class OptimisationResult:
         self.sense_format = ""
         if self._sensitivities:
             for value, conf in zip(
-                self._sensitivities["ST"], self._sensitivities["ST_conf"]
+                self._sensitivities["ST"], self._sensitivities["ST_conf"], strict=False
             ):
                 self.sense_format += f" {value:.3f} ± {conf:.3f},"
 
@@ -230,11 +230,11 @@ class OptimisationResult:
             f"  PyBaMM Solution available: {'Yes' if self.pybamm_solution else 'No'}"
         )
 
-    def average_iterations(self) -> Optional[float]:
+    def average_iterations(self) -> float | None:
         """Calculates the average number of iterations across all runs."""
         return np.mean(self._n_iterations)
 
-    def total_runtime(self) -> Optional[float]:
+    def total_runtime(self) -> float | None:
         """Calculates the total runtime across all runs."""
         return np.sum(self._time)
 

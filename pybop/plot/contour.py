@@ -1,6 +1,5 @@
 import warnings
 from functools import partial
-from typing import Union
 
 import numpy as np
 from scipy.interpolate import griddata
@@ -10,9 +9,9 @@ from pybop.plot.plotly_manager import PlotlyManager
 
 
 def contour(
-    call_object: Union[BaseCost, BaseOptimiser],
+    call_object: BaseCost | BaseOptimiser,
     gradient: bool = False,
-    bounds: Union[np.ndarray, None] = None,
+    bounds: np.ndarray | None = None,
     apply_transform: bool = False,
     steps: int = 10,
     show: bool = True,

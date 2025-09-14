@@ -1,6 +1,5 @@
 import warnings
 from time import time
-from typing import Union
 
 import numpy as np
 from scipy.optimize import Bounds, OptimizeResult, differential_evolution, minimize
@@ -233,7 +232,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         self.inf_count = 0
 
         # Add callback storing history of parameter values
-        def base_callback(intermediate_result: Union[OptimizeResult, np.ndarray]):
+        def base_callback(intermediate_result: OptimizeResult | np.ndarray):
             """
             Log intermediate optimisation solutions. Depending on the
             optimisation algorithm, intermediate_result may be either

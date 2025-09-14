@@ -1,5 +1,4 @@
 from copy import copy
-from typing import Optional
 
 import numpy as np
 
@@ -36,9 +35,9 @@ class GITTPulseFit(BaseApplication):
     def __init__(
         self,
         parameter_set: pybop.ParameterSet,
-        electrode: Optional[str] = "negative",
-        cost: Optional[pybop.BaseCost] = pybop.RootMeanSquaredError,
-        optimiser: Optional[pybop.BaseOptimiser] = pybop.SciPyMinimize,
+        electrode: str | None = "negative",
+        cost: pybop.BaseCost | None = pybop.RootMeanSquaredError,
+        optimiser: pybop.BaseOptimiser | None = pybop.SciPyMinimize,
         verbose: bool = True,
     ):
         self.electrode = electrode
@@ -117,9 +116,9 @@ class GITTFit(BaseApplication):
         gitt_dataset: pybop.Dataset,
         pulse_index: list[np.ndarray],
         parameter_set: pybop.ParameterSet,
-        electrode: Optional[str] = "negative",
-        cost: Optional[pybop.BaseCost] = pybop.RootMeanSquaredError,
-        optimiser: Optional[pybop.BaseOptimiser] = pybop.SciPyMinimize,
+        electrode: str | None = "negative",
+        cost: pybop.BaseCost | None = pybop.RootMeanSquaredError,
+        optimiser: pybop.BaseOptimiser | None = pybop.SciPyMinimize,
         verbose: bool = False,
     ):
         self.gitt_dataset = gitt_dataset

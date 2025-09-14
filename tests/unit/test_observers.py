@@ -44,7 +44,7 @@ class TestObserver:
         expected = parameters["y0"].initial_value * np.exp(
             -parameters["k"].initial_value * t_eval
         )
-        for y, t in zip(expected, t_eval):
+        for y, t in zip(expected, t_eval, strict=False):
             observer.observe(t)
             np.testing.assert_array_almost_equal(
                 observer.get_current_state().as_ndarray(),

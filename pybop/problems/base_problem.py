@@ -1,5 +1,3 @@
-from typing import Optional
-
 import numpy as np
 from pybamm import IDAKLUSolver
 
@@ -32,12 +30,12 @@ class BaseProblem:
     def __init__(
         self,
         parameters: Parameters,
-        model: Optional[BaseModel] = None,
+        model: BaseModel | None = None,
         check_model: bool = True,
-        signal: Optional[list[str]] = None,
-        domain: Optional[str] = None,
-        additional_variables: Optional[list[str]] = None,
-        initial_state: Optional[dict] = None,
+        signal: list[str] | None = None,
+        domain: str | None = None,
+        additional_variables: list[str] | None = None,
+        initial_state: dict | None = None,
     ):
         signal = signal or ["Voltage [V]"]
         if isinstance(signal, str):
@@ -96,7 +94,7 @@ class BaseProblem:
                 output_variables=tuple(self.output_variables),
             )
 
-    def set_initial_state(self, initial_state: Optional[dict] = None):
+    def set_initial_state(self, initial_state: dict | None = None):
         """
         Set the initial state to be applied to evaluations of the problem.
 

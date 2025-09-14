@@ -1,5 +1,4 @@
 import warnings
-from typing import Optional
 
 import numpy as np
 
@@ -42,12 +41,12 @@ class DesignProblem(BaseProblem):
         self,
         model: BaseModel,
         parameters: Parameters,
-        experiment: Optional[Experiment],
+        experiment: Experiment | None,
         check_model: bool = True,
-        signal: Optional[list[str]] = None,
-        domain: Optional[str] = None,
-        additional_variables: Optional[list[str]] = None,
-        initial_state: Optional[dict] = None,
+        signal: list[str] | None = None,
+        domain: str | None = None,
+        additional_variables: list[str] | None = None,
+        initial_state: dict | None = None,
         update_capacity: bool = False,
     ):
         super().__init__(

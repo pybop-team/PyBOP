@@ -46,7 +46,7 @@ pulse_starts = np.extract(
     nonzero_index[1:],  # return the index at the start of the pulse
 )
 pulse_index = []
-for start, finish in zip(pulse_starts[:-1], pulse_starts[1:]):
+for start, finish in zip(pulse_starts[:-1], pulse_starts[1:], strict=False):
     pulse_index.append(
         np.concatenate(
             ([start - 1], [i for i in nonzero_index if i >= start and i < finish])

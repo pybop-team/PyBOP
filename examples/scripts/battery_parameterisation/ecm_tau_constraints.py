@@ -1,5 +1,3 @@
-from typing import Union
-
 import numpy as np
 
 import pybop
@@ -52,9 +50,9 @@ parameter_set.update(
 
 
 def get_parameter_checker(
-    tau_mins: Union[float, list[float]],
-    tau_maxs: Union[float, list[float]],
-    fitted_rc_pair_indices: Union[int, list[int]],
+    tau_mins: float | list[float],
+    tau_maxs: float | list[float],
+    fitted_rc_pair_indices: int | list[int],
 ):
     """Returns a function to check parameters against given tau bounds.
     The resulting check_params function will be sent off to PyBOP; the
@@ -107,7 +105,9 @@ def get_parameter_checker(
             return True
 
         # Check every respective R*C against tau bounds
-        for i, tau_min, tau_max in zip(fitted_rc_pair_indices, tau_mins, tau_maxs):
+        for i, tau_min, tau_max in zip(
+            fitted_rc_pair_indices, tau_mins, tau_maxs, strict=False
+        ):
             tau = inputs[f"R{i} [Ohm]"] * inputs[f"C{i} [F]"]
             if not tau_min <= tau <= tau_max:
                 return False

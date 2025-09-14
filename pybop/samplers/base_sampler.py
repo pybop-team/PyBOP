@@ -1,5 +1,3 @@
-from typing import Union
-
 import numpy as np
 from pints import ParallelEvaluator
 
@@ -26,10 +24,10 @@ class BaseSampler(CostInterface):
 
     def __init__(
         self,
-        log_pdf: Union[LogPosterior, list[LogPosterior]],
+        log_pdf: LogPosterior | list[LogPosterior],
         x0,
         chains: int,
-        cov0: Union[np.ndarray, float],
+        cov0: np.ndarray | float,
     ):
         self._log_pdf = log_pdf
         self._cov0 = cov0
