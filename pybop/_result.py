@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 from pybamm import Solution
 
-from pybop import BaseCost, BaseLikelihood, Inputs
+from pybop import BaseCost, Inputs
 
 if TYPE_CHECKING:
     from pybop import BaseOptimiser
@@ -53,7 +53,6 @@ class OptimisationResult:
         self._x = []
         self._final_cost = []
         self._sensitivities = None
-        self._fisher = []
         self._n_iterations = []
         self._n_evaluations = []
         self._message = []
@@ -85,17 +84,9 @@ class OptimisationResult:
                 )
                 pybamm_solution = None
 
-            # Calculate Fisher Information if Likelihood
-            if isinstance(self.cost, BaseLikelihood):
-                fisher = self.cost.observed_fisher(x)
-                diag_fish = np.diag(fisher) if fisher is not None else None
-            else:
-                diag_fish = None
-
             self._extend(
                 x=[x],
                 final_cost=[final_cost],
-                fisher=[diag_fish],
                 n_iterations=[n_iterations],
                 n_evaluations=[n_evaluations],
                 time=[time],
@@ -110,7 +101,6 @@ class OptimisationResult:
         self._extend(
             x=result._x,  # noqa: SLF001
             final_cost=result._final_cost,  # noqa: SLF001
-            fisher=result._fisher,  # noqa: SLF001
             n_iterations=result._n_iterations,  # noqa: SLF001
             n_evaluations=result._n_evaluations,  # noqa: SLF001
             time=result._time,  # noqa: SLF001
@@ -124,7 +114,6 @@ class OptimisationResult:
         self,
         x: list[Inputs] | list[np.ndarray],
         final_cost: list[float],
-        fisher: list,
         n_iterations: list[int],
         n_evaluations: list[int],
         time: list[float],
@@ -136,7 +125,6 @@ class OptimisationResult:
         self.n_runs += len(final_cost)
         self._x.extend(x)
         self._final_cost.extend(final_cost)
-        self._fisher.extend(fisher)
         self._n_iterations.extend(n_iterations)
         self._n_evaluations.extend(n_evaluations)
         self._message.extend(message)
@@ -220,7 +208,6 @@ class OptimisationResult:
             f"  Initial parameters: {self.x0_best}\n"
             f"  Optimised parameters: {self.x_best}\n"
             f"  Total-order sensitivities:{self.sense_format}\n"
-            f"  Diagonal Fisher Information entries: {self.fisher_best}\n"
             f"  Final cost: {self.final_cost_best}\n"
             f"  Optimisation time: {self.time_best} seconds\n"
             f"  Number of iterations: {self.n_iterations_best}\n"
@@ -267,20 +254,12 @@ class OptimisationResult:
         return self._final_cost[self._best_run] if self._best_run is not None else None
 
     @property
-    def fisher(self):
-        return self._get_single_or_all("_fisher")
-
-    @property
     def sensitivities(self):
         return self._get_single_or_all("_sensitivities")
 
     @sensitivities.setter
     def sensitivities(self, obj: dict):
         self._sensitivities = obj
-
-    @property
-    def fisher_best(self):
-        return self._fisher[self._best_run] if self._best_run is not None else None
 
     @property
     def n_iterations(self):

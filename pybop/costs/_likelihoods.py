@@ -3,7 +3,7 @@ import scipy.stats as stats
 
 import pybop
 from pybop.costs.base_cost import BaseCost
-from pybop.parameters.parameter import Inputs, Parameter, Parameters
+from pybop.parameters.parameter import Parameter, Parameters
 from pybop.parameters.priors import BasePrior, JointLogPrior, Uniform
 from pybop.problems.base_problem import BaseProblem
 
@@ -18,36 +18,6 @@ class BaseLikelihood(BaseCost):
         super().__init__(problem)
         self.n_data = problem.n_data
         self.minimising = False
-
-    def observed_fisher(self, inputs: Inputs | list | np.ndarray) -> np.ndarray | None:
-        """
-        Compute the observed Fisher Information Matrix (FIM) for the given data.
-
-        The Fisher information is computed as the outer product of the gradients with respect to
-        the model parameters, scaled by the inverse of the dataset size. This method should only
-        be used with exponential-based likelihood functions.
-
-        Parameters
-        ----------
-        inputs : Union[dict[str, float], list-like]
-            Input data for model evaluation.
-
-        Returns
-        -------
-        np.ndarray
-            The observed Fisher Information Matrix.
-        """
-
-        # Check gradients are available, return None if not.
-        if not self.problem.sensitivities_available:
-            return
-
-        # Calculate the fisher information via gradient outer-product
-        _, grad = self.__call__(inputs, calculate_grad=True)
-        shaped_grad = grad.reshape(-1, 1)
-        fisher_info = (shaped_grad @ shaped_grad.T) / self.n_data
-
-        return fisher_info
 
 
 class BaseMetaLikelihood(BaseLikelihood):

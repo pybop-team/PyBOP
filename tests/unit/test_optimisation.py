@@ -596,7 +596,6 @@ class TestOptimisation:
             f"  Initial parameters: {results.x0}\n"
             f"  Optimised parameters: {results.x}\n"
             f"  Total-order sensitivities:{results.sense_format}\n"
-            f"  Diagonal Fisher Information entries: {None}\n"
             f"  Final cost: {results.final_cost}\n"
             f"  Optimisation time: {results.time} seconds\n"
             f"  Number of iterations: {results.n_iterations}\n"
@@ -700,7 +699,6 @@ class TestOptimisation:
         assert results.x[0] == 1e-3
         assert results.final_cost == cost([1e-3])
         assert results.n_iterations == 1
-        assert results.fisher is None
 
         # Test non-finite results
         with pytest.raises(

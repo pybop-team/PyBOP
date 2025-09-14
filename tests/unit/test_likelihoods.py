@@ -200,28 +200,3 @@ class TestLikelihoods:
         np.testing.assert_allclose(
             grad, scaled_likelihood([0.6], calculate_grad=True)[1]
         )
-
-    @pytest.mark.parametrize(
-        "likelihood_cls",
-        [pybop.GaussianLogLikelihoodKnownSigma],
-    )
-    def test_fisher_matrix(
-        self, likelihood_cls, one_signal_problem, model, dataset, parameters
-    ):
-        likelihood = likelihood_cls(one_signal_problem, sigma0=1e-3)
-        fisher = likelihood.observed_fisher([0.5])
-        assert isinstance(fisher, np.ndarray)
-
-        # Test fisher does not compute for non-gradient available parameters
-
-        parameters.add(
-            pybop.Parameter(
-                "Negative particle radius [m]",
-                prior=pybop.Gaussian(6e-06, 0.1e-6),
-                bounds=[1e-6, 9e-6],
-            ),
-        )
-        problem = pybop.FittingProblem(model, parameters, dataset)
-        likelihood_non_grad = likelihood_cls(problem, sigma0=1e-3)
-        fisher = likelihood_non_grad.observed_fisher([0.5, 5e-06])
-        assert fisher is None
