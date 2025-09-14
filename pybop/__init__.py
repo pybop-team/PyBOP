@@ -122,6 +122,11 @@ from .costs._weighted_cost import WeightedCost
 from ._evaluation import SciPyEvaluator
 
 #
+# Optimisation logging
+#
+from ._logging import Logger
+
+#
 # Optimiser classes
 #
 from .optimisers._cuckoo import CuckooSearchImpl
