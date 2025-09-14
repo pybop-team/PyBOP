@@ -77,7 +77,7 @@ class TestOptimisation:
         ],
     )
     def test_optimisation_f_guessed(self, f_guessed, cost):
-        x0 = cost.parameters.initial_value()
+        x0 = cost.parameters.get_initial_values()
         # Test each optimiser
         optim = pybop.XNES(
             cost=cost,

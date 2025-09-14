@@ -47,6 +47,7 @@ class Transformation(ABC):
     @abstractmethod
     def jacobian(self, q: np.ndarray) -> np.ndarray:
         """Returns the Jacobian matrix of the transformation at the parameter vector `q`."""
+        raise NotImplementedError
 
     def jacobian_S1(self, q: np.ndarray) -> tuple[np.ndarray, Sequence[np.ndarray]]:
         """
@@ -92,6 +93,7 @@ class Transformation(ABC):
         Transforms a parameter vector `x` from the search space to the model space if `method`
         is "to_model", or from the model space to the search space if `method` is "to_search".
         """
+        raise NotImplementedError
 
     def is_elementwise(self) -> bool:
         """

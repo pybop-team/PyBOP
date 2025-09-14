@@ -58,7 +58,7 @@ class MultiFittingProblem(BaseProblem):
             }
         )
         self._dataset = combined_dataset.data
-        self.parameters.initial_value()
+        self.parameters.get_initial_values()
 
         # Unpack domain and target data
         self._domain_data = self._dataset[self.domain]

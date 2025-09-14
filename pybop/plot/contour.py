@@ -90,8 +90,8 @@ def contour(
             param,
         ) in enumerate(parameters):
             if i > 1:
-                additional_values.append(param.value)
-                print(f"Fixed {param.name}:", param.value)
+                additional_values.append(param.current_value)
+                print(f"Fixed {param.name}:", param.current_value)
 
     # Set up parameter bounds
     if bounds is None:

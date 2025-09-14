@@ -19,7 +19,6 @@ class TestModelAndExperimentChanges:
                     "Negative particle radius [m]",
                     prior=pybop.Gaussian(6e-06, 0.1e-6),
                     bounds=[1e-6, 9e-6],
-                    true_value=5.86e-6,
                     initial_value=5.86e-6,
                 ),
             ),
@@ -28,13 +27,13 @@ class TestModelAndExperimentChanges:
                     "Positive particle diffusivity [m2.s-1]",
                     prior=pybop.Gaussian(3.43e-15, 1e-15),
                     bounds=[1e-15, 5e-15],
-                    true_value=4e-15,
                     initial_value=4e-15,
                 ),
             ),
         ]
     )
     def parameters(self, request):
+        self.ground_truth = [5.86e-6, 4e-15]
         return request.param
 
     @pytest.fixture
@@ -116,13 +115,13 @@ class TestModelAndExperimentChanges:
 
     def test_multi_fitting_problem(self, solver):
         parameter_set = pybop.ParameterSet("Chen2020")
+        ground_truth = parameter_set[
+            "Negative electrode active material volume fraction"
+        ]
         parameters = pybop.Parameters(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.68, 0.05),
-                true_value=parameter_set[
-                    "Negative electrode active material volume fraction"
-                ],
             )
         )
 
@@ -166,5 +165,5 @@ class TestModelAndExperimentChanges:
                 cost, sigma0=0.05, max_iterations=100, max_unchanged_iterations=30
             )
             results = optim.run()
-            np.testing.assert_allclose(results.x, parameters.true_value(), atol=2e-5)
+            np.testing.assert_allclose(results.x, ground_truth, atol=2e-5)
             np.testing.assert_allclose(results.final_cost, 0, atol=3e-5)

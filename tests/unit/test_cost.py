@@ -387,7 +387,7 @@ class TestCosts:
         assert np.isfinite(weighted_cost_4([0.5, sigma]))
         np.testing.assert_allclose(
             weighted_cost_4([0.6, sigma]),
-            cost1([0.6, sigma]) - 1 / weight * cost4([0.6, sigma]),
+            cost1([0.6]) - 1 / weight * cost4([0.6, sigma]),
             atol=1e-5,
         )
 

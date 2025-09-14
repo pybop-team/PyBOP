@@ -21,19 +21,17 @@ class TestClassification:
         ]
     )
     def parameters(self, request):
-        ground_truth = request.param
+        self.ground_truth = request.param
         return pybop.Parameters(
             pybop.Parameter(
                 "R0 [Ohm]",
                 prior=pybop.Gaussian(0.05, 0.01),
                 bounds=[0.02, 0.08],
-                true_value=ground_truth[0],
             ),
             pybop.Parameter(
                 "R1 [Ohm]",
                 prior=pybop.Gaussian(0.05, 0.01),
                 bounds=[0.02, 0.08],
-                true_value=ground_truth[1],
             ),
         )
 
@@ -47,7 +45,7 @@ class TestClassification:
 
     @pytest.fixture
     def model(self, parameter_set, parameters):
-        parameter_set.update(parameters.as_dict(parameters.true_value()))
+        parameter_set.update(parameters.as_dict(self.ground_truth))
         return pybop.empirical.Thevenin(parameter_set=parameter_set)
 
     @pytest.fixture
@@ -73,7 +71,7 @@ class TestClassification:
 
     def test_classify_using_hessian(self, problem):
         cost = pybop.RootMeanSquaredError(problem)
-        x = cost.parameters.true_value()
+        x = self.ground_truth
         bounds = cost.parameters.get_bounds()
         x0 = np.clip(x, bounds["lower"], bounds["upper"])
         optim = pybop.XNES(cost=cost)
@@ -112,12 +110,10 @@ class TestClassification:
         param_R0_a = pybop.Parameter(
             "R0_a [Ohm]",
             bounds=[0, 0.002],
-            true_value=0.001,
         )
         param_R0_b = pybop.Parameter(
             "R0_b [Ohm]",
             bounds=[-1e-4, 1e-4],
-            true_value=0,
         )
         parameter_set.update(
             {"R0_a [Ohm]": 0.001, "R0_b [Ohm]": 0},
@@ -146,7 +142,7 @@ class TestClassification:
         ]:
             problem = pybop.FittingProblem(model, parameters, dataset)
             cost = pybop.SumOfPower(problem, p=1)
-            x = cost.parameters.true_value()
+            x = [0.001, 0]
             optim = pybop.XNES(cost=cost)
             results = pybop.OptimisationResult(x=x, optim=optim)
 

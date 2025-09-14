@@ -168,9 +168,9 @@ class BaseCost:
         """
 
         salib_dict = {
-            "names": self.parameters.keys(),
-            "bounds": self.parameters.get_bounds_for_plotly(),
-            "num_vars": len(self.parameters.keys()),
+            "names": list(self.parameters.keys()),
+            "bounds": self.parameters.get_bounds_array(),
+            "num_vars": len(self.parameters),
         }
 
         param_values = sample(salib_dict, n_samples)

@@ -145,7 +145,7 @@ class TestEISParameterisation:
         return optim
 
     def test_eis_optimisers(self, optim):
-        x0 = optim.parameters.initial_value()
+        x0 = optim.parameters.get_initial_values()
 
         # Add sigma0 to ground truth for GaussianLogLikelihood
         if isinstance(optim.cost, pybop.GaussianLogLikelihood):

@@ -119,7 +119,7 @@ class TestWeightedCost:
         return pybop.WeightedCost(*costs, weights=[0.1, 1, 0.5, 0.6])
 
     def test_fitting_costs(self, weighted_fitting_cost):
-        x0 = weighted_fitting_cost.parameters.initial_value()
+        x0 = weighted_fitting_cost.parameters.get_initial_values()
         optim = pybop.CuckooSearch(
             cost=weighted_fitting_cost,
             sigma0=0.03,
@@ -127,7 +127,7 @@ class TestWeightedCost:
             max_unchanged_iterations=35,
         )
 
-        initial_cost = optim.cost(optim.parameters.initial_value())
+        initial_cost = optim.cost(optim.parameters.get_initial_values())
         results = optim.run()
 
         # Assertions
@@ -182,7 +182,7 @@ class TestWeightedCost:
             max_iterations=15,
             allow_infeasible_solutions=False,
         )
-        initial_values = optim.parameters.initial_value()
+        initial_values = optim.parameters.get_initial_values()
         initial_cost = optim.cost(initial_values)
         results = optim.run()
 

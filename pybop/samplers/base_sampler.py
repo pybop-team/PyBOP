@@ -63,7 +63,7 @@ class BaseSampler(CostInterface):
             self.parameters.update(initial_values=x0)
 
         # Update x0 w/ transformation if applicable - reshape to align with chains
-        self._x0 = self.parameters.reset_initial_value(apply_transform=True).reshape(
+        self._x0 = self.parameters.get_initial_values(apply_transform=True).reshape(
             1, -1
         )
 

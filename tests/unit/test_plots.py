@@ -1,5 +1,3 @@
-import warnings
-
 import numpy as np
 import pybamm
 import pytest
@@ -114,8 +112,7 @@ class TestPlots:
         pybop.plot.contour(cost, gradient=True, steps=5, apply_transform=True)
 
         # Test without bounds
-        for param in cost.parameters:
-            param.bounds = None
+        cost.parameters.remove_bounds()
         with pytest.raises(ValueError, match="All parameters require bounds for plot."):
             pybop.plot.contour(cost, steps=5)
 
@@ -125,7 +122,7 @@ class TestPlots:
     @pytest.fixture
     def optim(self, cost):
         # Define and run an example optimisation
-        optim = pybop.XNES(cost)
+        optim = pybop.IRPropMin(cost)
         optim.run()
         return optim
 
@@ -241,27 +238,6 @@ class TestPlots:
         fitting_problem = pybop.FittingProblem(model, parameters, dataset)
         cost = pybop.SumSquaredError(fitting_problem)
         pybop.plot.contour(cost)
-
-    def test_contour_prior_bounds(self, model, dataset):
-        # Test with prior bounds
-        parameters = pybop.Parameters(
-            pybop.Parameter(
-                "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.68, 0.01),
-            ),
-            pybop.Parameter(
-                "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.58, 0.01),
-            ),
-        )
-        fitting_problem = pybop.FittingProblem(model, parameters, dataset)
-        cost = pybop.SumSquaredError(fitting_problem)
-        with pytest.warns(
-            UserWarning,
-            match="Bounds were created from prior distributions.",
-        ):
-            warnings.simplefilter("always")
-            pybop.plot.contour(cost)
 
     def test_nyquist(self):
         # Define model

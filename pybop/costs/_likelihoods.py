@@ -209,7 +209,7 @@ class GaussianLogLikelihood(BaseLikelihood):
             If dy is not None, returns a tuple containing the log-likelihood (float) and the
             gradient with dimension (len(parameters)), otherwise returns only the log-likelihood.
         """
-        sigma = self.sigma.current_value()
+        sigma = self.sigma.get_values()
 
         if not self.verify_prediction(y):
             return (-np.inf, -self.grad_fail) if dy is not None else -np.inf
@@ -321,17 +321,17 @@ class LogPosterior(BaseMetaLikelihood):
         # Compute log prior (and gradient)
         if dy is not None:
             if isinstance(self._prior, BasePrior):
-                log_prior, dp = self._prior.logpdfS1(self.parameters.current_value())
+                log_prior, dp = self._prior.logpdfS1(self.parameters.get_values())
             else:
                 # Compute log prior first
-                log_prior = self._prior.logpdf(self.parameters.current_value())
+                log_prior = self._prior.logpdf(self.parameters.get_values())
 
                 # Compute a finite difference approximation of the gradient of the log prior
-                delta = self.parameters.current_value() * self.gradient_step
+                delta = self.parameters.get_values() * self.gradient_step
                 dp = []
 
                 for parameter, step_size in zip(self.parameters, delta, strict=False):
-                    param_value = parameter.value
+                    param_value = parameter.current_value
                     upper_value = param_value + step_size
                     lower_value = param_value - step_size
 
@@ -343,7 +343,7 @@ class LogPosterior(BaseMetaLikelihood):
                     )
                     dp.append(gradient)
         else:
-            log_prior = self._prior.logpdf(self.parameters.current_value())
+            log_prior = self._prior.logpdf(self.parameters.get_values())
 
         if not np.isfinite(log_prior).any():
             return (-np.inf, -self.grad_fail) if dy is not None else -np.inf

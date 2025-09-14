@@ -402,7 +402,7 @@ def surface(
                 )
             )
 
-    names = optim.cost.parameters.keys()
+    names = list(optim.cost.parameters.keys())
     fig.update_layout(
         title="Voronoi Cost Landscape",
         title_x=0.5,

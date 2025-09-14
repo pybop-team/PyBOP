@@ -90,7 +90,7 @@ class TestProblem:
             problem.set_target(dataset)
 
         # Different types of parameters
-        parameter_list = list(parameters.param.values())
+        parameter_list = list(parameters._parameters.values())
         problem = pybop.BaseProblem(parameters=parameter_list)
         problem = pybop.BaseProblem(parameters=parameter_list[0])
         with pytest.raises(
@@ -143,7 +143,7 @@ class TestProblem:
         assert_array_equal(target, dataset["Voltage [V]"])
 
         # Test model.simulate
-        model.simulate(inputs=[1e-5, 1e-5], t_eval=np.linspace(0, 10, 100))
+        problem.model.simulate(inputs=[1e-5, 1e-5], t_eval=np.linspace(0, 10, 100))
 
         # Test model.simulate with an initial state
         problem.evaluate(inputs=[1e-5, 1e-5])

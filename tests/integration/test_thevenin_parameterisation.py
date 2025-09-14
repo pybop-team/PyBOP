@@ -85,7 +85,7 @@ class TestTheveninParameterisation:
         problem = pybop.FittingProblem(model, parameters, dataset)
         cost = cost_class(problem)
 
-        x0 = cost.parameters.initial_value()
+        x0 = cost.parameters.get_initial_values()
         common_args = {
             "cost": cost,
             "max_iterations": 150,
@@ -100,7 +100,7 @@ class TestTheveninParameterisation:
         if isinstance(optimiser, pybop.BasePintsOptimiser):
             optim.set_max_unchanged_iterations(iterations=35, absolute_tolerance=1e-5)
 
-        initial_cost = optim.cost(optim.parameters.initial_value())
+        initial_cost = optim.cost(optim.parameters.get_initial_values())
         results = optim.run()
 
         # Assertions

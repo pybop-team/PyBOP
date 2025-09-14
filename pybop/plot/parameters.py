@@ -30,7 +30,7 @@ def parameters(optim, show=True, **layout_kwargs):
 
     # Create lists of axis titles and trace names
     axis_titles = []
-    trace_names = parameters.keys()
+    trace_names = list(parameters.keys())
     for name in trace_names:
         axis_titles.append(("Function Call", name))
 

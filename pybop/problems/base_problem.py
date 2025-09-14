@@ -61,7 +61,7 @@ class BaseProblem:
             )
 
         self.parameters = parameters
-        self.parameters.reset_initial_value()
+        self.parameters.reset_to_initial()
 
         self._model = model.copy() if model is not None else None
         self.eis = False

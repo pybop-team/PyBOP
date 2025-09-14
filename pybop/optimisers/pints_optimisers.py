@@ -639,7 +639,7 @@ class CMAES(BasePintsOptimiser):
         parallel: bool = False,
         **optimiser_kwargs,
     ):
-        x0 = optimiser_kwargs.get("x0", cost.parameters.initial_value())
+        x0 = optimiser_kwargs.get("x0", cost.parameters.get_initial_values())
         if len(x0) == 1 or len(cost.parameters) == 1:
             raise ValueError(
                 "CMAES requires optimisation of >= 2 parameters at once. "

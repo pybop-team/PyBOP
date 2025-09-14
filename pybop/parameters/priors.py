@@ -212,6 +212,9 @@ class BasePrior:
         """
         return self.scale
 
+    def bounds(self) -> tuple[float, float] | None:
+        raise NotImplementedError
+
 
 class Gaussian(BasePrior):
     """
@@ -251,6 +254,9 @@ class Gaussian(BasePrior):
             The value(s) of the first derivative at x.
         """
         return self.__call__(x), (self.loc - x) / self.scale**2
+
+    def bounds(self) -> None:
+        return None
 
 
 class Uniform(BasePrior):
@@ -310,6 +316,9 @@ class Uniform(BasePrior):
         """
         return (self.upper - self.lower) / (2 * np.sqrt(3))
 
+    def bounds(self) -> tuple[float, float]:
+        return self.lower, self.upper
+
 
 class Exponential(BasePrior):
     """
@@ -350,6 +359,9 @@ class Exponential(BasePrior):
         dlog_pdf = -1 / self.scale * np.ones_like(x)
         return log_pdf, dlog_pdf
 
+    def bounds(self) -> None:
+        return None
+
 
 class JointLogPrior(BasePrior):
     """
@@ -364,6 +376,9 @@ class JointLogPrior(BasePrior):
     def __init__(self, *priors: BasePrior):
         super().__init__()
 
+        if all(prior is None for prior in priors):
+            return
+
         if not all(isinstance(prior, BasePrior) for prior in priors):
             raise ValueError("All priors must be instances of BasePrior")
 
@@ -376,7 +391,7 @@ class JointLogPrior(BasePrior):
 
         Parameters
         ----------
-        x : Union[float, np.ndarray]
+        x : float | np.ndarray
             The point(s) at which to evaluate the distribution. The length of `x`
             should match the total number of parameters in the joint distribution.
 
@@ -398,7 +413,7 @@ class JointLogPrior(BasePrior):
 
         Parameters
         ----------
-        x : Union[float, np.ndarray]
+        x : float | np.ndarray
             The point(s) at which to evaluate the first derivative. The length of `x`
             should match the total number of parameters in the joint distribution.
 
@@ -421,9 +436,12 @@ class JointLogPrior(BasePrior):
             derivatives.append(dp)
 
         output = sum(log_probs)
-        doutput = np.array(derivatives)
+        doutput = np.asarray(derivatives)
 
-        return output, doutput
+        if doutput.ndim == 1:
+            return output, doutput
+
+        return output, doutput.T
 
     def __repr__(self) -> str:
         priors_repr = ", ".join([repr(prior) for prior in self._priors])

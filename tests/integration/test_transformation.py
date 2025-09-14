@@ -127,7 +127,7 @@ class TestTransformation:
         ids=lambda val: f"{transformation_id(val)}",
     )
     def test_thevenin_transformation(self, optimiser, cost):
-        x0 = cost.parameters.initial_value()
+        x0 = cost.parameters.get_initial_values()
         optim = optimiser(
             cost=cost,
             sigma0=[0.02, 0.02, 2e-3]

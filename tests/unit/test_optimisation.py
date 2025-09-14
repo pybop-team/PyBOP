@@ -361,7 +361,7 @@ class TestOptimisation:
                     optim.optimiser.pa = "test"
 
         else:
-            x0 = cost.parameters.initial_value()
+            x0 = cost.parameters.get_initial_values()
             assert optim.x0 == x0
             x0_new = np.array([0.5])
             optim = optimiser(cost=cost, x0=x0_new)
@@ -533,7 +533,7 @@ class TestOptimisation:
             max_iterations=1,
         )
 
-        # If small sigma, expect a ValueError due inability to resample a non np.inf cost
+        # If small sigma, expect a ValueError due to inability to resample a non np.inf cost
         if expect_exception:
             with pytest.raises(
                 ValueError,
@@ -552,9 +552,10 @@ class TestOptimisation:
         # Set up the parameter with no prior
         parameter = pybop.Parameter(
             "Negative electrode active material volume fraction",
-            initial_value=1,  # Intentionally infeasible!
+            initial_value=0.9,
             bounds=[0.55, 0.95],
         )
+        parameter.update_initial_value(1.0)  # Intentionally infeasible!
 
         # Define the problem and cost
         problem = pybop.FittingProblem(model, parameter, dataset)
@@ -576,7 +577,7 @@ class TestOptimisation:
         # Add a parameter transformation
         cost.parameters[
             "Positive electrode active material volume fraction"
-        ].transformation = pybop.IdentityTransformation()
+        ]._transformation = pybop.IdentityTransformation()
 
         # Test max evalutions
         optim = pybop.GradientDescent(cost=cost, max_evaluations=1, verbose=True)

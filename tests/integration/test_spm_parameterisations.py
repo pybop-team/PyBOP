@@ -162,7 +162,7 @@ class Test_SPM_Parameterisation:
         return optim
 
     def test_optimisers(self, optim):
-        x0 = optim.parameters.initial_value()
+        x0 = optim.parameters.get_initial_values()
 
         # Add sigma0 to ground truth for GaussianLogLikelihood
         if isinstance(optim.cost, pybop.GaussianLogLikelihood):
@@ -225,7 +225,7 @@ class Test_SPM_Parameterisation:
         ],
     )
     def test_multiple_signals(self, multi_optimiser, two_signal_cost):
-        x0 = two_signal_cost.parameters.initial_value()
+        x0 = two_signal_cost.parameters.get_initial_values()
         combined_sigma0 = np.asarray([self.sigma0, self.sigma0])
 
         common_args = {
@@ -250,7 +250,7 @@ class Test_SPM_Parameterisation:
         if isinstance(two_signal_cost, pybop.GaussianLogLikelihood):
             self.ground_truth = np.concatenate((self.ground_truth, combined_sigma0))
 
-        initial_cost = optim.cost(optim.parameters.initial_value())
+        initial_cost = optim.cost(optim.parameters.get_initial_values())
         results = optim.run()
 
         # Assertions

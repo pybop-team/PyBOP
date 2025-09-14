@@ -92,7 +92,7 @@ class TestHalfCellModel:
         return pybop.SumSquaredError(problem)
 
     def test_fitting_costs(self, fitting_cost):
-        x0 = fitting_cost.parameters.initial_value()
+        x0 = fitting_cost.parameters.get_initial_values()
         optim = pybop.CuckooSearch(
             cost=fitting_cost,
             sigma0=0.03,
@@ -100,7 +100,7 @@ class TestHalfCellModel:
             max_unchanged_iterations=35,
         )
 
-        initial_cost = optim.cost(optim.parameters.initial_value())
+        initial_cost = optim.cost(optim.parameters.get_initial_values())
         results = optim.run()
 
         # Assertions
@@ -140,7 +140,7 @@ class TestHalfCellModel:
             max_iterations=15,
             allow_infeasible_solutions=False,
         )
-        initial_values = optim.parameters.initial_value()
+        initial_values = optim.parameters.get_initial_values()
         initial_cost = optim.cost(initial_values)
         results = optim.run()
 

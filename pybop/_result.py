@@ -70,7 +70,7 @@ class OptimisationResult:
                 if final_cost is not None
                 else self.cost(x)
             )
-            x0 = self.optim.parameters.initial_value()
+            x0 = self.optim.parameters.get_initial_values()
 
             # Evaluate the problem once more to update the solution
             try:

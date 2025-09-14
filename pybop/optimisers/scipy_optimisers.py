@@ -261,7 +261,9 @@ class SciPyMinimize(BaseSciPyOptimiser):
         if np.isinf(self._cost0):
             for _i in range(1, self.num_resamples):
                 try:
-                    self.x0 = self.parameters.rvs(apply_transform=True)
+                    self.x0 = self.parameters.sample_from_priors(apply_transform=True)[
+                        0
+                    ]
                 except AttributeError:
                     warnings.warn(
                         "Parameter does not have a prior distribution. Stopping resampling.",

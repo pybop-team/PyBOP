@@ -158,7 +158,9 @@ class BaseOptimiser(CostInterface):
         x0 = self.unset_options.pop("x0", None)
         if x0 is not None:
             self.parameters.update(initial_values=x0)
-        self.x0 = self.parameters.reset_initial_value(apply_transform=True)
+        else:
+            self.parameters.reset_to_initial()
+        self.x0 = self.parameters.get_initial_values(apply_transform=True)
 
         # Set the search-space parameter bounds (for all or no parameters)
         bounds = self.unset_options.pop("bounds", self.parameters.get_bounds())
@@ -220,8 +222,10 @@ class BaseOptimiser(CostInterface):
         for i in range(self.multistart):
             if i >= 1:
                 self.unset_options = self.unset_options_store.copy()
-                self.parameters.update(initial_values=self.parameters.rvs(1))
-                self.x0 = self.parameters.reset_initial_value(apply_transform=True)
+                self.parameters.update(
+                    initial_values=self.parameters.sample_from_priors(1)
+                )
+                self.x0 = self.parameters.get_initial_values(apply_transform=True)
                 self._set_up_optimiser()
 
             self.result.add_result(self._run())

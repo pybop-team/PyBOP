@@ -289,8 +289,8 @@ class TestModels:
         assert sol.sensitivities in (None, {})
 
         # Test that the model can be rebuilt with different geometric parameters
-        parameters["Positive particle radius [m]"].update(5e-06)
-        parameters["Negative electrode thickness [m]"].update(45e-06)
+        parameters["Positive particle radius [m]"].update_value(5e-06)
+        parameters["Negative electrode thickness [m]"].update_value(45e-06)
         model.build(parameters=parameters)
         rebuilt_model = model
         assert rebuilt_model._built_model is not None
@@ -453,7 +453,6 @@ class TestModels:
         base = pybop.BaseModel()
         assert base.check_params()
         assert base.check_params(inputs={"a": 1})
-        assert base.check_params(inputs=[1])
         with pytest.raises(TypeError, match="Inputs must be a dictionary or numeric."):
             base.check_params(inputs=["unexpected_string"])
 

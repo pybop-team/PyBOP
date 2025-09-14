@@ -70,7 +70,7 @@ class TestLogPosterior:
     def test_log_posterior_construction(self, likelihood, prior):
         # Test log posterior construction
         posterior = pybop.LogPosterior(likelihood, prior)
-        keys = likelihood.parameters.keys()
+        keys = list(likelihood.parameters.keys())
 
         assert posterior._log_likelihood == likelihood
         assert posterior._prior == prior
