@@ -174,7 +174,7 @@ class EChemBaseModel(BaseModel):
         self._unprocessed_parameter_values = self._unprocessed_parameter_set
 
         # Set initial state via PyBaMM's Simulation class
-        Simulation.set_initial_soc(self, initial_state, inputs=inputs)
+        Simulation.set_initial_state(self, initial_state, inputs=inputs)
 
         # Update the default parameter set for consistency
         self._unprocessed_parameter_set = self._parameter_values
