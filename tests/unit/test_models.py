@@ -6,7 +6,6 @@ import pybamm
 import pytest
 
 import pybop
-from examples.standalone.model import ExponentialDecay as StandaloneDecay
 
 
 class TestModels:
@@ -325,9 +324,7 @@ class TestModels:
                 atol=1e-5,
             )
 
-    @pytest.mark.parametrize(
-        "model_cls", [StandaloneDecay, pybop.ExponentialDecayModel]
-    )
+    @pytest.mark.parametrize("model_cls", [pybop.ExponentialDecayModel])
     def test_reinit(self, model_cls):
         k = 0.1
         y0 = 1
@@ -352,9 +349,7 @@ class TestModels:
         ):
             model.reinit(inputs={})
 
-    @pytest.mark.parametrize(
-        "model_cls", [StandaloneDecay, pybop.ExponentialDecayModel]
-    )
+    @pytest.mark.parametrize("model_cls", [pybop.ExponentialDecayModel])
     def test_simulate(self, model_cls):
         k = 0.1
         y0 = 1
