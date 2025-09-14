@@ -158,7 +158,6 @@ from .optimisers.pints_optimisers import (
     AdamW,
     SimulatedAnnealing,
 )
-from .optimisers.optimisation import Optimisation
 
 #
 # Monte Carlo classes
@@ -177,7 +176,6 @@ from .samplers.pints_samplers import (
     RelativisticMCMC, SliceDoublingMCMC,
     SliceRankShrinkingMCMC, SliceStepoutMCMC,
 )
-from .samplers.mcmc_sampler import MCMCSampler
 
 #
 # Classification classes

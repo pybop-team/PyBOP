@@ -57,9 +57,8 @@ problem = pybop.FittingProblem(
     dataset,
 )
 cost = pybop.GaussianLogLikelihood(problem, sigma0=8e-3)
-optim = pybop.Optimisation(
+optim = pybop.CuckooSearch(
     cost,
-    optimiser=pybop.CuckooSearch,
     max_iterations=100,
 )
 

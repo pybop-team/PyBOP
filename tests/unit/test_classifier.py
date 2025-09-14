@@ -40,7 +40,7 @@ class TestClassifier:
 
     def test_classify_using_hessian_invalid(self, problem):
         cost = pybop.SumSquaredError(problem)
-        optim = pybop.Optimisation(cost=cost)
+        optim = pybop.XNES(cost=cost)
         x = np.asarray([0.001])
         results = pybop.OptimisationResult(x=x, optim=optim)
 

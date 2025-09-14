@@ -53,9 +53,8 @@ dataset = pybop.Dataset(
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.GaussianLogLikelihood(problem, sigma0=sigma * 4)
-optim = pybop.Optimisation(
+optim = pybop.RandomSearch(
     cost,
-    optimiser=pybop.RandomSearch,
     max_iterations=100,
 )
 

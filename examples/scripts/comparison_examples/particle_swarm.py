@@ -37,9 +37,8 @@ dataset = pybop.Dataset(
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.SumSquaredError(problem)
-optim = pybop.Optimisation(
+optim = pybop.PSO(
     cost,
-    optimiser=pybop.PSO,
     sigma0=0.05,
     max_unchanged_iterations=20,
     max_iterations=100,

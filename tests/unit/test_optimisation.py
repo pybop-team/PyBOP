@@ -105,12 +105,6 @@ class TestOptimisation:
 
         assert optim.cost is not None
         assert optim.name() == expected_name
-
-        # Test pybop.Optimisation construction
-        optim = pybop.Optimisation(cost=cost, optimiser=optimiser)
-
-        assert optim.cost is not None
-        assert optim.name() == expected_name
         assert optim.needs_sensitivities == sensitivities
 
         if optimiser not in [pybop.SciPyDifferentialEvolution]:
@@ -126,7 +120,7 @@ class TestOptimisation:
         )
         cost = pybop.RootMeanSquaredError(problem)
         with pytest.raises(ValueError, match="There are no parameters to optimise."):
-            pybop.Optimisation(cost=cost)
+            pybop.XNES(cost=cost)
 
     def test_sensitivities_not_available(self, cost):
         cost.problem.model.solver = pybamm.CasadiSolver()
@@ -235,9 +229,7 @@ class TestOptimisation:
 
             # Check population setter
             if isinstance(optim.optimiser, PopulationBasedOptimiser):
-                optim = pybop.Optimisation(
-                    cost=cost, optimiser=optimiser, population_size=100
-                )
+                optim = optimiser(cost=cost, population_size=100)
                 assert optim.optimiser.population_size() == 100
         else:
             optim = optimiser(cost=cost, bounds=bounds, tol=1e-2)
@@ -482,7 +474,7 @@ class TestOptimisation:
             Exception,
             match="The cost is not a recognised cost object or function.",
         ):
-            pybop.Optimisation(cost="Invalid string")
+            pybop.XNES(cost="Invalid string")
 
         def invalid_cost(x):
             return [1, 2]
@@ -491,20 +483,13 @@ class TestOptimisation:
             Exception,
             match="not a scalar numeric value.",
         ):
-            pybop.Optimisation(cost=invalid_cost)
+            pybop.XNES(cost=invalid_cost)
 
         # Test valid cost
         def valid_cost(x):
             return x[0] ** 2
 
-        pybop.Optimisation(cost=valid_cost, x0=np.asarray([0.1]))
-
-    def test_default_optimiser(self, cost):
-        optim = pybop.Optimisation(cost=cost)
-        assert optim.name() == "Exponential Natural Evolution Strategy (xNES)"
-
-        # Test getting incorrect attribute
-        assert not hasattr(optim, "not_a_valid_attribute")
+        pybop.XNES(cost=valid_cost, x0=np.asarray([0.1]))
 
     def test_incorrect_optimiser_class(self, cost):
         class RandomClass:
@@ -518,9 +503,6 @@ class TestOptimisation:
 
         with pytest.raises(NotImplementedError):
             pybop.BaseOptimiser(cost=cost)
-
-        with pytest.raises(ValueError):
-            pybop.Optimisation(cost=cost, optimiser=RandomClass)
 
     @pytest.mark.parametrize(
         "mean, sigma, expect_exception",
@@ -643,7 +625,7 @@ class TestOptimisation:
             optim.set_max_evaluations(-1)
 
         # Reset optim
-        optim = pybop.Optimisation(cost=cost, sigma0=0.015, verbose=True)
+        optim = pybop.XNES(cost=cost, sigma0=0.015, verbose=True)
 
         # Confirm setting threshold == None
         optim.set_threshold(None)
@@ -705,13 +687,13 @@ class TestOptimisation:
 
     def test_unphysical_result(self, cost):
         # Trigger parameters not physically viable warning
-        optim = pybop.Optimisation(cost=cost, max_iterations=3)
+        optim = pybop.XNES(cost=cost, max_iterations=3)
         results = optim.run()
         results.check_physical_viability(np.array([2]))
 
     def test_optimisation_results(self, cost):
         # Construct OptimisationResult
-        optim = pybop.Optimisation(cost=cost)
+        optim = pybop.XNES(cost=cost)
         results = pybop.OptimisationResult(optim=optim, x=[1e-3], n_iterations=1)
 
         # Asserts
@@ -728,7 +710,7 @@ class TestOptimisation:
             pybop.OptimisationResult(optim=optim, x=[1e-5], n_iterations=1)
 
         # Test list-like functionality with "best" properties
-        optim = pybop.Optimisation(
+        optim = pybop.XNES(
             cost=cost,
             x0=[0.5],
             n_iterations=1,

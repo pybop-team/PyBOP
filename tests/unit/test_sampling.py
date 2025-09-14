@@ -121,26 +121,19 @@ class TestPintsSamplers:
     def test_initialisation_and_run(
         self, log_posterior, x0, chains, MCMC, multi_samplers
     ):
-        sampler = pybop.MCMCSampler(
+        sampler = MCMC(
             log_pdf=log_posterior,
             chains=chains,
-            sampler=MCMC,
             x0=x0,
             max_iterations=1,
             verbose=True,
         )
         assert sampler._n_chains == chains
         assert sampler._log_pdf == log_posterior
-        if isinstance(sampler.sampler, multi_samplers):
+        if isinstance(sampler, multi_samplers):
             np.testing.assert_allclose(sampler._samplers[0]._x0[0], x0)
         else:
             np.testing.assert_allclose(sampler._samplers[0]._x0, x0)
-
-        # Test incorrect __getattr__
-        with pytest.raises(
-            AttributeError, match="'MCMCSampler' object has no attribute 'test'"
-        ):
-            sampler.__getattr__("test")
 
         # Test __setattr__
         sampler.some_attribute = 1
@@ -200,10 +193,9 @@ class TestPintsSamplers:
             return
 
         # Construct and run
-        sampler = pybop.MCMCSampler(
+        sampler = MCMC(
             log_pdf=log_posterior,
             chains=chains,
-            sampler=MCMC,
             max_iterations=3,
             verbose=True,
         )
@@ -214,10 +206,9 @@ class TestPintsSamplers:
 
     def test_multi_log_pdf(self, log_posterior, x0, chains):
         multi_log_posterior = [log_posterior, log_posterior, log_posterior]
-        sampler = pybop.MCMCSampler(
+        sampler = HamiltonianMCMC(
             log_pdf=multi_log_posterior,
             chains=chains,
-            sampler=HamiltonianMCMC,
             x0=x0,
             max_iterations=1,
         )
@@ -234,10 +225,9 @@ class TestPintsSamplers:
         with pytest.raises(
             ValueError, match="All log pdf's must be instances of BaseCost"
         ):
-            pybop.MCMCSampler(
+            pybop.HaarioBardenetACMC(
                 log_pdf=incorrect_multi_log_posterior,
                 chains=chains,
-                sampler=HaarioBardenetACMC,
                 x0=x0,
                 max_iterations=1,
             )
@@ -254,10 +244,9 @@ class TestPintsSamplers:
         with pytest.raises(
             ValueError, match="All log pdf's must have the same number of parameters"
         ):
-            pybop.MCMCSampler(
+            pybop.HaarioBardenetACMC(
                 log_pdf=[log_posterior, log_posterior, new_multi_log_posterior],
                 chains=chains,
-                sampler=HaarioBardenetACMC,
                 x0=x0,
                 max_iterations=1,
             )
@@ -408,14 +397,6 @@ class TestPintsSamplers:
             match=re.escape("log_pdf must be a LogPosterior or List[LogPosterior]"),
         ):
             pybop.BaseSampler(pybop.WeightedCost(log_posterior), x0, chains=1, cov0=0.1)
-
-    def test_MCMC_sampler(self, log_posterior, x0, chains):
-        with pytest.raises(TypeError):
-            pybop.MCMCSampler(
-                log_pdf=log_posterior,
-                chains=chains,
-                sampler=log_posterior,  # Incorrect sampler
-            )
 
     def test_base_chain_processor(self, log_posterior, x0):
         sampler = pybop.MALAMCMC(log_posterior, chains=1)

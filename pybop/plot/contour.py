@@ -4,7 +4,7 @@ from functools import partial
 import numpy as np
 from scipy.interpolate import griddata
 
-from pybop import BaseCost, BaseOptimiser, Optimisation
+from pybop import BaseCost, BaseOptimiser
 from pybop.plot.plotly_manager import PlotlyManager
 
 
@@ -26,10 +26,10 @@ def contour(
 
     Parameters
     ----------
-    call_object : Union([pybop.BaseCost,pybop.BaseOptimiser, pybop.BasePrior])
+    call_object : pybop.BaseCost | pybop.BaseOptimiser
         Either:
         - the cost function to be evaluated. Must accept a list of parameter values and return a cost value.
-        - an Optimisation object which provides a specific optimisation trace overlaid on the cost landscape.
+        - an optimiser object which provides a specific optimisation trace overlaid on the cost landscape.
     gradient : bool, optional
         If True, the gradient is shown (default: False).
     bounds : numpy.ndarray, optional
@@ -62,7 +62,7 @@ def contour(
     cost = cost_call = call_object
 
     # Assign input as a cost or optimisation object
-    if isinstance(call_object, BaseOptimiser | Optimisation):
+    if isinstance(call_object, BaseOptimiser):
         plot_optim = True
         optim = call_object
         cost = optim.cost

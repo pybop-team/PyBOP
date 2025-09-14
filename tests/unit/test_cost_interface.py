@@ -92,7 +92,7 @@ class TestCostInterface:
             self.x_model.append(0.002)
             self.x_search.append(0.002)
 
-        optim = pybop.Optimisation(cost=cost, x0=self.x_model)
+        optim = pybop.XNES(cost=cost, x0=self.x_model)
 
         true_cost = cost(self.x_model)
         cost_with_transformation = optim.call_cost(self.x_search, cost=optim.cost) * (
@@ -105,7 +105,7 @@ class TestCostInterface:
             self.x_model.append(0.002)
             self.x_search.append(0.002)
 
-        optim = pybop.Optimisation(cost=cost, x0=self.x_model)
+        optim = pybop.XNES(cost=cost, x0=self.x_model)
 
         true_cost, grad_wrt_model_parameters = cost(self.x_model, calculate_grad=True)
         cost_with_transformation, gradient_with_transformation = optim.call_cost(
