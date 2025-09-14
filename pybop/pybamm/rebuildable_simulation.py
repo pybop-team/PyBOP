@@ -27,11 +27,11 @@ class RebuildableSimulation:
     input_parameter_names : list[str], optional
         A list of the input parameter names.
     parameter_values : pybamm.ParameterValues, optional
-    initial_state : float | str, optional
-        The initial state of charge or voltage for the battery model. If float, it will be
-        represented as SoC and must be in range 0 to 1. If str, it will be represented as voltage and
-        needs to be in the format: "3.4 V".
         The parameter values to be used in the model.
+    initial_state : dict, optional
+        A valid initial state, e.g. `"Initial open-circuit voltage [V]"` or ``"Initial SoC"`.
+        Defaults to None, indicating that the existing initial state of charge (for an ECM)
+        or initial concentrations (for an EChem model) will be used.
     t_eval : np.ndarray, optional
         The time points to stop the solver at. These points should be used to inform the solver of
         discontinuities in the solution.
@@ -65,7 +65,7 @@ class RebuildableSimulation:
         cost_names: list[str] = None,
         input_parameter_names: list[str] | None = None,
         parameter_values: pybamm.ParameterValues | None = None,
-        initial_state: float | str | None = None,
+        initial_state: dict | None = None,
         t_eval: np.ndarray | None = None,
         t_interp: np.ndarray | None = None,
         experiment: pybamm.Experiment | None = None,
@@ -87,7 +87,7 @@ class RebuildableSimulation:
         )
 
         # Simulation Params
-        self._initial_state = initial_state
+        self._initial_state = self.convert_to_pybamm_initial_state(initial_state)
         self._t_eval = [t_eval[0], t_eval[-1]] if t_eval is not None else None
         self._t_interp = t_interp
         self._experiment = experiment
@@ -141,6 +141,36 @@ class RebuildableSimulation:
             self._parameter_values = unmodified_parameter_values  # reset
             return True
         return False
+
+    def convert_to_pybamm_initial_state(self, initial_state: dict):
+        """
+        Convert an initial state of charge into a float and an initial open-circuit
+        voltage into a string ending in "V".
+
+        Parameters
+        ----------
+        initial_state : dict
+            A valid initial state, e.g. the initial state of charge or open-circuit voltage.
+
+        Returns
+        -------
+        float or str
+            If float, this value is used as the initial state of charge (as a decimal between 0
+            and 1). If str ending in "V", this value is used as the initial open-circuit voltage.
+
+        Raises
+        ------
+        ValueError
+            If the input is not a dictionary with a single, valid key.
+        """
+        if len(initial_state) > 1:
+            raise ValueError("Expecting only one initial state.")
+        elif "Initial SoC" in initial_state.keys():
+            return initial_state["Initial SoC"]
+        elif "Initial open-circuit voltage [V]" in initial_state.keys():
+            return str(initial_state["Initial open-circuit voltage [V]"]) + "V"
+        else:
+            raise ValueError(f'Unrecognised initial state: "{list(initial_state)[0]}"')
 
     def _set_up_solution_method(self) -> None:
         """Configure the mode of operation."""

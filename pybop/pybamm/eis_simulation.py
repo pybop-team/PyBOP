@@ -34,10 +34,10 @@ class EISSimulation:
         A list of the input parameter names.
     parameter_values : pybamm.ParameterValues, optional
         The parameter values to be used in the model.
-    initial_state : float | str, optional
-        The initial state of charge or voltage for the battery model. If float, it will be represented
-        as SoC and must be in range 0 to 1. If str, it will be represented as voltage and needs to be in
-        the format: "3.4 V".
+    initial_state : dict, optional
+        A valid initial state, e.g. `"Initial open-circuit voltage [V]"` or ``"Initial SoC"`.
+        Defaults to None, indicating that the existing initial state of charge (for an ECM)
+        or initial concentrations (for an EChem model) will be used.
     solver : pybamm.BaseSolver, optional
         The solver to simulate the composed RebuildableSimulation. If None, uses `pybop.RecommendedSolver`.
     geometry : pybamm.Geometry, optional
