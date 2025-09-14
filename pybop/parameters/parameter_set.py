@@ -81,11 +81,11 @@ class ParameterSet:
         float
             The value of the parameter.
         """
-        if isinstance(symbol, (Number, np.float64)):
+        if isinstance(symbol, Number | np.float64):
             return symbol
         if isinstance(symbol, Scalar):
             return symbol.value
-        if isinstance(symbol, (Parameter, FunctionParameter)):
+        if isinstance(symbol, Parameter | FunctionParameter):
             return ParameterSet.evaluate_symbol(params[symbol.name], params)
         new_children = [
             Scalar(ParameterSet.evaluate_symbol(child, params))

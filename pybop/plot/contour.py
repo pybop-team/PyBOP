@@ -62,7 +62,7 @@ def contour(
     cost = cost_call = call_object
 
     # Assign input as a cost or optimisation object
-    if isinstance(call_object, (BaseOptimiser, Optimisation)):
+    if isinstance(call_object, BaseOptimiser | Optimisation):
         plot_optim = True
         optim = call_object
         cost = optim.cost

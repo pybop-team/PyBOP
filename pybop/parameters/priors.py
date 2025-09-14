@@ -109,7 +109,7 @@ class BasePrior:
         ValueError
             If the size parameter is negative.
         """
-        if not isinstance(size, (int, tuple)):
+        if not isinstance(size, int | tuple):
             raise ValueError(
                 "size must be a positive integer or tuple of positive integers"
             )

@@ -682,7 +682,7 @@ class BaseModel:
     def predict(
         self,
         inputs: Inputs | None = None,
-        t_eval: np.array | None = None,
+        t_eval: np.ndarray | None = None,
         parameter_set: ParameterSet | None = None,
         experiment: Experiment | None = None,
         initial_state: dict | None = None,

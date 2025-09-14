@@ -188,7 +188,7 @@ class GaussianLogLikelihood(BaseLikelihood):
     def _add_single_sigma(self, index, value):
         if isinstance(value, Parameter):
             self.sigma.add(value)
-        elif isinstance(value, (int, float)):
+        elif isinstance(value, int | float):
             self.sigma.add(
                 Parameter(
                     f"Sigma for output {index + 1}",

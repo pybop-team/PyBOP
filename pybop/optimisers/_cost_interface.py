@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 import numpy as np
 
 from pybop import BaseCost, Inputs, Transformation
@@ -37,7 +39,7 @@ class CostInterface:
     def call_cost(
         self,
         x: Inputs | list,
-        cost: BaseCost | callable,
+        cost: BaseCost | Callable,
         calculate_grad: bool = False,
     ) -> float | tuple[float, np.ndarray]:
         """

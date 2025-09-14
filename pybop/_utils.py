@@ -8,7 +8,7 @@ def is_numeric(x):
     """
     Check if a variable is numeric.
     """
-    return isinstance(x, (int, float, np.number))
+    return isinstance(x, int | float | np.number)
 
 
 def add_spaces(string):

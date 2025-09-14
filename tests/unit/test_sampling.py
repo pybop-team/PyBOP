@@ -91,7 +91,7 @@ class TestPintsSamplers:
 
     @pytest.fixture
     def multi_samplers(self):
-        return (pybop.DREAM, pybop.EmceeHammerMCMC, pybop.DifferentialEvolutionMCMC)
+        return pybop.DREAM | pybop.EmceeHammerMCMC | pybop.DifferentialEvolutionMCMC
 
     @pytest.fixture(
         params=[

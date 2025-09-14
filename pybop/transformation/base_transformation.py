@@ -38,7 +38,7 @@ class Transformation(ABC):
         Converts standard deviation `std`, either a scalar or a vector, from the model space
         to the search space around a parameter vector `q` in the search space.
         """
-        if isinstance(q, (int, float)):
+        if isinstance(q, int | float):
             q = np.asarray([q])
         jac_inv = np.linalg.pinv(self.jacobian(q))
         cov = jac_inv @ jac_inv.T
@@ -104,7 +104,7 @@ class Transformation(ABC):
         self, inputs: float | int | list[float] | np.ndarray | dict[str, float]
     ) -> np.ndarray:
         """Set and validate the transformation parameter."""
-        if isinstance(inputs, (float, int)):
+        if isinstance(inputs, float | int):
             return np.full(self._n_parameters, float(inputs))
 
         if isinstance(inputs, dict):

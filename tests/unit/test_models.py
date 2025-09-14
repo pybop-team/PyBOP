@@ -103,11 +103,9 @@ class TestModels:
         # Test new_copy() without pybamm_model
         if not isinstance(
             model,
-            (
-                pybop.lithium_ion.MSMR,
-                pybop.lithium_ion.GroupedSPM,
-                pybop.lithium_ion.GroupedSPMe,
-            ),
+            pybop.lithium_ion.MSMR
+            | pybop.lithium_ion.GroupedSPM
+            | pybop.lithium_ion.GroupedSPMe,
         ):
             new_model = model.new_copy()
             assert new_model.pybamm_model is not None
@@ -126,7 +124,7 @@ class TestModels:
                 "Series resistance [Ohm]": 0.01,
             }
         elif isinstance(
-            model, (pybop.lithium_ion.WeppnerHuggins, pybop.lithium_ion.SPDiffusion)
+            model, pybop.lithium_ion.WeppnerHuggins | pybop.lithium_ion.SPDiffusion
         ):
             inputs = {
                 "Theoretical electrode capacity [A.s]": 5000,
@@ -159,7 +157,7 @@ class TestModels:
             model.predict(inputs=inputs)
 
     def test_predict_without_allow_infeasible_solutions(self, model):
-        if isinstance(model, (pybop.lithium_ion.SPM, pybop.lithium_ion.SPMe)):
+        if isinstance(model, pybop.lithium_ion.SPM | pybop.lithium_ion.SPMe):
             model.allow_infeasible_solutions = False
             t_eval = np.linspace(0, 10, 100)
             inputs = {

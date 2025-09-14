@@ -205,6 +205,6 @@ class CuckooSearchImpl(PopulationBasedOptimiser):
     @pa.setter
     def pa(self, pa):
         """Setter for abandonment rate"""
-        if not isinstance(pa, (int, float)) or not 0 < pa <= 1:
+        if not isinstance(pa, int | float) or not 0 < pa <= 1:
             raise ValueError("pa must be a numeric value between 0 and 1.")
         self._pa = float(pa)

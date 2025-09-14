@@ -41,7 +41,7 @@ class BaseSampler(CostInterface):
         if isinstance(log_pdf, LogPosterior):
             self.parameters = log_pdf.parameters
             self.n_parameters = log_pdf.n_parameters
-        elif isinstance(log_pdf, (list, np.ndarray)) and isinstance(
+        elif isinstance(log_pdf, list | np.ndarray) and isinstance(
             log_pdf[0], LogPosterior
         ):
             self.parameters = log_pdf[0].parameters
