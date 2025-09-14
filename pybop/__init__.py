@@ -46,11 +46,6 @@ script_path = path.dirname(__file__)
 from ._utils import is_numeric, SymbolReplacer
 
 #
-# Experiment class
-#
-from ._experiment import Experiment
-
-#
 # Dataset class
 #
 from ._dataset import Dataset

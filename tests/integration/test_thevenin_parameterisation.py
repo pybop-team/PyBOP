@@ -1,4 +1,5 @@
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
@@ -116,7 +117,7 @@ class TestTheveninParameterisation:
             assert results.scipy_result.success is True
 
     def get_data(self, model):
-        experiment = pybop.Experiment(
+        experiment = pybamm.Experiment(
             [
                 (
                     "Discharge at 0.5C for 6 minutes (12 seconds period)",

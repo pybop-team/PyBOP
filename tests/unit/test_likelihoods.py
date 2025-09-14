@@ -1,4 +1,5 @@
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
@@ -37,7 +38,7 @@ class TestLikelihoods:
 
     @pytest.fixture
     def experiment(self):
-        return pybop.Experiment(
+        return pybamm.Experiment(
             [
                 ("Discharge at 1C for 1 minutes (5 second period)"),
             ]

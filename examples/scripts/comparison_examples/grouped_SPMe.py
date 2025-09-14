@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import pybamm
 
 import pybop
 
@@ -25,7 +26,7 @@ parameter_set["Electrolyte conductivity [S.m-1]"] = parameter_set[
 
 # Define a test protocol
 initial_state = {"Initial SoC": 0.9}
-experiment = pybop.Experiment(
+experiment = pybamm.Experiment(
     [
         "Discharge at 1C until 2.5 V (5 seconds period)",
         "Rest for 30 minutes (5 seconds period)",

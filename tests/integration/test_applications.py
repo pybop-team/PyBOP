@@ -1,6 +1,7 @@
 import warnings
 
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
@@ -157,7 +158,7 @@ class TestApplications:
     def pulse_data(self, half_cell_model):
         sigma = 5e-4
         initial_state = {"Initial SoC": 0.9}
-        experiment = pybop.Experiment(
+        experiment = pybamm.Experiment(
             [
                 "Rest for 1 second",
                 "Discharge at 2C for 5 minutes (10 second period)",

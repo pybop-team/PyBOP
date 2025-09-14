@@ -1,4 +1,5 @@
 import numpy as np
+import pybamm
 
 import pybop
 
@@ -11,7 +12,7 @@ model = pybop.lithium_ion.SPMe(
 # Generate data
 sigma = 1e-3
 initial_state = {"Initial SoC": 0.9}
-experiment = pybop.Experiment(
+experiment = pybamm.Experiment(
     [
         "Rest for 1 second",
         ("Discharge at 1C for 10 minutes (10 second period)", "Rest for 20 minutes")

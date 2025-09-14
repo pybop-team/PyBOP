@@ -1,3 +1,4 @@
+import pybamm
 from pybamm import Parameter
 
 import pybop
@@ -52,7 +53,7 @@ parameters = pybop.Parameters(
 )
 
 # Define test protocol
-experiment = pybop.Experiment(
+experiment = pybamm.Experiment(
     [
         "Discharge at 1C until 2.5 V (10 seconds period)",
         "Hold at 2.5 V for 30 minutes or until 10 mA (10 seconds period)",

@@ -1,8 +1,9 @@
 import warnings
 
 import numpy as np
+import pybamm
 
-from pybop import BaseModel, BaseProblem, Experiment, Parameters
+from pybop import BaseModel, BaseProblem, Parameters
 from pybop.models.empirical.base_ecm import ECircuitModel
 from pybop.models.lithium_ion.base_echem import EChemBaseModel
 from pybop.parameters.parameter import Inputs
@@ -41,7 +42,7 @@ class DesignProblem(BaseProblem):
         self,
         model: BaseModel,
         parameters: Parameters,
-        experiment: Experiment | None,
+        experiment: pybamm.Experiment | None,
         check_model: bool = True,
         signal: list[str] | None = None,
         domain: str | None = None,

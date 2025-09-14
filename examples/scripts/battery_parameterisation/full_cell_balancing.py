@@ -1,4 +1,5 @@
 import numpy as np
+import pybamm
 
 import pybop
 
@@ -51,7 +52,7 @@ parameters = pybop.Parameters(
 
 # Generate synthetic data
 sigma = 5e-4  # Volts
-experiment = pybop.Experiment(
+experiment = pybamm.Experiment(
     [
         "Discharge at 0.1C until 2.5V (3 min period)",
         "Charge at 0.1C until 4.2V (3 min period)",

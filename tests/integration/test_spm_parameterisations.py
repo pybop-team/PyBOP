@@ -1,4 +1,5 @@
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
@@ -305,7 +306,7 @@ class Test_SPM_Parameterisation:
 
     def get_data(self, model, init_soc):
         initial_state = {"Initial SoC": init_soc}
-        experiment = pybop.Experiment(
+        experiment = pybamm.Experiment(
             [
                 "Discharge at 0.5C for 8 minutes (8 second period)",
                 "Charge at 0.5C for 8 minutes (8 second period)",

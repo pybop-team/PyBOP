@@ -16,7 +16,7 @@ models = [
 # Generate data
 sigma = 5e-4
 soc = [0.15, 0.5]
-experiment = pybop.Experiment(
+experiment = pybamm.Experiment(
     [
         "Rest for 2 seconds (1 second period)",
         "Discharge at 0.1C for 1 minute (2 second period)",

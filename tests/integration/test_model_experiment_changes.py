@@ -54,7 +54,7 @@ class TestModelAndExperimentChanges:
         solution_1 = model.predict(initial_state=initial_state, t_eval=t_eval)
         cost_1 = self.final_cost(solution_1, model, parameters)
 
-        experiment = pybop.Experiment(["Charge at 1C until 4.1 V (2 seconds period)"])
+        experiment = pybamm.Experiment(["Charge at 1C until 4.1 V (2 seconds period)"])
         solution_2 = model.predict(
             initial_state=initial_state,
             experiment=experiment,
@@ -78,7 +78,7 @@ class TestModelAndExperimentChanges:
         parameter_set = pybop.ParameterSet("Chen2020")
         parameter_set.update(parameters.as_dict("true"))
         initial_state = {"Initial SoC": 0.5}
-        experiment = pybop.Experiment(["Charge at 1C until 4.1 V (30 seconds period)"])
+        experiment = pybamm.Experiment(["Charge at 1C until 4.1 V (30 seconds period)"])
 
         model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
         solution_1 = model.predict(initial_state=initial_state, experiment=experiment)
@@ -127,7 +127,7 @@ class TestModelAndExperimentChanges:
         )
 
         model_1 = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
-        experiment_1 = pybop.Experiment(
+        experiment_1 = pybamm.Experiment(
             ["Discharge at 0.5C for 5 minutes (10 seconds period)"]
         )
         solution_1 = model_1.predict(experiment=experiment_1)
@@ -142,7 +142,7 @@ class TestModelAndExperimentChanges:
         model_2 = pybop.lithium_ion.SPMe(
             parameter_set=parameter_set.copy(), solver=solver
         )
-        experiment_2 = pybop.Experiment(
+        experiment_2 = pybamm.Experiment(
             ["Discharge at 1C for 3 minutes (10 seconds period)"]
         )
         solution_2 = model_2.predict(experiment=experiment_2)

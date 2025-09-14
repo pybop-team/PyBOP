@@ -38,7 +38,7 @@ class TestCosts:
 
     @pytest.fixture
     def experiment(self):
-        return pybop.Experiment(["Discharge at 1C for 10 minutes (20 second period)"])
+        return pybamm.Experiment(["Discharge at 1C for 10 minutes (20 second period)"])
 
     @pytest.fixture
     def dataset(self, model, experiment):

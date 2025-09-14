@@ -1,4 +1,5 @@
 import numpy as np
+import pybamm
 import pytest
 from pybamm import Parameter
 
@@ -51,7 +52,7 @@ class TestClassification:
 
     @pytest.fixture
     def dataset(self, model):
-        experiment = pybop.Experiment(
+        experiment = pybamm.Experiment(
             [
                 "Discharge at 0.5C for 2 minutes (4 seconds period)",
                 "Charge at 0.5C for 2 minutes (4 seconds period)",
@@ -127,7 +128,7 @@ class TestClassification:
         )
         model = pybop.empirical.Thevenin(parameter_set=parameter_set)
 
-        experiment = pybop.Experiment(
+        experiment = pybamm.Experiment(
             ["Discharge at 0.5C for 2 minutes (4 seconds period)"]
         )
         solution = model.predict(experiment=experiment)

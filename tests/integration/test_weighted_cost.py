@@ -1,4 +1,5 @@
 import numpy as np
+import pybamm
 import pytest
 from pybamm import Parameter
 
@@ -163,7 +164,7 @@ class TestWeightedCost:
                 bounds=[2e-06, 10e-05],
             ),
         )
-        experiment = pybop.Experiment(
+        experiment = pybamm.Experiment(
             ["Discharge at 1C until 3.5 V (5 seconds period)"],
         )
 
@@ -192,7 +193,7 @@ class TestWeightedCost:
 
     def get_data(self, model, init_soc):
         initial_state = {"Initial SoC": init_soc}
-        experiment = pybop.Experiment(
+        experiment = pybamm.Experiment(
             [
                 (
                     "Discharge at 0.5C for 3 minutes (4 second period)",

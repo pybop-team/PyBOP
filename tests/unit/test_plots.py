@@ -1,6 +1,7 @@
 import warnings
 
 import numpy as np
+import pybamm
 import pytest
 from packaging import version
 
@@ -88,7 +89,7 @@ class TestPlots:
 
     @pytest.fixture
     def experiment(self):
-        return pybop.Experiment(
+        return pybamm.Experiment(
             [
                 ("Discharge at 1C for 10 minutes (20 second period)"),
             ]

@@ -43,7 +43,7 @@ class TestCostInterface:
 
     @pytest.fixture
     def experiment(self):
-        return pybop.Experiment(
+        return pybamm.Experiment(
             [
                 ("Discharge at 1C for 1 minutes (6 second period)"),
             ]

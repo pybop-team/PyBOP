@@ -1,4 +1,5 @@
 import numpy as np
+import pybamm
 
 import pybop
 
@@ -26,7 +27,7 @@ parameters = pybop.Parameters(
 
 # Generate data
 sigma = 0.002
-experiment = pybop.Experiment(
+experiment = pybamm.Experiment(
     [
         (
             "Charge at 0.5C for 3 minutes (3 second period)",

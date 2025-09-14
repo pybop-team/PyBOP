@@ -34,7 +34,7 @@ class TestProblem:
 
     @pytest.fixture
     def experiment(self):
-        return pybop.Experiment(
+        return pybamm.Experiment(
             [
                 (
                     "Discharge at 1C for 5 minutes (1 second period)",
@@ -230,7 +230,7 @@ class TestProblem:
 
         # Generate a second fitting problem
         model = model.new_copy()
-        experiment = pybop.Experiment(
+        experiment = pybamm.Experiment(
             ["Discharge at 1C for 5 minutes (1 second period)"]
         )
         values = model.predict(

@@ -10,7 +10,7 @@ from pybamm import IDAKLUSolver as IDAKLUSolver
 from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import spsolve
 
-from pybop import Dataset, Experiment, Parameters, ParameterSet, SymbolReplacer
+from pybop import Dataset, Parameters, ParameterSet, SymbolReplacer
 from pybop.parameters.parameter import Inputs
 
 
@@ -684,7 +684,7 @@ class BaseModel:
         inputs: Inputs | None = None,
         t_eval: np.ndarray | None = None,
         parameter_set: ParameterSet | None = None,
-        experiment: Experiment | None = None,
+        experiment: pybamm.Experiment | None = None,
         initial_state: dict | None = None,
     ) -> dict[str, np.ndarray[np.float64]]:
         """

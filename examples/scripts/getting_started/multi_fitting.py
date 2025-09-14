@@ -1,4 +1,5 @@
 import numpy as np
+import pybamm
 
 import pybop
 
@@ -9,8 +10,8 @@ model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 # Create initial SOC, experiment objects
 init_soc = [{"Initial SoC": 0.8}, {"Initial SoC": 0.6}]
 experiment = [
-    pybop.Experiment([("Discharge at 0.5C for 2 minutes (4 second period)")]),
-    pybop.Experiment([("Discharge at 1C for 1 minutes (4 second period)")]),
+    pybamm.Experiment([("Discharge at 0.5C for 2 minutes (4 second period)")]),
+    pybamm.Experiment([("Discharge at 1C for 1 minutes (4 second period)")]),
 ]
 
 # Fitting parameters

@@ -26,7 +26,7 @@ parameters = pybop.Parameters(
 )
 
 # Define test protocol and generate data
-experiment = pybop.Experiment([("Discharge at 0.5C for 10 minutes (3 second period)")])
+experiment = pybamm.Experiment([("Discharge at 0.5C for 10 minutes (3 second period)")])
 values = model.predict(
     initial_state={"Initial open-circuit voltage [V]": 4.2}, experiment=experiment
 )

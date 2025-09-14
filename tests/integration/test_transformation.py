@@ -1,6 +1,7 @@
 import itertools
 
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
@@ -163,7 +164,7 @@ class TestTransformation:
 
     def get_data(self, model, init_soc):
         initial_state = {"Initial SoC": init_soc}
-        experiment = pybop.Experiment(
+        experiment = pybamm.Experiment(
             [
                 (
                     "Rest for 10 seconds (2 second period)",
