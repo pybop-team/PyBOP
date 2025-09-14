@@ -1,7 +1,7 @@
 import warnings
 
 import numpy as np
-from pybamm import IDAKLUJax, SolverError
+from pybamm import SolverError
 
 from pybop import BaseModel, BaseProblem, Dataset
 from pybop.parameters.parameter import Inputs, Parameters
@@ -167,12 +167,7 @@ class FittingProblem(BaseProblem):
             parameter x and signal y.
         """
         try:
-            if isinstance(self.model.solver, IDAKLUJax):
-                sol = self._model.solver.get_vars(self.signal)(
-                    self.domain_data, inputs
-                )  # TODO: Add initial_state capabilities
-            else:
-                sol = func(inputs, self._domain_data, initial_state=self.initial_state)
+            sol = func(inputs, self._domain_data, initial_state=self.initial_state)
         except (SolverError, ZeroDivisionError, RuntimeError, ValueError) as e:
             if isinstance(e, ValueError) and str(e) not in self.exception:
                 raise  # Raise the error if it doesn't match the expected list
@@ -182,9 +177,6 @@ class FittingProblem(BaseProblem):
 
         if self.eis:
             return sol
-
-        if isinstance(self.model.solver, IDAKLUJax):
-            return {signal: sol[:, i] for i, signal in enumerate(self.signal)}
 
         if calculate_grad:
             param_keys = [

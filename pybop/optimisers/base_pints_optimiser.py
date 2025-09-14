@@ -13,11 +13,9 @@ from pints import strfloat as PintsStrFloat
 
 from pybop import (
     AdamWImpl,
-    BaseJaxCost,
     BaseOptimiser,
     GradientDescentImpl,
     OptimisationResult,
-    SequentialJaxEvaluator,
 )
 
 
@@ -210,20 +208,17 @@ class BasePintsOptimiser(BaseOptimiser):
             )
 
         # Create evaluator object
-        if isinstance(self.cost, BaseJaxCost):
-            evaluator = SequentialJaxEvaluator(fun)
-        else:
-            if self._parallel:
-                # Get number of workers
-                n_workers = self._n_workers
+        if self._parallel:
+            # Get number of workers
+            n_workers = self._n_workers
 
-                # For population based optimisers, don't use more workers than
-                # particles!
-                if isinstance(self.optimiser, PintsPopulationBasedOptimiser):
-                    n_workers = min(n_workers, self.optimiser.population_size())
-                evaluator = PintsParallelEvaluator(fun, n_workers=n_workers)
-            else:
-                evaluator = PintsSequentialEvaluator(fun)
+            # For population based optimisers, don't use more workers than
+            # particles!
+            if isinstance(self.optimiser, PintsPopulationBasedOptimiser):
+                n_workers = min(n_workers, self.optimiser.population_size())
+            evaluator = PintsParallelEvaluator(fun, n_workers=n_workers)
+        else:
+            evaluator = PintsSequentialEvaluator(fun)
 
         # Keep track of current best and best-guess scores.
         fb = fg = np.inf

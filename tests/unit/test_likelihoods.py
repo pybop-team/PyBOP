@@ -203,10 +203,7 @@ class TestLikelihoods:
 
     @pytest.mark.parametrize(
         "likelihood_cls",
-        [
-            pybop.GaussianLogLikelihoodKnownSigma,
-            pybop.JaxGaussianLogLikelihoodKnownSigma,
-        ],
+        [pybop.GaussianLogLikelihoodKnownSigma],
     )
     def test_fisher_matrix(
         self, likelihood_cls, one_signal_problem, model, dataset, parameters

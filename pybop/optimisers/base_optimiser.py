@@ -2,7 +2,6 @@ import warnings
 from copy import deepcopy
 from dataclasses import dataclass, field
 
-import jax.numpy as jnp
 import numpy as np
 
 from pybop import (
@@ -318,8 +317,6 @@ class BaseOptimiser(CostInterface):
 
     def _to_list(self, array_like):
         """Convert input to a list."""
-        if isinstance(array_like, (list, tuple, np.ndarray, jnp.ndarray)):
-            return list(array_like)
         return [array_like]
 
     def _print_verbose_output(self):

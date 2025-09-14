@@ -789,31 +789,6 @@ class BaseModel:
 
         return self._pybamm_solution
 
-    def jaxify_solver(self, t_eval, calculate_sensitivities=False):
-        """
-        Jaxify the IDAKLU Solver and store a copy for future reconstruction.
-        Handles sensitivity calculations during solver construction.
-        """
-        self._calculate_sensitivities = calculate_sensitivities
-
-        if not isinstance(self._solver, (pybamm.IDAKLUSolver, pybamm.IDAKLUJax)):
-            raise ValueError("Solver must be pybamm.IDAKLUSolver to jaxify.")
-
-        # Store original solver if not already stored, and create local copy
-        if isinstance(self._solver, pybamm.IDAKLUSolver):
-            self._IDAKLU_stored = self._solver.copy()
-        base_solver = self._IDAKLU_stored
-
-        # Handle PyBaMM v24.11 bug: use full t_eval only when calculating sensitivities
-        t_eval_adjusted = t_eval if calculate_sensitivities else [t_eval[0], t_eval[-1]]
-
-        self._solver = base_solver.jaxify(
-            model=self._built_model,
-            t_eval=t_eval_adjusted,
-            t_interp=t_eval,
-            calculate_sensitivities=calculate_sensitivities,
-        )
-
     def check_params(
         self,
         inputs: Inputs | None = None,
@@ -1051,9 +1026,7 @@ class BaseModel:
 
     @solver.setter
     def solver(self, solver):
-        if isinstance(solver, pybamm.solvers.idaklu_jax.IDAKLUJax):
-            self._solver = solver
-        elif isinstance(solver, pybamm.BaseSolver):
+        if isinstance(solver, pybamm.BaseSolver):
             self._solver = solver.copy()
         else:
             self._solver = None

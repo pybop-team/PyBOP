@@ -82,12 +82,6 @@ class TestPlots:
         return pybop.FittingProblem(model, parameters, dataset)
 
     @pytest.fixture
-    def jax_fitting_problem(self, model, parameters, dataset):
-        problem = pybop.FittingProblem(model, parameters, dataset)
-        problem.model.jaxify_solver(t_eval=problem.domain_data)
-        return problem
-
-    @pytest.fixture
     def experiment(self):
         return pybamm.Experiment(
             [
@@ -100,11 +94,10 @@ class TestPlots:
         model = pybop.lithium_ion.SPM()
         return pybop.DesignProblem(model, parameters, experiment)
 
-    def test_problem_plots(self, fitting_problem, design_problem, jax_fitting_problem):
+    def test_problem_plots(self, fitting_problem, design_problem):
         # Test plot of Problem objects
         pybop.plot.problem(fitting_problem, title="Optimised Comparison")
         pybop.plot.problem(design_problem)
-        pybop.plot.problem(jax_fitting_problem)
 
         # Test conversion of values into inputs
         pybop.plot.problem(fitting_problem, problem_inputs=[0.6, 0.6])

@@ -65,7 +65,7 @@ class TestTheveninParameterisation:
 
     @pytest.mark.parametrize(
         "cost_class",
-        [pybop.RootMeanSquaredError, pybop.SumSquaredError, pybop.JaxSumSquaredError],
+        [pybop.RootMeanSquaredError, pybop.SumSquaredError],
     )
     @pytest.mark.parametrize(
         "optimiser, method",
