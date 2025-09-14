@@ -1,7 +1,6 @@
 import numpy as np
 
 from pybop.costs.base_cost import BaseCost
-from pybop.observers.observer import Observer
 
 
 class FittingCost(BaseCost):
@@ -100,45 +99,3 @@ class FittingCost(BaseCost):
             gradient with dimension (len(parameters)), otherwise returns only the cost.
         """
         raise NotImplementedError
-
-
-class ObserverCost(BaseCost):
-    """
-    Observer cost function.
-
-    Computes the cost function for an observer model, which is log likelihood
-    of the data points given the model parameters.
-
-    Inherits all parameters and attributes from ``BaseCost``.
-    """
-
-    def __init__(self, observer: Observer):
-        super().__init__(problem=observer)
-        self._observer = observer
-        self._has_separable_problem = False
-
-    def compute(
-        self,
-        y: dict,
-        dy: np.ndarray | None = None,
-    ) -> float:
-        """
-        Computes the cost function for the given predictions.
-
-        Parameters
-        ----------
-        y : dict
-            The dictionary of predictions with keys designating the signals for fitting.
-        dy : np.ndarray, optional
-            The corresponding gradient with respect to the parameters for each signal.
-
-        Returns
-        -------
-        float
-            The observer cost (negative of the log likelihood).
-        """
-        inputs = self._parameters.as_dict()
-        log_likelihood = self._observer.log_likelihood(
-            self._target, self._observer.domain_data, inputs
-        )
-        return -log_likelihood

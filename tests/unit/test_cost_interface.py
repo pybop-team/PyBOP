@@ -71,7 +71,6 @@ class TestCostInterface:
             pybop.SumSquaredError,
             pybop.Minkowski,
             pybop.SumOfPower,
-            pybop.ObserverCost,
             pybop.LogPosterior,
             pybop.GaussianLogLikelihood,
             pybop.GaussianLogLikelihoodKnownSigma,
@@ -85,30 +84,6 @@ class TestCostInterface:
             return cls(pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.002))
         elif cls is pybop.GaussianLogLikelihoodKnownSigma:
             return pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.002)
-        elif cls is pybop.ObserverCost:
-            inputs = problem.parameters.initial_value()
-            state = problem.model.reinit(inputs)
-            n = len(state)
-            sigma_diag = [0.0] * n
-            sigma_diag[0] = 1e-4
-            sigma_diag[1] = 1e-4
-            process_diag = [0.0] * n
-            process_diag[0] = 1e-4
-            process_diag[1] = 1e-4
-            sigma0 = np.diag(sigma_diag)
-            process = np.diag(process_diag)
-            dataset = pybop.Dataset(data_dictionary=problem.dataset)
-            return cls(
-                pybop.UnscentedKalmanFilterObserver(
-                    problem.parameters,
-                    problem.model,
-                    sigma0=sigma0,
-                    process=process,
-                    measure=1e-4,
-                    dataset=dataset,
-                    signal=problem.signal,
-                ),
-            )
         else:
             return cls(problem)
 
@@ -126,10 +101,6 @@ class TestCostInterface:
         np.testing.assert_allclose(true_cost, cost_with_transformation)
 
     def test_cost_gradient_transformed(self, cost):
-        # Gradient transformations are not implemented on ObserverCost
-        if isinstance(cost, pybop.ObserverCost):
-            return
-
         if isinstance(cost, pybop.GaussianLogLikelihood):
             self.x_model.append(0.002)
             self.x_search.append(0.002)

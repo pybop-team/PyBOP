@@ -68,7 +68,6 @@ class TestCosts:
     @pytest.fixture(
         params=[
             pybop.MeanAbsoluteError,
-            pybop.ObserverCost,
             pybop.LogPosterior,
         ]
     )
@@ -78,29 +77,6 @@ class TestCosts:
             return cls(problem)
         elif cls is pybop.LogPosterior:
             return cls(pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.002))
-        elif cls is pybop.ObserverCost:
-            inputs = problem.parameters.initial_value()
-            state = problem.model.reinit(inputs)
-            n = len(state)
-            sigma_diag = [0.0] * n
-            sigma_diag[0] = 1e-4
-            sigma_diag[1] = 1e-4
-            process_diag = [0.0] * n
-            process_diag[0] = 1e-4
-            process_diag[1] = 1e-4
-            sigma0 = np.diag(sigma_diag)
-            process = np.diag(process_diag)
-            dataset = pybop.Dataset(data_dictionary=problem.dataset)
-            return cls(
-                pybop.UnscentedKalmanFilterObserver(
-                    problem.parameters,
-                    problem.model,
-                    sigma0=sigma0,
-                    process=process,
-                    measure=1e-4,
-                    dataset=dataset,
-                ),
-            )
 
     def test_fitting_costs(self, fitting_cost, parameters):
         cost = fitting_cost

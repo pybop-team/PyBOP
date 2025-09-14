@@ -91,10 +91,7 @@ from .problems.design_problem import DesignProblem
 # Cost classes
 #
 from .costs.base_cost import BaseCost
-from .costs.fitting_costs import (
-    FittingCost,
-    ObserverCost,
-)
+from .costs.fitting_costs import FittingCost
 from .costs.error_measures import (
     RootMeanSquaredError,
     MeanAbsoluteError,
@@ -176,12 +173,6 @@ from .samplers.pints_samplers import (
     SliceRankShrinkingMCMC, SliceStepoutMCMC,
 )
 from .samplers.mcmc_sampler import MCMCSampler
-
-#
-# Observer classes
-#
-from .observers.unscented_kalman import UnscentedKalmanFilterObserver
-from .observers.observer import Observer
 
 #
 # Classification classes
