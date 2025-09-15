@@ -160,18 +160,18 @@ class BaseOptimiser(CostInterface):
             self.parameters.update(initial_values=x0)
         else:
             self.parameters.reset_to_initial()
-        self.x0 = self.parameters.get_initial_values(apply_transform=True)
+        self.x0 = self.parameters.get_initial_values(transformed=True)
 
         # Set the search-space parameter bounds (for all or no parameters)
         bounds = self.unset_options.pop("bounds", self.parameters.get_bounds())
         if bounds is not None:
             self.parameters.update(bounds=bounds)
-            bounds = self.parameters.get_bounds(apply_transform=True)
+            bounds = self.parameters.get_bounds(transformed=True)
         self.bounds = bounds  # can be None or current parameter bounds
 
         # Set default initial standard deviation (for all or no parameters)
         self.sigma0 = self.unset_options.pop(
-            "sigma0", self.parameters.get_sigma0(apply_transform=True) or self.sigma0
+            "sigma0", self.parameters.get_sigma0(transformed=True) or self.sigma0
         )
 
         # Set other options
@@ -225,7 +225,7 @@ class BaseOptimiser(CostInterface):
                 self.parameters.update(
                     initial_values=self.parameters.sample_from_priors(1)
                 )
-                self.x0 = self.parameters.get_initial_values(apply_transform=True)
+                self.x0 = self.parameters.get_initial_values(transformed=True)
                 self._set_up_optimiser()
 
             self.result.add_result(self._run())

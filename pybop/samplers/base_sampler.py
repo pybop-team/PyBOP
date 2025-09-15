@@ -63,9 +63,7 @@ class BaseSampler(CostInterface):
             self.parameters.update(initial_values=x0)
 
         # Update x0 w/ transformation if applicable - reshape to align with chains
-        self._x0 = self.parameters.get_initial_values(apply_transform=True).reshape(
-            1, -1
-        )
+        self._x0 = self.parameters.get_initial_values(transformed=True).reshape(1, -1)
 
         if len(self._x0) != self._n_chains or len(self._x0) == 1:
             self._x0 = np.tile(self._x0, (self._n_chains, 1))

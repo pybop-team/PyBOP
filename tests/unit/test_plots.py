@@ -109,7 +109,7 @@ class TestPlots:
         # Test plot of Cost objects
         pybop.plot.contour(cost, gradient=True, steps=5)
 
-        pybop.plot.contour(cost, gradient=True, steps=5, apply_transform=True)
+        pybop.plot.contour(cost, gradient=True, steps=5, transformed=True)
 
         # Test without bounds
         cost.parameters.remove_bounds()

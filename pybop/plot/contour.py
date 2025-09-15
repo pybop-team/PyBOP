@@ -12,7 +12,7 @@ def contour(
     call_object: BaseCost | BaseOptimiser,
     gradient: bool = False,
     bounds: np.ndarray | None = None,
-    apply_transform: bool = False,
+    transformed: bool = False,
     steps: int = 10,
     show: bool = True,
     use_optim_log: bool = False,
@@ -35,7 +35,7 @@ def contour(
     bounds : numpy.ndarray, optional
         A 2x2 array specifying the [min, max] bounds for each parameter. If None, uses
         `parameters.get_bounds_for_plotly`.
-    apply_transform : bool, optional
+    transformed : bool, optional
         Uses the transformed parameter values (as seen by the optimiser) for plotting.
     steps : int, optional
         The number of grid points to divide the parameter space into along each dimension (default: 10).
@@ -156,7 +156,7 @@ def contour(
     # Apply any transformation if requested
     def transform_array_of_values(list_of_values, parameter):
         """Apply transformation if requested."""
-        if apply_transform:
+        if transformed:
             return np.asarray(
                 [parameter.transformation.to_search(value) for value in list_of_values]
             ).flatten()
@@ -182,10 +182,10 @@ def contour(
         legend=dict(orientation="h", yanchor="bottom", y=1, xanchor="right", x=1),
     )
     layout_options["xaxis_title"] = (
-        "Transformed " + names[0] if apply_transform else names[0]
+        "Transformed " + names[0] if transformed else names[0]
     )
     layout_options["yaxis_title"] = (
-        "Transformed " + names[1] if apply_transform else names[1]
+        "Transformed " + names[1] if transformed else names[1]
     )
     layout = go.Layout(layout_options)
 

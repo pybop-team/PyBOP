@@ -154,7 +154,7 @@ class Parameter:
         n_samples: int = 1,
         *,
         random_state: int | None = None,
-        apply_transform: bool = False,
+        transformed: bool = False,
     ) -> NDArray[np.floating] | None:
         """
         Sample from parameter's prior distribution.
@@ -165,7 +165,7 @@ class Parameter:
             Number of samples to draw (default: 1).
         random_state : int, optional
             Random seed for reproducibility.
-        apply_transform : bool
+        transformed : bool
             Whether to apply transformation to samples (default: False).
 
         Returns
@@ -186,7 +186,7 @@ class Parameter:
             effective_upper = self._bounds.upper - offset
             samples = np.clip(samples, effective_lower, effective_upper)
 
-        if apply_transform:
+        if transformed:
             samples = np.array([self._transformation.to_search(s)[0] for s in samples])
 
         return samples
@@ -393,13 +393,13 @@ class Parameters:
             raise ParameterNotFoundError(f"Parameter '{name}' not found")
         return self._parameters[name]
 
-    def get_bounds(self, apply_transform: bool = False) -> dict:
+    def get_bounds(self, transformed: bool = False) -> dict:
         """
         Get bounds, for either all or no parameters.
 
         Parameters
         ----------
-        apply_transform : bool
+        transformed : bool
             If True, the transformation is applied to the output (default: False).
         """
         bounds = {"lower": [], "upper": []}
@@ -407,7 +407,7 @@ class Parameters:
             lower, upper = param.bounds or (-np.inf, np.inf)
 
             if (
-                apply_transform
+                transformed
                 and param.bounds is not None
                 and param.transformation is not None
             ):
@@ -428,7 +428,7 @@ class Parameters:
 
         return bounds
 
-    def get_bounds_array(self, apply_transform: bool = False) -> np.ndarray:
+    def get_bounds_array(self, transformed: bool = False) -> np.ndarray:
         """
         Retrieve parameter bounds in numpy format.
 
@@ -437,7 +437,7 @@ class Parameters:
         bounds : numpy.ndarray
             An array of shape (n_parameters, 2) containing the bounds for each parameter.
         """
-        bounds = self.get_bounds(apply_transform=apply_transform)
+        bounds = self.get_bounds(transformed=transformed)
         return np.column_stack([bounds["lower"], bounds["upper"]])
 
     def update(
@@ -548,7 +548,7 @@ class Parameters:
         n_samples: int = 1,
         *,
         random_state: int | None = None,
-        apply_transform: bool = False,
+        transformed: bool = False,
     ) -> NDArray[np.floating] | None:
         """
         Sample from all parameter priors.
@@ -562,7 +562,7 @@ class Parameters:
 
         for param in self._parameters.values():
             samples = param.sample_from_prior(
-                n_samples, random_state=random_state, apply_transform=apply_transform
+                n_samples, random_state=random_state, transformed=transformed
             )
             if samples is None:
                 return None
@@ -570,13 +570,13 @@ class Parameters:
 
         return np.column_stack(all_samples)
 
-    def get_sigma0(self, apply_transform: bool = False) -> list:
+    def get_sigma0(self, transformed: bool = False) -> list:
         """
         Get the standard deviation, for either all or no parameters.
 
         Parameters
         ----------
-        apply_transform : bool
+        transformed : bool
             If True, the transformation is applied to the output (default: False).
         """
         sigma0 = []
@@ -590,7 +590,7 @@ class Parameters:
                 if np.isfinite(upper - lower):
                     sig = 0.05 * (upper - lower)
 
-            if apply_transform and sig is not None and param.transformation is not None:
+            if transformed and sig is not None and param.transformation is not None:
                 sig = np.ndarray.item(
                     param.transformation.convert_standard_deviation(
                         sig, param.transformation.to_search(param.initial_value)[0]
@@ -608,15 +608,13 @@ class Parameters:
             if param.prior is not None
         ]
 
-    def get_initial_values(
-        self, *, apply_transform: bool = False
-    ) -> NDArray[np.floating]:
+    def get_initial_values(self, *, transformed: bool = False) -> NDArray[np.floating]:
         """
         Get initial values as array.
 
         Parameters
         ----------
-        apply_transform : bool, default=False
+        transformed : bool, default=False
             Whether to apply transformations to bounds
 
         Returns
@@ -630,19 +628,17 @@ class Parameters:
             if value is None:
                 # Try to sample from prior if available
                 if param.prior is not None:
-                    samples = param.sample_from_prior(
-                        1, apply_transform=apply_transform
-                    )
+                    samples = param.sample_from_prior(1, transformed=transformed)
                     if samples is not None:
                         param.update_initial_value(samples[0])
-                        value = samples[0] if apply_transform else param.initial_value
+                        value = samples[0] if transformed else param.initial_value
 
                 if value is None:
                     raise ParameterError(
                         f"Parameter '{param.name}' has no initial value"
                     )
 
-            if apply_transform:
+            if transformed:
                 value = param.transformation.to_search(value)[0]
 
             values.append(value)
@@ -660,13 +656,13 @@ class Parameters:
         for param in target_params:
             param.reset_to_initial()
 
-    def get_values(self, *, apply_transform: bool = False) -> NDArray[np.floating]:
+    def get_values(self, *, transformed: bool = False) -> NDArray[np.floating]:
         """
         Get current values as array.
 
         Parameters
         ----------
-        apply_transform : bool, default=False
+        transformed : bool, default=False
             Whether to apply transformations
 
         Returns
@@ -680,7 +676,7 @@ class Parameters:
             if value is None:
                 raise ParameterError(f"Parameter '{param.name}' has no current value")
 
-            if apply_transform:
+            if transformed:
                 value = param.transformation.to_search(value)[0]
 
             values.append(value)
@@ -706,7 +702,7 @@ class Parameters:
 
         return ComposedTransformation(transformations)
 
-    def get_bounds_for_plotly(self, apply_transform: bool = False) -> np.ndarray:
+    def get_bounds_for_plotly(self, transformed: bool = False) -> np.ndarray:
         """
         Retrieve parameter bounds in the format expected by Plotly.
 
@@ -715,7 +711,7 @@ class Parameters:
         bounds : numpy.ndarray
             An array of shape (n_parameters, 2) containing the bounds for each parameter.
         """
-        bounds = self.get_bounds(apply_transform=apply_transform)
+        bounds = self.get_bounds(transformed=transformed)
 
         # Validate that all parameters have bounds
         if bounds is None or not np.isfinite(list(bounds.values())).all():

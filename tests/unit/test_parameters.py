@@ -175,7 +175,7 @@ class TestParameters:
         )
 
         # Test transformed bounds
-        bounds = params.get_bounds(apply_transform=True)
+        bounds = params.get_bounds(transformed=True)
         np.testing.assert_allclose(bounds["lower"], [-np.inf, 0.5, 0, -1])
         np.testing.assert_allclose(bounds["upper"], [np.log(1), 1.5, 1, 0])
 
@@ -192,7 +192,7 @@ class TestParameters:
         with pytest.raises(
             ValueError, match="Transformed bounds resulted in NaN values."
         ):
-            params.get_bounds(apply_transform=True)
+            params.get_bounds(transformed=True)
 
     def test_parameters_update(self, parameter):
         params = pybop.Parameters(parameter)
@@ -209,7 +209,7 @@ class TestParameters:
         )
         params = pybop.Parameters(parameter)
         params.construct_transformation()
-        samples = params.sample_from_priors(n_samples=500, apply_transform=True)
+        samples = params.sample_from_priors(n_samples=500, transformed=True)
         assert (samples >= -0.125).all() and (samples <= -0.06).all()
         parameter._transformation = None
 
