@@ -1,15 +1,16 @@
 import numpy as np
+import pybamm
 
 import pybop
 
 # Import the ECM parameter set from JSON
-parameter_set = pybop.ParameterSet(
+parameter_set = pybamm.ParameterValues(
     json_path="examples/parameters/initial_ecm_parameters.json"
 )
 
 # Alternatively, define the initial parameter set with a dictionary
 # Add definitions for R's, C's, and initial overpotentials for any additional RC elements
-# parameter_set = pybop.ParameterSet(
+# parameter_set = pybamm.ParameterValues(
 #     params_dict={
 #         "chemistry": "ecm",
 #         "Initial SoC": 0.5,

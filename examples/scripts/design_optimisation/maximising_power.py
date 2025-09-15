@@ -2,9 +2,11 @@ import pybamm
 from pybamm import Parameter
 
 import pybop
+from pybop.parameters.parameter_set import set_formation_concentrations
 
 # Define parameter set and additional parameters needed for the cost function
-parameter_set = pybop.ParameterSet("Chen2020", formation_concentrations=True)
+parameter_set = pybamm.ParameterValues("Chen2020")
+set_formation_concentrations(parameter_set)
 parameter_set.update(
     {
         "Electrolyte density [kg.m-3]": Parameter("Separator density [kg.m-3]"),

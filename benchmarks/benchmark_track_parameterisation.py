@@ -1,4 +1,5 @@
 import numpy as np
+import pybamm
 
 import pybop
 from benchmarks.benchmark_utils import set_random_seed
@@ -35,7 +36,7 @@ class BenchmarkTrackParameterisation:
         set_random_seed()
 
         # Create model instance
-        params = pybop.ParameterSet(parameter_set)
+        params = pybamm.ParameterValues(parameter_set)
         params.update(
             {
                 "Negative electrode active material volume fraction": 0.63,

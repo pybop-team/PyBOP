@@ -11,7 +11,7 @@ and C1 is replaced by 1/R1 so that the bounds can be applied directly.
 """
 
 # Define the initial parameter set
-parameter_set = pybop.ParameterSet("ECM_Example")
+parameter_set = pybamm.ParameterValues("ECM_Example")
 parameter_set.update(
     {
         "Initial SoC": 0.75,

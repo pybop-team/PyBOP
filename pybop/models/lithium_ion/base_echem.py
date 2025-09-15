@@ -1,11 +1,10 @@
 import sys
 import warnings
 
-from pybamm import LithiumIonParameters, Simulation
+from pybamm import LithiumIonParameters, ParameterValues, Simulation
 from pybamm import lithium_ion as pybamm_lithium_ion
 
 from pybop.models.base_model import BaseModel, Inputs
-from pybop.parameters.parameter_set import ParameterSet
 
 
 class EChemBaseModel(BaseModel):
@@ -92,7 +91,7 @@ class EChemBaseModel(BaseModel):
     def _check_params(
         self,
         inputs: Inputs,
-        parameter_set: ParameterSet,
+        parameter_set: ParameterValues,
         allow_infeasible_solutions: bool = True,
     ):
         """
@@ -102,7 +101,7 @@ class EChemBaseModel(BaseModel):
         ----------
         inputs : Inputs
             The input parameters for the simulation.
-        parameter_set : pybop.ParameterSet
+        parameter_set : pybamm.ParameterValues
             A PyBOP parameter set object or a dictionary containing the parameter values.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).
@@ -141,10 +140,7 @@ class EChemBaseModel(BaseModel):
             total_vol_fraction = (
                 related_parameters[material_vol_fraction] + related_parameters[porosity]
             )
-            if (
-                ParameterSet.evaluate_symbol(total_vol_fraction, parameter_set)
-                > 1 + sys.float_info.epsilon
-            ):
+            if parameter_set.evaluate(total_vol_fraction) > 1 + sys.float_info.epsilon:
                 if self.param_check_counter <= len(electrode_params):
                     infeasibility_warning = "Non-physical point encountered - [{material_vol_fraction} + {porosity}] > 1.0!"
                     warnings.warn(infeasibility_warning, UserWarning, stacklevel=2)
@@ -184,7 +180,7 @@ class EChemBaseModel(BaseModel):
         del self._unprocessed_parameter_values
         del self._parameter_values
 
-    def cell_volume(self, parameter_set: ParameterSet | None = None):
+    def cell_volume(self, parameter_set: ParameterValues | None = None):
         """
         Calculate the total cell volume in m3.
 
@@ -221,9 +217,9 @@ class EChemBaseModel(BaseModel):
         # Calculate total cell volume
         cell_volume = cross_sectional_area * cell_thickness
 
-        return ParameterSet.evaluate_symbol(cell_volume, parameter_set)
+        return parameter_set.evaluate(cell_volume)
 
-    def cell_mass(self, parameter_set: ParameterSet | None = None):
+    def cell_mass(self, parameter_set: ParameterValues | None = None):
         """
         Calculate the total cell mass in kilograms.
 
@@ -312,9 +308,9 @@ class EChemBaseModel(BaseModel):
         )
         cell_mass = cross_sectional_area * total_area_density
 
-        return ParameterSet.evaluate_symbol(cell_mass, parameter_set)
+        return parameter_set.evaluate(cell_mass)
 
-    def approximate_capacity(self, parameter_set: ParameterSet | None = None):
+    def approximate_capacity(self, parameter_set: ParameterValues | None = None):
         """
         Calculate an estimate for the nominal cell capacity. The estimate is computed
         by estimating the capacity of the positive electrode that lies between the
@@ -352,7 +348,7 @@ class EChemBaseModel(BaseModel):
 
         Q_p = LithiumIonParameters().p.prim.Q_init
         theoretical_capacity = Q_p * (max_sto_p - min_sto_p)
-        return ParameterSet.evaluate_symbol(theoretical_capacity, parameter_set)
+        return parameter_set.evaluate(theoretical_capacity)
 
     def set_geometric_parameters(self):
         """

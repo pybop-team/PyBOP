@@ -2,6 +2,7 @@ import pybamm
 from pybamm import Parameter
 
 import pybop
+from pybop.parameters.parameter_set import set_formation_concentrations
 
 # A design optimisation example loosely based on work by L.D. Couto
 # available at https://doi.org/10.1016/j.energy.2022.125966.
@@ -13,7 +14,8 @@ import pybop
 # separator width.
 
 # Define parameter set and additional parameters needed for the cost function
-parameter_set = pybop.ParameterSet("Chen2020", formation_concentrations=True)
+parameter_set = pybamm.ParameterValues("Chen2020")
+set_formation_concentrations(parameter_set)
 parameter_set.update(
     {
         "Electrolyte density [kg.m-3]": Parameter("Separator density [kg.m-3]"),

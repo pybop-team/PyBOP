@@ -4,7 +4,7 @@ import pybamm
 import pybop
 
 # Define model
-parameter_set = pybop.ParameterSet("Xu2019")
+parameter_set = pybamm.ParameterValues("Xu2019")
 model = pybop.lithium_ion.SPMe(
     parameter_set=parameter_set, options={"working electrode": "positive"}
 )
@@ -82,7 +82,7 @@ model.set_current_function(dataset)
 fitted_values = model.predict(t_eval=dataset["Time [s]"])
 
 # Return to the original model
-parameter_set = pybop.ParameterSet("Xu2019")
+parameter_set = pybamm.ParameterValues("Xu2019")
 
 # Update the diffusivity value
 diffusivity = np.mean(

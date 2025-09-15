@@ -1,9 +1,10 @@
 import numpy as np
+import pybamm
 
 import pybop
 
 # Generate some synthetic data for testing
-parameter_set = pybop.ParameterSet("Chen2020")
+parameter_set = pybamm.ParameterValues("Chen2020")
 ocv_function = parameter_set["Positive electrode OCP [V]"]
 nom_capacity = parameter_set["Nominal cell capacity [A.h]"]
 

@@ -1,3 +1,4 @@
+import json
 import sys
 from io import StringIO
 
@@ -53,7 +54,7 @@ class TestModels:
         ],
     )
     def test_model_classes(self, model_class, expected_name, options):
-        parameter_set = pybop.ParameterSet({"Nominal cell capacity [A.h]": 5.12})
+        parameter_set = pybamm.ParameterValues({"Nominal cell capacity [A.h]": 5.12})
         model = model_class(options=options, parameter_set=parameter_set)
         assert model.pybamm_model is not None
         assert model.name == expected_name
@@ -224,19 +225,12 @@ class TestModels:
         model = pybop.BaseModel(parameter_set=None)
         assert model.parameter_set is None
 
-        model = pybop.BaseModel(parameter_set=param_dict)
         parameter_set = pybamm.ParameterValues(param_dict)
-        assert model.parameter_set == parameter_set
-
         model = pybop.BaseModel(parameter_set=parameter_set)
         assert model.parameter_set == parameter_set
 
-        pybop_parameter_set = pybop.ParameterSet(param_dict)
-        model = pybop.BaseModel(parameter_set=pybop_parameter_set)
-        assert model.parameter_set == parameter_set
-
     def test_rebuild_geometric_parameters(self):
-        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        parameter_set = pybamm.ParameterValues("Chen2020")
         parameters = pybop.Parameters(
             pybop.Parameter(
                 "Positive particle radius [m]",
@@ -406,9 +400,8 @@ class TestModels:
         assert isinstance(base.parameters, pybop.Parameters)
 
     def test_thevenin_model(self):
-        parameter_set = pybop.ParameterSet(
-            json_path="examples/parameters/initial_ecm_parameters.json"
-        )
+        with open("examples/parameters/initial_ecm_parameters.json") as file:
+            parameter_set = pybamm.ParameterValues(json.load(file))
         model = pybop.empirical.Thevenin(
             parameter_set=parameter_set, options={"number of rc elements": 2}
         )
@@ -597,7 +590,7 @@ class TestModels:
             assert "are not currently used by " in str(record[0].message)
 
     def test_weppner_huggins(self):
-        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        parameter_set = pybamm.ParameterValues("Chen2020")
 
         with pytest.raises(ValueError, match="Unrecognised electrode type"):
             pybop.lithium_ion.WeppnerHuggins.apply_parameter_grouping(
@@ -624,7 +617,7 @@ class TestModels:
         assert isinstance(variable_list, list)
 
     def test_SP_diffusion(self):
-        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        parameter_set = pybamm.ParameterValues("Chen2020")
 
         with pytest.raises(ValueError, match="Unrecognised electrode type"):
             pybop.lithium_ion.SPDiffusion.apply_parameter_grouping(
@@ -654,7 +647,7 @@ class TestModels:
             model.set_initial_state({"Initial open-circuit voltage [V]": 3.7})
 
     def test_grouped_SPM(self):
-        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        parameter_set = pybamm.ParameterValues("Chen2020")
         parameter_set["Electrolyte diffusivity [m2.s-1]"] = 1.769e-10
         parameter_set["Electrolyte conductivity [S.m-1]"] = 0.9487
 
@@ -676,7 +669,7 @@ class TestModels:
         assert isinstance(variable_list, list)
 
     def test_grouped_SPMe(self):
-        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        parameter_set = pybamm.ParameterValues("Chen2020")
         parameter_set["Electrolyte diffusivity [m2.s-1]"] = 1.769e-10
         parameter_set["Electrolyte conductivity [S.m-1]"] = 0.9487
 

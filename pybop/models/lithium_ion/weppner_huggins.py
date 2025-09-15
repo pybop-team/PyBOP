@@ -5,8 +5,6 @@ from pybamm import DummySolver, Parameter, ParameterValues, citations
 from pybamm import lithium_ion as pybamm_lithium_ion
 from pybamm import t as pybamm_t
 
-from pybop import ParameterSet
-
 
 class BaseWeppnerHuggins(pybamm_lithium_ion.BaseModel):
     """
@@ -137,7 +135,7 @@ class BaseWeppnerHuggins(pybamm_lithium_ion.BaseModel):
 
         Parameters
         ----------
-        parameter_set : Union[dict, pybop.ParameterSet, pybamm.ParameterValues]
+        parameter_set : Union[dict, pybamm.ParameterValues, pybamm.ParameterValues]
             A dict-like object containing the parameter values.
         electrode : str
             Either "positive" or "negative" for the type of electrode.
@@ -147,8 +145,6 @@ class BaseWeppnerHuggins(pybamm_lithium_ion.BaseModel):
         dict
             A dictionary of the grouped parameters.
         """
-        parameter_set = ParameterSet.to_pybamm(parameter_set)
-
         # Unpack physical parameters
         F = parameter_set["Faraday constant [C.mol-1]"]
         if electrode == "positive":
@@ -180,10 +176,12 @@ class BaseWeppnerHuggins(pybamm_lithium_ion.BaseModel):
         Q_th = F * alpha * c_max * L * A
         tau_d = R**2 / D
 
-        return {
-            "Current function [A]": parameter_set["Current function [A]"],
-            "Reference voltage [V]": 4,
-            "Derivative of the OCP wrt stoichiometry [V]": -1,
-            "Theoretical electrode capacity [A.s]": Q_th,
-            "Particle diffusion time scale [s]": tau_d,
-        }
+        return ParameterValues(
+            {
+                "Current function [A]": parameter_set["Current function [A]"],
+                "Reference voltage [V]": 4,
+                "Derivative of the OCP wrt stoichiometry [V]": -1,
+                "Theoretical electrode capacity [A.s]": Q_th,
+                "Particle diffusion time scale [s]": tau_d,
+            }
+        )

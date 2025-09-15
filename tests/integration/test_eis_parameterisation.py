@@ -1,4 +1,5 @@
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
@@ -22,7 +23,7 @@ class TestEISParameterisation:
 
     @pytest.fixture
     def model(self):
-        parameter_set = pybop.ParameterSet("Chen2020")
+        parameter_set = pybamm.ParameterValues("Chen2020")
         x = self.ground_truth
         parameter_set.update(
             {

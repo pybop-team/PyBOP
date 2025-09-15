@@ -5,7 +5,7 @@ from pybamm import CasadiSolver
 import pybop
 
 # Generate some synthetic data for testing
-parameter_set = pybop.ParameterSet("Chen2020")
+parameter_set = pybamm.ParameterValues("Chen2020")
 model = pybop.lithium_ion.SPMe(parameter_set=parameter_set, solver=CasadiSolver())
 
 # Create representative charge and discharge datasets

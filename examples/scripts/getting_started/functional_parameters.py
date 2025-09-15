@@ -11,7 +11,7 @@ import pybop
 
 
 # Load parameter set
-parameter_set = pybop.ParameterSet("Chen2020")
+parameter_set = pybamm.ParameterValues("Chen2020")
 
 
 # Define a new function using pybamm parameters

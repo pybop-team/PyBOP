@@ -1,3 +1,5 @@
+import json
+
 import numpy as np
 import pybamm
 import pytest
@@ -37,9 +39,8 @@ class TestClassification:
 
     @pytest.fixture
     def parameter_set(self):
-        parameter_set = pybop.ParameterSet(
-            json_path="examples/parameters/initial_ecm_parameters.json"
-        )
+        with open("examples/parameters/initial_ecm_parameters.json") as file:
+            parameter_set = pybamm.ParameterValues(json.load(file))
         parameter_set.update({"C1 [F]": 1000})
         return parameter_set
 

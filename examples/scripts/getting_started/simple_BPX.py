@@ -1,10 +1,14 @@
+import json
+
 import numpy as np
+import pybamm
 
 import pybop
 
 # Define model
-parameter_set = pybop.ParameterSet(json_path="examples/parameters/example_BPX.json")
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
+with open("examples/parameters/example_BPX.json") as file:
+    parameter_set = pybamm.ParameterValues(json.load(file))
+model = pybamm.lithium_ion.SPM(parameter_set=parameter_set)
 
 # Fitting parameters
 parameters = pybop.Parameters(

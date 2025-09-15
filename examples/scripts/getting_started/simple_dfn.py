@@ -1,6 +1,7 @@
 import os
 
 import numpy as np
+import pybamm
 
 import pybop
 
@@ -11,7 +12,7 @@ dataset_path = os.path.join(
 )
 
 # Define model
-parameter_set = pybop.ParameterSet("Chen2020")
+parameter_set = pybamm.ParameterValues("Chen2020")
 model = pybop.lithium_ion.DFN(parameter_set=parameter_set)
 
 # Fitting parameters

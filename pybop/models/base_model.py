@@ -7,10 +7,11 @@ import casadi
 import numpy as np
 import pybamm
 from pybamm import IDAKLUSolver as IDAKLUSolver
+from pybamm import ParameterValues
 from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import spsolve
 
-from pybop import Dataset, Parameters, ParameterSet, SymbolReplacer
+from pybop import Dataset, Parameters, SymbolReplacer
 from pybop.parameters.parameter import Inputs
 
 
@@ -71,7 +72,7 @@ class BaseModel:
     def __init__(
         self,
         name: str = "Base Model",
-        parameter_set: ParameterSet | None = None,
+        parameter_set: ParameterValues | None = None,
         check_params: Callable = None,
         eis: bool = False,
     ):
@@ -82,7 +83,7 @@ class BaseModel:
         ----------
         name : str, optional
             The name given to the model instance.
-        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues, dict], optional
+        parameter_set : Union[pybamm.ParameterValues, pybamm.ParameterValues, dict], optional
             A dict-like object containing the parameter values.
         check_params : Callable, optional
             A compatibility check for the model parameters. Function, with
@@ -111,7 +112,7 @@ class BaseModel:
         self._calculate_sensitivities = False
         self._sensitivities_available = not eis  # Not available for EIS, use as default
 
-        self._parameter_set = ParameterSet.to_pybamm(parameter_set)
+        self._parameter_set = copy.deepcopy(parameter_set)
         self.param_checker = check_params
 
         self.pybamm_model = None
@@ -683,7 +684,7 @@ class BaseModel:
         self,
         inputs: Inputs | None = None,
         t_eval: np.ndarray | None = None,
-        parameter_set: ParameterSet | None = None,
+        parameter_set: ParameterValues | None = None,
         experiment: pybamm.Experiment | None = None,
         initial_state: dict | None = None,
     ) -> dict[str, np.ndarray[np.float64]]:
@@ -702,7 +703,7 @@ class BaseModel:
         t_eval : array-like, optional
             An array of time points at which to evaluate the solution. Defaults to None,
             which means the time points need to be specified within experiment or elsewhere.
-        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues], optional
+        parameter_set : Union[pybamm.ParameterValues, pybamm.ParameterValues], optional
             A dict-like object containing the parameter values to use for the simulation.
             Defaults to the model's current ParameterValues if None.
         experiment : pybamm.Experiment, optional
@@ -735,10 +736,7 @@ class BaseModel:
         self._pybamm_solution = None
 
         no_parameter_set = parameter_set is None
-        parameter_set = (
-            ParameterSet.to_pybamm(parameter_set)
-            or self._unprocessed_parameter_set.copy()
-        )
+        parameter_set = parameter_set or self._unprocessed_parameter_set.copy()
         if inputs is not None:
             inputs = self.parameters.verify(inputs)
             parameter_set.update(inputs)
@@ -792,7 +790,7 @@ class BaseModel:
     def check_params(
         self,
         inputs: Inputs | None = None,
-        parameter_set: ParameterSet | None = None,
+        parameter_set: ParameterValues | None = None,
         allow_infeasible_solutions: bool = True,
     ):
         """
@@ -802,7 +800,7 @@ class BaseModel:
         ----------
         inputs : Inputs
             The input parameters for the simulation.
-        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues], optional
+        parameter_set : Union[pybamm.ParameterValues, pybamm.ParameterValues], optional
             A dict-like object containing the parameter values.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).
@@ -825,7 +823,7 @@ class BaseModel:
     def _check_params(
         self,
         inputs: Inputs,
-        parameter_set: ParameterSet,
+        parameter_set: ParameterValues,
         allow_infeasible_solutions: bool = True,
     ):
         """
@@ -836,7 +834,7 @@ class BaseModel:
         ----------
         inputs : Inputs
             The input parameters for the simulation.
-        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues], optional
+        parameter_set : Union[pybamm.ParameterValues, pybamm.ParameterValues], optional
             A dict-like object containing the parameter values.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).
@@ -912,7 +910,7 @@ class BaseModel:
 
         return reduced_info
 
-    def cell_mass(self, parameter_set: ParameterSet = None):
+    def cell_mass(self, parameter_set: ParameterValues = None):
         """
         Calculate the cell mass in kilograms.
 
@@ -920,7 +918,7 @@ class BaseModel:
 
         Parameters
         ----------
-        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues], optional
+        parameter_set : Union[pybamm.ParameterValues, pybamm.ParameterValues], optional
             A dict-like object containing the parameter values.
 
         Raises
@@ -930,7 +928,7 @@ class BaseModel:
         """
         raise NotImplementedError
 
-    def cell_volume(self, parameter_set: ParameterSet = None):
+    def cell_volume(self, parameter_set: ParameterValues = None):
         """
         Calculate the cell volume in m3.
 
@@ -938,7 +936,7 @@ class BaseModel:
 
         Parameters
         ----------
-        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues], optional
+        parameter_set : Union[pybamm.ParameterValues, pybamm.ParameterValues], optional
             A dict-like object containing the parameter values.
 
         Raises
@@ -948,7 +946,7 @@ class BaseModel:
         """
         raise NotImplementedError
 
-    def approximate_capacity(self, parameter_set: ParameterSet = None):
+    def approximate_capacity(self, parameter_set: ParameterValues = None):
         """
         Calculate a new estimate for the nominal capacity based on the theoretical energy
         density and an average voltage.
@@ -957,7 +955,7 @@ class BaseModel:
 
         Parameters
         ----------
-        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues], optional
+        parameter_set : Union[pybamm.ParameterValues, pybamm.ParameterValues], optional
             A dict-like object containing the parameter values.
 
         Raises

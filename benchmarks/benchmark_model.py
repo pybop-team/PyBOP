@@ -1,4 +1,5 @@
 import numpy as np
+import pybamm
 
 import pybop
 from benchmarks.benchmark_utils import set_random_seed
@@ -23,7 +24,7 @@ class BenchmarkModel:
         set_random_seed()
 
         # Create model instance
-        self.model = model(parameter_set=pybop.ParameterSet(parameter_set))
+        self.model = model(parameter_set=pybamm.ParameterValues(parameter_set))
 
         # Define fitting parameters
         parameters = pybop.Parameters(

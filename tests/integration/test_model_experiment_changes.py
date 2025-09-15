@@ -44,7 +44,7 @@ class TestModelAndExperimentChanges:
     def test_changing_experiment(self, parameters, solver):
         # Change the experiment and check that the results are different.
 
-        parameter_set = pybop.ParameterSet("Chen2020")
+        parameter_set = pybamm.ParameterValues("Chen2020")
         parameter_set.update(parameters.to_dict("true"))
         initial_state = {"Initial SoC": 0.5}
         model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
@@ -74,7 +74,7 @@ class TestModelAndExperimentChanges:
     def test_changing_model(self, parameters, solver):
         # Change the model and check that the results are different.
 
-        parameter_set = pybop.ParameterSet("Chen2020")
+        parameter_set = pybamm.ParameterValues("Chen2020")
         parameter_set.update(parameters.to_dict("true"))
         initial_state = {"Initial SoC": 0.5}
         experiment = pybamm.Experiment(["Charge at 1C until 4.1 V (30 seconds period)"])
@@ -114,7 +114,7 @@ class TestModelAndExperimentChanges:
         return results.final_cost
 
     def test_multi_fitting_problem(self, solver):
-        parameter_set = pybop.ParameterSet("Chen2020")
+        parameter_set = pybamm.ParameterValues("Chen2020")
         ground_truth = parameter_set[
             "Negative electrode active material volume fraction"
         ]

@@ -25,7 +25,7 @@ class TestSolvers:
 
     @pytest.fixture
     def model(self, solver):
-        parameter_set = pybop.ParameterSet.pybamm("Marquis2019")
+        parameter_set = pybamm.ParameterValues("Marquis2019")
         model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
         return model
 

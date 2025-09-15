@@ -1,6 +1,7 @@
 from copy import copy
 
 import numpy as np
+from pybamm import ParameterValues
 
 import pybop
 from pybop import BaseApplication
@@ -20,7 +21,7 @@ class GITTPulseFit(BaseApplication):
     gitt_pulse : pybop.Dataset
         A dataset containing the "Time [s]", "Current function [A]" and "Voltage [V]"
         for one pulse obtained from a GITT measurement.
-    parameter_set : pybop.ParameterSet
+    parameter_set : pybamm.ParameterValues
         A parameter set containing values for the parameters of the SPDiffusion model.
     electrode : str, optional
         Either "positive" or "negative" depending on the type of electrode.
@@ -34,7 +35,7 @@ class GITTPulseFit(BaseApplication):
 
     def __init__(
         self,
-        parameter_set: pybop.ParameterSet,
+        parameter_set: ParameterValues,
         electrode: str | None = "negative",
         cost: pybop.BaseCost | None = pybop.RootMeanSquaredError,
         optimiser: pybop.BaseOptimiser | None = pybop.SciPyMinimize,
@@ -99,7 +100,7 @@ class GITTFit(BaseApplication):
         for a GITT measurement.
     pulse_index : list[np.ndarray]
         A nested list of integers representing the indices of each pulse in the dataset.
-    parameter_set : pybop.ParameterSet
+    parameter_set : pybamm.ParameterValues
         A parameter set containing values for the parameters of the SPDiffusion model.
     electrode : str, optional
         Either "positive" or "negative" depending on the type of electrode.
@@ -115,7 +116,7 @@ class GITTFit(BaseApplication):
         self,
         gitt_dataset: pybop.Dataset,
         pulse_index: list[np.ndarray],
-        parameter_set: pybop.ParameterSet,
+        parameter_set: ParameterValues,
         electrode: str | None = "negative",
         cost: pybop.BaseCost | None = pybop.RootMeanSquaredError,
         optimiser: pybop.BaseOptimiser | None = pybop.SciPyMinimize,

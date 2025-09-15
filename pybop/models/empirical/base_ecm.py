@@ -1,8 +1,8 @@
 import numpy as np
 import pybamm
+from pybamm import ParameterValues
 
 from pybop.models.base_model import BaseModel, Inputs
-from pybop.parameters.parameter_set import ParameterSet
 
 
 class ECircuitModel(BaseModel):
@@ -99,7 +99,7 @@ class ECircuitModel(BaseModel):
     def _check_params(
         self,
         inputs: Inputs,
-        parameter_set: ParameterSet,
+        parameter_set: ParameterValues,
         allow_infeasible_solutions: bool = True,
     ):
         """
@@ -109,7 +109,7 @@ class ECircuitModel(BaseModel):
         ----------
         inputs : Inputs
             The input parameters for the simulation.
-        parameter_set : pybop.ParameterSet
+        parameter_set : pybamm.ParameterValues
             A PyBOP parameter set object or a dictionary containing the parameter values.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).

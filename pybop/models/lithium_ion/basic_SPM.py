@@ -21,8 +21,6 @@ from pybamm.models.full_battery_models.lithium_ion.electrode_soh import (
     get_min_max_stoichiometries,
 )
 
-from pybop import ParameterSet
-
 
 class BaseGroupedSPM(pybamm_lithium_ion.BaseModel):
     """
@@ -469,7 +467,7 @@ class BaseGroupedSPM(pybamm_lithium_ion.BaseModel):
 
         Parameters
         ----------
-        parameter_set : Union[dict, pybop.ParameterSet, pybamm.ParameterValues]
+        parameter_set : Union[dict, pybamm.ParameterValues, pybamm.ParameterValues]
             A dict-like object containing the parameter values.
 
         Returns
@@ -477,8 +475,6 @@ class BaseGroupedSPM(pybamm_lithium_ion.BaseModel):
         dict
             A dictionary of the grouped parameters.
         """
-        parameter_set = ParameterSet.to_pybamm(parameter_set)
-
         # Unpack physical parameters
         F = parameter_set["Faraday constant [C.mol-1]"]
         alpha_p = parameter_set["Positive electrode active material volume fraction"]
@@ -563,27 +559,35 @@ class BaseGroupedSPM(pybamm_lithium_ion.BaseModel):
         l_p = L_p / L
         l_n = L_n / L
 
-        return {
-            "Nominal cell capacity [A.h]": parameter_set["Nominal cell capacity [A.h]"],
-            "Current function [A]": parameter_set["Current function [A]"],
-            "Initial temperature [K]": parameter_set["Ambient temperature [K]"],
-            "Initial SoC": soc_init,
-            "Minimum negative stoichiometry": x_0,
-            "Maximum negative stoichiometry": x_100,
-            "Minimum positive stoichiometry": y_100,
-            "Maximum positive stoichiometry": y_0,
-            "Lower voltage cut-off [V]": parameter_set["Lower voltage cut-off [V]"],
-            "Upper voltage cut-off [V]": parameter_set["Upper voltage cut-off [V]"],
-            "Positive electrode OCP [V]": parameter_set["Positive electrode OCP [V]"],
-            "Negative electrode OCP [V]": parameter_set["Negative electrode OCP [V]"],
-            "Measured cell capacity [A.s]": Q_meas,
-            "Positive particle diffusion time scale [s]": tau_d_p,
-            "Negative particle diffusion time scale [s]": tau_d_n,
-            "Positive electrode charge transfer time scale [s]": tau_ct_p,
-            "Negative electrode charge transfer time scale [s]": tau_ct_n,
-            "Positive electrode capacitance [F]": C_p,
-            "Negative electrode capacitance [F]": C_n,
-            "Positive electrode relative thickness": l_p,
-            "Negative electrode relative thickness": l_n,
-            "Series resistance [Ohm]": R0,
-        }
+        return ParameterValues(
+            {
+                "Nominal cell capacity [A.h]": parameter_set[
+                    "Nominal cell capacity [A.h]"
+                ],
+                "Current function [A]": parameter_set["Current function [A]"],
+                "Initial temperature [K]": parameter_set["Ambient temperature [K]"],
+                "Initial SoC": soc_init,
+                "Minimum negative stoichiometry": x_0,
+                "Maximum negative stoichiometry": x_100,
+                "Minimum positive stoichiometry": y_100,
+                "Maximum positive stoichiometry": y_0,
+                "Lower voltage cut-off [V]": parameter_set["Lower voltage cut-off [V]"],
+                "Upper voltage cut-off [V]": parameter_set["Upper voltage cut-off [V]"],
+                "Positive electrode OCP [V]": parameter_set[
+                    "Positive electrode OCP [V]"
+                ],
+                "Negative electrode OCP [V]": parameter_set[
+                    "Negative electrode OCP [V]"
+                ],
+                "Measured cell capacity [A.s]": Q_meas,
+                "Positive particle diffusion time scale [s]": tau_d_p,
+                "Negative particle diffusion time scale [s]": tau_d_n,
+                "Positive electrode charge transfer time scale [s]": tau_ct_p,
+                "Negative electrode charge transfer time scale [s]": tau_ct_n,
+                "Positive electrode capacitance [F]": C_p,
+                "Negative electrode capacitance [F]": C_n,
+                "Positive electrode relative thickness": l_p,
+                "Negative electrode relative thickness": l_n,
+                "Series resistance [Ohm]": R0,
+            }
+        )

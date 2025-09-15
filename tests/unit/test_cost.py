@@ -238,7 +238,7 @@ class TestCosts:
 
     @pytest.fixture
     def design_problem(self, parameters, experiment):
-        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        parameter_set = pybamm.ParameterValues("Chen2020")
         parameter_set.update(
             {
                 "Electrolyte density [kg.m-3]": pybamm.Parameter(

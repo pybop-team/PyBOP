@@ -1,6 +1,7 @@
 import os
 
 import numpy as np
+import pybamm
 
 import pybop
 
@@ -11,7 +12,7 @@ dataset_path = os.path.join(
 )
 
 # Construct and update initial parameter values
-parameter_set = pybop.ParameterSet("Chen2020")
+parameter_set = pybamm.ParameterValues("Chen2020")
 parameter_set.update(
     {
         "Negative electrode active material volume fraction": 0.43,

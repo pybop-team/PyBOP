@@ -17,8 +17,6 @@ from pybamm.input.parameters.lithium_ion.Xu2019 import (
     nmc_ocp_Xu2019,
 )
 
-from pybop import ParameterSet
-
 
 class BaseSPDiffusion(pybamm_lithium_ion.BaseModel):
     """
@@ -259,7 +257,7 @@ class BaseSPDiffusion(pybamm_lithium_ion.BaseModel):
 
         Parameters
         ----------
-        parameter_set : Union[dict, pybop.ParameterSet, pybamm.ParameterValues]
+        parameter_set : Union[dict, pybamm.ParameterValues, pybamm.ParameterValues]
             A dict-like object containing the parameter values.
         electrode : str
             Either "positive" or "negative" for the type of electrode.
@@ -269,8 +267,6 @@ class BaseSPDiffusion(pybamm_lithium_ion.BaseModel):
         dict
             A dictionary of the grouped parameters.
         """
-        parameter_set = ParameterSet.to_pybamm(parameter_set)
-
         # Unpack physical parameters
         F = parameter_set["Faraday constant [C.mol-1]"]
         if electrode == "positive":
@@ -312,12 +308,16 @@ class BaseSPDiffusion(pybamm_lithium_ion.BaseModel):
         Q_th = F * alpha * c_max * L * A
         tau_d = R**2 / D
 
-        return {
-            "Nominal cell capacity [A.h]": parameter_set["Nominal cell capacity [A.h]"],
-            "Current function [A]": parameter_set["Current function [A]"],
-            "Initial stoichiometry": sto_init,
-            "Electrode OCP [V]": ocp,
-            "Theoretical electrode capacity [A.s]": Q_th,
-            "Particle diffusion time scale [s]": tau_d,
-            "Series resistance [Ohm]": 1,
-        }
+        return ParameterValues(
+            {
+                "Nominal cell capacity [A.h]": parameter_set[
+                    "Nominal cell capacity [A.h]"
+                ],
+                "Current function [A]": parameter_set["Current function [A]"],
+                "Initial stoichiometry": sto_init,
+                "Electrode OCP [V]": ocp,
+                "Theoretical electrode capacity [A.s]": Q_th,
+                "Particle diffusion time scale [s]": tau_d,
+                "Series resistance [Ohm]": 1,
+            }
+        )

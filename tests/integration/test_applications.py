@@ -23,7 +23,7 @@ class TestApplications:
 
     @pytest.fixture
     def parameter_set(self):
-        return pybop.ParameterSet("Chen2020")
+        return pybamm.ParameterValues("Chen2020")
 
     def noise(self, sigma, values):
         return np.random.normal(0, sigma, values)
@@ -149,7 +149,7 @@ class TestApplications:
 
     @pytest.fixture
     def half_cell_model(self):
-        parameter_set = pybop.ParameterSet("Xu2019")
+        parameter_set = pybamm.ParameterValues("Xu2019")
         return pybop.lithium_ion.SPMe(
             parameter_set=parameter_set, options={"working electrode": "positive"}
         )
