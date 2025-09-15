@@ -116,10 +116,10 @@ class BaseCost:
 
         if self._has_separable_problem:
             if calculate_grad:
-                y, dy = self.problem.evaluateS1(self.problem.parameters.as_dict())
+                y, dy = self.problem.evaluateS1(self.problem.parameters.to_dict())
                 return self.compute(y, dy=dy)
 
-            y = self.problem.evaluate(self.problem.parameters.as_dict())
+            y = self.problem.evaluate(self.problem.parameters.to_dict())
 
         return self.compute(y, dy=dy)
 

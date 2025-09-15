@@ -68,7 +68,7 @@ class GITTPulseFit(BaseApplication):
             initial_state={
                 "Initial stoichiometry": self.parameter_set["Initial stoichiometry"]
             },
-            inputs=self.parameters.as_dict(),
+            inputs=self.parameters.to_dict(),
         )
 
         # Define the cost
@@ -80,7 +80,7 @@ class GITTPulseFit(BaseApplication):
         # Build and run the optimisation problem
         self.optim = self.optimiser(cost=cost, verbose=self.verbose, tol=1e-8)
         self.results = self.optim.run()
-        self.parameter_set.update(self.parameters.as_dict(self.results.x))
+        self.parameter_set.update(self.parameters.to_dict(self.results.x))
 
         # pybop.plot.problem(problem=problem, problem_inputs=self.results.x)
 

@@ -89,7 +89,7 @@ class WeightedCost(BaseCost):
             The weighted cost value.
         """
         if self._has_identical_problems:
-            inputs = self.problem.parameters.as_dict()
+            inputs = self.problem.parameters.to_dict()
             if dy is not None:
                 y, dy = self.problem.evaluateS1(inputs)
             else:
@@ -102,7 +102,7 @@ class WeightedCost(BaseCost):
             if self._has_identical_problems:
                 y, dy = (y, dy)
             elif cost.has_separable_problem:
-                inputs = cost.parameters.as_dict()
+                inputs = cost.parameters.to_dict()
                 if dy is not None:
                     y, dy = cost.problem.evaluateS1(inputs)
                 else:

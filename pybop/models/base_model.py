@@ -369,7 +369,7 @@ class BaseModel:
         self.parameters = parameters or self.parameters
 
         # Compile all parameters and inputs
-        parameter_dictionary = self.parameters.as_dict()
+        parameter_dictionary = self.parameters.to_dict()
         parameter_dictionary.update(inputs or {})
 
         rebuild_parameters = {

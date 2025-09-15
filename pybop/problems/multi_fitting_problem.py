@@ -98,7 +98,7 @@ class MultiFittingProblem(BaseProblem):
         combined_signal = []
 
         for problem in self.problems:
-            problem_inputs = problem.parameters.as_dict()
+            problem_inputs = problem.parameters.to_dict()
             problem_output = problem.evaluate(problem_inputs)
             domain_data = (
                 problem_output[problem.domain]
@@ -141,7 +141,7 @@ class MultiFittingProblem(BaseProblem):
             dy[key] = {"Combined signal": []}
 
         for problem in self.problems:
-            problem_inputs = problem.parameters.as_dict()
+            problem_inputs = problem.parameters.to_dict()
             problem_output, dyi = problem.evaluateS1(problem_inputs)
             domain_data = (
                 problem_output[problem.domain]

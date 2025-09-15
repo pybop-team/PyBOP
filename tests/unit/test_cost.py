@@ -94,7 +94,7 @@ class TestCosts:
 
         # Test type of returned value
         assert np.isscalar(cost([0.5]))
-        assert np.isscalar(cost(parameters.as_dict()))
+        assert np.isscalar(cost(parameters.to_dict()))
 
         # Test UserWarnings
         if isinstance(cost, (pybop.MeanAbsoluteError)):

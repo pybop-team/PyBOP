@@ -45,7 +45,7 @@ class TestModelAndExperimentChanges:
         # Change the experiment and check that the results are different.
 
         parameter_set = pybop.ParameterSet("Chen2020")
-        parameter_set.update(parameters.as_dict("true"))
+        parameter_set.update(parameters.to_dict("true"))
         initial_state = {"Initial SoC": 0.5}
         model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
 
@@ -57,7 +57,7 @@ class TestModelAndExperimentChanges:
         solution_2 = model.predict(
             initial_state=initial_state,
             experiment=experiment,
-            inputs=parameters.as_dict("true"),
+            inputs=parameters.to_dict("true"),
         )
         cost_2 = self.final_cost(solution_2, model, parameters)
 
@@ -75,7 +75,7 @@ class TestModelAndExperimentChanges:
         # Change the model and check that the results are different.
 
         parameter_set = pybop.ParameterSet("Chen2020")
-        parameter_set.update(parameters.as_dict("true"))
+        parameter_set.update(parameters.to_dict("true"))
         initial_state = {"Initial SoC": 0.5}
         experiment = pybamm.Experiment(["Charge at 1C until 4.1 V (30 seconds period)"])
 

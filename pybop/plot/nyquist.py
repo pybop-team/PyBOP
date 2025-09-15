@@ -40,7 +40,7 @@ def nyquist(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
     >>> # The plots will be displayed and nyquist_figures will contain the list of figure objects.
     """
     if problem_inputs is None:
-        problem_inputs = problem.parameters.as_dict()
+        problem_inputs = problem.parameters.to_dict()
     else:
         problem_inputs = problem.parameters.verify(problem_inputs)
 

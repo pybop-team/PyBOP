@@ -31,7 +31,7 @@ def problem(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
         The Plotly figure object for the scatter plot.
     """
     if problem_inputs is None:
-        problem_inputs = problem.parameters.as_dict()
+        problem_inputs = problem.parameters.to_dict()
     else:
         problem_inputs = problem.parameters.verify(problem_inputs)
 

@@ -82,7 +82,7 @@ class DesignProblem(BaseProblem):
         self.update_capacity = update_capacity
 
         # Add an example dataset for plot comparison
-        sol = self.evaluate(self.parameters.as_dict("initial"))
+        sol = self.evaluate(self.parameters.to_dict("initial"))
         self._domain_data = sol[self.domain]
         self._target = {key: sol[key] for key in self.signal}
         self._dataset = None

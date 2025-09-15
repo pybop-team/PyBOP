@@ -719,7 +719,7 @@ class Parameters:
 
         return np.asarray(list(bounds.values())).T
 
-    def as_dict(self, values: str | ArrayLike | None = None) -> Inputs:
+    def to_dict(self, values: str | ArrayLike | None = None) -> Inputs:
         """
         Convert to parameter dictionary.
 
@@ -767,7 +767,7 @@ class Parameters:
         if (isinstance(inputs, list) and all(is_numeric(x) for x in inputs)) or all(
             is_numeric(x) for x in list(inputs)
         ):
-            return self.as_dict(inputs)
+            return self.to_dict(inputs)
         else:
             raise TypeError(
                 f"Inputs must be a dictionary or numeric. Received {type(inputs)}"
@@ -786,11 +786,11 @@ class Parameters:
         """
         values = np.asarray(values)
         if values.ndim == 1:
-            return [self.as_dict(values=values)]
+            return [self.to_dict(values=values)]
 
         inputs_list = []
         for val in values:
-            inputs_list.append(self.as_dict(values=val))
+            inputs_list.append(self.to_dict(values=val))
         return inputs_list
 
     def copy(self) -> Parameters:

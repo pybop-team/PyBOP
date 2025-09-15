@@ -265,7 +265,7 @@ class TestModels:
             ValueError,
             match="Cannot use sensitivities for parameters which require a model rebuild",
         ):
-            model.simulateS1(t_eval=t_eval, inputs=parameters.as_dict())
+            model.simulateS1(t_eval=t_eval, inputs=parameters.to_dict())
 
         # Test with CasadiSolver to trigger warning
         Casadi_param = pybop.Parameters(
@@ -283,7 +283,7 @@ class TestModels:
         with pytest.warns(
             UserWarning, match="Casadi solver does not support sensitivity analysis"
         ):
-            sol = casadi_model.simulateS1(t_eval=t_eval, inputs=Casadi_param.as_dict())
+            sol = casadi_model.simulateS1(t_eval=t_eval, inputs=Casadi_param.to_dict())
 
         assert isinstance(sol, pybamm.Solution)
         assert sol.sensitivities in (None, {})

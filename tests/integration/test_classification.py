@@ -45,7 +45,7 @@ class TestClassification:
 
     @pytest.fixture
     def model(self, parameter_set, parameters):
-        parameter_set.update(parameters.as_dict(self.ground_truth))
+        parameter_set.update(parameters.to_dict(self.ground_truth))
         return pybop.empirical.Thevenin(parameter_set=parameter_set)
 
     @pytest.fixture
