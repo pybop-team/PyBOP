@@ -14,26 +14,31 @@ class TestModelAndExperimentChanges:
 
     @pytest.fixture(
         params=[
-            pybop.Parameters(
-                pybop.Parameter(  # geometric parameter
-                    "Negative particle radius [m]",
-                    prior=pybop.Gaussian(6e-06, 0.1e-6),
-                    bounds=[1e-6, 9e-6],
-                    initial_value=5.86e-6,
+            [
+                pybop.Parameters(
+                    pybop.Parameter(  # geometric parameter
+                        "Negative particle radius [m]",
+                        prior=pybop.Gaussian(6e-06, 0.1e-6),
+                        bounds=[1e-6, 9e-6],
+                        initial_value=5.86e-6,
+                    ),
                 ),
-            ),
-            pybop.Parameters(
-                pybop.Parameter(  # non-geometric parameter
-                    "Positive particle diffusivity [m2.s-1]",
-                    prior=pybop.Gaussian(3.43e-15, 1e-15),
-                    bounds=[1e-15, 5e-15],
-                    initial_value=4e-15,
+                [5.86e-6],
+            ],
+            [
+                pybop.Parameters(
+                    pybop.Parameter(  # non-geometric parameter
+                        "Positive particle diffusivity [m2.s-1]",
+                        prior=pybop.Gaussian(3.43e-15, 1e-15),
+                        bounds=[1e-15, 5e-15],
+                        initial_value=4e-15,
+                    ),
                 ),
-            ),
+                [4e-15],
+            ],
         ]
     )
-    def parameters(self, request):
-        self.ground_truth = [5.86e-6, 4e-15]
+    def parameters_and_value(self, request):
         return request.param
 
     @pytest.fixture
@@ -41,11 +46,12 @@ class TestModelAndExperimentChanges:
         return pybamm.IDAKLUSolver(atol=1e-6, rtol=1e-6)
 
     @pytest.mark.integration
-    def test_changing_experiment(self, parameters, solver):
+    def test_changing_experiment(self, parameters_and_value, solver):
         # Change the experiment and check that the results are different.
 
         parameter_set = pybamm.ParameterValues("Chen2020")
-        parameter_set.update(parameters.to_dict("true"))
+        parameters, value = parameters_and_value
+        parameter_set.update(parameters.to_dict(value))
         initial_state = {"Initial SoC": 0.5}
         model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
 
@@ -71,11 +77,12 @@ class TestModelAndExperimentChanges:
         np.testing.assert_allclose(cost_1, 0, atol=1e-5)
         np.testing.assert_allclose(cost_2, 0, atol=1e-5)
 
-    def test_changing_model(self, parameters, solver):
+    def test_changing_model(self, parameters_and_value, solver):
         # Change the model and check that the results are different.
 
         parameter_set = pybamm.ParameterValues("Chen2020")
-        parameter_set.update(parameters.to_dict("true"))
+        parameters, value = parameters_and_value
+        parameter_set.update(parameters.to_dict(value))
         initial_state = {"Initial SoC": 0.5}
         experiment = pybamm.Experiment(["Charge at 1C until 4.1 V (30 seconds period)"])
 
