@@ -130,7 +130,6 @@ class TestHalfCellModel:
             parameters,
             experiment=experiment,
             initial_state=initial_state,
-            update_capacity=True,
         )
         return pybop.GravimetricEnergyDensity(problem)
 

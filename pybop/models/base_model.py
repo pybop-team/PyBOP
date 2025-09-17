@@ -946,25 +946,6 @@ class BaseModel:
         """
         raise NotImplementedError
 
-    def approximate_capacity(self, parameter_set: ParameterValues = None):
-        """
-        Calculate a new estimate for the nominal capacity based on the theoretical energy
-        density and an average voltage.
-
-        This method must be implemented by subclasses.
-
-        Parameters
-        ----------
-        parameter_set : Union[pybamm.ParameterValues, pybamm.ParameterValues], optional
-            A dict-like object containing the parameter values.
-
-        Raises
-        ------
-        NotImplementedError
-            If the method has not been implemented by the subclass.
-        """
-        raise NotImplementedError
-
     @property
     def built_model(self):
         return self._built_model

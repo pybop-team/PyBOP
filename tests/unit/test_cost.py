@@ -296,11 +296,6 @@ class TestCosts:
         with pytest.raises(TypeError, match="Inputs must be a dictionary or numeric."):
             cost(["StringInputShouldNotWork"])
 
-        # Compute after updating nominal capacity
-        design_problem.update_capacity = True
-        cost = cost_class(design_problem)
-        cost([0.4])
-
     @pytest.fixture
     def noisy_problem(self, ground_truth, parameters, experiment):
         model = pybop.lithium_ion.SPM()
@@ -415,22 +410,6 @@ class TestCosts:
         for i, _ in enumerate(weighted_cost.costs):
             assert isinstance(weighted_cost.costs[i].problem, pybop.DesignProblem)
 
-        assert weighted_cost([0.5]) >= 0
-        np.testing.assert_allclose(
-            weighted_cost([0.6]),
-            cost1([0.6]) + cost2([0.6]),
-            atol=1e-5,
-        )
-
-    def test_weighted_design_cost_with_update_capacity(self, design_problem):
-        design_problem.update_capacity = True
-        cost1 = pybop.GravimetricEnergyDensity(design_problem)
-        cost2 = pybop.VolumetricEnergyDensity(design_problem)
-        weighted_cost = pybop.WeightedCost(cost1, cost2, weights=[1, 1])
-
-        assert weighted_cost.has_identical_problems is True
-        assert weighted_cost.has_separable_problem is False
-        assert weighted_cost.problem is design_problem
         assert weighted_cost([0.5]) >= 0
         np.testing.assert_allclose(
             weighted_cost([0.6]),

@@ -70,7 +70,6 @@ problem = pybop.DesignProblem(
     experiment,
     signal=signal,
     initial_state={"Initial SoC": 1.0},
-    update_capacity=True,
 )
 
 # Define the cost

@@ -1,7 +1,7 @@
 import sys
 import warnings
 
-from pybamm import LithiumIonParameters, ParameterValues, Simulation
+from pybamm import ParameterValues, Simulation
 from pybamm import lithium_ion as pybamm_lithium_ion
 
 from pybop.models.base_model import BaseModel, Inputs
@@ -309,46 +309,6 @@ class EChemBaseModel(BaseModel):
         cell_mass = cross_sectional_area * total_area_density
 
         return parameter_set.evaluate(cell_mass)
-
-    def approximate_capacity(self, parameter_set: ParameterValues | None = None):
-        """
-        Calculate an estimate for the nominal cell capacity. The estimate is computed
-        by estimating the capacity of the positive electrode that lies between the
-        stoichiometric limits corresponding to the upper and lower voltage limits.
-
-        Parameters
-        ----------
-        parameter_set : dict, optional
-            A dictionary containing the parameter values necessary for the calculation.
-
-        Returns
-        -------
-        float
-            The estimate of the nominal cell capacity [A.h].
-        """
-        parameter_set = parameter_set or self._parameter_set
-
-        # Calculate the theoretical capacity in the limit of low current
-        if self.pybamm_model.options["working electrode"] == "positive":
-            (
-                max_sto_p,
-                min_sto_p,
-            ) = self._electrode_soh_half_cell.get_min_max_stoichiometries(parameter_set)
-        else:
-            (
-                min_sto_n,
-                max_sto_n,
-                min_sto_p,
-                max_sto_p,
-            ) = self._electrode_soh.get_min_max_stoichiometries(parameter_set)
-            # Note that the stoichiometric limits correspond to 0 and 100% SOC.
-            # Stoichiometric balancing is performed within get_min_max_stoichiometries
-            # such that the capacity accessible between the limits should be the same
-            # for both electrodes, so we consider just the positive electrode below.
-
-        Q_p = LithiumIonParameters().p.prim.Q_init
-        theoretical_capacity = Q_p * (max_sto_p - min_sto_p)
-        return parameter_set.evaluate(theoretical_capacity)
 
     def set_geometric_parameters(self):
         """

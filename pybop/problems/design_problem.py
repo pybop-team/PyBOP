@@ -34,8 +34,6 @@ class DesignProblem(BaseProblem):
         Additional variables to observe and store in the solution (default additions are: ["Time [s]", "Current [A]"]).
     initial_state : dict, optional
         A valid initial state (default: {"Initial SoC": 1.0}).
-    update_capacity : bool, optional
-        If True, the nominal capacity is updated with an approximate value for each design.
     """
 
     def __init__(
@@ -48,7 +46,6 @@ class DesignProblem(BaseProblem):
         domain: str | None = None,
         additional_variables: list[str] | None = None,
         initial_state: dict | None = None,
-        update_capacity: bool = False,
     ):
         super().__init__(
             parameters=parameters,
@@ -68,18 +65,6 @@ class DesignProblem(BaseProblem):
         # Add "Current" to the variable list
         self.additional_variables.extend([self.domain, "Current [A]"])
         self.additional_variables = list(set(self.additional_variables))
-
-        # Set whether to update the nominal capacity along with the design parameters
-        if update_capacity is True:
-            nominal_capacity_warning = (
-                "The nominal capacity is approximated for each evaluation."
-            )
-        else:
-            nominal_capacity_warning = (
-                "The nominal capacity is fixed at the initial model value."
-            )
-        warnings.warn(nominal_capacity_warning, UserWarning, stacklevel=2)
-        self.update_capacity = update_capacity
 
         # Add an example dataset for plot comparison
         sol = self.evaluate(self.parameters.to_dict("initial"))
@@ -135,9 +120,6 @@ class DesignProblem(BaseProblem):
         if isinstance(self._model, EChemBaseModel):
             set_formation_concentrations(parameter_set)
         parameter_set.update(inputs)
-        if self.update_capacity:
-            approximate_capacity = self.model.approximate_capacity(parameter_set)
-            parameter_set.update({"Nominal cell capacity [A.h]": approximate_capacity})
 
         try:
             with warnings.catch_warnings():

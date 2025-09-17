@@ -267,24 +267,10 @@ class TestProblem:
                 model,
                 parameters,
                 experiment,
-                update_capacity=True,
-            )
-        assert "The nominal capacity is approximated for each evaluation." in str(
-            record[0].message
-        )
-
-        with pytest.warns(UserWarning) as record:
-            problem = pybop.DesignProblem(
-                model,
-                parameters,
-                experiment,
                 initial_state={"Initial open-circuit voltage [V]": 4.0},
             )
         assert "It is usually better to define an initial state of charge" in str(
             record[0].message
-        )
-        assert "The nominal capacity is fixed at the initial model value." in str(
-            record[1].message
         )
 
         # Construct Problem

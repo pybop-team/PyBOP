@@ -385,16 +385,12 @@ class TestModels:
 
     def test_basemodel(self):
         base = pybop.BaseModel()
-        x = np.array([1, 2, 3])
 
         with pytest.raises(NotImplementedError):
             base.cell_mass()
 
         with pytest.raises(NotImplementedError):
             base.cell_volume()
-
-        with pytest.raises(NotImplementedError):
-            base.approximate_capacity(x)
 
         base.classify_parameters(parameters=None)
         assert isinstance(base.parameters, pybop.Parameters)
