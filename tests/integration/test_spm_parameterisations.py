@@ -31,7 +31,13 @@ class Test_SPM_Parameterisation:
                 "Positive electrode active material volume fraction": x[1],
             }
         )
-        return pybop.lithium_ion.SPM(parameter_set=parameter_set)
+        model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
+
+        # Fix the total lithium concentration to simplify the fitting problem
+        model.pybamm_model.param.Q_Li_particles_init = parameter_set.evaluate(
+            model.pybamm_model.param.Q_Li_particles_init
+        )
+        return model
 
     @pytest.fixture
     def parameters(self):
@@ -132,24 +138,27 @@ class Test_SPM_Parameterisation:
                 sigma0.append(2e-3)
 
         # Construct optimisation object
-        common_args = {
-            "cost": cost,
-            "max_iterations": 450,
-            "max_unchanged_iterations": max_unchanged_iter,
-            "sigma0": sigma0,
-        }
+        if optimiser is pybop.SciPyDifferentialEvolution:
+            options = pybop.SciPyDifferentialEvolutionOptions(maxiter=450)
+        else:
+            options = pybop.PintsOptions(
+                max_iterations=450,
+                max_unchanged_iterations=max_unchanged_iter,
+                sigma=sigma0,
+            )
 
         if optimiser in [
             pybop.SciPyDifferentialEvolution,
             pybop.CuckooSearch,
         ]:
-            common_args["bounds"] = {"lower": [0.375, 0.375], "upper": [0.775, 0.775]}
+            bounds = {"lower": [0.375, 0.375], "upper": [0.775, 0.775]}
             if isinstance(cost, pybop.GaussianLogLikelihood):
-                common_args["bounds"]["lower"].append(0.0)
-                common_args["bounds"]["upper"].append(0.05)
+                bounds["lower"].append(0.0)
+                bounds["upper"].append(0.05)
+            cost.parameters.update(bounds=bounds)
 
         # Set sigma0 and create optimiser
-        optim = optimiser(**common_args)
+        optim = optimiser(cost=cost, options=options)
 
         # Set Hypers
         if isinstance(optim, pybop.SimulatedAnnealing):
@@ -162,7 +171,7 @@ class Test_SPM_Parameterisation:
         return optim
 
     def test_optimisers(self, optim):
-        x0 = optim.parameters.get_initial_values()
+        x0 = optim.cost.parameters.get_initial_values()
 
         # Add sigma0 to ground truth for GaussianLogLikelihood
         if isinstance(optim.cost, pybop.GaussianLogLikelihood):
@@ -178,9 +187,9 @@ class Test_SPM_Parameterisation:
             raise AssertionError("Initial guess is too close to ground truth")
 
         if results.minimising:
-            assert initial_cost > results.final_cost
+            assert initial_cost > results.best_cost
         else:
-            assert initial_cost < results.final_cost
+            assert initial_cost < results.best_cost
 
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
         if isinstance(optim.cost, pybop.GaussianLogLikelihood):
@@ -228,29 +237,32 @@ class Test_SPM_Parameterisation:
         x0 = two_signal_cost.parameters.get_initial_values()
         combined_sigma0 = np.asarray([self.sigma0, self.sigma0])
 
-        common_args = {
-            "cost": two_signal_cost,
-            "max_iterations": 250,
-            "max_unchanged_iterations": 60,
-            "sigma0": [0.03, 0.03, 6e-3, 6e-3]
-            if isinstance(two_signal_cost, pybop.GaussianLogLikelihood)
-            else 0.03,
-        }
+        if multi_optimiser is pybop.SciPyDifferentialEvolution:
+            options = pybop.SciPyDifferentialEvolutionOptions(maxiter=250)
+        else:
+            options = pybop.PintsOptions(
+                max_iterations=250,
+                max_unchanged_iterations=60,
+                sigma=[0.03, 0.03, 6e-3, 6e-3]
+                if isinstance(two_signal_cost, pybop.GaussianLogLikelihood)
+                else 0.03,
+            )
 
         if multi_optimiser is pybop.SciPyDifferentialEvolution:
-            common_args["bounds"] = {"lower": [0.375, 0.375], "upper": [0.775, 0.775]}
+            bounds = {"lower": [0.375, 0.375], "upper": [0.775, 0.775]}
             if isinstance(two_signal_cost, pybop.GaussianLogLikelihood):
-                common_args["bounds"]["lower"].extend([0.0, 0.0])
-                common_args["bounds"]["upper"].extend([0.05, 0.05])
+                bounds["lower"].extend([0.0, 0.0])
+                bounds["upper"].extend([0.05, 0.05])
+            two_signal_cost.parameters.update(bounds=bounds)
 
         # Test each optimiser
-        optim = multi_optimiser(**common_args)
+        optim = multi_optimiser(cost=two_signal_cost, options=options)
 
         # Add sigma0 to ground truth for GaussianLogLikelihood
         if isinstance(two_signal_cost, pybop.GaussianLogLikelihood):
             self.ground_truth = np.concatenate((self.ground_truth, combined_sigma0))
 
-        initial_cost = optim.cost(optim.parameters.get_initial_values())
+        initial_cost = optim.cost(optim.cost.parameters.get_initial_values())
         results = optim.run()
 
         # Assertions
@@ -258,9 +270,9 @@ class Test_SPM_Parameterisation:
             raise AssertionError("Initial guess is too close to ground truth")
 
         if results.minimising:
-            assert initial_cost > results.final_cost
+            assert initial_cost > results.best_cost
         else:
-            assert initial_cost < results.final_cost
+            assert initial_cost < results.best_cost
 
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
         if isinstance(two_signal_cost, pybop.GaussianLogLikelihood):
@@ -292,13 +304,13 @@ class Test_SPM_Parameterisation:
 
         # Build the optimisation problem
         optim = optimiser(cost=cost)
-        initial_cost = optim.cost(optim.x0)
+        initial_cost = cost(parameters.get_initial_values())
 
         # Run the optimisation problem
         results = optim.run()
 
-        # Assertion for final_cost
-        assert initial_cost > results.final_cost
+        # Assertion for best_cost
+        assert initial_cost > results.best_cost
 
         # Assertion for x
         with np.testing.assert_raises(AssertionError):

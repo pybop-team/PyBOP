@@ -118,7 +118,7 @@ class TestModelAndExperimentChanges:
         cost = pybop.RootMeanSquaredError(problem)
         optim = pybop.NelderMead(cost)
         results = optim.run()
-        return results.final_cost
+        return results.best_cost
 
     def test_multi_fitting_problem(self, solver):
         parameter_set = pybamm.ParameterValues("Chen2020")
@@ -168,9 +168,10 @@ class TestModelAndExperimentChanges:
 
         # Test with a gradient and non-gradient-based optimiser
         for optimiser in [pybop.SNES, pybop.IRPropMin]:
-            optim = optimiser(
-                cost, sigma0=0.05, max_iterations=100, max_unchanged_iterations=30
+            options = pybop.PintsOptions(
+                sigma=0.05, max_iterations=100, max_unchanged_iterations=30
             )
+            optim = optimiser(cost=cost, options=options)
             results = optim.run()
             np.testing.assert_allclose(results.x, ground_truth, atol=2e-5)
-            np.testing.assert_allclose(results.final_cost, 0, atol=3e-5)
+            np.testing.assert_allclose(results.best_cost, 0, atol=3e-5)

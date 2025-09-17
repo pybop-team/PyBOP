@@ -253,19 +253,28 @@ def surface(
         e.g. `xaxis_title="Time [s]"` or
         `xaxis={"title": "Time [s]", font={"size":14}}`
     """
-
-    # Append the optimisation trace to the data
-    points = optim.log.x
+    points = optim.logger.x_model
 
     if points[0].shape[0] != 2:
         raise ValueError("This plot method requires two parameters.")
 
     x_optim, y_optim = map(list, zip(*points, strict=False))
-    f = optim.log.cost
+
+    # Filter out duplicate points
+    x_optim, y_optim = np.asarray(x_optim), np.asarray(y_optim)
+    _, unique_x = np.unique(x_optim, return_index=True)
+    _, unique_y = np.unique(y_optim, return_index=True)
+    index = [i for i in unique_x if i in unique_y]
+    x_optim, y_optim = x_optim[index], y_optim[index]
+
+    # Get corresponding cost values
+    f = np.asarray(optim.logger.cost)[index]
 
     # Translate bounds, taking only the first two elements
     xlim, ylim = (
-        bounds if bounds is not None else [param.bounds for param in optim.parameters]
+        bounds
+        if bounds is not None
+        else [param.bounds for param in optim.cost.parameters]
     )[:2]
 
     # Create a grid for plot
@@ -365,11 +374,12 @@ def surface(
     )
 
     # Plot the initial guess
-    if optim.x0 is not None:
+    if len(optim.logger.x_model) > 0:
+        x0 = optim.logger.x_model[0]
         fig.add_trace(
             go.Scatter(
-                x=[optim.x0[0]],
-                y=[optim.x0[1]],
+                x=[x0[0]],
+                y=[x0[1]],
                 mode="markers",
                 marker_symbol="x",
                 marker=dict(
@@ -384,11 +394,12 @@ def surface(
         )
 
         # Plot optimised value
-        if optim.log.x_best is not None:
+        if optim.logger.x_model_best is not None:
+            x_best = optim.logger.x_model_best
             fig.add_trace(
                 go.Scatter(
-                    x=[optim.log.x_best[-1][0]],
-                    y=[optim.log.x_best[-1][1]],
+                    x=[x_best[0]],
+                    y=[x_best[1]],
                     mode="markers",
                     marker_symbol="cross",
                     marker=dict(

@@ -128,15 +128,20 @@ class TestTransformation:
     )
     def test_thevenin_transformation(self, optimiser, cost):
         x0 = cost.parameters.get_initial_values()
-        optim = optimiser(
-            cost=cost,
-            sigma0=[0.02, 0.02, 2e-3]
-            if isinstance(cost, pybop.GaussianLogLikelihood | pybop.LogPosterior)
-            else [0.02, 0.02],
-            max_iterations=250,
-            max_unchanged_iterations=45,
-            popsize=3 if optimiser is pybop.SciPyDifferentialEvolution else 6,
-        )
+        if optimiser is pybop.SciPyDifferentialEvolution:
+            options = pybop.SciPyDifferentialEvolutionOptions(
+                maxiter=50,
+                popsize=3,
+            )
+        else:
+            options = pybop.PintsOptions(
+                sigma=[0.02, 0.02, 2e-3]
+                if isinstance(cost, pybop.GaussianLogLikelihood | pybop.LogPosterior)
+                else [0.02, 0.02],
+                max_iterations=150,
+                max_unchanged_iterations=45,
+            )
+        optim = optimiser(cost=cost, options=options)
 
         initial_cost = optim.cost(x0)
         results = optim.run()
@@ -156,9 +161,9 @@ class TestTransformation:
             np.testing.assert_allclose(results.x[-1], self.sigma0, atol=5e-4)
         else:
             assert (
-                (initial_cost > results.final_cost)
+                (initial_cost > results.best_cost)
                 if results.minimising
-                else (initial_cost < results.final_cost)
+                else (initial_cost < results.best_cost)
             )
             np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
 
@@ -172,5 +177,4 @@ class TestTransformation:
                 ),
             ]
         )
-        sim = model.predict(initial_state=initial_state, experiment=experiment)
-        return sim
+        return model.predict(initial_state=initial_state, experiment=experiment)

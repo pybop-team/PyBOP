@@ -31,8 +31,11 @@ class MultiFittingProblem(BaseProblem):
 
         # Compile the set of parameters, ignoring duplicates
         combined_parameters = Parameters()
+        sensitivities_available = False
         for problem in self.problems:
             combined_parameters.join(problem.parameters)
+            if problem.sensitivities_available:
+                sensitivities_available = True
 
         # Combine the target datasets
         domain = self.problems[0].domain
@@ -59,6 +62,7 @@ class MultiFittingProblem(BaseProblem):
         )
         self._dataset = combined_dataset.data
         self.parameters.get_initial_values()
+        self._sensitivities_available = sensitivities_available
 
         # Unpack domain and target data
         self._domain_data = self._dataset[self.domain]

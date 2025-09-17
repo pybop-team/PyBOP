@@ -76,7 +76,10 @@ class TestClassification:
         bounds = cost.parameters.get_bounds()
         x0 = np.clip(x, bounds["lower"], bounds["upper"])
         optim = pybop.XNES(cost=cost)
-        results = pybop.OptimisationResult(x=x0, optim=optim)
+        logger = pybop.Logger(minimising=True)
+        logger.iteration = 1
+        logger.extend_log(x_search=[x0], x_model=[x0], cost=[cost(x0)])
+        results = pybop.OptimisationResult(optim=optim, logger=logger, time=1.0)
 
         if np.all(x == np.asarray([0.05, 0.05])):
             message = pybop.classify_using_hessian(results)
@@ -99,7 +102,10 @@ class TestClassification:
         if np.all(x == np.asarray([0.05, 0.05])):
             cost = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.002)
             optim = pybop.XNES(cost=cost)
-            results = pybop.OptimisationResult(x=x, optim=optim)
+            logger = pybop.Logger(minimising=True)
+            logger.iteration = 1
+            logger.extend_log(x_search=[x], x_model=[x], cost=[cost(x)])
+            results = pybop.OptimisationResult(optim=optim, logger=logger, time=1.0)
 
             message = pybop.classify_using_hessian(results)
             assert message == "The optimiser has located a maximum."
@@ -145,7 +151,10 @@ class TestClassification:
             cost = pybop.SumOfPower(problem, p=1)
             x = [0.001, 0]
             optim = pybop.XNES(cost=cost)
-            results = pybop.OptimisationResult(x=x, optim=optim)
+            logger = pybop.Logger(minimising=True)
+            logger.iteration = 1
+            logger.extend_log(x_search=[x], x_model=[x], cost=[cost(x)])
+            results = pybop.OptimisationResult(optim=optim, logger=logger, time=1.0)
 
             message = pybop.classify_using_hessian(results)
             assert message == (

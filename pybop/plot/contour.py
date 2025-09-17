@@ -142,10 +142,10 @@ def contour(
         flat_costs = costs.flatten()
 
         # Append the optimisation trace to the data
-        parameter_log = np.asarray(optim.log.x)
+        parameter_log = np.asarray(optim.logger.x_model)
         flat_x = np.concatenate((flat_x, parameter_log[:, 0]))
         flat_y = np.concatenate((flat_y, parameter_log[:, 1]))
-        flat_costs = np.concatenate((flat_costs, optim.log.cost))
+        flat_costs = np.concatenate((flat_costs, optim.logger.cost))
 
         # Order the parameter values and estimate the cost using interpolation
         x = np.unique(flat_x)
@@ -197,7 +197,7 @@ def contour(
 
     if plot_optim:
         # Plot the optimisation trace
-        optim_trace = np.asarray([item[:2] for item in optim.log.x])
+        optim_trace = np.asarray([item[:2] for item in optim.logger.x_model])
         optim_trace = optim_trace.reshape(-1, 2)
 
         fig.add_trace(
@@ -216,11 +216,12 @@ def contour(
         )
 
         # Plot the initial guess
-        if optim.x0 is not None:
+        if len(optim.logger.x_model) > 0:
+            x0 = optim.logger.x_model[0]
             fig.add_trace(
                 go.Scatter(
-                    x=transform_array_of_values([optim.x0[0]], parameters[names[0]]),
-                    y=transform_array_of_values([optim.x0[1]], parameters[names[1]]),
+                    x=transform_array_of_values([x0[0]], parameters[names[0]]),
+                    y=transform_array_of_values([x0[1]], parameters[names[1]]),
                     mode="markers",
                     marker_symbol="x",
                     marker=dict(
@@ -235,15 +236,12 @@ def contour(
             )
 
         # Plot optimised value
-        if optim.log.x_best is not None:
+        if optim.logger.x_model_best is not None:
+            x_best = optim.logger.x_model_best
             fig.add_trace(
                 go.Scatter(
-                    x=transform_array_of_values(
-                        [optim.log.x_best[-1][0]], parameters[names[0]]
-                    ),
-                    y=transform_array_of_values(
-                        [optim.log.x_best[-1][1]], parameters[names[1]]
-                    ),
+                    x=transform_array_of_values([x_best[0]], parameters[names[0]]),
+                    y=transform_array_of_values([x_best[1]], parameters[names[1]]),
                     mode="markers",
                     marker_symbol="cross",
                     marker=dict(

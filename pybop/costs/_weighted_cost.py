@@ -54,8 +54,12 @@ class WeightedCost(BaseCost):
         else:
             super().__init__()
 
+        has_sensitivities = False
         for cost in self.costs:
             self.join_parameters(cost.parameters)
+            if cost.has_sensitivities:
+                has_sensitivities = True
+        self.has_sensitivities = has_sensitivities
 
         # Apply the minimising property from each cost
         for i, cost in enumerate(self.costs):

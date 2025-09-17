@@ -1,4 +1,5 @@
 import numpy as np
+import pints
 from pints import Optimiser as PintsOptimiser
 
 
@@ -34,10 +35,10 @@ class GradientDescentImpl(PintsOptimiser):
         Initial learning rate or rates for each dimension. If a scalar is
         provided, the same learning rate is applied across all dimensions.
         If an array is provided, each dimension will have its own learning
-        rate. Defaults to 0.02.
+        rate (default: 0.02).
     boundaries : pybop.Boundaries, optional
         Boundaries for the parameters. This optimiser ignores boundaries and
-        operates as an unbounded method. Defaults to None.
+        operates as an unbounded method (default: None).
 
     Attributes
     ----------
@@ -56,7 +57,12 @@ class GradientDescentImpl(PintsOptimiser):
         the objective function.
     """
 
-    def __init__(self, x0, sigma0=0.02, boundaries=None):
+    def __init__(
+        self,
+        x0: np.ndarray,
+        sigma0: list[float] | None,
+        boundaries: pints.Boundaries | None,
+    ):
         super().__init__(x0, sigma0, boundaries)
 
         # Initialise state

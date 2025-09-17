@@ -25,8 +25,8 @@ def parameters(optim, show=True, **layout_kwargs):
 
     # Extract parameters and log from the optimisation object
     parameters = optim.cost.parameters
-    x = list(range(len(optim.log.x)))
-    y = [list(item) for item in zip(*optim.log.x, strict=False)]
+    x = list(range(len(optim.logger.x_model)))
+    y = [list(item) for item in zip(*optim.logger.x_model, strict=False)]
 
     # Create lists of axis titles and trace names
     axis_titles = []

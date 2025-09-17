@@ -100,13 +100,12 @@ class TestSamplingThevenin:
 
     @pytest.fixture
     def map_estimate(self, posterior):
-        common_args = {
-            "max_iterations": 80,
-            "max_unchanged_iterations": 35,
-            "sigma0": [3e-4, 3e-4],
-            "verbose": True,
-        }
-        optim = pybop.CMAES(posterior, **common_args)
+        options = pybop.PintsOptions(
+            max_iterations=80,
+            sigma=[3e-4, 3e-4],
+            verbose=True,
+        )
+        optim = pybop.CMAES(posterior, options=options)
         results = optim.run()
 
         return results.x
@@ -129,17 +128,16 @@ class TestSamplingThevenin:
     )
     def test_sampling_thevenin(self, sampler, posterior, map_estimate):
         x0 = np.clip(map_estimate + np.random.normal(0, 5e-3, size=2), 1e-4, 1e-1)
-        common_args = {
-            "log_pdf": posterior,
-            "chains": 2,
-            "warm_up": 50,
-            "cov0": [6e-3, 6e-3],
-            "max_iterations": 350 if sampler is SliceRankShrinkingMCMC else 350,
-            "x0": x0,
-        }
+        posterior.parameters.update(initial_values=x0)
+        options = pybop.PintsSamplerOptions(
+            n_chains=2,
+            warm_up_iterations=50,
+            cov=[6e-3, 6e-3],
+            max_iterations=500 if sampler is SliceRankShrinkingMCMC else 350,
+        )
 
         # construct and run
-        sampler = sampler(**common_args)
+        sampler = sampler(log_pdf=posterior, options=options)
         if isinstance(sampler, SliceRankShrinkingMCMC):
             for i, _j in enumerate(sampler._samplers):
                 sampler._samplers[i].set_hyper_parameters([1e-3])

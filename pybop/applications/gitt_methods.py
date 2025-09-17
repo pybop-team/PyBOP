@@ -79,7 +79,8 @@ class GITTPulseFit(BaseApplication):
         cost = self.cost(self.problem, weighting="domain")
 
         # Build and run the optimisation problem
-        self.optim = self.optimiser(cost=cost, verbose=self.verbose, tol=1e-8)
+        options = pybop.SciPyMinimizeOptions(verbose=self.verbose, tol=1e-8)
+        self.optim = self.optimiser(cost=cost, options=options)
         self.results = self.optim.run()
         self.parameter_set.update(self.parameters.to_dict(self.results.x))
 
@@ -176,7 +177,7 @@ class GITTFit(BaseApplication):
                 stoichiometry.append(
                     self.gitt_pulse.parameter_set["Initial stoichiometry"]
                 )
-                final_costs.append(gitt_results.final_cost)
+                final_costs.append(gitt_results.best_cost)
 
             except (Exception, SystemExit, KeyboardInterrupt):
                 self.pulses.append(None)

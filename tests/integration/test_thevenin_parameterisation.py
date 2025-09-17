@@ -87,29 +87,33 @@ class TestTheveninParameterisation:
         cost = cost_class(problem)
 
         x0 = cost.parameters.get_initial_values()
-        common_args = {
-            "cost": cost,
-            "max_iterations": 150,
-        }
-        if optimiser in [pybop.GradientDescent]:
-            optim = optimiser(sigma0=2.5e-2, **common_args)
-        elif method == "L-BFGS-B":
-            optim = optimiser(sigma0=2.5e-2, method=method, jac=True, **common_args)
+        if optimiser is pybop.SciPyMinimize:
+            options = pybop.SciPyMinimizeOptions(maxiter=150)
         else:
-            optim = optimiser(sigma0=0.02, method=method, **common_args)
+            options = pybop.PintsOptions(max_iterations=150)
+        if optimiser in [pybop.GradientDescent]:
+            options.sigma0 = 2.5e-2
+        elif method == "L-BFGS-B":
+            options.sigma0 = 2.5e-2
+            options.method = method
+            options.jac = True
+        else:
+            options.sigma0 = 0.02
+            options.method = method
+        optim = optimiser(cost=cost, options=options)
 
         if isinstance(optimiser, pybop.BasePintsOptimiser):
             optim.set_max_unchanged_iterations(iterations=35, absolute_tolerance=1e-5)
 
-        initial_cost = optim.cost(optim.parameters.get_initial_values())
+        initial_cost = optim.cost(optim.cost.parameters.get_initial_values())
         results = optim.run()
 
         # Assertions
         if not np.allclose(x0, self.ground_truth, atol=1e-5):
             if results.minimising:
-                assert initial_cost > results.final_cost
+                assert initial_cost > results.best_cost
             else:
-                assert initial_cost < results.final_cost
+                assert initial_cost < results.best_cost
         else:
             raise ValueError("Initial value is the same as the ground truth value.")
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
@@ -127,5 +131,4 @@ class TestTheveninParameterisation:
                 ),
             ]
         )
-        sol = model.predict(experiment=experiment)
-        return sol
+        return model.predict(experiment=experiment)

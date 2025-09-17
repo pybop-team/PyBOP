@@ -41,12 +41,18 @@ class TestClassifier:
     def test_classify_using_hessian_invalid(self, problem):
         cost = pybop.SumSquaredError(problem)
         optim = pybop.XNES(cost=cost)
-        x = np.asarray([0.001])
-        results = pybop.OptimisationResult(x=x, optim=optim)
+        logger = pybop.Logger(minimising=True)
+        logger.iteration = 1
+        logger.extend_log(
+            x_search=[np.asarray([1e-3])],
+            x_model=[np.asarray([1e-3])],
+            cost=[cost(np.asarray([1e-3]))],
+        )
+        result = pybop.OptimisationResult(optim=optim, logger=logger, time=1.0)
 
         with pytest.raises(
             ValueError,
             match="The function classify_using_hessian currently only works"
             " in the case of 2 parameters, and dx must have the same length as x.",
         ):
-            pybop.classify_using_hessian(results)
+            pybop.classify_using_hessian(result)

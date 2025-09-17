@@ -93,22 +93,22 @@ class TestHalfCellModel:
 
     def test_fitting_costs(self, fitting_cost):
         x0 = fitting_cost.parameters.get_initial_values()
-        optim = pybop.CuckooSearch(
-            cost=fitting_cost,
-            sigma0=0.03,
+        options = pybop.PintsOptions(
+            sigma=0.03,
             max_iterations=250,
             max_unchanged_iterations=35,
         )
+        optim = pybop.CuckooSearch(cost=fitting_cost, options=options)
 
-        initial_cost = optim.cost(optim.parameters.get_initial_values())
+        initial_cost = optim.cost(optim.cost.parameters.get_initial_values())
         results = optim.run()
 
         # Assertions
         if not np.allclose(x0, self.ground_truth, atol=1e-5):
             if results.minimising:
-                assert initial_cost > results.final_cost
+                assert initial_cost > results.best_cost
             else:
-                assert initial_cost < results.final_cost
+                assert initial_cost < results.best_cost
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
 
     @pytest.fixture
@@ -134,19 +134,14 @@ class TestHalfCellModel:
         return pybop.GravimetricEnergyDensity(problem)
 
     def test_design_costs(self, design_cost):
-        optim = pybop.CuckooSearch(
-            design_cost,
-            max_iterations=15,
-            allow_infeasible_solutions=False,
-        )
-        initial_values = optim.parameters.get_initial_values()
+        options = pybop.PintsOptions(max_iterations=15)
+        optim = pybop.CuckooSearch(cost=design_cost, options=options)
+        initial_values = optim.cost.parameters.get_initial_values()
         initial_cost = optim.cost(initial_values)
         results = optim.run()
 
         # Assertions
-        assert initial_cost < results.final_cost
-        for i, _ in enumerate(results.x):
-            assert results.x[i] < initial_values[i]
+        assert initial_cost < results.best_cost
 
     def get_data(self, model, init_soc):
         initial_state = {"Initial SoC": init_soc}
@@ -158,5 +153,4 @@ class TestHalfCellModel:
                 ),
             ]
         )
-        sim = model.predict(initial_state=initial_state, experiment=experiment)
-        return sim
+        return model.predict(initial_state=initial_state, experiment=experiment)

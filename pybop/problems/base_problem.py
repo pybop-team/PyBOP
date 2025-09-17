@@ -81,6 +81,10 @@ class BaseProblem:
             self.eis = self.model.eis
             self.domain = "Frequency [Hz]" if self.eis else "Time [s]"
 
+        self._sensitivities_available = False
+        if self._model is not None:
+            self._sensitivities_available = self._model.check_sensitivities_available()
+
         # If model.solver is IDAKLU, set output vars for improved performance
         if self._model is not None and isinstance(self._model.solver, IDAKLUSolver):
             self._solver_copy = self._model.solver.copy()
@@ -184,7 +188,7 @@ class BaseProblem:
 
     @property
     def sensitivities_available(self):
-        return self._model.sensitivities_available
+        return self._sensitivities_available
 
     @property
     def target(self):

@@ -39,7 +39,13 @@ class Test_Sampling_SPM:
                 "Positive electrode active material volume fraction": x[1],
             }
         )
-        return pybop.lithium_ion.SPM(parameter_set=parameter_set)
+        model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
+
+        # Fix the total lithium concentration to simplify the fitting problem
+        model.pybamm_model.param.Q_Li_particles_init = parameter_set.evaluate(
+            model.pybamm_model.param.Q_Li_particles_init
+        )
+        return model
 
     @pytest.fixture
     def parameters(self):
@@ -84,11 +90,11 @@ class Test_Sampling_SPM:
 
     @pytest.fixture
     def map_estimate(self, log_posterior):
-        common_args = {
-            "max_iterations": 100,
-            "max_unchanged_iterations": 35,
-        }
-        optim = pybop.CMAES(log_posterior, **common_args)
+        options = pybop.PintsOptions(
+            max_iterations=100,
+            max_unchanged_iterations=35,
+        )
+        optim = pybop.CMAES(log_posterior, options=options)
         results = optim.run()
 
         return results.x
@@ -110,17 +116,15 @@ class Test_Sampling_SPM:
             [0.4, 0.4, 1e-5],
             [0.75, 0.75, 5e-2],
         )
-        # set common args
-        common_args = {
-            "log_pdf": log_posterior,
-            "chains": 3,
-            "x0": x0,
-            "warm_up": 150,
-            "max_iterations": 550,
-        }
+        log_posterior.parameters.update(initial_values=x0)
+        options = pybop.PintsSamplerOptions(
+            n_chains=3,
+            warm_up_iterations=150,
+            max_iterations=550,
+        )
 
         # construct and run
-        sampler = quick_sampler(**common_args)
+        sampler = quick_sampler(log_pdf=log_posterior, options=options)
         chains = sampler.run()
 
         # Assert both final sample and posterior mean
@@ -138,5 +142,4 @@ class Test_Sampling_SPM:
                 ),
             ]
         )
-        sim = model.predict(initial_state=initial_state, experiment=experiment)
-        return sim
+        return model.predict(initial_state=initial_state, experiment=experiment)

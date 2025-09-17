@@ -127,26 +127,30 @@ class TestEISParameterisation:
             cost = cost(problem)
 
         # Construct optimisation object
-        common_args = {
-            "cost": cost,
-            "max_iterations": 100,
-            "absolute_tolerance": 1e-6,
-            "max_unchanged_iterations": 35,
-            "sigma0": [0.05, 0.05, 1e-3]
-            if isinstance(cost, pybop.GaussianLogLikelihood)
-            else 0.02,
-            "polish": False
-            if isinstance(optimiser, pybop.SciPyDifferentialEvolution)
-            else None,
-            "population_size": 4,
-        }
+        if optimiser is pybop.SciPyDifferentialEvolution:
+            options = pybop.SciPyDifferentialEvolutionOptions(
+                maxiter=100,
+                atol=1e-6,
+                polish=False,
+                popsize=4,
+            )
+        else:
+            options = pybop.PintsOptions(
+                max_iterations=100,
+                absolute_tolerance=1e-6,
+                max_unchanged_iterations=35,
+                sigma=(
+                    [0.05, 0.05, 1e-3]
+                    if isinstance(cost, pybop.GaussianLogLikelihood)
+                    else 0.02
+                ),
+            )
 
         # Create optimiser
-        optim = optimiser(**common_args)
-        return optim
+        return optimiser(cost=cost, options=options)
 
     def test_eis_optimisers(self, optim):
-        x0 = optim.parameters.get_initial_values()
+        x0 = optim.cost.parameters.get_initial_values()
 
         # Add sigma0 to ground truth for GaussianLogLikelihood
         if isinstance(optim.cost, pybop.GaussianLogLikelihood):
@@ -165,14 +169,14 @@ class TestEISParameterisation:
         # as the sigma values are small (5e-4), this is a difficult identification process
         # and requires a high number of iterations, and parameter dependent step sizes.
         if results.minimising:
-            assert initial_cost > results.final_cost
+            assert initial_cost > results.best_cost
         else:
-            assert initial_cost < results.final_cost
+            assert initial_cost < results.best_cost
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
 
     def get_data(self, model, init_soc, f_eval):
         initial_state = {"Initial SoC": init_soc}
-        sim = model.simulateEIS(
+        return model.simulateEIS(
             inputs={
                 "Negative electrode active material volume fraction": self.ground_truth[
                     0
@@ -184,5 +188,3 @@ class TestEISParameterisation:
             f_eval=f_eval,
             initial_state=initial_state,
         )
-
-        return sim

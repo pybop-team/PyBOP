@@ -118,7 +118,7 @@ from .costs._weighted_cost import WeightedCost
 #
 # Evaluation
 #
-from ._evaluation import SciPyEvaluator
+from ._evaluation import PopulationEvaluator, ScalarEvaluator, SequentialEvaluator
 
 #
 # Optimisation logging
@@ -129,19 +129,14 @@ from ._result import OptimisationResult
 #
 # Optimiser classes
 #
-from .optimisers._cuckoo import CuckooSearchImpl
-from .optimisers._random_search import RandomSearchImpl
-from .optimisers._adamw import AdamWImpl
-from .optimisers._gradient_descent import GradientDescentImpl
-from .optimisers._simulated_annealing import SimulatedAnnealingImpl
-from .optimisers._irprop_plus import IRPropPlusImpl
-from .optimisers._cost_interface import CostInterface
-from .optimisers.base_optimiser import BaseOptimiser
-from .optimisers.base_pints_optimiser import BasePintsOptimiser
+from .optimisers.base_optimiser import BaseOptimiser, OptimiserOptions
+from .optimisers.base_pints_optimiser import BasePintsOptimiser, PintsOptions
 from .optimisers.scipy_optimisers import (
     BaseSciPyOptimiser,
     SciPyMinimize,
-    SciPyDifferentialEvolution
+    SciPyMinimizeOptions,
+    SciPyDifferentialEvolution,
+    SciPyDifferentialEvolutionOptions,
 )
 from .optimisers.pints_optimisers import (
     GradientDescent,
@@ -161,19 +156,32 @@ from .optimisers.pints_optimisers import (
 #
 # Monte Carlo classes
 #
-from .samplers.chain_processor import ChainProcessor, MultiChainProcessor, SingleChainProcessor
-from .samplers.base_sampler import BaseSampler
-from .samplers.base_pints_sampler import BasePintsSampler
+from .samplers.chain_processor import (
+    ChainProcessor,
+    MultiChainProcessor,
+    SingleChainProcessor,
+)
+from .samplers.base_sampler import BaseSampler, SamplerOptions
+from .samplers.base_pints_sampler import BasePintsSampler, PintsSamplerOptions
 from .samplers.pints_samplers import (
-    NUTS, DREAM, AdaptiveCovarianceMCMC,
-    DifferentialEvolutionMCMC, DramACMC,
+    NUTS,
+    DREAM,
+    AdaptiveCovarianceMCMC,
+    DifferentialEvolutionMCMC,
+    DramACMC,
     EmceeHammerMCMC,
-    HaarioACMC, HaarioBardenetACMC,
-    HamiltonianMCMC, MALAMCMC,
-    MetropolisRandomWalkMCMC, MonomialGammaHamiltonianMCMC,
-    PopulationMCMC, RaoBlackwellACMC,
-    RelativisticMCMC, SliceDoublingMCMC,
-    SliceRankShrinkingMCMC, SliceStepoutMCMC,
+    HaarioACMC,
+    HaarioBardenetACMC,
+    HamiltonianMCMC,
+    MALAMCMC,
+    MetropolisRandomWalkMCMC,
+    MonomialGammaHamiltonianMCMC,
+    PopulationMCMC,
+    RaoBlackwellACMC,
+    RelativisticMCMC,
+    SliceDoublingMCMC,
+    SliceRankShrinkingMCMC,
+    SliceStepoutMCMC,
 )
 
 #

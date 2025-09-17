@@ -48,6 +48,7 @@ class BaseCost:
         self.dy = None
         self._de = 1.0
         self.minimising = True
+        self.has_sensitivities = False
         if isinstance(self.problem, BaseProblem):
             self._target = self.problem.target
             self._parameters.join(self.problem.parameters)
@@ -56,6 +57,7 @@ class BaseCost:
             self._has_separable_problem = True
             self.grad_fail = None
             self.set_fail_gradient()
+            self.has_sensitivities = self.problem.sensitivities_available
 
     def __call__(
         self,
@@ -104,12 +106,8 @@ class BaseCost:
         model_inputs = self.parameters.verify(inputs)
         self.parameters.update(values=list(model_inputs.values()))
 
-        if (
-            calculate_grad
-            and self.problem is not None
-            and self.problem.model is not None
-        ):
-            calculate_grad = self.problem.model.check_sensitivities_available()
+        if calculate_grad:
+            calculate_grad = self.has_sensitivities
 
         y = self.DeferredPrediction
         dy = self.DeferredPrediction if calculate_grad else None
@@ -144,6 +142,27 @@ class BaseCost:
             If the method has not been implemented by the subclass.
         """
         raise NotImplementedError
+
+    def get_finite_initial_cost(self):
+        """
+        Compute the absolute initial cost, resampling the initial parameters if needed.
+        """
+        x0 = self.parameters.get_initial_values()
+        cost0 = np.abs(self.__call__(x0))
+        nsamples = 0
+        while np.isinf(cost0) and nsamples < 10:
+            x0 = self.parameters.sample_from_priors()
+            if x0 is None:
+                break
+
+            cost0 = np.abs(self.__call__(x0))
+            nsamples += 1
+        if nsamples > 0:
+            self.parameters.update(initial_values=x0)
+
+        if np.isinf(cost0):
+            raise ValueError("The initial parameter values return an infinite cost.")
+        return cost0
 
     def sensitivity_analysis(self, n_samples: int = 256):
         """

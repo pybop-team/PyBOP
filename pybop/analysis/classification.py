@@ -4,7 +4,9 @@ from pybop import OptimisationResult
 
 
 def classify_using_hessian(
-    result: OptimisationResult, dx=None, cost_tolerance: float | None = 1e-5
+    result: OptimisationResult,
+    dx=None,
+    cost_tolerance: float | None = 1e-5,
 ):
     """
     A simple check for parameter correlations based on numerical approximation
@@ -13,7 +15,7 @@ def classify_using_hessian(
     Parameters
     ---------
     result : OptimisationResult
-        The PyBOP optimisation results.
+        The optimisation result.
     dx : array-like, optional
         An array of small positive values used to check proximity to the parameter
         bounds and as the perturbation distance in the finite difference calculations.
@@ -22,10 +24,13 @@ def classify_using_hessian(
     """
     x = result.x
     dx = np.asarray(dx) if dx is not None else np.maximum(x, 1e-40) * 1e-2
-    final_cost = result.final_cost
-    cost = result.cost
-    parameters = cost.parameters
+    best_cost = result.best_cost
+    cost_object = result.optim.cost
+    parameters = cost_object.parameters
     minimising = result.minimising
+
+    def cost(x):
+        return cost_object.__call__(x)
 
     n = len(x)
     if n != 2 or len(dx) != n:
@@ -42,8 +47,8 @@ def classify_using_hessian(
     for i in np.arange(0, 3):
         for j in np.arange(0, 3):
             if i == j == 1:
-                costs[1, 1, 0] = final_cost
-                costs[1, 1, 1] = final_cost
+                costs[1, 1, 0] = best_cost
+                costs[1, 1, 1] = best_cost
             else:
                 costs[i, j, 0] = cost(x + np.multiply([i - 1, j - 1], dx))
                 costs[i, j, 1] = cost(x + np.multiply([i - 1, j - 1], 2 * dx))
@@ -60,8 +65,8 @@ def classify_using_hessian(
         return ""
 
     # Classify the result
-    if (minimising and np.any(costs < final_cost)) or (
-        not minimising and np.any(costs > final_cost)
+    if (minimising and np.any(costs < best_cost)) or (
+        not minimising and np.any(costs > best_cost)
     ):
         message = "The optimiser has not converged to a stationary point."
         message += check_proximity_to_bounds(parameters, x, dx, names)
@@ -130,7 +135,7 @@ def classify_using_hessian(
                     cost(x - np.multiply(eigenvectors[:, 0], dx)),
                     cost(x + np.multiply(eigenvectors[:, 0], dx)),
                 ]
-                if np.allclose(final_cost, diagonal_costs, atol=cost_tolerance, rtol=0):
+                if np.allclose(best_cost, diagonal_costs, atol=cost_tolerance, rtol=0):
                     message += " There may be a correlation between these parameters."
 
     print(message)

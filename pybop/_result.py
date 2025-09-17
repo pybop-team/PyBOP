@@ -1,13 +1,11 @@
-import warnings
 from typing import TYPE_CHECKING
 
 import numpy as np
-from pybamm import Solution
-
-from pybop import BaseCost, Inputs
+from pybamm import ParameterValues
 
 if TYPE_CHECKING:
     from pybop import BaseOptimiser
+from pybop import Logger
 
 
 class OptimisationResult:
@@ -18,173 +16,131 @@ class OptimisationResult:
     ----------
     optim : pybop.BaseOptimiser
         The optimisation object used to generate the results.
-    x : ndarray
-        The solution of the optimisation.
-    final_cost : float
-        The cost associated with the solution x.
-    n_iterations : int
-        Number of iterations performed by the optimiser.
+    logger : pybop.Logger
+        The log of the optimisation process.
+    time : float
+        The time taken.
+    optim_name : str
+        The name of the optimiser.
     message : str
         The reason for stopping given by the optimiser.
     scipy_result : scipy.optimize.OptimizeResult, optional
         The result obtained from a SciPy optimiser.
-    pybamm_solution: pybamm.Solution or list[pybamm.Solution], optional
-        The best solution object(s) obtained from the optimisation.
     """
 
     def __init__(
         self,
         optim: "BaseOptimiser",
-        x: Inputs | np.ndarray = None,
-        final_cost: float | None = None,
-        sensitivities: dict | None = None,
-        n_iterations: int | None = None,
-        n_evaluations: int | None = None,
-        time: float | None = None,
+        logger: Logger,
+        time: float,
+        optim_name: str | None = None,
         message: str | None = None,
         scipy_result=None,
     ):
-        self.optim = optim
-        self.cost = self.optim.cost
-        self.minimising = not self.optim.invert_cost
-        self._transformation = self.optim.transformation
+        self._optim = optim
+        self._minimising = optim.cost.minimising
+        self.optim_name = optim_name
         self.n_runs = 0
         self._best_run = None
-        self._x = []
-        self._final_cost = []
-        self._sensitivities = None
-        self._n_iterations = []
-        self._n_evaluations = []
-        self._message = []
-        self._scipy_result = []
-        self._time = []
-        self._x0 = []
-        self._pybamm_solution = []
+        self._parameter_values = None
+        self._x = [logger.x_model_best]
+        self._x_model = [logger.x_model]
+        self._x0 = [logger.x0]
+        self._best_cost = [logger.cost_best]
+        self._cost = [logger.cost_convergence]
+        self._initial_cost = [logger.cost[0]]
+        self._n_iterations = [logger.iteration]
+        self._iteration_number = [logger.iteration_number]
+        self._n_evaluations = [logger.evaluations]
+        self._message = [message]
+        self._scipy_result = [scipy_result]
+        self._time = [time]
 
-        if x is not None:
-            # Transform the parameter values and update the sign of any final cost
-            # coming directly from an optimiser
-            x = self._transformation.to_model(x) if self._transformation else x
-            final_cost = (
-                final_cost * (1 if self.minimising else -1)
-                if final_cost is not None
-                else self.cost(x)
-            )
-            x0 = self.optim.parameters.get_initial_values()
+        self._validate()
 
-            # Evaluate the problem once more to update the solution
-            try:
-                self.cost(x)
-                pybamm_solution = self.cost.pybamm_solution
-            except Exception:
-                warnings.warn(
-                    "Failed to evaluate the model with best fit parameters.",
-                    UserWarning,
-                    stacklevel=2,
-                )
-                pybamm_solution = None
+    @staticmethod
+    def combine(results: list["OptimisationResult"]) -> "OptimisationResult":
+        """
+        Combine multiple OptimisationResult objects into a single one.
 
-            self._extend(
-                x=[x],
-                final_cost=[final_cost],
-                n_iterations=[n_iterations],
-                n_evaluations=[n_evaluations],
-                time=[time],
-                message=[message],
-                scipy_result=[scipy_result],
-                x0=[x0],
-                pybamm_solution=[pybamm_solution],
-            )
+        Parameters
+        ----------
+        results : list[OptimisationResult]
+            List of OptimisationResult objects to combine.
 
-    def add_result(self, result):
-        """Add a preprocessed OptimisationResult."""
-        self._extend(
-            x=result._x,  # noqa: SLF001
-            final_cost=result._final_cost,  # noqa: SLF001
-            n_iterations=result._n_iterations,  # noqa: SLF001
-            n_evaluations=result._n_evaluations,  # noqa: SLF001
-            time=result._time,  # noqa: SLF001
-            message=result._message,  # noqa: SLF001
-            scipy_result=result._scipy_result,  # noqa: SLF001
-            x0=result._x0,  # noqa: SLF001
-            pybamm_solution=result._pybamm_solution,  # noqa: SLF001
-        )
+        Returns
+        -------
+        OptimisationResult
+            Combined OptimisationResult object.
+        """
+        if len(results) == 0:
+            raise ValueError("No results to combine.")
+        ret = results[0]
+        ret._x = [x for result in results for x in result._x]  # noqa: SLF001
+        ret._x_model = [x for result in results for x in result._x_model]  # noqa: SLF001
+        ret._x0 = [x for result in results for x in result._x0]  # noqa: SLF001
+        ret._best_cost = [  # noqa: SLF001
+            x
+            for result in results
+            for x in result._best_cost  # noqa: SLF001
+        ]
+        ret._cost = [x for result in results for x in result._cost]  # noqa: SLF001
+        ret._initial_cost = [  # noqa: SLF001
+            x
+            for result in results
+            for x in result._initial_cost  # noqa: SLF001
+        ]
+        ret._n_iterations = [  # noqa: SLF001
+            x
+            for result in results
+            for x in result._n_iterations  # noqa: SLF001
+        ]
+        ret._iteration_number = [  # noqa: SLF001
+            x
+            for result in results
+            for x in result._iteration_number  # noqa: SLF001
+        ]
+        ret._n_evaluations = [  # noqa: SLF001
+            x
+            for result in results
+            for x in result._n_evaluations  # noqa: SLF001
+        ]
+        ret._message = [  # noqa: SLF001
+            x
+            for result in results
+            for x in result._message  # noqa: SLF001
+        ]
+        ret._scipy_result = [  # noqa: SLF001
+            x
+            for result in results
+            for x in result._scipy_result  # noqa: SLF001
+        ]
+        ret._time = [x for result in results for x in result._time]  # noqa: SLF001
 
-    def _extend(
-        self,
-        x: list[Inputs] | list[np.ndarray],
-        final_cost: list[float],
-        n_iterations: list[int],
-        n_evaluations: list[int],
-        time: list[float],
-        message: list[str],
-        scipy_result: list,
-        x0: list,
-        pybamm_solution: list[Solution],
-    ):
-        self.n_runs += len(final_cost)
-        self._x.extend(x)
-        self._final_cost.extend(final_cost)
-        self._n_iterations.extend(n_iterations)
-        self._n_evaluations.extend(n_evaluations)
-        self._message.extend(message)
-        self._scipy_result.extend(scipy_result)
-        self._time.extend(time)
-        self._x0.extend(x0)
-        self._pybamm_solution.extend(pybamm_solution)
+        ret._best_run = None  # noqa: SLF001
+        ret.n_runs = len(results)
+        ret._validate()  #  noqa: SLF001
 
-        # Check that there is a finite cost and update best run
-        self.check_for_finite_cost()
-        self._best_run = self._final_cost.index(
-            min(self._final_cost) if self.minimising else max(self._final_cost)
-        )
+        return ret
 
-        # Check that the best parameters are physically viable
-        self.check_physical_viability(self.x_best)
+    def _validate(self):
+        """Check that there is a finite cost and update best run."""
+        self._check_for_finite_cost()
+        if self._minimising:
+            self._best_run = self._best_cost.index(min(self._best_cost))
+        else:
+            self._best_run = self._best_cost.index(max(self._best_cost))
 
-    def check_for_finite_cost(self) -> None:
+    def _check_for_finite_cost(self) -> None:
         """
         Validate the optimised parameters and ensure they produce a finite cost value.
 
         Raises:
             ValueError: If the optimised parameters do not produce a finite cost value.
         """
-        if not any(np.isfinite(self._final_cost)):
+        if not any(np.isfinite(self._best_cost)):
             raise ValueError(
-                f"Optimised parameters {self.cost.parameters.as_dict()} do not produce a finite cost value"
-            )
-
-    def check_physical_viability(self, x):
-        """
-        Check if the optimised parameters are physically viable.
-
-        Parameters
-        ----------
-        x : array-like
-            Optimised parameter values.
-        """
-        if (
-            not isinstance(self.cost, BaseCost)
-            or self.cost.problem is None
-            or self.cost.problem.model is None
-        ):
-            warnings.warn(
-                "No model within problem class, can't check physical viability.",
-                UserWarning,
-                stacklevel=2,
-            )
-            return
-
-        if self.cost.problem.model.check_params(
-            inputs=x, allow_infeasible_solutions=False
-        ):
-            return
-        else:
-            warnings.warn(
-                "Optimised parameters are not physically viable! \nConsider retrying the optimisation"
-                " with a non-gradient-based optimiser and the option allow_infeasible_solutions=False",
-                UserWarning,
-                stacklevel=2,
+                f"Optimised parameters {self._optim.cost.parameters.to_dict(self._x[-1])} do not produce a finite cost value."
             )
 
     def __str__(self) -> str:
@@ -194,127 +150,107 @@ class OptimisationResult:
         Returns:
             str: A formatted string containing optimisation result information.
         """
-        # Format the sensitivities
-        self.sense_format = ""
-        if self._sensitivities:
-            for value, conf in zip(
-                self._sensitivities["ST"], self._sensitivities["ST_conf"], strict=False
-            ):
-                self.sense_format += f" {value:.3f} ± {conf:.3f},"
-
         return (
             f"OptimisationResult:\n"
             f"  Best result from {self.n_runs} run(s).\n"
-            f"  Initial parameters: {self.x0_best}\n"
-            f"  Optimised parameters: {self.x_best}\n"
-            f"  Total-order sensitivities:{self.sense_format}\n"
-            f"  Final cost: {self.final_cost_best}\n"
-            f"  Optimisation time: {self.time_best} seconds\n"
-            f"  Number of iterations: {self.n_iterations_best}\n"
-            f"  Number of evaluations: {self.n_evaluations_best}\n"
-            f"  Reason for stopping: {self.message_best}\n"
-            f"  SciPy result available: {'Yes' if self.scipy_result_best else 'No'}\n"
-            f"  PyBaMM Solution available: {'Yes' if self.pybamm_solution else 'No'}"
+            f"  Initial parameters: {self.x0}\n"
+            f"  Optimised parameters: {self.x}\n"
+            f"  Best cost: {self.best_cost}\n"
+            f"  Optimisation time: {self.time} seconds\n"
+            f"  Number of iterations: {self.total_iterations()}\n"
+            f"  Number of evaluations: {self.total_evaluations()}\n"
+            f"  Reason for stopping: {self.message}"
         )
 
-    def average_iterations(self) -> float | None:
-        """Calculates the average number of iterations across all runs."""
-        return np.mean(self._n_iterations)
+    def total_iterations(self) -> np.floating | None:
+        """Calculates the total number of iterations across all runs."""
+        return np.sum(self._n_iterations) if len(self._n_iterations) > 0 else None
 
-    def total_runtime(self) -> float | None:
+    def total_evaluations(self) -> np.floating | None:
+        """Calculates the total number of evaluations across all runs."""
+        return np.sum(self._n_evaluations) if len(self._n_evaluations) > 0 else None
+
+    def total_runtime(self) -> np.floating | None:
         """Calculates the total runtime across all runs."""
-        return np.sum(self._time)
+        return np.sum(self._time) if len(self._time) > 0 else None
 
     def _get_single_or_all(self, attr):
         value = getattr(self, attr)
-        return value[0] if len(value) == 1 else value
+        if len(value) > 1:
+            return value[self._best_run]
+        return value[0]
 
     @property
-    def x(self):
+    def x(self) -> np.ndarray:
+        """The solution of the optimisation (in model space)."""
         return self._get_single_or_all("_x")
 
     @property
-    def x_best(self):
-        return self._x[self._best_run] if self._best_run is not None else None
+    def x_model(self) -> np.ndarray:
+        """The log of the evaluated parameters (in model space)."""
+        return self._get_single_or_all("_x_model")
 
     @property
-    def x0(self):
+    def x0(self) -> np.ndarray:
+        """The initial parameter values."""
         return self._get_single_or_all("_x0")
 
     @property
-    def x0_best(self):
-        return self._x0[self._best_run] if self._best_run is not None else None
+    def best_cost(self) -> float:
+        """The best cost value(s)."""
+        return self._get_single_or_all("_best_cost")
 
     @property
-    def final_cost(self):
-        return self._get_single_or_all("_final_cost")
+    def cost(self) -> np.ndarray:
+        """The log of the cost values."""
+        return self._get_single_or_all("_cost")
 
     @property
-    def final_cost_best(self):
-        return self._final_cost[self._best_run] if self._best_run is not None else None
+    def initial_cost(self) -> float:
+        """The initial cost value(s)."""
+        return self._get_single_or_all("_initial_cost")
 
     @property
-    def sensitivities(self):
-        return self._get_single_or_all("_sensitivities")
-
-    @sensitivities.setter
-    def sensitivities(self, obj: dict):
-        self._sensitivities = obj
-
-    @property
-    def n_iterations(self):
+    def n_iterations(self) -> int:
+        """The number of iterations."""
         return self._get_single_or_all("_n_iterations")
 
     @property
-    def n_iterations_best(self):
-        return (
-            self._n_iterations[self._best_run] if self._best_run is not None else None
-        )
+    def iteration_number(self) -> np.ndarray | None:
+        """The number of iterations."""
+        return self._get_single_or_all("_iteration_number")
 
     @property
-    def n_evaluations(self):
+    def n_evaluations(self) -> int:
+        """The number of evaluations."""
         return self._get_single_or_all("_n_evaluations")
 
     @property
-    def n_evaluations_best(self):
-        return (
-            self._n_evaluations[self._best_run] if self._best_run is not None else None
-        )
+    def optim(self) -> "BaseOptimiser":
+        """The optimisation problem."""
+        return self._optim
 
     @property
-    def message(self):
+    def minimising(self) -> bool:
+        """Whether the cost was minimised (or maximised)."""
+        return self._minimising
+
+    @property
+    def parameter_values(self) -> ParameterValues | dict:
+        """The best parameter values from the optimisation."""
+        return self._parameter_values
+
+    @property
+    def message(self) -> str | None:
+        """The optimisation termination message(s)."""
         return self._get_single_or_all("_message")
 
     @property
-    def message_best(self):
-        return self._message[self._best_run] if self._best_run is not None else None
-
-    @property
     def scipy_result(self):
+        """The SciPy result."""
         return self._get_single_or_all("_scipy_result")
 
     @property
-    def scipy_result_best(self):
-        return (
-            self._scipy_result[self._best_run] if self._best_run is not None else None
-        )
-
-    @property
-    def pybamm_solution(self):
-        return self._get_single_or_all("_pybamm_solution")
-
-    @property
-    def pybamm_solution_best(self):
-        return (
-            self._pybamm_solution[self._best_run]
-            if self._best_run is not None
-            else None
-        )
-
-    @property
-    def time(self):
-        return self._get_single_or_all("_time")
-
-    @property
-    def time_best(self):
-        return self._time[self._best_run] if self._best_run is not None else None
+    def time(self) -> float | None:
+        """The optimisation time(s)."""
+        return self.total_runtime()

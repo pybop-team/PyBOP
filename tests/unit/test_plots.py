@@ -122,7 +122,7 @@ class TestPlots:
     @pytest.fixture
     def optim(self, cost):
         # Define and run an example optimisation
-        optim = pybop.IRPropMin(cost)
+        optim = pybop.XNES(cost)
         optim.run()
         return optim
 
@@ -130,8 +130,6 @@ class TestPlots:
         bounds = np.asarray([[0.5, 0.8], [0.4, 0.7]])
 
         # Plot convergence
-        pybop.plot.convergence(optim)
-        optim.invert_cost = True
         pybop.plot.convergence(optim)
 
         # Plot the parameter traces
@@ -165,7 +163,8 @@ class TestPlots:
         posterior = pybop.LogPosterior(
             pybop.GaussianLogLikelihoodKnownSigma(fitting_problem, sigma0=2e-3)
         )
-        sampler = pybop.SliceStepoutMCMC(posterior, chains=1, iterations=1)
+        options = pybop.PintsSamplerOptions(n_chains=1, max_iterations=1)
+        sampler = pybop.SliceStepoutMCMC(posterior, options=options)
         results = sampler.run()
         return pybop.PosteriorSummary(results)
 
@@ -195,7 +194,8 @@ class TestPlots:
     def test_gaussianloglikelihood_plots(self, fitting_problem):
         # Test plot of GaussianLogLikelihood
         likelihood = pybop.GaussianLogLikelihood(fitting_problem)
-        optim = pybop.CMAES(likelihood, max_iterations=5)
+        options = pybop.PintsOptions(max_iterations=5)
+        optim = pybop.CMAES(likelihood, options=options)
         optim.run()
 
         # Plot parameters

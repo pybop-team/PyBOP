@@ -90,14 +90,25 @@ class InverseOCV:
         float
             The stoichiometry corresponding to the open-circuit voltage value.
         """
+        ocv_function = self.ocv_function
 
         # Set up a root-finding cost function
-        def ocv_root(x, **kwargs):
-            return np.abs(self.ocv_function(x[0]) - ocv_value)
+        class OCVRoot(pybop.BaseCost):
+            def __init__(self):
+                super().__init__()
+                self._parameters = pybop.Parameters(
+                    pybop.Parameter("Root", initial_value=0.5, bounds=[0, 1])
+                )
+
+            def single_call(
+                self, inputs: pybop.Inputs | np.ndarray, calculate_grad: bool = False
+            ) -> float:
+                """Evaluate the cost for a single set of inputs."""
+                model_inputs = self._parameters.verify(inputs)
+                return np.abs(ocv_function(model_inputs["Root"]) - ocv_value)
 
         # Minimise to find the stoichiometry
-        optim = self.optimiser(
-            cost=ocv_root, x0=np.asarray([0.5]), verbose=self.verbose
-        )
+        options = pybop.SciPyMinimizeOptions(verbose=self.verbose)
+        optim = self.optimiser(cost=OCVRoot(), options=options)
         results = optim.run()
         return results.x[0]

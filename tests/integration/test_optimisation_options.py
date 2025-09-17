@@ -1,5 +1,3 @@
-import sys
-
 import numpy as np
 import pybamm
 import pytest
@@ -78,33 +76,24 @@ class TestOptimisation:
     )
     def test_optimisation_f_guessed(self, f_guessed, cost):
         x0 = cost.parameters.get_initial_values()
-        # Test each optimiser
-        optim = pybop.XNES(
-            cost=cost,
-            sigma0=0.05,
+        options = pybop.PintsOptions(
+            sigma=0.05,
             max_iterations=100,
             max_unchanged_iterations=25,
             absolute_tolerance=1e-5,
             use_f_guessed=f_guessed,
-            compute_sensitivities=True,
-            n_sensitivity_samples=3,
-            allow_infeasible_solutions=False,
         )
-
-        # Set parallelisation if not on Windows
-        if sys.platform != "win32":
-            optim.set_parallel(1)
+        optim = pybop.XNES(cost=cost, options=options)
 
         initial_cost = optim.cost(x0)
         results = optim.run()
 
         # Assertions
-        assert results.sensitivities is not None
         if not np.allclose(x0, self.ground_truth, atol=1e-5):
             if results.minimising:
-                assert initial_cost > results.final_cost
+                assert initial_cost > results.best_cost
             else:
-                assert initial_cost < results.final_cost
+                assert initial_cost < results.best_cost
         else:
             raise ValueError("Initial value is the same as the ground truth value.")
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
@@ -119,5 +108,4 @@ class TestOptimisation:
                 ),
             ]
         )
-        sim = model.predict(initial_state=initial_state, experiment=experiment)
-        return sim
+        return model.predict(initial_state=initial_state, experiment=experiment)

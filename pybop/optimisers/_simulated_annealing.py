@@ -1,4 +1,5 @@
 import numpy as np
+import pints
 from pints import Optimiser as PintsOptimiser
 
 
@@ -39,7 +40,12 @@ class SimulatedAnnealingImpl(PintsOptimiser):
         Optional boundaries for parameters
     """
 
-    def __init__(self, x0, sigma0=0.05, boundaries=None):
+    def __init__(
+        self,
+        x0: np.ndarray,
+        sigma0: list[float] | None,
+        boundaries: pints.Boundaries | None,
+    ):
         super().__init__(x0, sigma0, boundaries)
 
         # Set optimiser state
