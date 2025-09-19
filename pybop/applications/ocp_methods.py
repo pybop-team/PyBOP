@@ -208,12 +208,11 @@ class OCPAverage(BaseApplication):
                         ),
                     }
 
-        self.model = None
         self.problem = FunctionFitting(
-            model=self.model,
+            simulator=None,
             parameters=self.parameters,
             dataset=interpolated_dataset,
-            signal=["Voltage [mV]", "Differential capacity [V-1]"],
+            output_variables=["Voltage [mV]", "Differential capacity [V-1]"],
             domain="Stoichiometry",
         )
 
@@ -320,12 +319,11 @@ class OCPCapacityToStoichiometry(BaseApplication):
                     ),
                 }
 
-        self.model = None
         self.problem = FunctionFitting(
-            model=self.model,
+            simulator=None,
             parameters=self.parameters,
             dataset=self.ocv_dataset,
-            signal=["Voltage [V]"],
+            output_variables=["Voltage [V]"],
             domain="Charge capacity [A.h]",
         )
 

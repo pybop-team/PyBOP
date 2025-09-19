@@ -52,9 +52,9 @@ class FittingCost(BaseCost):
         Parameters
         ----------
         y : dict[str, np.ndarray[np.float64]]
-            The dictionary of predictions with keys designating the signals for fitting.
+            The dictionary of predictions with keys designating the output variables for fitting.
         dy : dict[str, dict[str, np.ndarray]], optional
-            The corresponding sensitivities to each parameter for each signal.
+            The corresponding sensitivities to each parameter for each output variable.
 
         Returns
         -------
@@ -66,10 +66,10 @@ class FittingCost(BaseCost):
         if not self.verify_prediction(y):
             return (np.inf, self.grad_fail) if dy is not None else np.inf
 
-        # Compute the residual for all signals
-        r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
+        # Compute the residual for all output variables
+        r = np.asarray([y[var] - self._target[var] for var in self.output_variables])
 
-        # Extract the sensitivities for all signals and parameters
+        # Extract the sensitivities for all output variables and parameters
         if dy is not None:
             dy = self.stack_sensitivities(dy)
 
@@ -87,10 +87,10 @@ class FittingCost(BaseCost):
         ----------
         r : np.ndarray
             The residual difference between the model prediction and the target. The
-            dimensions of r are (len(signal), len(domain_data)).
+            dimensions of r are (len(output_variables), len(domain_data)).
         dy : np.ndarray, optional
-            The corresponding gradient with respect to the parameters for each signal.
-            The dimensions of dy are (len(parameters), len(signal), len(domain_data)).
+            The corresponding gradient with respect to the parameters for each output variable.
+            The dimensions of dy are (len(parameters), len(output_variables), len(domain_data)).
 
         Returns
         -------

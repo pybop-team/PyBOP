@@ -22,15 +22,19 @@ class TestOptimisation:
 
     @pytest.fixture
     def model(self):
-        parameter_set = pybamm.ParameterValues("Chen2020")
+        return pybamm.lithium_ion.SPM()
+
+    @pytest.fixture
+    def parameter_values(self):
+        parameter_values = pybamm.ParameterValues("Chen2020")
         x = self.ground_truth
-        parameter_set.update(
+        parameter_values.update(
             {
                 "Negative electrode active material volume fraction": x[0],
                 "Positive electrode active material volume fraction": x[1],
             }
         )
-        return pybop.lithium_ion.SPM(parameter_set=parameter_set)
+        return parameter_values
 
     @pytest.fixture
     def parameters(self):
@@ -51,20 +55,18 @@ class TestOptimisation:
         return data + np.random.normal(0, sigma, len(data))
 
     @pytest.fixture
-    def cost(self, model, parameters):
-        # Form dataset
-        initial_state = {"Initial SoC": 0.5}
-        solution = self.get_data(model, initial_state)
-        dataset = pybop.Dataset(
-            {
-                "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, 0.002),
-            }
-        )
+    def cost(self, model, parameter_values, parameters):
+        parameter_values.set_initial_state(0.5)
+        dataset = self.get_data(model, parameter_values)
 
         # Define the cost to optimise
-        problem = pybop.FittingProblem(model, parameters, dataset)
+        simulator = pybop.pybamm.Simulator(
+            model,
+            parameter_values=parameter_values,
+            input_parameter_names=parameters.names,
+            protocol=dataset,
+        )
+        problem = pybop.FittingProblem(simulator, parameters, dataset)
         return pybop.SumSquaredError(problem)
 
     @pytest.mark.parametrize(
@@ -98,14 +100,20 @@ class TestOptimisation:
             raise ValueError("Initial value is the same as the ground truth value.")
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
 
-    def get_data(self, model, initial_state):
-        # Update the initial state and save the ground truth initial concentrations
+    def get_data(self, model, parameter_values):
         experiment = pybamm.Experiment(
             [
-                (
-                    "Discharge at 0.5C for 3 minutes (10 second period)",
-                    "Charge at 0.5C for 3 minutes (10 second period)",
-                ),
+                "Discharge at 0.5C for 3 minutes (10 second period)",
+                "Charge at 0.5C for 3 minutes (10 second period)",
             ]
         )
-        return model.predict(initial_state=initial_state, experiment=experiment)
+        solution = pybamm.Simulation(
+            model, parameter_values=parameter_values, experiment=experiment
+        ).solve()
+        return pybop.Dataset(
+            {
+                "Time [s]": solution["Time [s]"].data,
+                "Current function [A]": solution["Current [A]"].data,
+                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, 0.002),
+            }
+        )

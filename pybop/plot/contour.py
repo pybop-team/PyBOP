@@ -96,6 +96,8 @@ def contour(
     # Set up parameter bounds
     if bounds is None:
         bounds = parameters.get_bounds_for_plotly()
+    else:
+        bounds = np.asarray(bounds)
 
     # Generate grid
     x = np.linspace(bounds[0, 0], bounds[0, 1], steps)

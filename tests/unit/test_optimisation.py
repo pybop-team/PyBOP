@@ -3,6 +3,7 @@ import re
 import sys
 
 import numpy as np
+import pybamm
 import pytest
 from pints import PopulationBasedOptimiser
 
@@ -52,24 +53,22 @@ class TestOptimisation:
 
     @pytest.fixture
     def model(self):
-        return pybop.lithium_ion.SPM()
+        return pybamm.lithium_ion.SPM()
 
     @pytest.fixture
     def cost(self, model, one_parameter, dataset):
-        problem = pybop.FittingProblem(
-            model,
-            one_parameter,
-            dataset,
+        simulator = pybop.pybamm.Simulator(
+            model, input_parameter_names=[one_parameter.name], protocol=dataset
         )
+        problem = pybop.FittingProblem(simulator, one_parameter, dataset)
         return pybop.SumSquaredError(problem)
 
     @pytest.fixture
     def two_param_cost(self, model, two_parameters, dataset):
-        problem = pybop.FittingProblem(
-            model,
-            two_parameters,
-            dataset,
+        simulator = pybop.pybamm.Simulator(
+            model, input_parameter_names=two_parameters.names, protocol=dataset
         )
+        problem = pybop.FittingProblem(simulator, two_parameters, dataset)
         return pybop.SumSquaredError(problem)
 
     @pytest.mark.parametrize(
@@ -114,16 +113,6 @@ class TestOptimisation:
             optim = optimiser(cost=cost)
             assert all(np.isinf(optim.cost.parameters.get_bounds()["lower"]))
             assert all(np.isinf(optim.cost.parameters.get_bounds()["upper"]))
-
-    def test_no_optimisation_parameters(self, model, dataset):
-        problem = pybop.FittingProblem(
-            model=model, parameters=pybop.Parameters(), dataset=dataset
-        )
-        cost = pybop.RootMeanSquaredError(problem)
-        with pytest.raises(
-            ValueError, match="The parameter space must have a dimension > 0"
-        ):
-            pybop.XNES(cost=cost)
 
     @pytest.mark.parametrize(
         "optimiser",
@@ -401,7 +390,7 @@ class TestOptimisation:
         with pytest.raises(NotImplementedError):
             pybop.BaseOptimiser(cost=cost)
 
-    def test_halting(self, cost):
+    def test_halting(self, cost, model):
         # Add a parameter transformation
         cost.parameters[
             "Positive electrode active material volume fraction"
@@ -417,7 +406,7 @@ class TestOptimisation:
 
         # Test max unchanged iterations
         options = pybop.PintsOptions(max_unchanged_iterations=1, min_iterations=1)
-        optim = pybop.GradientDescent(cost=cost, options=options)
+        optim = pybop.XNES(cost=cost, options=options)
         results = optim.run()
         assert results.n_iterations == 2
 

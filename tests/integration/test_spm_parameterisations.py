@@ -22,22 +22,22 @@ class Test_SPM_Parameterisation:
         )
 
     @pytest.fixture
-    def model(self):
-        parameter_set = pybamm.ParameterValues("Chen2020")
+    def model_and_parameter_values(self):
+        model = pybamm.lithium_ion.SPM()
+        parameter_values = pybamm.ParameterValues("Chen2020")
         x = self.ground_truth
-        parameter_set.update(
+        parameter_values.update(
             {
                 "Negative electrode active material volume fraction": x[0],
                 "Positive electrode active material volume fraction": x[1],
             }
         )
-        model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
         # Fix the total lithium concentration to simplify the fitting problem
-        model.pybamm_model.param.Q_Li_particles_init = parameter_set.evaluate(
-            model.pybamm_model.param.Q_Li_particles_init
+        model.param.Q_Li_particles_init = parameter_values.evaluate(
+            model.param.Q_Li_particles_init
         )
-        return model
+        return model, parameter_values
 
     @pytest.fixture
     def parameters(self):
@@ -55,10 +55,6 @@ class Test_SPM_Parameterisation:
                 # no bounds
             ),
         )
-
-    @pytest.fixture(params=[0.4, 0.7])
-    def init_soc(self, request):
-        return request.param
 
     @pytest.fixture(
         params=[
@@ -81,35 +77,29 @@ class Test_SPM_Parameterisation:
 
     @pytest.fixture(
         params=[
-            pybop.SciPyDifferentialEvolution,
-            pybop.SimulatedAnnealing,
-            pybop.CuckooSearch,
-            pybop.NelderMead,
-            pybop.IRPropMin,
-            pybop.IRPropPlus,
-            pybop.AdamW,
-            pybop.CMAES,
-            pybop.SNES,
-            pybop.XNES,
+            pybop.SciPyMinimize,  # scipy with sensitivities
+            pybop.SciPyDifferentialEvolution,  # without sensitivites
+            pybop.IRPropMin,  # pints optimiser with sensitivities
+            pybop.NelderMead,  # pints without sensitivities
         ]
     )
     def optimiser(self, request):
         return request.param
 
     @pytest.fixture
-    def optim(self, optimiser, model, parameters, cost_cls, init_soc):
-        # Form dataset
-        solution = self.get_data(model, init_soc)
-        dataset = pybop.Dataset(
-            {
-                "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma0),
-            }
-        )
+    def optim(self, optimiser, model_and_parameter_values, parameters, cost_cls):
+        model, parameter_values = model_and_parameter_values
+        parameter_values.set_initial_state(0.6)
+        dataset = self.get_data(model, parameter_values)
 
         # Define the problem
-        problem = pybop.FittingProblem(model, parameters, dataset)
+        simulator = pybop.pybamm.Simulator(
+            model,
+            parameter_values=parameter_values,
+            input_parameter_names=parameters.names,
+            protocol=dataset,
+        )
+        problem = pybop.FittingProblem(simulator, parameters, dataset)
 
         # Construct the cost
         if cost_cls is pybop.GaussianLogLikelihoodKnownSigma:
@@ -140,6 +130,8 @@ class Test_SPM_Parameterisation:
         # Construct optimisation object
         if optimiser is pybop.SciPyDifferentialEvolution:
             options = pybop.SciPyDifferentialEvolutionOptions(maxiter=450)
+        elif optimiser is pybop.SciPyMinimize:
+            options = pybop.SciPyMinimizeOptions(maxiter=450)
         else:
             options = pybop.PintsOptions(
                 max_iterations=450,
@@ -157,7 +149,7 @@ class Test_SPM_Parameterisation:
                 bounds["upper"].append(0.05)
             cost.parameters.update(bounds=bounds)
 
-        # Set sigma0 and create optimiser
+        # Create optimiser
         optim = optimiser(cost=cost, options=options)
 
         # Set Hypers
@@ -196,23 +188,22 @@ class Test_SPM_Parameterisation:
             np.testing.assert_allclose(results.x[-1], self.sigma0, atol=1e-3)
 
     @pytest.fixture
-    def two_signal_cost(self, parameters, model, cost_cls):
-        # Form dataset
-        solution = self.get_data(model, init_soc=0.5)
-        dataset = pybop.Dataset(
-            {
-                "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma0),
-                "Bulk open-circuit voltage [V]": self.noisy(
-                    solution["Bulk open-circuit voltage [V]"].data, self.sigma0
-                ),
-            }
-        )
+    def two_signal_cost(self, parameters, model_and_parameter_values, cost_cls):
+        model, parameter_values = model_and_parameter_values
+        parameter_values.set_initial_state(0.5)
+        dataset = self.get_data(model, parameter_values, include_ocv=True)
 
         # Define the cost to optimise
-        signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
-        problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
+        output_variables = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
+        simulator = pybop.pybamm.Simulator(
+            model,
+            parameter_values=parameter_values,
+            input_parameter_names=parameters.names,
+            protocol=dataset,
+        )
+        problem = pybop.FittingProblem(
+            simulator, parameters, dataset, output_variables=output_variables
+        )
 
         if cost_cls is pybop.GaussianLogLikelihoodKnownSigma:
             return cost_cls(problem, sigma0=self.sigma0)
@@ -239,6 +230,8 @@ class Test_SPM_Parameterisation:
 
         if multi_optimiser is pybop.SciPyDifferentialEvolution:
             options = pybop.SciPyDifferentialEvolutionOptions(maxiter=250)
+        elif multi_optimiser is pybop.SciPyMinimize:
+            options = pybop.SciPyMinimizeOptions(maxiter=450)
         else:
             options = pybop.PintsOptions(
                 max_iterations=250,
@@ -279,31 +272,34 @@ class Test_SPM_Parameterisation:
             np.testing.assert_allclose(results.x[-2:], combined_sigma0, atol=5e-4)
 
     @pytest.mark.parametrize("init_soc", [0.4, 0.6])
-    def test_model_misparameterisation(self, parameters, model, init_soc):
+    def test_model_misparameterisation(
+        self, parameters, model_and_parameter_values, init_soc
+    ):
+        model, parameter_values = model_and_parameter_values
+        parameter_values.set_initial_state(init_soc)
+
         # Define two different models with different parameter sets
         # The optimisation should fail as the models are not the same
-        second_parameter_set = pybamm.ParameterValues("Ecker2015")
-        second_model = pybop.lithium_ion.SPMe(parameter_set=second_parameter_set)
-
-        # Form dataset
-        solution = self.get_data(second_model, init_soc)
-        dataset = pybop.Dataset(
-            {
-                "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": solution["Voltage [V]"].data,
-            }
+        second_parameter_values = pybamm.ParameterValues("Ecker2015")
+        second_parameter_values.set_initial_state(init_soc)
+        second_model = pybamm.lithium_ion.SPMe()
+        simulator = pybop.pybamm.Simulator(
+            second_model, parameter_values=second_parameter_values
         )
+        dataset = self.get_data(second_model, second_parameter_values)
 
         # Define the cost to optimise
-        problem = pybop.FittingProblem(model, parameters, dataset)
+        simulator = pybop.pybamm.Simulator(
+            model,
+            parameter_values=parameter_values,
+            input_parameter_names=parameters.names,
+            protocol=dataset,
+        )
+        problem = pybop.FittingProblem(simulator, parameters, dataset)
         cost = pybop.RootMeanSquaredError(problem)
 
-        # Select optimiser
-        optimiser = pybop.XNES
-
         # Build the optimisation problem
-        optim = optimiser(cost=cost)
+        optim = pybop.XNES(cost=cost)
         initial_cost = cost(parameters.get_initial_values())
 
         # Run the optimisation problem
@@ -316,12 +312,33 @@ class Test_SPM_Parameterisation:
         with np.testing.assert_raises(AssertionError):
             np.testing.assert_allclose(results.x, self.ground_truth, atol=2e-2)
 
-    def get_data(self, model, init_soc):
-        initial_state = {"Initial SoC": init_soc}
+    def get_data(self, model, parameter_values, include_ocv=False):
         experiment = pybamm.Experiment(
             [
                 "Discharge at 0.5C for 8 minutes (8 second period)",
                 "Charge at 0.5C for 8 minutes (8 second period)",
             ]
         )
-        return model.predict(initial_state=initial_state, experiment=experiment)
+        solution = pybamm.Simulation(
+            model, parameter_values=parameter_values, experiment=experiment
+        ).solve()
+        if not include_ocv:
+            return pybop.Dataset(
+                {
+                    "Time [s]": solution["Time [s]"].data,
+                    "Current function [A]": solution["Current [A]"].data,
+                    "Voltage [V]": self.noisy(
+                        solution["Voltage [V]"].data, self.sigma0
+                    ),
+                }
+            )
+        return pybop.Dataset(
+            {
+                "Time [s]": solution["Time [s]"].data,
+                "Current function [A]": solution["Current [A]"].data,
+                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma0),
+                "Bulk open-circuit voltage [V]": self.noisy(
+                    solution["Bulk open-circuit voltage [V]"].data, self.sigma0
+                ),
+            }
+        )

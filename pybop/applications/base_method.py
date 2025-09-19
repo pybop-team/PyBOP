@@ -6,6 +6,7 @@ from pybamm import Interpolant as PybammInterpolant
 from scipy import interpolate
 
 import pybop
+from pybop.parameters.parameter import Inputs
 
 
 class BaseApplication:
@@ -101,11 +102,10 @@ class InverseOCV:
                 )
 
             def single_call(
-                self, inputs: pybop.Inputs | np.ndarray, calculate_grad: bool = False
+                self, inputs: Inputs, calculate_grad: bool = False
             ) -> float:
                 """Evaluate the cost for a single set of inputs."""
-                model_inputs = self._parameters.verify(inputs)
-                return np.abs(ocv_function(model_inputs["Root"]) - ocv_value)
+                return np.abs(ocv_function(inputs["Root"]) - ocv_value)
 
         # Minimise to find the stoichiometry
         options = pybop.SciPyMinimizeOptions(verbose=self.verbose)

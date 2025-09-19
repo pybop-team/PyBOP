@@ -15,7 +15,7 @@ def problem(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
     Parameters
     ----------
     problem : object
-        Problem object with dataset and signal attributes.
+        Problem object with dataset and output_variables attributes.
     problem_inputs : Inputs
         Optimised (or example) parameter values.
     show : bool, optional
@@ -30,10 +30,8 @@ def problem(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
     plotly.graph_objs.Figure
         The Plotly figure object for the scatter plot.
     """
-    if problem_inputs is None:
-        problem_inputs = problem.parameters.to_dict()
-    else:
-        problem_inputs = problem.parameters.verify(problem_inputs)
+    if not isinstance(problem_inputs, dict):
+        problem_inputs = problem.parameters.to_dict(problem_inputs)
 
     # Extract the time data and evaluate the model's output and target values
     domain = problem.domain
@@ -43,21 +41,21 @@ def problem(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
 
     # Create a plot for each output
     figure_list = []
-    for signal in problem.signal:
+    for var in problem.output_variables:
         # Create a plot dictionary
         plot_dict = StandardPlot(
             layout_options=dict(
                 title="Scatter Plot",
                 xaxis_title="Time / s",
-                yaxis_title=StandardPlot.remove_brackets(signal),
+                yaxis_title=StandardPlot.remove_brackets(var),
             )
         )
 
         model_trace = plot_dict.create_trace(
             x=model_output[domain]
             if domain in model_output.keys()
-            else domain_data[: len(model_output[signal])],
-            y=model_output[signal],
+            else domain_data[: len(model_output[var])],
+            y=model_output[var],
             name="Optimised" if isinstance(problem, DesignProblem) else "Model",
             mode="markers" if isinstance(problem, MultiFittingProblem) else "lines",
             showlegend=True,
@@ -66,23 +64,23 @@ def problem(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
 
         target_trace = plot_dict.create_trace(
             x=domain_data,
-            y=target_output[signal],
+            y=target_output[var],
             name="Reference",
             mode="markers",
             showlegend=True,
         )
         plot_dict.traces.append(target_trace)
 
-        if isinstance(problem, FittingProblem) and len(model_output[signal]) == len(
-            target_output[signal]
+        if isinstance(problem, FittingProblem) and len(model_output[var]) == len(
+            target_output[var]
         ):
             # Compute the standard deviation as proxy for uncertainty
-            plot_dict.sigma = np.std(model_output[signal] - target_output[signal])
+            plot_dict.sigma = np.std(model_output[var] - target_output[var])
 
             # Convert x and upper and lower limits into lists to create a filled trace
             x = domain_data.tolist()
-            y_upper = (model_output[signal] + plot_dict.sigma).tolist()
-            y_lower = (model_output[signal] - plot_dict.sigma).tolist()
+            y_upper = (model_output[var] + plot_dict.sigma).tolist()
+            y_lower = (model_output[var] - plot_dict.sigma).tolist()
 
             fill_trace = plot_dict.create_trace(
                 x=x + x[::-1],

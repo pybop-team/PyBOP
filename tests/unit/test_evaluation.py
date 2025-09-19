@@ -18,13 +18,16 @@ class TestEvaluation:
         self.x_search = [1 / 0.25 * (self.x_model[0] - 0.375), np.log(self.x_model[1])]
 
     @pytest.fixture
+    def solver(self):
+        return pybamm.IDAKLUSolver(atol=5e-6, rtol=5e-6)
+
+    @pytest.fixture
     def model(self):
-        solver = pybamm.IDAKLUSolver(atol=5e-6, rtol=5e-6)
-        return pybop.lithium_ion.SPM(solver=solver)
+        return pybamm.lithium_ion.SPM()
 
     @pytest.fixture
     def parameters(self):
-        parameters = pybop.Parameters(
+        return pybop.Parameters(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.5, 0.01),
@@ -39,19 +42,16 @@ class TestEvaluation:
                 transformation=pybop.LogTransformation(),
             ),
         )
-        return parameters
 
     @pytest.fixture
     def experiment(self):
-        return pybamm.Experiment(
-            [
-                ("Discharge at 1C for 1 minutes (6 second period)"),
-            ]
-        )
+        return pybamm.Experiment(["Discharge at 1C for 1 minutes (6 second period)"])
 
     @pytest.fixture
-    def dataset(self, model, experiment):
-        solution = model.predict(experiment=experiment)
+    def dataset(self, model, experiment, solver):
+        solution = pybamm.Simulation(
+            model, experiment=experiment, solver=solver
+        ).solve()
         return pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -61,9 +61,14 @@ class TestEvaluation:
         )
 
     @pytest.fixture
-    def problem(self, model, parameters, dataset, request):
-        problem = pybop.FittingProblem(model, parameters, dataset)
-        return problem
+    def problem(self, model, parameters, dataset, solver, request):
+        simulator = pybop.pybamm.Simulator(
+            model,
+            input_parameter_names=parameters.names,
+            protocol=dataset,
+            solver=solver,
+        )
+        return pybop.FittingProblem(simulator, parameters, dataset)
 
     @pytest.fixture(
         params=[

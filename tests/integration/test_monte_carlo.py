@@ -30,22 +30,22 @@ class Test_Sampling_SPM:
         )
 
     @pytest.fixture
-    def model(self):
-        parameter_set = pybamm.ParameterValues("Chen2020")
+    def model_and_parameter_values(self):
+        model = pybamm.lithium_ion.SPM()
+        parameter_values = pybamm.ParameterValues("Chen2020")
         x = self.ground_truth
-        parameter_set.update(
+        parameter_values.update(
             {
                 "Negative electrode active material volume fraction": x[0],
                 "Positive electrode active material volume fraction": x[1],
             }
         )
-        model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
         # Fix the total lithium concentration to simplify the fitting problem
-        model.pybamm_model.param.Q_Li_particles_init = parameter_set.evaluate(
-            model.pybamm_model.param.Q_Li_particles_init
+        model.param.Q_Li_particles_init = parameter_values.evaluate(
+            model.param.Q_Li_particles_init
         )
-        return model
+        return model, parameter_values
 
     @pytest.fixture
     def parameters(self):
@@ -72,19 +72,19 @@ class Test_Sampling_SPM:
         return data + np.random.normal(0, sigma, len(data))
 
     @pytest.fixture
-    def log_posterior(self, model, parameters, init_soc):
-        # Form dataset
-        solution = self.get_data(model, init_soc)
-        dataset = pybop.Dataset(
-            {
-                "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, 0.002),
-            }
-        )
+    def log_posterior(self, model_and_parameter_values, parameters, init_soc):
+        model, parameter_values = model_and_parameter_values
+        parameter_values.set_initial_state(init_soc)
+        dataset = self.get_data(model, parameter_values)
 
         # Define the posterior to optimise
-        problem = pybop.FittingProblem(model, parameters, dataset)
+        simulator = pybop.pybamm.Simulator(
+            model,
+            parameter_values=parameter_values,
+            input_parameter_names=parameters.names,
+            protocol=dataset,
+        )
+        problem = pybop.FittingProblem(simulator, parameters, dataset)
         likelihood = pybop.GaussianLogLikelihood(problem, sigma0=0.002 * 1.2)
         return pybop.LogPosterior(likelihood)
 
@@ -132,14 +132,20 @@ class Test_Sampling_SPM:
         for i in range(len(x)):
             np.testing.assert_allclose(x[i], self.ground_truth, atol=1.6e-2)
 
-    def get_data(self, model, init_soc):
-        initial_state = {"Initial SoC": init_soc}
+    def get_data(self, model, parameter_values):
         experiment = pybamm.Experiment(
             [
-                (
-                    "Discharge at 0.5C for 4 minutes (12 second period)",
-                    "Charge at 0.5C for 4 minutes (12 second period)",
-                ),
+                "Discharge at 0.5C for 4 minutes (12 second period)",
+                "Charge at 0.5C for 4 minutes (12 second period)",
             ]
         )
-        return model.predict(initial_state=initial_state, experiment=experiment)
+        solution = pybamm.Simulation(
+            model, parameter_values=parameter_values, experiment=experiment
+        ).solve()
+        return pybop.Dataset(
+            {
+                "Time [s]": solution["Time [s]"].data,
+                "Current function [A]": solution["Current [A]"].data,
+                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, 0.002),
+            }
+        )

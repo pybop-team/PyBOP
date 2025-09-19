@@ -1,5 +1,3 @@
-import warnings
-
 import pybamm
 from pybamm import (
     Event,
@@ -13,65 +11,28 @@ from pybamm import (
 )
 from pybamm import lithium_ion as pybamm_lithium_ion
 from pybamm import t as pybamm_t
-from pybamm.input.parameters.lithium_ion.Xu2019 import (
-    nmc_ocp_Xu2019,
-)
 
 
-class BaseSPDiffusion(pybamm_lithium_ion.BaseModel):
+class SPDiffusion(pybamm_lithium_ion.BaseModel):
     """
     Diffusion model for a single, spherical particle representing a half-cell for GITT.
 
-    This model can be used with PyBOP through the `pybop.SPDiffusion` class.
+    Note: the working electrode is the positive electrode.
 
     Parameters
     ----------
     name : str, optional
         The name of the model.
-    electrode : str, optional
-        Either "positive" or "negative" depending on the type of electrode.
     **model_kwargs : optional
         Valid PyBaMM model option keys and their values, for example:
-        parameter_set : pybamm.ParameterValues or dict, optional
-            The parameters for the model. If None, default parameters provided by PyBaMM are used.
-        geometry : dict, optional
-            The geometry definitions for the model. If None, default geometry from PyBaMM is used.
-        submesh_types : dict, optional
-            The types of submeshes to use. If None, default submesh types from PyBaMM are used.
-        var_pts : dict, optional
-            The discretization points for each variable in the model. If None, default points from PyBaMM are used.
-        spatial_methods : dict, optional
-            The spatial methods used for discretization. If None, default spatial methods from PyBaMM are used.
-        solver : pybamm.Solver, optional
-            The solver to use for simulating the model. If None, the default solver from PyBaMM is used.
-        build : bool, optional
-            If True, the model is built upon creation (default: False).
         options : dict, optional
             A dictionary of options to customise the behaviour of the PyBaMM model.
+        build : bool, optional
+            If True, the model is built upon creation (default: False).
     """
 
-    def __init__(
-        self,
-        name="Single Particle Diffusion Model",
-        electrode="negative",
-        **model_kwargs,
-    ):
-        unused_keys = []
-        for key in model_kwargs.keys():
-            if key not in ["build", "parameter_set", "options"]:
-                unused_keys.append(key)
-        if model_kwargs.get("build", True) is False:
-            unused_keys.append("build")
-        if model_kwargs.get("options", None) is not None:
-            for key in model_kwargs["options"].keys():
-                unused_keys.append("options[" + key + "]")
-        if any(unused_keys):
-            unused_kwargs_warning = f"The input model_kwargs {unused_keys} are not currently used by the SP Diffusion Model."
-            warnings.warn(unused_kwargs_warning, UserWarning, stacklevel=2)
-
-        super().__init__(options={}, name=name, build=True)
-
-        pybamm.citations.register("Xu2019")  # for the OCP
+    def __init__(self, name="Single Particle Diffusion Model", **model_kwargs):
+        super().__init__(name=name, **model_kwargs)
 
         ######################
         # Variables
@@ -130,10 +91,7 @@ class BaseSPDiffusion(pybamm_lithium_ion.BaseModel):
         self.rhs[sto] = pybamm.div(pybamm.grad(sto) / self.tau_d(sto))
 
         # Boundary conditions must be provided for equations with spatial derivatives
-        if electrode == "positive":
-            j = -I / (3 * Q_th)
-        else:
-            j = I / (3 * Q_th)
+        j = -I / (3 * Q_th)
         self.boundary_conditions[sto] = {
             "left": (Scalar(0), "Neumann"),
             "right": (-self.tau_d(sto_surf) * j, "Neumann"),
@@ -210,17 +168,9 @@ class BaseSPDiffusion(pybamm_lithium_ion.BaseModel):
         pybamm.logger.info(f"Finish building {self.name}")
 
     @property
-    def default_parameter_values(self):
-        parameter_dictionary = {
-            "Nominal cell capacity [A.h]": 0.0024,
-            "Current function [A]": 0.0024,
-            "Initial stoichiometry": 0.9,
-            "Electrode OCP [V]": nmc_ocp_Xu2019,
-            "Theoretical electrode capacity [A.s]": 15,
-            "Particle diffusion time scale [s]": 3000,
-            "Series resistance [Ohm]": 1,
-        }
-        return ParameterValues(values=parameter_dictionary)
+    def default_parameter_values(self) -> ParameterValues:
+        param = ParameterValues("Xu2019")
+        return self.create_grouped_parameters(param)
 
     @property
     def default_quick_plot_variables(self):
@@ -250,74 +200,103 @@ class BaseSPDiffusion(pybamm_lithium_ion.BaseModel):
         return {"particle": pybamm.FiniteVolume()}
 
     @staticmethod
-    def apply_parameter_grouping(parameter_set, electrode) -> dict:
+    def create_grouped_parameters(parameter_values: ParameterValues) -> ParameterValues:
         """
-        A function to create an electrode parameter set from a standard
-        PyBaMM parameter set.
+        Create a parameter set for the Single Particle Diffusion Model from a
+        PyBaMM lithium-ion ParameterValues object.
+
+        Note: the working electrode is the positive electrode.
 
         Parameters
         ----------
-        parameter_set : Union[dict, pybamm.ParameterValues, pybamm.ParameterValues]
-            A dict-like object containing the parameter values.
-        electrode : str
-            Either "positive" or "negative" for the type of electrode.
+        parameter_values : pybamm.ParameterValues
+            Parameters and their corresponding values.
 
         Returns
         -------
-        dict
-            A dictionary of the grouped parameters.
+        parameter_values : pybamm.ParameterValues
+            A new set of parameters and their values.
         """
+        param = parameter_values
+
         # Unpack physical parameters
-        F = parameter_set["Faraday constant [C.mol-1]"]
-        if electrode == "positive":
-            alpha = parameter_set["Positive electrode active material volume fraction"]
-            c_max = parameter_set[
-                "Maximum concentration in positive electrode [mol.m-3]"
-            ]
-            L = parameter_set["Positive electrode thickness [m]"]
-            R = parameter_set["Positive particle radius [m]"]
-            D = parameter_set["Positive particle diffusivity [m2.s-1]"]
-            sto_init = (
-                parameter_set["Initial concentration in positive electrode [mol.m-3]"]
-                / c_max
-            )
-            ocp = parameter_set["Positive electrode OCP [V]"]
-        elif electrode == "negative":
-            alpha = parameter_set["Negative electrode active material volume fraction"]
-            c_max = parameter_set[
-                "Maximum concentration in negative electrode [mol.m-3]"
-            ]
-            L = parameter_set["Negative electrode thickness [m]"]
-            R = parameter_set["Negative particle radius [m]"]
-            D = parameter_set["Negative particle diffusivity [m2.s-1]"]
-            sto_init = (
-                parameter_set["Initial concentration in negative electrode [mol.m-3]"]
-                / c_max
-            )
-            ocp = parameter_set["Negative electrode OCP [V]"]
-        else:
-            raise ValueError(
-                f"Unrecognised electrode type: {electrode}, "
-                'expecting either "positive" or "negative".'
-            )
+        F = param["Faraday constant [C.mol-1]"]
+        alpha = param["Positive electrode active material volume fraction"]
+        c_max = param["Maximum concentration in positive electrode [mol.m-3]"]
+        L = param["Positive electrode thickness [m]"]
+        R = param["Positive particle radius [m]"]
+        D = param["Positive particle diffusivity [m2.s-1]"]
+        sto_init = (
+            param["Initial concentration in positive electrode [mol.m-3]"] / c_max
+        )
+        ocp = param["Positive electrode OCP [V]"]
 
         # Compute the cell area
-        A = parameter_set["Electrode height [m]"] * parameter_set["Electrode width [m]"]
+        A = param["Electrode height [m]"] * param["Electrode width [m]"]
 
         # Grouped parameters
         Q_th = F * alpha * c_max * L * A
         tau_d = R**2 / D
 
-        return ParameterValues(
-            {
-                "Nominal cell capacity [A.h]": parameter_set[
-                    "Nominal cell capacity [A.h]"
-                ],
-                "Current function [A]": parameter_set["Current function [A]"],
-                "Initial stoichiometry": sto_init,
-                "Electrode OCP [V]": ocp,
-                "Theoretical electrode capacity [A.s]": Q_th,
-                "Particle diffusion time scale [s]": tau_d,
-                "Series resistance [Ohm]": 1,
-            }
-        )
+        parameter_dictionary = {
+            "Nominal cell capacity [A.h]": param["Nominal cell capacity [A.h]"],
+            "Current function [A]": param["Current function [A]"],
+            "Initial stoichiometry": sto_init,
+            "Electrode OCP [V]": ocp,
+            "Theoretical electrode capacity [A.s]": Q_th,
+            "Particle diffusion time scale [s]": tau_d,
+            "Series resistance [Ohm]": 1,
+        }
+        parameter_values = ParameterValues(values=parameter_dictionary)
+        parameter_values._set_initial_state = set_initial_state  # noqa: SLF001
+        return parameter_values
+
+
+def set_initial_state(
+    initial_value,
+    parameter_values,
+    direction=None,
+    param=None,
+    inplace=True,
+    options=None,
+    inputs=None,
+    tol=1e-6,
+):
+    """
+    Set the value of the initial state of charge.
+
+    Parameters
+    ----------
+    initial_value : float
+        Target initial value.
+        If float, interpreted as SOC, must be between 0 and 1.
+        If string e.g. "4 V", interpreted as voltage, must be between V_min and V_max.
+    parameter_values : :class:`pybamm.ParameterValues`
+        Parameters and their corresponding values.
+    param : :class:`pybamm.LithiumIonParameters`, optional
+        The symbolic parameter set to use for the simulation.
+        If not provided, the default parameter set will be used.
+    inplace: bool, optional
+        If True, replace the parameters values in place. Otherwise, return a new set of
+        parameter values. Default is True.
+    options : dict-like, optional
+        A dictionary of options to be passed to the model, see
+        :class:`pybamm.BatteryModelOptions`.
+    inputs : dict, optional
+        A dictionary of input parameters to pass to the model when solving.
+    tol : float, optional
+        The tolerance for the solver used to compute the initial stoichiometries.
+        A lower value results in higher precision but may increase computation time.
+        Default is 1e-6.
+    """
+    parameter_values = parameter_values if inplace else parameter_values.copy()
+
+    if isinstance(initial_value, int | float):
+        if not 0 <= initial_value <= 1:
+            raise ValueError("Initial SOC should be between 0 and 1")
+        parameter_values["Initial SoC"] = initial_value
+
+    else:
+        raise ValueError("Initial value must be a float between 0 and 1.")
+
+    return parameter_values

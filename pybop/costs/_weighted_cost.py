@@ -82,10 +82,10 @@ class WeightedCost(BaseCost):
 
         Parameters
         ----------
-        y : dict
-            The dictionary of predictions with keys designating the signals for fitting.
-        dy : np.ndarray, optional
-            The corresponding gradient with respect to the parameters for each signal.
+        y : dict | DeferredPrediction
+            The dictionary of predictions with keys designating the output variables for fitting.
+        dy : np.ndarray | DeferredPrediction, optional
+            The corresponding gradient with respect to the parameters for each output variable.
 
         Returns
         -------

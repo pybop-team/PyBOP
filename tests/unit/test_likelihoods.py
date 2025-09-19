@@ -13,14 +13,13 @@ class TestLikelihoods:
     pytestmark = pytest.mark.unit
 
     @pytest.fixture
-    def model(self, ground_truth):
-        model = pybop.lithium_ion.SPM()
-        model.parameter_set.update(
-            {
-                "Negative electrode active material volume fraction": ground_truth,
-            }
+    def model_and_parameter_values(self, ground_truth):
+        model = pybamm.lithium_ion.SPM()
+        parameter_values = model.default_parameter_values
+        parameter_values.update(
+            {"Negative electrode active material volume fraction": ground_truth}
         )
-        return model
+        return model, parameter_values
 
     @pytest.fixture
     def ground_truth(self):
@@ -38,15 +37,14 @@ class TestLikelihoods:
 
     @pytest.fixture
     def experiment(self):
-        return pybamm.Experiment(
-            [
-                ("Discharge at 1C for 1 minutes (5 second period)"),
-            ]
-        )
+        return pybamm.Experiment(["Discharge at 1C for 1 minutes (5 second period)"])
 
     @pytest.fixture
-    def dataset(self, model, experiment):
-        solution = model.predict(experiment=experiment)
+    def dataset(self, model_and_parameter_values, experiment):
+        model, parameter_values = model_and_parameter_values
+        solution = pybamm.Simulation(
+            model, parameter_values=parameter_values, experiment=experiment
+        ).solve()
         return pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -56,14 +54,29 @@ class TestLikelihoods:
         )
 
     @pytest.fixture
-    def one_signal_problem(self, model, parameters, dataset):
-        signal = ["Voltage [V]"]
-        return pybop.FittingProblem(model, parameters, dataset, signal=signal)
+    def one_signal_problem(self, model_and_parameter_values, parameters, dataset):
+        model, parameter_values = model_and_parameter_values
+        simulator = pybop.pybamm.Simulator(
+            model,
+            parameter_values=parameter_values,
+            input_parameter_names=parameters.names,
+            protocol=dataset,
+        )
+        return pybop.FittingProblem(simulator, parameters, dataset)
 
     @pytest.fixture
-    def two_signal_problem(self, model, parameters, dataset):
-        signal = ["Time [s]", "Voltage [V]"]
-        return pybop.FittingProblem(model, parameters, dataset, signal=signal)
+    def two_signal_problem(self, model_and_parameter_values, parameters, dataset):
+        model, parameter_values = model_and_parameter_values
+        output_variables = ["Time [s]", "Voltage [V]"]
+        simulator = pybop.pybamm.Simulator(
+            model,
+            parameter_values=parameter_values,
+            input_parameter_names=parameters.names,
+            protocol=dataset,
+        )
+        return pybop.FittingProblem(
+            simulator, parameters, dataset, output_variables=output_variables
+        )
 
     @pytest.mark.parametrize(
         "problem_name, n_outputs",

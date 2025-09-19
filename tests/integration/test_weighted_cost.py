@@ -24,8 +24,17 @@ class TestWeightedCost:
 
     @pytest.fixture
     def model(self):
-        parameter_set = pybamm.ParameterValues("Chen2020")
-        parameter_set.update(
+        model = pybamm.lithium_ion.SPM()
+        pybop.pybamm.add_variable_to_model(
+            model, "Gravimetric energy density [Wh.kg-1]"
+        )
+        pybop.pybamm.add_variable_to_model(model, "Volumetric energy density [Wh.m-3]")
+        return model
+
+    @pytest.fixture
+    def parameter_values(self):
+        parameter_values = pybamm.ParameterValues("Chen2020")
+        parameter_values.update(
             {
                 "Electrolyte density [kg.m-3]": Parameter("Separator density [kg.m-3]"),
                 "Negative electrode active material density [kg.m-3]": Parameter(
@@ -40,17 +49,19 @@ class TestWeightedCost:
                 "Positive electrode carbon-binder density [kg.m-3]": Parameter(
                     "Positive electrode density [kg.m-3]"
                 ),
+                "Cell mass [kg]": pybop.pybamm.cell_mass(),
+                "Cell volume [m3]": pybop.pybamm.cell_volume(),
             },
             check_already_exists=False,
         )
         x = self.ground_truth
-        parameter_set.update(
+        parameter_values.update(
             {
                 "Negative electrode active material volume fraction": x[0],
                 "Positive electrode active material volume fraction": x[1],
             }
         )
-        return pybop.lithium_ion.SPM(parameter_set=parameter_set)
+        return parameter_values
 
     @pytest.fixture
     def parameters(self):
@@ -66,10 +77,6 @@ class TestWeightedCost:
                 # no bounds
             ),
         )
-
-    @pytest.fixture(params=[0.4])
-    def init_soc(self, request):
-        return request.param
 
     @pytest.fixture(
         params=[
@@ -88,19 +95,18 @@ class TestWeightedCost:
         return data + np.random.normal(0, sigma, len(data))
 
     @pytest.fixture
-    def weighted_fitting_cost(self, model, parameters, cost_class, init_soc):
-        # Form dataset
-        solution = self.get_data(model, init_soc)
-        dataset = pybop.Dataset(
-            {
-                "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma0),
-            }
-        )
+    def weighted_fitting_cost(self, model, parameter_values, parameters, cost_class):
+        parameter_values.set_initial_state(0.4)
+        dataset = self.get_data(model, parameter_values)
 
         # Define the cost to optimise
-        problem = pybop.FittingProblem(model, parameters, dataset)
+        simulator = pybop.pybamm.Simulator(
+            model,
+            parameter_values=parameter_values,
+            input_parameter_names=parameters.names,
+            protocol=dataset,
+        )
+        problem = pybop.FittingProblem(simulator, parameters, dataset)
         costs = []
         for cost in cost_class:
             if issubclass(cost, pybop.LogPosterior):
@@ -138,19 +144,15 @@ class TestWeightedCost:
                 assert initial_cost < results.best_cost
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
 
-    @pytest.fixture(
-        params=[
-            (
-                pybop.GravimetricEnergyDensity,
-                pybop.VolumetricEnergyDensity,
-            )
+    @pytest.fixture
+    def design_targets(self):
+        return [
+            "Gravimetric energy density [Wh.kg-1]",
+            "Volumetric energy density [Wh.m-3]",
         ]
-    )
-    def design_cost(self, request):
-        return request.param
 
     @pytest.fixture
-    def weighted_design_cost(self, model, design_cost):
+    def weighted_design_cost(self, model, parameter_values, design_targets):
         initial_state = {"Initial SoC": 1.0}
         parameters = pybop.Parameters(
             pybop.Parameter(
@@ -165,13 +167,19 @@ class TestWeightedCost:
             ),
         )
         experiment = pybamm.Experiment(
-            ["Discharge at 1C until 3.5 V (5 seconds period)"],
+            ["Discharge at 1C until 3.5 V (5 seconds period)"]
         )
-
+        simulator = pybop.pybamm.Simulator(
+            model,
+            parameter_values=parameter_values,
+            input_parameter_names=parameters.names,
+            protocol=experiment,
+            initial_state=initial_state,
+        )
         problem = pybop.DesignProblem(
-            model, parameters, experiment=experiment, initial_state=initial_state
+            simulator, parameters, output_variables=design_targets
         )
-        costs = [cost(problem) for cost in design_cost]
+        costs = [pybop.DesignCost(problem, target=target) for target in design_targets]
 
         return pybop.WeightedCost(*costs, weights=[1.0, 0.1])
 
@@ -188,14 +196,20 @@ class TestWeightedCost:
         for i, _ in enumerate(results.x):
             assert results.x[i] > initial_values[i]
 
-    def get_data(self, model, init_soc):
-        initial_state = {"Initial SoC": init_soc}
+    def get_data(self, model, parameter_values):
         experiment = pybamm.Experiment(
             [
-                (
-                    "Discharge at 0.5C for 3 minutes (4 second period)",
-                    "Charge at 0.5C for 3 minutes (4 second period)",
-                ),
+                "Discharge at 0.5C for 3 minutes (4 second period)",
+                "Charge at 0.5C for 3 minutes (4 second period)",
             ]
         )
-        return model.predict(initial_state=initial_state, experiment=experiment)
+        solution = pybamm.Simulation(
+            model, parameter_values=parameter_values, experiment=experiment
+        ).solve()
+        return pybop.Dataset(
+            {
+                "Time [s]": solution["Time [s]"].data,
+                "Current function [A]": solution["Current [A]"].data,
+                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma0),
+            }
+        )

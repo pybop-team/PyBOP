@@ -24,16 +24,28 @@ class TestTheveninParameterisation:
 
     @pytest.fixture
     def model(self):
+        return pybamm.equivalent_circuit.Thevenin()
+
+    @pytest.fixture
+    def parameter_values(self, model):
         with open("examples/parameters/initial_ecm_parameters.json") as file:
-            parameter_set = pybamm.ParameterValues(json.load(file))
-        parameter_set.update(
+            parameter_values = pybamm.ParameterValues(json.load(file))
+        parameter_values.update(
+            {
+                "Open-circuit voltage [V]": model.default_parameter_values[
+                    "Open-circuit voltage [V]"
+                ]
+            },
+            check_already_exists=False,
+        )
+        parameter_values.update(
             {
                 "C1 [F]": 1000,
                 "R0 [Ohm]": self.ground_truth[0],
                 "R1 [Ohm]": self.ground_truth[1],
             }
         )
-        return pybop.empirical.Thevenin(parameter_set=parameter_set)
+        return parameter_values
 
     @pytest.fixture
     def parameters(self):
@@ -53,16 +65,8 @@ class TestTheveninParameterisation:
         )
 
     @pytest.fixture
-    def dataset(self, model):
-        # Form dataset
-        solution = self.get_data(model)
-        return pybop.Dataset(
-            {
-                "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": solution["Voltage [V]"].data,
-            }
-        )
+    def dataset(self, model, parameter_values):
+        return self.get_data(model, parameter_values)
 
     @pytest.mark.parametrize(
         "cost_class",
@@ -80,10 +84,23 @@ class TestTheveninParameterisation:
         ],
     )
     def test_optimisers_on_thevenin_model(
-        self, model, parameters, dataset, cost_class, optimiser, method
+        self,
+        model,
+        parameter_values,
+        parameters,
+        dataset,
+        cost_class,
+        optimiser,
+        method,
     ):
+        simulator = pybop.pybamm.Simulator(
+            model,
+            parameter_values=parameter_values,
+            input_parameter_names=parameters.names,
+            protocol=dataset,
+        )
         # Define the cost to optimise
-        problem = pybop.FittingProblem(model, parameters, dataset)
+        problem = pybop.FittingProblem(simulator, parameters, dataset)
         cost = cost_class(problem)
 
         x0 = cost.parameters.get_initial_values()
@@ -121,14 +138,21 @@ class TestTheveninParameterisation:
         if isinstance(optimiser, pybop.SciPyMinimize):
             assert results.scipy_result.success is True
 
-    def get_data(self, model):
+    def get_data(self, model, parameter_values):
         experiment = pybamm.Experiment(
             [
-                (
-                    "Discharge at 0.5C for 6 minutes (12 seconds period)",
-                    "Rest for 20 seconds (4 seconds period)",
-                    "Charge at 0.5C for 6 minutes (12 seconds period)",
-                ),
+                "Discharge at 0.5C for 6 minutes (12 seconds period)",
+                "Rest for 20 seconds (4 seconds period)",
+                "Charge at 0.5C for 6 minutes (12 seconds period)",
             ]
         )
-        return model.predict(experiment=experiment)
+        solution = pybamm.Simulation(
+            model, parameter_values=parameter_values, experiment=experiment
+        ).solve()
+        return pybop.Dataset(
+            {
+                "Time [s]": solution["Time [s]"].data,
+                "Current function [A]": solution["Current [A]"].data,
+                "Voltage [V]": solution["Voltage [V]"].data,
+            }
+        )

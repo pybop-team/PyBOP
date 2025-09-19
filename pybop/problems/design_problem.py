@@ -1,13 +1,9 @@
 import warnings
 
 import numpy as np
-import pybamm
 
-from pybop import BaseModel, BaseProblem, Parameters
-from pybop.models.empirical.base_ecm import ECircuitModel
-from pybop.models.lithium_ion.base_echem import EChemBaseModel
-from pybop.parameters.parameter import Inputs
-from pybop.parameters.parameter_set import set_formation_concentrations
+from pybop import BaseProblem
+from pybop.parameters.parameter import Inputs, Parameters
 
 
 class DesignProblem(BaseProblem):
@@ -18,90 +14,47 @@ class DesignProblem(BaseProblem):
 
     Parameters
     ----------
-    model : object
-        The model to apply the design to.
+    simulator : pybop.pybamm.Simulator or pybop.pybamm.EISSimulator
+        The model and protocol combined into a simulator object.
     parameters : pybop.Parameter or pybop.Parameters
         An object or list of the parameters for the problem.
-    experiment : object
-        The experimental setup to apply the model to.
-    check_model : bool, optional
-        Flag to indicate if the model parameters should be checked for feasibility each iteration (default: True).
-    signal : list[str], optional
-        A list of variables to analyse (default: ["Voltage [V]"]).
+    output_variables : list[str], optional
+        Output variables to return in the solution (default: ["Voltage [V]"]).
     domain : str, optional
         The name of the domain (default: "Time [s]").
-    additional_variables : list[str], optional
-        Additional variables to observe and store in the solution (default additions are: ["Time [s]", "Current [A]"]).
-    initial_state : dict, optional
-        A valid initial state (default: {"Initial SoC": 1.0}).
     """
 
     def __init__(
         self,
-        model: BaseModel,
+        simulator,
         parameters: Parameters,
-        experiment: pybamm.Experiment | None,
-        check_model: bool = True,
-        signal: list[str] | None = None,
+        output_variables: list[str] | None = None,
         domain: str | None = None,
-        additional_variables: list[str] | None = None,
-        initial_state: dict | None = None,
     ):
-        super().__init__(
-            parameters=parameters,
-            model=model,
-            check_model=check_model,
-            signal=signal,
-            domain=domain,
-            additional_variables=additional_variables,
-            initial_state=initial_state,
+        output_variables = list(
+            set((output_variables or ["Voltage [V]"]) + ["Time [s]"])
         )
-        self.experiment = experiment
+        super().__init__(
+            simulator=simulator,
+            parameters=parameters,
+            output_variables=output_variables,
+            domain=domain,
+        )
+        self.simulator.use_formation_concentrations = True
         self.warning_patterns = [
             "Ah is greater than",
             "Non-physical point encountered",
         ]
 
-        # Add "Current" to the variable list
-        self.additional_variables.extend([self.domain, "Current [A]"])
-        self.additional_variables = list(set(self.additional_variables))
-
         # Add an example dataset for plot comparison
         sol = self.evaluate(self.parameters.to_dict("initial"))
         self._domain_data = sol[self.domain]
-        self._target = {key: sol[key] for key in self.signal}
+        self._target = {key: sol[key] for key in self.output_variables}
         self._dataset = None
-
-    def set_initial_state(self, initial_state: dict):
-        """
-        Set the initial state to be applied to evaluations of the problem.
-
-        Parameters
-        ----------
-        initial_state : dict, optional
-            A valid initial state (default: None).
-        """
-        if initial_state is None:
-            if isinstance(self.model, ECircuitModel):
-                initial_state = {"Initial SoC": self.model.parameter_set["Initial SoC"]}
-            else:
-                initial_state = {"Initial SoC": 1.0}  # default value
-        elif "Initial open-circuit voltage [V]" in initial_state.keys():
-            warnings.warn(
-                "It is usually better to define an initial state of charge as the "
-                "initial_state for a DesignProblem because this state will scale with "
-                "design properties such as the capacity of the battery, as opposed to the "
-                "initial open-circuit voltage which may correspond to a different state "
-                "of charge for each design.",
-                UserWarning,
-                stacklevel=1,
-            )
-
-        self.initial_state = initial_state
 
     def evaluate(self, inputs: Inputs):
         """
-        Evaluate the model with the given parameters and return the signal.
+        Evaluate the model with the given parameters and return the output variables.
 
         Parameters
         ----------
@@ -113,14 +66,6 @@ class DesignProblem(BaseProblem):
         y : np.ndarray
             The model output y(t) simulated with inputs.
         """
-        inputs = self.parameters.verify(inputs)
-
-        # Update the active parameter set
-        parameter_set = self.model.parameter_set
-        if isinstance(self._model, EChemBaseModel):
-            set_formation_concentrations(parameter_set)
-        parameter_set.update(inputs)
-
         try:
             with warnings.catch_warnings():
                 for pattern in self.warning_patterns:
@@ -128,19 +73,18 @@ class DesignProblem(BaseProblem):
                         "error", category=UserWarning, message=pattern
                     )
 
-                sol = self._model.predict(
-                    parameter_set=parameter_set,
-                    experiment=self.experiment,
-                    initial_state=self.initial_state,
-                )
+                sol = self._simulator.solve(inputs=inputs)
 
         # Catch infeasible solutions and return infinity
         except (UserWarning, Exception) as e:
             if self.verbose:
                 print(f"Ignoring this sample due to: {e}")
             return {
-                signal: np.asarray(np.ones(2) * -np.inf)
-                for signal in self.output_variables
+                output_variables: np.asarray(np.ones(2) * -np.inf)
+                for output_variables in self.output_variables
             }
 
-        return {signal: sol[signal].data for signal in self.output_variables}
+        return {
+            output_variables: sol[output_variables].data
+            for output_variables in self.output_variables
+        }

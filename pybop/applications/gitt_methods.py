@@ -11,7 +11,7 @@ class GITTPulseFit(BaseApplication):
     """
     Fit the diffusion timescale of one pulse from a galvanostatic intermittent
     titration technique (GITT) measurement using the diffusion model for a single,
-    spherical particle representing one electrode.
+    spherical particle representing the working electrode.
 
     The cost function requires a "domain"-based weighting to fit (possibly non-uniform)
     data consistently across the observed time period.
@@ -21,10 +21,8 @@ class GITTPulseFit(BaseApplication):
     gitt_pulse : pybop.Dataset
         A dataset containing the "Time [s]", "Current function [A]" and "Voltage [V]"
         for one pulse obtained from a GITT measurement.
-    parameter_set : pybamm.ParameterValues
+    parameter_values : pybamm.ParameterValues
         A parameter set containing values for the parameters of the SPDiffusion model.
-    electrode : str, optional
-        Either "positive" or "negative" depending on the type of electrode.
     cost : pybop.BaseCost, optional
         The cost function to quantify the error (default: pybop.RootMeanSquaredError).
     optimiser : pybop.BaseOptimiser, optional
@@ -35,21 +33,17 @@ class GITTPulseFit(BaseApplication):
 
     def __init__(
         self,
-        parameter_set: ParameterValues,
-        electrode: str | None = "negative",
+        parameter_values: ParameterValues,
         cost: pybop.BaseCost | None = pybop.RootMeanSquaredError,
         optimiser: pybop.BaseOptimiser | None = pybop.SciPyMinimize,
         verbose: bool = True,
     ):
-        self.electrode = electrode
-        self.parameter_set = parameter_set
+        self.parameter_values = parameter_values
         self.parameters = pybop.Parameters(
             pybop.Parameter("Particle diffusion time scale [s]", bounds=[0, np.inf]),
             pybop.Parameter("Series resistance [Ohm]", bounds=[0, np.inf]),
         )
-        self.model = pybop.lithium_ion.SPDiffusion(
-            parameter_set=self.parameter_set, electrode=self.electrode, build=True
-        )
+        self.model = pybop.lithium_ion.SPDiffusion(build=True)
         self.problem = None
         self.cost = cost
         self.verbose = verbose
@@ -61,20 +55,22 @@ class GITTPulseFit(BaseApplication):
         # Update starting point
         self.parameters.update(
             initial_values=[
-                self.parameter_set["Particle diffusion time scale [s]"],
-                self.parameter_set["Series resistance [Ohm]"],
+                self.parameter_values["Particle diffusion time scale [s]"],
+                self.parameter_values["Series resistance [Ohm]"],
             ]
-        )
-        self.model.set_initial_state(
-            initial_state={
-                "Initial stoichiometry": self.parameter_set["Initial stoichiometry"]
-            },
-            inputs=self.parameters.to_dict(),
         )
 
         # Define the cost
+        simulator = pybop.pybamm.Simulator(
+            self.model,
+            parameter_values=self.parameter_values,
+            input_parameter_names=self.parameters.names,
+            protocol=gitt_pulse,
+        )
         self.problem = pybop.FittingProblem(
-            model=self.model, parameters=self.parameters, dataset=gitt_pulse
+            simulator=simulator,
+            parameters=self.parameters,
+            dataset=gitt_pulse,
         )
         cost = self.cost(self.problem, weighting="domain")
 
@@ -82,7 +78,7 @@ class GITTPulseFit(BaseApplication):
         options = pybop.SciPyMinimizeOptions(verbose=self.verbose, tol=1e-8)
         self.optim = self.optimiser(cost=cost, options=options)
         self.results = self.optim.run()
-        self.parameter_set.update(self.parameters.to_dict(self.results.x))
+        self.parameter_values.update(self.parameters.to_dict(self.results.x))
 
         # pybop.plot.problem(problem=problem, problem_inputs=self.results.x)
 
@@ -101,10 +97,8 @@ class GITTFit(BaseApplication):
         for a GITT measurement.
     pulse_index : list[np.ndarray]
         A nested list of integers representing the indices of each pulse in the dataset.
-    parameter_set : pybamm.ParameterValues
+    parameter_values : pybamm.ParameterValues
         A parameter set containing values for the parameters of the SPDiffusion model.
-    electrode : str, optional
-        Either "positive" or "negative" depending on the type of electrode.
     cost : pybop.BaseCost, optional
         The cost function to quantify the error (default: pybop.RootMeanSquaredError).
     optimiser : pybop.BaseOptimiser, optional
@@ -117,22 +111,19 @@ class GITTFit(BaseApplication):
         self,
         gitt_dataset: pybop.Dataset,
         pulse_index: list[np.ndarray],
-        parameter_set: ParameterValues,
-        electrode: str | None = "negative",
+        parameter_values: ParameterValues,
         cost: pybop.BaseCost | None = pybop.RootMeanSquaredError,
         optimiser: pybop.BaseOptimiser | None = pybop.SciPyMinimize,
         verbose: bool = False,
     ):
         self.gitt_dataset = gitt_dataset
         self.pulse_index = pulse_index
-        self.parameter_set = parameter_set
-        self.electrode = electrode
+        self.parameter_values = parameter_values
         self.cost = cost
         self.optimiser = optimiser
         self.verbose = verbose
         self.gitt_pulse = pybop.GITTPulseFit(
-            parameter_set=self.parameter_set.copy(),
-            electrode=self.electrode,
+            parameter_values=self.parameter_values.copy(),
             cost=self.cost,
             optimiser=self.optimiser,
             verbose=self.verbose,
@@ -146,11 +137,11 @@ class GITTFit(BaseApplication):
         series_resistance = []
         final_costs = []
 
-        inverse_ocp = pybop.InverseOCV(self.parameter_set["Electrode OCP [V]"])
+        inverse_ocp = pybop.InverseOCV(self.parameter_values["Electrode OCP [V]"])
 
         for index in self.pulse_index:
             # Estimate the initial stoichiometry from the initial voltage
-            self.gitt_pulse.parameter_set["Initial stoichiometry"] = inverse_ocp(
+            self.gitt_pulse.parameter_values["Initial stoichiometry"] = inverse_ocp(
                 self.gitt_dataset["Voltage [V]"][index[0]]
             )
 
@@ -169,13 +160,15 @@ class GITTFit(BaseApplication):
 
                 # Log the results
                 diffusion_time.append(
-                    self.gitt_pulse.parameter_set["Particle diffusion time scale [s]"]
+                    self.gitt_pulse.parameter_values[
+                        "Particle diffusion time scale [s]"
+                    ]
                 )
                 series_resistance.append(
-                    self.gitt_pulse.parameter_set["Series resistance [Ohm]"]
+                    self.gitt_pulse.parameter_values["Series resistance [Ohm]"]
                 )
                 stoichiometry.append(
-                    self.gitt_pulse.parameter_set["Initial stoichiometry"]
+                    self.gitt_pulse.parameter_values["Initial stoichiometry"]
                 )
                 final_costs.append(gitt_results.best_cost)
 
@@ -205,7 +198,7 @@ class GITTFit(BaseApplication):
         )
 
         # Update parameter set
-        self.parameter_set.update(
+        self.parameter_values.update(
             {
                 "Particle diffusion time scale [s]": np.mean(
                     self.parameter_data["Particle diffusion time scale [s]"],

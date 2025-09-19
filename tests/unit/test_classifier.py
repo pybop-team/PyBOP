@@ -14,14 +14,14 @@ class TestClassifier:
 
     @pytest.fixture
     def problem(self):
-        model = pybop.empirical.Thevenin()
+        model = pybamm.equivalent_circuit.Thevenin()
         experiment = pybamm.Experiment(
             [
                 "Discharge at 0.5C for 2 minutes (4 seconds period)",
                 "Charge at 0.5C for 2 minutes (4 seconds period)",
             ]
         )
-        solution = model.predict(experiment=experiment)
+        solution = pybamm.Simulation(model, experiment=experiment).solve()
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -36,7 +36,10 @@ class TestClassifier:
                 bounds=[1e-4, 0.1],
             ),
         )
-        return pybop.FittingProblem(model, parameters, dataset)
+        simulator = pybop.pybamm.Simulator(
+            model, input_parameter_names=parameters.names, protocol=dataset
+        )
+        return pybop.FittingProblem(simulator, parameters, dataset)
 
     def test_classify_using_hessian_invalid(self, problem):
         cost = pybop.SumSquaredError(problem)

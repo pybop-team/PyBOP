@@ -71,12 +71,13 @@ from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential, JointL
 #
 # Model classes
 #
-from .models.base_model import BaseModel
 from .models import lithium_ion
-from .models import empirical
 from .models._exponential_decay import ExponentialDecayModel
-from .models.base_model import TimeSeriesState
-from .models.base_model import Inputs
+
+#
+# PyBaMM utility classes
+#
+from . import pybamm
 
 #
 # Problem classes
@@ -99,13 +100,7 @@ from .costs.error_measures import (
     Minkowski,
     SumOfPower,
 )
-from .costs.design_costs import (
-    DesignCost,
-    GravimetricEnergyDensity,
-    VolumetricEnergyDensity,
-    GravimetricPowerDensity,
-    VolumetricPowerDensity,
-)
+from .costs.design_costs import DesignCost
 from .costs._likelihoods import (
     BaseLikelihood,
     GaussianLogLikelihood,

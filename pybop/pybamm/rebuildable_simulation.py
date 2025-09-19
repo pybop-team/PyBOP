@@ -1,12 +1,17 @@
-from copy import deepcopy
+from copy import copy, deepcopy
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pybamm
 
-from pybop import FailedSolution, Inputs, RecommendedSolver
+if TYPE_CHECKING:
+    from pybop.parameters.parameter import Inputs
+from pybop._dataset import Dataset
+from pybop._utils import FailedSolution, RecommendedSolver
+from pybop.pybamm.parameter_utils import set_formation_concentrations
 
 
-class RebuildableSimulation:
+class Simulator:
     """
     A class to automatically build/rebuild and solve a pybamm.Simulation for a given model and protocol.
 
@@ -22,27 +27,20 @@ class RebuildableSimulation:
     ----------
     model : pybamm.BaseModel
         The PyBaMM model to be used.
-    cost_names : list[str]
-        A list of the cost variable names.
-    input_parameter_names : list[str], optional
-        A list of the input parameter names.
     parameter_values : pybamm.ParameterValues, optional
         The parameter values to be used in the model.
+    input_parameter_names : list[str], optional
+        A list of the input parameter names.
     initial_state : dict, optional
         A valid initial state, e.g. `"Initial open-circuit voltage [V]"` or ``"Initial SoC"`.
         Defaults to None, indicating that the existing initial state of charge (for an ECM)
         or initial concentrations (for an EChem model) will be used.
-    t_eval : np.ndarray, optional
-        The time points to stop the solver at. These points should be used to inform the solver of
-        discontinuities in the solution.
-    t_interp : np.ndarray, optional
-        The time points at which to interpolate the solution. If None, no interpolation will be done.
-    experiment : pybamm.Experiment | string | list, optional
-        The experimental conditions under which to solve the model. If a string is passed, the
-        experiment is constructed as `pybamm.Experiment([experiment])`. If a list is passed, the
-        experiment is constructed as `pybamm.Experiment(experiment)`.
+    protocol : pybamm.Experiment | Dataset | np.ndarray | None
+        The protocol as an experiment, a 1D array of values or dataset containing (time) domain data.
     solver : pybamm.BaseSolver, optional
         The solver to use to solve the model. If None, uses `pybop.RecommendedSolver`.
+    output_variables : list, optional
+        A list of output variables to return.
     geometry : pybamm.Geometry, optional
         The geometry upon which to solve the model.
     submesh_types : dict, optional
@@ -57,43 +55,58 @@ class RebuildableSimulation:
     build_every_time : bool, optional
         If True, the model will be rebuilt every evaluation. Otherwise, the need to rebuild will be
         determined automatically.
+    use_formation_concentrations : bool, optional
+        If True and "Initial concentration in negative electrode [mol.m-3]" is in the parameter set,
+        the total quantity of lithium will be moved to the positive electrode prior to applying any
+        inputs or initial state (default: False).
     """
 
     def __init__(
         self,
         model: pybamm.BaseModel,
-        cost_names: list[str] = None,
-        input_parameter_names: list[str] | None = None,
         parameter_values: pybamm.ParameterValues | None = None,
+        input_parameter_names: str | list[str] | None = None,
         initial_state: dict | None = None,
-        t_eval: np.ndarray | None = None,
-        t_interp: np.ndarray | None = None,
-        experiment: pybamm.Experiment | None = None,
+        protocol: pybamm.Experiment | Dataset | np.ndarray | None = None,
         solver: pybamm.BaseSolver | None = None,
+        output_variables: list[str] | None = None,
         geometry: pybamm.Geometry | None = None,
         submesh_types: dict | None = None,
         var_pts: dict | None = None,
         spatial_methods: dict | None = None,
         discretisation_kwargs: dict | None = None,
         build_every_time: bool = False,
+        use_formation_concentrations: bool = False,
     ):
         # Core
         self._model = model
-        self._cost_names = cost_names
         self._parameter_values = (
             parameter_values.copy()
             if parameter_values is not None
             else model.default_parameter_values
         )
+        self.use_formation_concentrations = use_formation_concentrations
 
-        # Simulation Params
+        # Simulation params
         self._initial_state = self.convert_to_pybamm_initial_state(initial_state)
-        self._t_eval = [t_eval[0], t_eval[-1]] if t_eval is not None else None
-        self._t_interp = t_interp
-        self._experiment = experiment
+        self._experiment = None
+        self._t_eval = None
+        self._t_interp = None
+        self._set_protocol(protocol=protocol)
+
+        # Solver set-up
+        if solver is not None:
+            solver = solver.copy()
+        elif isinstance(self._model.default_solver, pybamm.DummySolver):
+            solver = self._model.default_solver
+        else:
+            solver = RecommendedSolver()
+        self._solver = solver
+        if not self._solver.supports_interp:
+            self._t_eval = self._t_interp
+            self._t_interp = None
 
         # Configuration
-        self._solver = solver.copy() if solver is not None else RecommendedSolver()
         self._geometry = geometry or model.default_geometry
         self._submesh_types = submesh_types or model.default_submesh_types
         self._var_pts = var_pts or model.default_var_pts
@@ -107,11 +120,61 @@ class RebuildableSimulation:
         self._calculate_sensitivities = False
 
         # Build
-        self._input_parameter_names = input_parameter_names
+        input_names = input_parameter_names or []
+        self._input_parameter_names = (
+            input_names if isinstance(input_names, list | None) else [input_names]
+        )
         self._requires_model_rebuild = self._determine_rebuild_requirement(
             build_every_time
         )
-        self._set_up_solution_method()
+        self._set_up_solution_method(output_variables=output_variables)
+
+    def _set_protocol(self, protocol: pybamm.Experiment | Dataset | np.ndarray | None):
+        """
+        Set up the protocol for the simulation.
+
+        Parameters
+        ----------
+        protocol : pybamm.Experiment | pybop.Dataset | np.ndarray | None
+            The protocol as an experiment, a 1D array of values or dataset containing (time) domain data.
+
+        Attributes
+        ----------
+        t_eval : np.ndarray, optional
+            The time points to stop the solver at. These points should be used to inform the solver of
+            discontinuities in the solution.
+        t_interp : np.ndarray, optional
+            The time points at which to interpolate the solution. If None, no interpolation will be done.
+        experiment : pybamm.Experiment | string | list, optional
+            The experimental conditions under which to solve the model.
+        """
+        if protocol is None:
+            self._experiment = None
+            self._t_eval = None
+            self._t_interp = None
+        elif isinstance(protocol, pybamm.Experiment):
+            self._experiment = protocol
+            self._t_eval = None
+            self._t_interp = None
+        elif isinstance(protocol, Dataset):
+            self._experiment = None
+            time_data = protocol[protocol.domain]
+            self._t_eval = [time_data[0], time_data[-1]]
+            self._t_interp = time_data
+            control = "Current function [A]"
+            if control in protocol.data.keys():
+                self._parameter_values[control] = pybamm.Interpolant(
+                    protocol["Time [s]"],
+                    protocol[control],
+                    pybamm.t,
+                )
+        else:
+            self._experiment = None
+            time_data = protocol
+            self._t_eval = [time_data[0], time_data[-1]]
+            self._t_interp = time_data
+        # else:
+        #     raise ValueError(f"Expected an experiment or a dataset. Received {type(protocol)}")
 
     def _determine_rebuild_requirement(self, build_every_time: bool | None) -> bool:
         """Determine if model needs rebuilding on each evaluation."""
@@ -122,6 +185,10 @@ class RebuildableSimulation:
 
         # All non-experiment protocols with an initial state require model rebuilding
         if self._experiment is None and self._initial_state is not None:
+            return True
+
+        # All protocols which require resetting to formation conditions require rebuiding
+        if self.use_formation_concentrations:
             return True
 
         # Test whether the model needs rebuilding by marking parameters as inputs
@@ -142,7 +209,7 @@ class RebuildableSimulation:
             return True
         return False
 
-    def convert_to_pybamm_initial_state(self, initial_state: dict):
+    def convert_to_pybamm_initial_state(self, initial_state: dict | None) -> None:
         """
         Convert an initial state of charge into a float and an initial open-circuit
         voltage into a string ending in "V".
@@ -163,7 +230,9 @@ class RebuildableSimulation:
         ValueError
             If the input is not a dictionary with a single, valid key.
         """
-        if len(initial_state) > 1:
+        if initial_state is None:
+            return None
+        elif len(initial_state) > 1:
             raise ValueError("Expecting only one initial state.")
         elif "Initial SoC" in initial_state.keys():
             return initial_state["Initial SoC"]
@@ -172,8 +241,13 @@ class RebuildableSimulation:
         else:
             raise ValueError(f'Unrecognised initial state: "{list(initial_state)[0]}"')
 
-    def _set_up_solution_method(self) -> None:
+    def _set_up_solution_method(
+        self, output_variables: list[str] | None = None
+    ) -> None:
         """Configure the mode of operation."""
+
+        # Speed up the solver with output_variables if provided
+        self._solver.output_variables = output_variables or []
 
         if self._experiment is not None:
             # Build if only building once, otherwise build on evalution
@@ -187,12 +261,6 @@ class RebuildableSimulation:
             # Remove all voltage-based events when not using an experiment
             self._model.events = [e for e in self._model.events if "[V]" not in e.name]
 
-            # Speed up the solver with output_variables when not using an experiment
-            if self._solver.output_variables == []:
-                """DISABLE until PyBaMM PR 5118 is resolved"""
-                # self._solver.output_variables = self._cost_names or []
-                pass
-
             # Build if only building once, otherwise build on evalution
             if not self._requires_model_rebuild:
                 self.build_model()
@@ -201,7 +269,9 @@ class RebuildableSimulation:
                 self._solve = self._solve_in_time_with_rebuild
 
     def solve(
-        self, inputs: Inputs | list[Inputs], calculate_sensitivities: bool = False
+        self,
+        inputs: "Inputs | None" = None,
+        calculate_sensitivities: bool = False,
     ) -> list[pybamm.Solution | FailedSolution]:
         """
         Run the simulation using the built model and solver.
@@ -213,41 +283,56 @@ class RebuildableSimulation:
 
         Returns
         -------
-        solution : list[pybamm.Solution | pybop.FailedSolution]
-            The pybamm solution object.
+        list[pybamm.Solution | pybop.FailedSolution] | pybamm.Solution | pybop.FailedSolution
+            A list of solution objects or one solution object.
         """
         # Convert and standardise inputs as a list of candidate dictionaries
-        inputs_list = inputs if isinstance(inputs, list) else [inputs]
-        self._calculate_sensitivities = calculate_sensitivities
+        inputs = inputs or {}
+        if isinstance(inputs, list):
+            inputs_list = inputs
+            return_as_list = True
+        else:
+            inputs_list = [inputs]
+            return_as_list = False
 
         # Check for expected input parameters
         if set(inputs_list[0].keys()) != set(self._input_parameter_names):
             raise ValueError(
                 "The inputs do not contain the expected parameters. "
                 f"The inputs keys are {list(inputs_list[0].keys())}, "
-                f"but the expected inputs are {self._parameter_names}."
+                f"but the expected inputs are {self._input_parameter_names}."
             )
 
-        # The underlying solve method is one of four methods set during initialisation
-        solutions = self._solve(inputs_list)
+        # Set whether to compute the sensitivities
+        self._calculate_sensitivities = calculate_sensitivities
 
-        return self._process_solutions(solutions)
+        # The underlying solve method is one of four methods set during initialisation
+        solutions = self._process_solutions(self._solve(inputs_list))
+
+        if return_as_list:
+            return solutions
+        return solutions[0]
 
     """ ______ ______ ATTRIBUTES FOR SOLVING IN TIME, WITHOUT AN EXPERIMENT ______ ______  """
 
-    def rebuild_model(self, inputs: Inputs) -> None:
+    def rebuild_model(self, inputs: "Inputs") -> None:
         """Update the parameter values and rebuild the model, if required."""
         if not self._requires_model_rebuild:
             # Parameter values will be passed to the solver as inputs
             return
 
         # Update the parameter values and build again
-
+        if self.use_formation_concentrations:
+            set_formation_concentrations(self._parameter_values)
         self._parameter_values.update(inputs)
         self.build_model()
 
     def build_model(self) -> None:
         """Build the model using the given parameter values."""
+        # Build pybamm model if not already built
+        if not self._model.built:
+            self._model.build_model()
+
         model = self._model.new_copy()
         geometry = deepcopy(self._geometry)
 
@@ -269,7 +354,7 @@ class RebuildableSimulation:
         self._solver = self._solver.copy()  # reset solver for new model
 
     def _solve_in_time_without_rebuild(
-        self, inputs: list[Inputs]
+        self, inputs: "list[Inputs]"
     ) -> list[pybamm.Solution]:
         """Solve in time without rebuilding the PyBaMM model."""
         if len(inputs) == 1:
@@ -277,7 +362,7 @@ class RebuildableSimulation:
         return self._pybamm_solve(inputs=inputs)
 
     def _solve_in_time_with_rebuild(
-        self, inputs: list[Inputs]
+        self, inputs: "list[Inputs]"
     ) -> list[pybamm.Solution]:
         """Solve in time, rebuilding the model for each set of inputs."""
         solutions = []
@@ -287,7 +372,7 @@ class RebuildableSimulation:
         return solutions
 
     def _pybamm_solve(
-        self, inputs: Inputs | list[Inputs] | None
+        self, inputs: "Inputs | list[Inputs] | None"
     ) -> pybamm.Solution | list[pybamm.Solution]:
         """A function that runs the simulation using the built model."""
         return self._solver.solve(
@@ -315,7 +400,7 @@ class RebuildableSimulation:
         )
 
     def _simulate_experiment_without_rebuild(
-        self, inputs: list[Inputs]
+        self, inputs: "list[Inputs]"
     ) -> list[pybamm.Solution]:
         """Simulate an experiment without rebuilding the PyBaMM model."""
         solutions = []
@@ -325,12 +410,14 @@ class RebuildableSimulation:
         return solutions
 
     def _simulate_experiment_with_rebuild(
-        self, inputs: list[Inputs]
+        self, inputs: "list[Inputs]"
     ) -> list[pybamm.Solution]:
         """Simulate an experiment, rebuilding the simulation for each set of inputs."""
         solutions = []
         for x in inputs:
             # Update parameters and create new simulation
+            if self.use_formation_concentrations:
+                set_formation_concentrations(self._parameter_values)
             self._parameter_values.update(x)
             sim = self._create_experiment_simulation()
             solutions.append(sim.solve(initial_soc=self._initial_state))
@@ -346,7 +433,7 @@ class RebuildableSimulation:
         for solution in solutions:
             if hasattr(solution, "termination") and solution.termination == "failure":
                 failed_solution = FailedSolution(
-                    self._cost_names, list(self._input_parameter_names)
+                    self._output_variables, list(self._input_parameter_names)
                 )
                 processed_solutions.append(failed_solution)
             else:
@@ -375,9 +462,33 @@ class RebuildableSimulation:
         return self._initial_state
 
     @property
+    def experiment(self):
+        return self._experiment
+
+    @property
     def solver(self):
         return self._solver
 
     @property
+    def output_variables(self):
+        return self._solver.output_variables
+
+    @output_variables.setter
+    def output_variables(self, value: list[str] | None):
+        self._set_up_solution_method(output_variables=value)
+
+    @property
     def requires_model_rebuild(self):
         return self._requires_model_rebuild
+
+    @property
+    def has_sensitivities(self):
+        return (
+            False
+            if (self._initial_state is not None or not self._solver.supports_interp)
+            else True
+        )
+
+    def copy(self):
+        """Return a copy of the simulation."""
+        return copy(self)

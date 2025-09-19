@@ -2,6 +2,7 @@ import logging
 from unittest.mock import call, patch
 
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
@@ -61,22 +62,19 @@ class TestPintsSamplers:
 
     @pytest.fixture
     def model(self):
-        return pybop.lithium_ion.SPM()
+        return pybamm.lithium_ion.SPM()
 
     @pytest.fixture
     def log_posterior(self, model, parameters, dataset):
-        problem = pybop.FittingProblem(
-            model,
-            parameters,
-            dataset,
+        simulator = pybop.pybamm.Simulator(
+            model, input_parameter_names=parameters.names, protocol=dataset
         )
+        problem = pybop.FittingProblem(simulator, parameters, dataset)
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.01)
         prior1 = pybop.Gaussian(0.7, 0.02)
         prior2 = pybop.Gaussian(0.6, 0.02)
         composed_prior = pybop.JointLogPrior(prior1, prior2)
-        log_posterior = pybop.LogPosterior(likelihood, composed_prior)
-
-        return log_posterior
+        return pybop.LogPosterior(likelihood, composed_prior)
 
     @pytest.fixture
     def chains(self):
@@ -168,11 +166,10 @@ class TestPintsSamplers:
                 bounds=[0.58, 0.62],
             )
         )
-        problem = pybop.FittingProblem(
-            model,
-            parameters,
-            dataset,
+        simulator = pybop.pybamm.Simulator(
+            model, input_parameter_names=parameters.names, protocol=dataset
         )
+        problem = pybop.FittingProblem(simulator, parameters, dataset)
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.01)
         log_posterior = pybop.LogPosterior(likelihood)
 

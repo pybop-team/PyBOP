@@ -1,4 +1,6 @@
 import warnings
+from copy import copy
+from typing import TYPE_CHECKING
 
 import casadi
 import numpy as np
@@ -6,11 +8,13 @@ import pybamm
 from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import spsolve
 
-from pybop import Inputs, SymbolReplacer
-from pybop.pybamm.rebuildable_simulation import RebuildableSimulation
+if TYPE_CHECKING:
+    from pybop.parameters.parameter import Inputs
+from pybop._utils import SymbolReplacer
+from pybop.pybamm.rebuildable_simulation import Simulator
 
 
-class EISSimulation:
+class EISSimulator:
     """
     A class to extend a PyBaMM model for EIS, automatically build/rebuild a pybamm.Simulation to obtain
     a built model which can be solved to compute the complex impedance for a given set of frequencies.
@@ -20,7 +24,7 @@ class EISSimulation:
     2. A pybamm model needs to be built and then run for each set of inputs, for example in the case
         where one of the inputs is a geometric parameter which requires a new mesh.
 
-    The logic for (1) and (2) occurs within the composed RebuildableSimulation and happens automatically.
+    The logic for (1) and (2) occurs within the composed Simulator and happens automatically.
     To override this logic, the argument `build_every_time` can be set to `True` which will force (2) to
     occur.
 
@@ -30,16 +34,16 @@ class EISSimulation:
         The PyBaMM model to be used.
     f_eval : list
         The frequencies at which to evaluate the impedance.
-    input_parameter_names : list[str], optional
-        A list of the input parameter names.
     parameter_values : pybamm.ParameterValues, optional
         The parameter values to be used in the model.
+    input_parameter_names : list[str], optional
+        A list of the input parameter names.
     initial_state : dict, optional
         A valid initial state, e.g. `"Initial open-circuit voltage [V]"` or ``"Initial SoC"`.
         Defaults to None, indicating that the existing initial state of charge (for an ECM)
         or initial concentrations (for an EChem model) will be used.
     solver : pybamm.BaseSolver, optional
-        The solver to simulate the composed RebuildableSimulation. If None, uses `pybop.RecommendedSolver`.
+        The solver to simulate the composed Simulator. If None, uses `pybop.RecommendedSolver`.
     geometry : pybamm.Geometry, optional
         The geometry upon which to solve the model.
     submesh_types : dict, optional
@@ -60,8 +64,8 @@ class EISSimulation:
         self,
         model: pybamm.BaseModel,
         f_eval: np.ndarray | list[float],
-        input_parameter_names: list[str] | None = None,
         parameter_values: pybamm.ParameterValues | None = None,
+        input_parameter_names: list[str] | None = None,
         initial_state: float | str | None = None,
         solver: pybamm.BaseSolver | None = None,
         geometry: pybamm.Geometry | None = None,
@@ -78,10 +82,10 @@ class EISSimulation:
         parameter_values["Current function [A]"] = 0
 
         # Set up a simulation
-        self._simulation = RebuildableSimulation(
+        self._simulation = Simulator(
             model,
-            input_parameter_names=input_parameter_names,
             parameter_values=parameter_values,
+            input_parameter_names=input_parameter_names,
             initial_state=initial_state,
             solver=solver,
             geometry=geometry,
@@ -171,13 +175,13 @@ class EISSimulation:
 
         return model
 
-    def _model_rebuild(self, inputs: Inputs) -> None:
+    def _model_rebuild(self, inputs: "Inputs") -> None:
         """Update the parameter values and rebuild the EIS model."""
         if self._simulation.requires_model_rebuild:
             self._simulation.rebuild_model(inputs=inputs)
         self._initialise_eis_matrices(inputs=inputs)
 
-    def _initialise_eis_matrices(self, inputs: Inputs) -> None:
+    def _initialise_eis_matrices(self, inputs: "Inputs") -> None:
         """
         Initialise the electrochemical impedance spectroscopy (EIS) simulation.
         This method sets up the mass matrix and solver, converts inputs to the appropriate format,
@@ -212,7 +216,7 @@ class EISSimulation:
         self.b[-1] = -1
 
     def solve(
-        self, inputs: Inputs, calculate_sensitivities: bool = False
+        self, inputs: "Inputs | None" = None, calculate_sensitivities: bool = False
     ) -> np.ndarray:
         """
         Run the EIS simulation to calculate impedance at all specified frequencies.
@@ -239,7 +243,7 @@ class EISSimulation:
 
         zs = [self.calculate_impedance(frequency) for frequency in self._f_eval]
 
-        return np.asarray(zs) * self.z_scale
+        return {"Impedance": np.asarray(zs) * self.z_scale}
 
     def calculate_impedance(self, frequency):
         """
@@ -279,3 +283,11 @@ class EISSimulation:
     @property
     def input_parameter_names(self):
         return self._simulation.input_parameter_names
+
+    @property
+    def has_sensitivities(self):
+        return False
+
+    def copy(self):
+        """Return a copy of the simulation."""
+        return copy(self)

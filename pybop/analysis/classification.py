@@ -40,7 +40,7 @@ def classify_using_hessian(
         )
 
     # Get a list of parameter names for use in the output message
-    names = list(parameters.keys())
+    names = parameters.names
 
     # Evaluate the cost for a grid of surrounding points
     costs = np.zeros((3, 3, 2))

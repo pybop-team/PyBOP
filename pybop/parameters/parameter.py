@@ -9,7 +9,6 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
-from pybop._utils import is_numeric
 from pybop.parameters.priors import BasePrior, Uniform
 from pybop.transformation.base_transformation import Transformation
 from pybop.transformation.transformations import (
@@ -335,6 +334,10 @@ class Parameters:
     def keys(self) -> Iterator[str]:
         """Iterate over parameter names."""
         return iter(self._parameters.keys())
+
+    @property
+    def names(self) -> list[str]:
+        return list(self._parameters.keys())
 
     def __iter__(self) -> Iterator[Parameter]:
         return iter(self._parameters.values())
@@ -751,27 +754,15 @@ class Parameters:
                 )
             return dict(zip(self._parameters.keys(), values_array, strict=False))
 
-    def verify(self, inputs: Inputs | None = None):
-        """
-        Verify that the inputs are an Inputs dictionary or numeric values
-        which can be used to construct an Inputs dictionary
-
-        Parameters
-        ----------
-        inputs : Inputs or numeric
-        """
-        if inputs is None or isinstance(inputs, dict):
-            return inputs
-        if isinstance(inputs, np.ndarray) and inputs.ndim == 0:
-            inputs = inputs[np.newaxis]
-        if (isinstance(inputs, list) and all(is_numeric(x) for x in inputs)) or all(
-            is_numeric(x) for x in list(inputs)
-        ):
-            return self.to_dict(inputs)
-        else:
-            raise TypeError(
-                f"Inputs must be a dictionary or numeric. Received {type(inputs)}"
-            )
+    def verify_inputs(self, inputs: Inputs) -> bool:
+        """Check if the inputs are valid parameters."""
+        valid = True
+        for name, param in self._parameters.items():
+            if param.bounds is not None:
+                input_value = inputs[name]
+                if input_value < param.bounds[0] or input_value > param.bounds[1]:
+                    valid = False
+        return valid
 
     def __repr__(self) -> str:
         param_summary = "\n".join(

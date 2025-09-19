@@ -23,19 +23,19 @@ class TestEISParameterisation:
 
     @pytest.fixture
     def model(self):
-        parameter_set = pybamm.ParameterValues("Chen2020")
+        return pybamm.lithium_ion.SPM(options={"surface form": "differential"})
+
+    @pytest.fixture
+    def parameter_values(self):
+        parameter_values = pybamm.ParameterValues("Chen2020")
         x = self.ground_truth
-        parameter_set.update(
+        parameter_values.update(
             {
                 "Negative electrode active material volume fraction": x[0],
                 "Positive electrode active material volume fraction": x[1],
             }
         )
-        return pybop.lithium_ion.SPM(
-            parameter_set=parameter_set,
-            eis=True,
-            options={"surface form": "differential"},
-        )
+        return parameter_values
 
     @pytest.fixture
     def parameters(self):
@@ -93,24 +93,20 @@ class TestEISParameterisation:
         return request.param
 
     @pytest.fixture
-    def optim(self, optimiser, model, parameters, cost, init_soc):
+    def optim(self, optimiser, model, parameter_values, parameters, cost, init_soc):
         n_frequency = 15
-        # Set frequency set
         f_eval = np.logspace(-4, 5, n_frequency)
-
-        # Form dataset
-        solution = self.get_data(model, init_soc, f_eval)
-        dataset = pybop.Dataset(
-            {
-                "Frequency [Hz]": f_eval,
-                "Current function [A]": np.ones(n_frequency) * 0.0,
-                "Impedance": self.noisy(solution["Impedance"], self.sigma0),
-            }
-        )
+        parameter_values.set_initial_state(init_soc)
+        dataset = self.get_data(model, parameter_values, f_eval)
 
         # Define the problem
-        signal = ["Impedance"]
-        problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
+        simulator = pybop.pybamm.EISSimulator(
+            model,
+            parameter_values=parameter_values,
+            input_parameter_names=parameters.names,
+            f_eval=dataset["Frequency [Hz]"],
+        )
+        problem = pybop.FittingProblem(simulator, parameters, dataset)
 
         # Construct the cost
         if cost is pybop.GaussianLogLikelihoodKnownSigma:
@@ -174,17 +170,22 @@ class TestEISParameterisation:
             assert initial_cost < results.best_cost
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
 
-    def get_data(self, model, init_soc, f_eval):
-        initial_state = {"Initial SoC": init_soc}
-        return model.simulateEIS(
-            inputs={
-                "Negative electrode active material volume fraction": self.ground_truth[
-                    0
-                ],
-                "Positive electrode active material volume fraction": self.ground_truth[
-                    1
-                ],
-            },
+    def get_data(self, model, parameter_values, f_eval):
+        inputs = {
+            "Negative electrode active material volume fraction": self.ground_truth[0],
+            "Positive electrode active material volume fraction": self.ground_truth[1],
+        }
+        simulator = pybop.pybamm.EISSimulator(
+            model,
+            parameter_values=parameter_values,
+            input_parameter_names=list(inputs.keys()),
             f_eval=f_eval,
-            initial_state=initial_state,
+        )
+        solution = simulator.solve(inputs=inputs)
+        return pybop.Dataset(
+            {
+                "Frequency [Hz]": f_eval,
+                "Current function [A]": np.zeros_like(f_eval),
+                "Impedance": self.noisy(solution["Impedance"], self.sigma0),
+            }
         )

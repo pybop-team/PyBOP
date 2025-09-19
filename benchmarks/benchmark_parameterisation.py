@@ -8,7 +8,7 @@ from benchmarks.benchmark_utils import set_random_seed
 class BenchmarkParameterisation:
     param_names = ["model", "parameter_set", "optimiser"]
     params = [
-        [pybop.lithium_ion.SPM, pybop.lithium_ion.SPMe],
+        [pybamm.lithium_ion.SPM, pybamm.lithium_ion.SPMe],
         ["Chen2020"],
         [
             pybop.SciPyMinimize,

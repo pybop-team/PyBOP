@@ -1,9 +1,7 @@
-import warnings
-
 import numpy as np
-from pybamm import SolverError
+from pybamm import Solution, SolverError
 
-from pybop import BaseModel, BaseProblem, Dataset
+from pybop import BaseProblem, Dataset
 from pybop.parameters.parameter import Inputs, Parameters
 
 
@@ -15,117 +13,68 @@ class FittingProblem(BaseProblem):
 
     Parameters
     ----------
-    model : object
-        The model to fit.
+    simulator : pybop.pybamm.Simulator or pybop.pybamm.EISSimulator
+        The model, protocol and dataset combined into a simulator object.
     parameters : pybop.Parameter or pybop.Parameters
         An object or list of the parameters for the problem.
     dataset : Dataset
-        Dataset object containing the data to fit the model to.
-    check_model : bool, optional
-        Flag to indicate if the model should be checked (default: True).
-    signal : list[str], optional
-        A list of variables to fit (default: ["Voltage [V]"]).
+        Dataset object containing the target data.
+    output_variables : list[str], optional
+        Output variables to return in the solution (default: ["Voltage [V]"]).
     domain : str, optional
         The name of the domain (default: "Time [s]").
-    additional_variables : list[str], optional
-        Additional variables to observe and store in the solution (default additions are: ["Time [s]"]).
-    initial_state : dict, optional
-        A valid initial state, e.g. the initial open-circuit voltage (default: None) which will trigger
-        a model rebuild on each evaluation. Example: {"Initial open-circuit potential [V]": 4.1}
-        NOTE: Sensitivities are not support with this arg due to the model rebuilding.
 
     Additional Attributes
     ---------------------
     dataset : dictionary
-        The dictionary from a Dataset object containing the signal keys and values to fit the model to.
+        The dictionary from a Dataset object containing the output_variables and target values.
     domain_data : np.ndarray
         The domain points in the dataset.
     n_domain_data : int
         The number of domain points.
     target : np.ndarray
-        The target values of the signals.
+        The target values of the output variables.
     """
 
     def __init__(
         self,
-        model: BaseModel,
+        simulator,
         parameters: Parameters,
         dataset: Dataset,
-        check_model: bool = True,
-        signal: list[str] | None = None,
+        output_variables: list[str] | None = None,
         domain: str | None = None,
-        additional_variables: list[str] | None = None,
-        initial_state: dict | None = None,
     ):
         super().__init__(
+            simulator=simulator,
             parameters=parameters,
-            model=model,
-            check_model=check_model,
-            signal=signal,
+            output_variables=output_variables,
             domain=domain,
-            additional_variables=additional_variables,
-            initial_state=initial_state,
         )
         self._dataset = dataset.data
         self._n_parameters = len(self.parameters)
 
         # Check that the dataset contains necessary variables
-        dataset.check(domain=self.domain, signal=self.signal)
+        dataset.check(domain=self.domain, signal=self.output_variables)
 
         # Unpack domain and target data
         self._domain_data = self._dataset[self.domain]
         self.n_data = len(self._domain_data)
         self.set_target(dataset)
 
-        if self._model is not None:
-            # Build the model from scratch
-            if self._model.built_model is not None:
-                self._model.clear()
-            self._model.build(
-                dataset=self._dataset,
-                parameters=self.parameters,
-                check_model=self.check_model,
-                initial_state=self.initial_state,
-            )
-
         self.error_out = {var: self.failure_output for var in self.output_variables}
-        self.error_sense = {
+        self.error_sens = {
             param: {var: self.failure_output for var in self.output_variables}
             for param in self.parameters.keys()
         }
 
-    def set_initial_state(self, initial_state: dict | None = None):
-        """
-        Set the initial state to be applied for every problem evaluation.
-
-        Parameters
-        ----------
-        initial_state : dict, optional
-            A valid initial state (default: None).
-        """
-        if initial_state is not None and "Initial SoC" in initial_state.keys():
-            warnings.warn(
-                "It is usually better to define an initial open-circuit voltage as the "
-                "initial_state for a FittingProblem because this value can typically be "
-                "obtained from the data, unlike the intrinsic initial state of charge. "
-                "In the case where the fitting parameters do not change the OCV-SOC "
-                "relationship, the initial state of charge may be passed to the model "
-                'using, for example, `model.set_initial_state({"Initial SoC": 1.0})` '
-                "before constructing the FittingProblem.",
-                UserWarning,
-                stacklevel=1,
-            )
-
-        self.initial_state = initial_state
-
     def evaluate(
-        self, inputs: Inputs, eis=False
+        self, inputs: Inputs
     ) -> (
         dict[str, np.ndarray]
         | tuple[dict[str, np.ndarray], dict[str, dict[str, np.ndarray]]]
     ):
         """
-        Evaluate the model with the given parameters and return the signal.
+        Evaluate the model with the given parameters and return the output_variables.
 
         Parameters
         ----------
@@ -135,71 +84,47 @@ class FittingProblem(BaseProblem):
         Returns
         -------
         dict[str, np.ndarray[np.float64]]
-            The simulated model output y(t) for self.eis == False, and y(ω) for self.eis == True
-            for the given inputs.
+            The simulated model output y(t), or y(ω) for EIS, for the given inputs.
         """
-        inputs = self.parameters.verify(inputs)
-        if self.eis:
-            return self._evaluate(self._model.simulateEIS, inputs)
+        sol = self._run_simulation(inputs=inputs, calculate_grad=False)
 
-        return self._evaluate(self._model.simulate, inputs)
+        if not self.eis:
+            return {s: sol[s].data for s in self.output_variables}
+        return sol
 
-    def _evaluate(
-        self, func, inputs, calculate_grad=False
-    ) -> (
-        dict[str, np.ndarray]
-        | tuple[dict[str, np.ndarray], dict[str, dict[str, np.ndarray]]]
-    ):
+    def _run_simulation(
+        self, inputs: Inputs, calculate_grad: bool
+    ) -> dict[str, np.ndarray] | Solution:
         """
         Perform simulation using the specified method and handle exceptions.
 
         Parameters
         ----------
-        func : callable
-            The method to be used for simulation.
         inputs : Inputs
             Parameters for evaluation of the model.
+        calculate_grad : bool
+            Whether to calculate the sensitivities.
 
         Returns
         -------
-        dict[str, np.ndarray[np.float64]] or tuple[dict[str, np.ndarray], dict[str, dict[str, np.ndarray]]]
-            The simulation result y(t) and, optionally, the sensitivities dy/dx(t) for each
-            parameter x and signal y.
+        pybamm.Solution | dict[str, np.ndarray[np.float64]]
+            The simulation result as a pybamm.Solution, or a dictionary for EIS.
         """
         try:
-            sol = func(inputs, self._domain_data, initial_state=self.initial_state)
+            return self._simulator.solve(
+                inputs=inputs, calculate_sensitivities=calculate_grad
+            )
         except (SolverError, ZeroDivisionError, RuntimeError, ValueError) as e:
             if isinstance(e, ValueError) and str(e) not in self.exception:
                 raise  # Raise the error if it doesn't match the expected list
             if calculate_grad:
-                return self.error_out, self.error_sense
+                return self.error_out, self.error_sens
             return self.error_out
-
-        if self.eis:
-            return sol
-
-        if calculate_grad:
-            param_keys = [
-                p
-                for p in self.parameters.keys()
-                if p in sol[self.signal[0]].sensitivities.keys()
-            ]
-            return (
-                {s: sol[s].data for s in self.output_variables},
-                {
-                    p: {
-                        s: np.asarray(sol[s].sensitivities[p])
-                        for s in self.output_variables
-                    }
-                    for p in param_keys
-                },
-            )
-
-        return {s: sol[s].data for s in self.output_variables}
 
     def evaluateS1(self, inputs: Inputs):
         """
-        Evaluate the model with the given parameters and return the signal and its derivatives.
+        Evaluate the model with the given parameters and return the output_variables and
+        their derivatives.
 
         Parameters
         ----------
@@ -210,13 +135,22 @@ class FittingProblem(BaseProblem):
         -------
         tuple[dict[str, np.ndarray[np.float64]], dict[str, dict[str, np.ndarray]]]
             A tuple containing the simulation result y(t) and the sensitivities dy/dx(t)
-            for each parameter x and signal y evaluated with the given inputs.
+            for each parameter x and output variables y evaluated with the given inputs.
         """
-        inputs = self.parameters.verify(inputs)
-        self.parameters.update(values=list(inputs.values()))
-        calc_grad = (
-            self.model.check_sensitivities_available()
-            if self.model is not None
-            else True
+        if not self.has_sensitivities:
+            raise ValueError(
+                "Sensitivities are not available for this fitting problem."
+            )
+
+        sol = self._run_simulation(inputs, calculate_grad=True)
+
+        return (
+            {s: sol[s].data for s in self.output_variables},
+            {
+                p: {
+                    s: np.asarray(sol[s].sensitivities[p])
+                    for s in self.output_variables
+                }
+                for p in self.parameters.keys()
+            },
         )
-        return self._evaluate(self._model.simulateS1, inputs, calculate_grad=calc_grad)

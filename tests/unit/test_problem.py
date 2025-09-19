@@ -15,7 +15,7 @@ class TestProblem:
 
     @pytest.fixture
     def model(self):
-        return pybop.lithium_ion.SPM()
+        return pybamm.lithium_ion.SPM()
 
     @pytest.fixture
     def parameters(self):
@@ -36,12 +36,10 @@ class TestProblem:
     def experiment(self):
         return pybamm.Experiment(
             [
-                (
-                    "Discharge at 1C for 5 minutes (1 second period)",
-                    "Rest for 2 minutes (1 second period)",
-                    "Charge at 1C for 5 minutes (1 second period)",
-                    "Rest for 2 minutes (1 second period)",
-                ),
+                "Discharge at 1C for 5 minutes (1 second period)",
+                "Rest for 2 minutes (1 second period)",
+                "Charge at 1C for 5 minutes (1 second period)",
+                "Rest for 2 minutes (1 second period)",
             ]
             * 2
         )
@@ -49,13 +47,16 @@ class TestProblem:
     @pytest.fixture
     def dataset(self, model, experiment):
         x0 = np.array([2e-5, 0.5e-5])
-        model.parameter_set.update(
+        parameter_values = model.default_parameter_values
+        parameter_values.update(
             {
                 "Negative particle radius [m]": x0[0],
                 "Positive particle radius [m]": x0[1],
             }
         )
-        solution = model.predict(experiment=experiment)
+        solution = pybamm.Simulation(
+            model, parameter_values=parameter_values, experiment=experiment
+        ).solve()
         return pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -64,29 +65,24 @@ class TestProblem:
             }
         )
 
-    @pytest.fixture
-    def signal(self):
-        return "Voltage [V]"
-
     def test_base_problem(self, parameters, model, dataset):
         # Construct Problem
-        problem = pybop.BaseProblem(parameters, model=model)
+        problem = pybop.BaseProblem(parameters=parameters)
 
         with pytest.raises(NotImplementedError):
-            problem.evaluate([1e-5, 1e-5])
+            problem.evaluate(inputs=None)
         with pytest.raises(NotImplementedError):
-            problem.evaluateS1([1e-5, 1e-5])
-
-        with pytest.raises(ValueError):
-            pybop.BaseProblem(parameters, model=model, signal=[1e-5, 1e-5])
+            problem.evaluateS1(inputs=None)
 
         # Incorrect set target
-        with pytest.raises(ValueError, match="Dataset must be a pybop Dataset object."):
+        with pytest.raises(ValueError, match="Dataset must be a pybop.Dataset object."):
             problem.set_target("This is not a dataset")
 
         # No signal
-        problem.signal = None
-        with pytest.raises(ValueError, match="Signal must be defined to set target."):
+        problem._output_variables = None
+        with pytest.raises(
+            ValueError, match="Output variables must be defined to set target."
+        ):
             problem.set_target(dataset)
 
         # Different types of parameters
@@ -95,7 +91,7 @@ class TestProblem:
         problem = pybop.BaseProblem(parameters=parameter_list[0])
         with pytest.raises(
             TypeError,
-            match="The input parameters must be a pybop Parameter, a list of pybop.Parameter objects, or a pybop Parameters object.",
+            match="The input parameters must be a pybop.Parameter, a list of pybop.Parameter objects, or a pybop.Parameters object.",
         ):
             problem = pybop.BaseProblem(parameters="Invalid string")
         with pytest.raises(
@@ -106,29 +102,15 @@ class TestProblem:
                 parameters=[parameter_list[0], "Invalid string"]
             )
 
-    def test_fitting_problem(self, parameters, dataset, model, signal):
-        with pytest.warns(UserWarning) as record:
-            problem = pybop.FittingProblem(
-                model,
-                parameters,
-                dataset,
-                signal=signal,
-                initial_state={"Initial SoC": 0.8},
-            )
-        assert "It is usually better to define an initial open-circuit voltage" in str(
-            record[0].message
-        )
-
+    def test_fitting_problem(self, parameters, dataset, model):
         # Construct Problem
-        problem = pybop.FittingProblem(
+        simulator = pybop.pybamm.Simulator(
             model,
-            parameters,
-            dataset,
-            signal=signal,
+            input_parameter_names=parameters.names,
+            protocol=dataset,
             initial_state={"Initial open-circuit voltage [V]": 4.0},
         )
-
-        assert problem.model.built_model is not None
+        problem = pybop.FittingProblem(simulator, parameters, dataset)
 
         # Test get target
         target = problem.get_target()["Voltage [V]"]
@@ -142,24 +124,15 @@ class TestProblem:
         target = problem.get_target()["Voltage [V]"]
         assert_array_equal(target, dataset["Voltage [V]"])
 
-        # Test model.simulate
-        problem.model.simulate(inputs=[1e-5, 1e-5], t_eval=np.linspace(0, 10, 100))
-
-        # Test model.simulate with an initial state
-        problem.evaluate(inputs=[1e-5, 1e-5])
+        # Test model.evaluate
+        inputs = parameters.to_dict([1e-5, 1e-5])
+        problem.evaluate(inputs)
 
         # Test try-except
         problem.verbose = True
-        out = problem.evaluate(inputs=[0.0, 0.0])
+        inputs = parameters.to_dict([0.0, 0.0])
+        out = problem.evaluate(inputs)
         assert not np.isfinite(out["Voltage [V]"])
-
-        # Force CasadiSolver to hit calc_grad=False in evaluateS1
-        problem.model._solver = pybamm.CasadiSolver()
-        with pytest.raises(
-            ValueError,
-            match="Cannot use sensitivities for parameters which require a model rebuild",
-        ):
-            problem.evaluateS1(inputs=[1e-5, 1e-5])
 
         # Test problem construction errors
         for bad_dataset in [
@@ -187,15 +160,22 @@ class TestProblem:
             ),
         ]:
             with pytest.raises(ValueError):
-                pybop.FittingProblem(model, parameters, bad_dataset, signal=signal)
+                simulator = pybop.pybamm.Simulator(
+                    model, input_parameter_names=parameters.names, protocol=bad_dataset
+                )
+                pybop.FittingProblem(simulator, parameters, bad_dataset)
 
-        two_signals = ["Voltage [V]", "Time [s]"]
+        output_variables = ["Voltage [V]", "Time [s]"]
         with pytest.raises(ValueError):
-            pybop.FittingProblem(model, parameters, bad_dataset, signal=two_signals)
+            simulator = pybop.pybamm.Simulator(
+                model, input_parameter_names=parameters.names, protocol=bad_dataset
+            )
+            pybop.FittingProblem(
+                simulator, parameters, bad_dataset, output_variables=output_variables
+            )
 
     def test_fitting_problem_eis(self, parameters):
-        model = pybop.lithium_ion.SPM(eis=True)
-
+        model = pybamm.lithium_ion.SPM()
         dataset = pybop.Dataset(
             {
                 "Frequency [Hz]": np.logspace(-4, 5, 30),
@@ -205,107 +185,99 @@ class TestProblem:
         )
 
         # Construct Problem
-        problem = pybop.FittingProblem(
+        simulator = pybop.pybamm.EISSimulator(
             model,
-            parameters,
-            dataset,
-            signal=["Impedance"],
+            input_parameter_names=parameters.names,
             initial_state={"Initial open-circuit voltage [V]": 4.0},
+            f_eval=dataset["Frequency [Hz]"],
         )
-        assert problem.eis == model.eis
+        problem = pybop.FittingProblem(
+            simulator, parameters, dataset, output_variables=["Impedance"]
+        )
         assert problem.domain == "Frequency [Hz]"
 
         # Test try-except
         problem.verbose = True
-        out = problem.evaluate(inputs=[0.0, 0.0])
+        inputs = parameters.to_dict([0.0, 0.0])
+        out = problem.evaluate(inputs)
         assert not np.isfinite(out["Impedance"])
 
-    def test_multi_fitting_problem(self, model, parameters, dataset, signal):
-        problem_1 = pybop.FittingProblem(model, parameters, dataset, signal=signal)
+    def test_multi_fitting_problem(self, model, parameters, dataset):
+        simulator = pybop.pybamm.Simulator(
+            model, input_parameter_names=parameters.names, protocol=dataset
+        )
+        problem_1 = pybop.FittingProblem(simulator, parameters, dataset)
 
         with pytest.raises(
-            ValueError, match="Make a new_copy of the model for each problem."
+            ValueError, match="Make a new_copy of the simulator for each problem."
         ):
             pybop.MultiFittingProblem(problem_1, problem_1)
 
         # Generate a second fitting problem
-        model = model.new_copy()
         experiment = pybamm.Experiment(
             ["Discharge at 1C for 5 minutes (1 second period)"]
         )
-        values = model.predict(
-            initial_state={"Initial SoC": 0.8}, experiment=experiment
+        solution = pybamm.Simulation(model, experiment=experiment).solve(
+            initial_soc=0.8
         )
         dataset_2 = pybop.Dataset(
             {
-                "Time [s]": values["Time [s]"].data,
-                "Current function [A]": values["Current [A]"].data,
-                "Voltage [V]": values["Voltage [V]"].data,
+                "Time [s]": solution["Time [s]"].data,
+                "Current function [A]": solution["Current [A]"].data,
+                "Voltage [V]": solution["Voltage [V]"].data,
             }
         )
-        problem_2 = pybop.FittingProblem(model, parameters, dataset_2, signal=signal)
+        simulator = pybop.pybamm.Simulator(
+            model, input_parameter_names=parameters.names, protocol=dataset_2
+        )
+        problem_2 = pybop.FittingProblem(simulator, parameters, dataset_2)
         combined_problem = pybop.MultiFittingProblem(problem_1, problem_2)
 
-        assert combined_problem._model is None
+        assert combined_problem._simulator is None
 
         assert len(combined_problem._dataset["Time [s]"]) == len(
             problem_1._dataset["Time [s]"]
         ) + len(problem_2._dataset["Time [s]"])
         assert len(combined_problem._dataset["Combined signal"]) == len(
-            problem_1._dataset[signal]
-        ) + len(problem_2._dataset[signal])
+            problem_1._dataset["Voltage [V]"]
+        ) + len(problem_2._dataset["Voltage [V]"])
 
-        y = combined_problem.evaluate(inputs=[1e-5, 1e-5])
+        inputs = parameters.to_dict([1e-5, 1e-5])
+        y = combined_problem.evaluate(inputs)
         assert len(y["Combined signal"]) == len(
             combined_problem._dataset["Combined signal"]
         )
-        assert len(combined_problem.pybamm_solution) == 2
 
     def test_design_problem(self, parameters, experiment, model):
-        with pytest.warns(UserWarning) as record:
-            problem = pybop.DesignProblem(
-                model,
-                parameters,
-                experiment,
-                initial_state={"Initial open-circuit voltage [V]": 4.0},
-            )
-        assert "It is usually better to define an initial state of charge" in str(
-            record[0].message
-        )
-
         # Construct Problem
-        problem = pybop.DesignProblem(model, parameters, experiment)
-
-        assert (
-            problem.model.built_model is None
-        )  # building postponed with input experiment
-        assert problem.initial_state == {"Initial SoC": 1.0}
+        simulator = pybop.pybamm.Simulator(
+            model, input_parameter_names=parameters.names, protocol=experiment
+        )
+        problem = pybop.DesignProblem(simulator, parameters)
 
         # Test evaluation
-        problem.evaluate(inputs=[1e-5, 1e-5])
-        problem.evaluate(inputs=[3e-5, 3e-5])
+        inputs = parameters.to_dict([1e-5, 1e-5])
+        problem.evaluate(inputs)
+        inputs = parameters.to_dict([3e-5, 3e-5])
+        problem.evaluate(inputs)
 
-        # Test initial SoC from parameter_set
-        model = pybop.empirical.Thevenin()
-        model.parameter_set["Initial SoC"] = 0.8
-        problem = pybop.DesignProblem(model, pybop.Parameters(), experiment)
-        assert problem.initial_state == {"Initial SoC": 0.8}
-
-    def test_problem_construct_with_model_predict(
-        self, parameters, model, dataset, signal
-    ):
+    def test_problem_construct_with_model_predict(self, parameters, model, dataset):
         # Construct model and predict
-        model.parameters = parameters
-        out = model.predict(inputs=[1e-5, 1e-5], t_eval=np.linspace(0, 10, 100))
-
-        problem = pybop.FittingProblem(
-            model, parameters, dataset=dataset, signal=signal
+        simulator = pybop.pybamm.Simulator(
+            model,
+            input_parameter_names=parameters.names,
+            protocol=np.linspace(0, 10, 100),
         )
+        inputs = parameters.to_dict([1e-5, 1e-5])
+        out = simulator.solve(inputs)
 
         # Test problem evaluate
-        problem_output = problem.evaluate([2e-5, 2e-5])
+        problem = pybop.FittingProblem(simulator, parameters, dataset)
+        problem_out = problem.evaluate(inputs)
+        assert_allclose(out["Voltage [V]"].data, problem_out["Voltage [V]"], atol=1e-6)
 
-        assert problem.model.built_model is not None
+        inputs = parameters.to_dict([2e-5, 2e-5])
+        problem_output = problem.evaluate(inputs)
         with pytest.raises(AssertionError):
             assert_allclose(
                 out["Voltage [V]"].data,

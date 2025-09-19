@@ -83,7 +83,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
             return (-np.inf, -self.grad_fail) if dy is not None else -np.inf
 
         # Calculate residuals and error
-        r = np.asarray([self._target[signal] - y[signal] for signal in self.signal])
+        r = np.asarray([self._target[var] - y[var] for var in self.output_variables])
         l = np.sum(self._offset + self._multip * np.sum(np.real(r * np.conj(r))))
 
         if dy is not None:
@@ -199,9 +199,9 @@ class GaussianLogLikelihood(BaseLikelihood):
         Parameters
         ----------
         y : dict[str, np.ndarray[np.float64]]
-            The dictionary of predictions with keys designating the signals for fitting.
+            The dictionary of predictions with keys designating the output variables for fitting.
         dy : dict[str, dict[str, np.ndarray]], optional
-            The corresponding gradient with respect to each parameter for each signal.
+            The corresponding gradient with respect to each parameter for each output variable.
 
         Returns
         -------
@@ -215,7 +215,7 @@ class GaussianLogLikelihood(BaseLikelihood):
             return (-np.inf, -self.grad_fail) if dy is not None else -np.inf
 
         # Calculate residuals and error
-        r = np.asarray([self._target[signal] - y[signal] for signal in self.signal])
+        r = np.asarray([self._target[var] - y[var] for var in self.output_variables])
         sum_r2 = np.sum(np.real(r * np.conj(r)), axis=1)
         l = np.sum(
             self._logpi - self.n_data * np.log(sigma) - sum_r2 / (2.0 * sigma**2.0)
@@ -308,9 +308,9 @@ class LogPosterior(BaseMetaLikelihood):
         Parameters
         ----------
         y : dict[str, np.ndarray[np.float64]]
-            The dictionary of predictions with keys designating the signals for fitting.
+            The dictionary of predictions with keys designating the output variables for fitting.
         dy : dict[str, dict[str, np.ndarray]], optional
-            The corresponding sensitivities to each parameter for each signal.
+            The corresponding sensitivities to each parameter for each output variable.
 
         Returns
         -------

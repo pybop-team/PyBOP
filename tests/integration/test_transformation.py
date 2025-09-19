@@ -38,16 +38,28 @@ class TestTransformation:
 
     @pytest.fixture
     def model(self):
+        return pybamm.equivalent_circuit.Thevenin()
+
+    @pytest.fixture
+    def parameter_values(self, model):
         with open("examples/parameters/initial_ecm_parameters.json") as file:
-            parameter_set = pybamm.ParameterValues(json.load(file))
-        parameter_set.update(
+            parameter_values = pybamm.ParameterValues(json.load(file))
+        parameter_values.update(
+            {
+                "Open-circuit voltage [V]": model.default_parameter_values[
+                    "Open-circuit voltage [V]"
+                ]
+            },
+            check_already_exists=False,
+        )
+        parameter_values.update(
             {
                 "C1 [F]": 1000,
                 "R0 [Ohm]": self.ground_truth[0],
                 "R1 [Ohm]": self.ground_truth[1],
             }
         )
-        return pybop.empirical.Thevenin(parameter_set=parameter_set)
+        return parameter_values
 
     @pytest.fixture
     def parameters(self, transformation_r0, transformation_r1):
@@ -66,10 +78,6 @@ class TestTransformation:
             ),
         )
 
-    @pytest.fixture(params=[0.6])
-    def init_soc(self, request):
-        return request.param
-
     def noisy(self, data, sigma):
         return data + np.random.normal(0, sigma, len(data))
 
@@ -85,19 +93,18 @@ class TestTransformation:
         return request.param
 
     @pytest.fixture
-    def cost(self, model, parameters, init_soc, cost_cls):
-        # Form dataset
-        solution = self.get_data(model, init_soc)
-        dataset = pybop.Dataset(
-            {
-                "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma0),
-            }
-        )
+    def cost(self, model, parameter_values, parameters, cost_cls):
+        parameter_values.set_initial_state(0.6)
+        dataset = self.get_data(model, parameter_values)
 
         # Construct problem
-        problem = pybop.FittingProblem(model, parameters, dataset)
+        simulator = pybop.pybamm.Simulator(
+            model,
+            parameter_values=parameter_values,
+            input_parameter_names=parameters.names,
+            protocol=dataset,
+        )
+        problem = pybop.FittingProblem(simulator, parameters, dataset)
 
         # Construct the cost
         if cost_cls is pybop.GaussianLogLikelihood:
@@ -167,14 +174,20 @@ class TestTransformation:
             )
             np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
 
-    def get_data(self, model, init_soc):
-        initial_state = {"Initial SoC": init_soc}
+    def get_data(self, model, parameter_values):
         experiment = pybamm.Experiment(
             [
-                (
-                    "Rest for 10 seconds (2 second period)",
-                    "Discharge at 0.5C for 6 minutes (12 second period)",
-                ),
+                "Rest for 10 seconds (2 second period)",
+                "Discharge at 0.5C for 6 minutes (12 second period)",
             ]
         )
-        return model.predict(initial_state=initial_state, experiment=experiment)
+        solution = pybamm.Simulation(
+            model, parameter_values=parameter_values, experiment=experiment
+        ).solve()
+        return pybop.Dataset(
+            {
+                "Time [s]": solution["Time [s]"].data,
+                "Current function [A]": solution["Current [A]"].data,
+                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma0),
+            }
+        )

@@ -53,29 +53,30 @@ class BaseCost:
             self._target = self.problem.target
             self._parameters.join(self.problem.parameters)
             self.n_outputs = self.problem.n_outputs
-            self.signal = self.problem.signal
+            self.output_variables = self.problem.output_variables
             self._has_separable_problem = True
             self.grad_fail = None
             self.set_fail_gradient()
-            self.has_sensitivities = self.problem.sensitivities_available
+            self.has_sensitivities = self.problem.has_sensitivities
 
     def __call__(
         self,
         inputs: Inputs | list | np.ndarray,
         calculate_grad: bool = False,
-    ) -> float | list | tuple[float, np.ndarray] | list[tuple[float, np.ndarray]]:
+    ) -> (
+        float | tuple[float, np.ndarray] | list[float] | list[tuple[float, np.ndarray]]
+    ):
         """
         Compute cost and optional gradient for given input parameters.
 
         Parameters
         ----------
-        inputs : Union[Inputs, list, np.ndarray]
+        inputs : Inputs | list[Inputs] | list[float] | np.adarray
             Input parameters for cost computation. Supports list-like evaluation of
             multiple input values, shaped [N,M] where N is the number of input positions
             to evaluate and M is the number of inputs for the underlying model (i.e. parameters).
-        calculate_grad : bool, default=False
-            If True, both the cost and gradient will be computed. Otherwise, only the
-            cost is computed.
+        calculate_grad : bool
+            If True, the gradient will be computed as well as the cost (default: False).
 
         Returns
         -------
@@ -85,10 +86,12 @@ class BaseCost:
             - Single input with gradient: tuple[float, np.ndarray]
             - Multiple inputs with gradient: list[tuple[float, np.ndarray]]
         """
-        # Convert dict to list for sequential computations
-        if isinstance(inputs, dict):
-            inputs = list(inputs.values())
-        inputs_list = np.atleast_2d(inputs)
+        # Convert values to parameter inputs
+        if not isinstance(inputs, dict):
+            if not isinstance(inputs[0], dict):
+                values = np.atleast_2d(inputs)
+                inputs = [self.parameters.to_dict(v) for v in values]
+        inputs_list = inputs if isinstance(inputs, list) else [inputs]
 
         results = []
         for inputs in inputs_list:
@@ -99,15 +102,25 @@ class BaseCost:
 
     def single_call(
         self,
-        inputs: Inputs | np.ndarray,
+        inputs: Inputs,
         calculate_grad: bool,
     ) -> float | tuple[float, np.ndarray]:
         """Evaluate the cost and (optionally) the gradient for a single set of inputs."""
-        model_inputs = self.parameters.verify(inputs)
-        self.parameters.update(values=list(model_inputs.values()))
-
         if calculate_grad:
             calculate_grad = self.has_sensitivities
+
+        # Check the validity of the parameters before evaluating the cost
+        if not self.parameters.verify_inputs(inputs):
+            if calculate_grad:
+                return (
+                    (np.inf, self.grad_fail)
+                    if self.minimising
+                    else (-np.inf, -self.grad_fail)
+                )
+            else:
+                return np.inf if self.minimising else -np.inf
+
+        self.parameters.update(values=list(inputs.values()))
 
         y = self.DeferredPrediction
         dy = self.DeferredPrediction if calculate_grad else None
@@ -132,9 +145,9 @@ class BaseCost:
         Parameters
         ----------
         y : dict
-            A dictionary of predictions with keys designating the signals for fitting.
+            A dictionary of predictions with keys designating the output variables for fitting.
         dy : np.ndarray, optional
-            The corresponding gradient with respect to the parameters for each signal.
+            The corresponding gradient with respect to the parameters for each output variable.
 
         Raises
         ------
@@ -219,7 +232,7 @@ class BaseCost:
         Parameters
         ----------
         y : dict
-            A dictionary of predictions with keys designating the signals for fitting.
+            A dictionary of predictions with keys designating the output variables for fitting.
 
         Returns
         -------
@@ -227,7 +240,8 @@ class BaseCost:
             True if the prediction matches the target data, otherwise False.
         """
         if any(
-            len(y.get(key, [])) != len(self._target.get(key, [])) for key in self.signal
+            len(y.get(key, [])) != len(self._target.get(key, []))
+            for key in self.output_variables
         ):
             return False
 
@@ -244,22 +258,22 @@ class BaseCost:
 
     def stack_sensitivities(self, dy) -> np.ndarray:
         """
-        Stack the sensitivities for each signal and parameter into a single array.
+        Stack the sensitivities for each output variable and parameter into a single array.
 
         Parameters
         ----------
         dict[str, dict[str, np.ndarray[np.float64]]]
-            A dictionary of the sensitivities dy/dx(t) for each parameter x and signal y.
+            A dictionary of the sensitivities dy/dx(t) for each parameter x and output_variables y.
 
         Returns
         -------
         np.ndarray[np.float64]
-            The combined sensitivities dy/dx(t) for each parameter and signal, with
-            dimensions of (len(parameters), len(signal), len(domain_data)).
+            The combined sensitivities dy/dx(t) for each parameter and output_variables, with
+            dimensions of (len(parameters), len(output_variables), len(domain_data)).
         """
         return np.stack(
             [
-                np.row_stack([dy[key][signal] for signal in self.signal])
+                np.row_stack([dy[key][var] for var in self.output_variables])
                 for key in dy.keys()
             ],
             axis=0,
@@ -288,7 +302,3 @@ class BaseCost:
     @parameters.setter
     def parameters(self, parameters):
         self._parameters = parameters
-
-    @property
-    def pybamm_solution(self):
-        return self.problem.pybamm_solution if self.problem is not None else None

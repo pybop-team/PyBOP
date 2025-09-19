@@ -1,7 +1,7 @@
 import pybamm
 import pytest
 
-from pybop.parameters.parameter_set import set_formation_concentrations
+from pybop.pybamm.parameter_utils import set_formation_concentrations
 
 
 class TestParameterSets:

@@ -27,8 +27,7 @@ class TestPlots:
 
     @pytest.fixture
     def model(self):
-        # Define an example model
-        return pybop.lithium_ion.SPM()
+        return pybamm.lithium_ion.SPM()
 
     @pytest.fixture
     def parameters(self):
@@ -53,16 +52,13 @@ class TestPlots:
 
     @pytest.fixture
     def dataset(self, model):
-        # Generate data
         t_eval = np.arange(0, 50, 2)
-        values = model.predict(t_eval=t_eval)
-
-        # Form dataset
+        solution = pybamm.Simulation(model).solve(t_eval=t_eval)
         return pybop.Dataset(
             {
                 "Time [s]": t_eval,
-                "Current function [A]": values["Current [A]"].data,
-                "Voltage [V]": values["Voltage [V]"].data,
+                "Current function [A]": solution["Current [A]"](t_eval),
+                "Voltage [V]": solution["Voltage [V]"](t_eval),
             }
         )
 
@@ -77,20 +73,21 @@ class TestPlots:
 
     @pytest.fixture
     def fitting_problem(self, model, parameters, dataset):
-        return pybop.FittingProblem(model, parameters, dataset)
+        simulator = pybop.pybamm.Simulator(
+            model, input_parameter_names=parameters.names, protocol=dataset
+        )
+        return pybop.FittingProblem(simulator, parameters, dataset)
 
     @pytest.fixture
     def experiment(self):
-        return pybamm.Experiment(
-            [
-                ("Discharge at 1C for 10 minutes (20 second period)"),
-            ]
-        )
+        return pybamm.Experiment(["Discharge at 1C for 10 minutes (20 second period)"])
 
     @pytest.fixture
     def design_problem(self, model, parameters, experiment):
-        model = pybop.lithium_ion.SPM()
-        return pybop.DesignProblem(model, parameters, experiment)
+        simulator = pybop.pybamm.Simulator(
+            model, input_parameter_names=parameters.names, protocol=experiment
+        )
+        return pybop.DesignProblem(simulator, parameters)
 
     def test_problem_plots(self, fitting_problem, design_problem):
         # Test plot of Problem objects
@@ -102,7 +99,6 @@ class TestPlots:
 
     @pytest.fixture
     def cost(self, fitting_problem):
-        # Define an example cost
         return pybop.SumSquaredError(fitting_problem)
 
     def test_cost_plots(self, cost):
@@ -210,7 +206,10 @@ class TestPlots:
                 bounds=[0.5, 0.8],
             ),
         )
-        fitting_problem = pybop.FittingProblem(model, parameters, dataset)
+        simulator = pybop.pybamm.Simulator(
+            model, input_parameter_names=parameters.names, protocol=dataset
+        )
+        fitting_problem = pybop.FittingProblem(simulator, parameters, dataset)
         cost = pybop.SumSquaredError(fitting_problem)
         with pytest.raises(
             ValueError, match="This cost function takes fewer than 2 parameters."
@@ -235,15 +234,16 @@ class TestPlots:
                 bounds=[4e-06, 6e-06],
             ),
         )
-        fitting_problem = pybop.FittingProblem(model, parameters, dataset)
+        simulator = pybop.pybamm.Simulator(
+            model, input_parameter_names=parameters.names, protocol=dataset
+        )
+        fitting_problem = pybop.FittingProblem(simulator, parameters, dataset)
         cost = pybop.SumSquaredError(fitting_problem)
         pybop.plot.contour(cost)
 
     def test_nyquist(self):
         # Define model
-        model = pybop.lithium_ion.SPM(
-            eis=True, options={"surface form": "differential"}
-        )
+        model = pybamm.lithium_ion.SPM(options={"surface form": "differential"})
 
         # Fitting parameters
         parameters = pybop.Parameters(
@@ -263,14 +263,19 @@ class TestPlots:
             }
         )
 
-        signal = ["Impedance"]
         # Generate problem, cost function, and optimisation class
-        problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
+        simulator = pybop.pybamm.EISSimulator(
+            model,
+            input_parameter_names=parameters.names,
+            f_eval=dataset["Frequency [Hz]"],
+        )
+        problem = pybop.FittingProblem(
+            simulator, parameters, dataset, output_variables=["Impedance"]
+        )
 
         # Plot the nyquist
-        pybop.plot.nyquist(
-            problem, problem_inputs=[60e-6], title="Optimised Comparison"
-        )
+        inputs = parameters.to_dict([60e-6])
+        pybop.plot.nyquist(problem, problem_inputs=inputs, title="Optimised Comparison")
 
         # Without inputs
         pybop.plot.nyquist(problem, title="Optimised Comparison")

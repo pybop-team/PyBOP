@@ -15,14 +15,22 @@ class TestLogPosterior:
 
     @pytest.fixture
     def model(self):
-        return pybop.lithium_ion.SPM()
+        return pybamm.lithium_ion.SPM()
 
     @pytest.fixture
     def ground_truth(self):
         return 0.52
 
     @pytest.fixture
-    def parameters(self, ground_truth):
+    def parameter_values(self, model, ground_truth):
+        parameter_values = model.default_parameter_values
+        parameter_values.update(
+            {"Negative electrode active material volume fraction": ground_truth}
+        )
+        return parameter_values
+
+    @pytest.fixture
+    def parameter(self, ground_truth):
         return pybop.Parameter(
             "Negative electrode active material volume fraction",
             prior=pybop.Gaussian(0.5, 0.01),
@@ -32,21 +40,13 @@ class TestLogPosterior:
 
     @pytest.fixture
     def experiment(self):
-        return pybamm.Experiment(
-            [
-                ("Discharge at 1C for 1 minutes (5 second period)"),
-            ]
-        )
+        return pybamm.Experiment(["Discharge at 1C for 1 minutes (5 second period)"])
 
     @pytest.fixture
-    def dataset(self, model, experiment, ground_truth):
-        model._parameter_set = model.pybamm_model.default_parameter_values
-        model._parameter_set.update(
-            {
-                "Negative electrode active material volume fraction": ground_truth,
-            }
-        )
-        solution = model.predict(experiment=experiment)
+    def dataset(self, model, parameter_values, experiment):
+        solution = pybamm.Simulation(
+            model, parameter_values=parameter_values, experiment=experiment
+        ).solve()
         return pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -56,8 +56,14 @@ class TestLogPosterior:
         )
 
     @pytest.fixture
-    def one_signal_problem(self, model, parameters, dataset):
-        return pybop.FittingProblem(model, parameters, dataset)
+    def one_signal_problem(self, model, parameter_values, parameter, dataset):
+        simulator = pybop.pybamm.Simulator(
+            model,
+            parameter_values=parameter_values,
+            input_parameter_names=parameter.name,
+            protocol=dataset,
+        )
+        return pybop.FittingProblem(simulator, parameter, dataset)
 
     @pytest.fixture
     def likelihood(self, one_signal_problem):
@@ -94,12 +100,12 @@ class TestLogPosterior:
     def test_log_posterior(self, posterior):
         # Test log posterior
         x = np.array([0.50])
-        assert np.allclose(posterior(x), 51.5236, atol=2e-2)
+        assert np.allclose(posterior(x), 51.6033, atol=2e-2)
 
         # Test log posterior evaluateS1
         p, dp = posterior(x, calculate_grad=True)
-        assert np.allclose(p, 51.5236, atol=2e-2)
-        assert np.allclose(dp, 2.0, atol=2e-2)
+        assert np.allclose(p, 51.6033, atol=2e-2)
+        assert np.allclose(dp, 0.4266, atol=2e-2)
 
         # Get log likelihood and log prior
         likelihood = posterior.likelihood
