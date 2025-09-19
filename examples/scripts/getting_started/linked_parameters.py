@@ -2,15 +2,19 @@ import pybamm
 from pybamm import Parameter
 
 import pybop
-from pybop.parameters.parameter_set import set_formation_concentrations
+from pybop.pybamm.parameter_utils import set_formation_concentrations
 
 # The aim of this script is to show how to systematically update
 # design parameters which depend on the optimisation parameters.
 
+# Define model
+model = pybamm.lithium_ion.SPMe()
+pybop.pybamm.add_variable_to_model(model, "Gravimetric energy density [Wh.kg-1]")
+
 # Define parameter set and additional parameters needed for the cost function
-parameter_set = pybamm.ParameterValues("Chen2020")
-set_formation_concentrations(parameter_set)
-parameter_set.update(
+parameter_values = pybamm.ParameterValues("Chen2020")
+set_formation_concentrations(parameter_values)
+parameter_values.update(
     {
         "Electrolyte density [kg.m-3]": Parameter("Separator density [kg.m-3]"),
         "Negative electrode active material density [kg.m-3]": Parameter(
@@ -25,20 +29,18 @@ parameter_set.update(
         "Positive electrode carbon-binder density [kg.m-3]": Parameter(
             "Positive electrode density [kg.m-3]"
         ),
+        "Cell mass [kg]": pybop.pybamm.cell_mass(),
     },
     check_already_exists=False,
 )
 
 # Link parameters
-parameter_set.update(
+parameter_values.update(
     {
         "Positive electrode porosity": 1
         - Parameter("Positive electrode active material volume fraction")
     }
 )
-
-# Define model
-model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -61,30 +63,33 @@ experiment = pybamm.Experiment(
         "Hold at 2.5 V for 30 minutes or until 10 mA (10 seconds period)",
     ],
 )
-signal = ["Voltage [V]", "Current [A]"]
 
-# Generate problem
-problem = pybop.DesignProblem(
+# Build the problem
+simulator = pybop.pybamm.Simulator(
     model,
-    parameters,
-    experiment,
-    signal=signal,
+    parameter_values=parameter_values,
+    input_parameter_names=parameters.names,
+    protocol=experiment,
     initial_state={"Initial SoC": 1.0},
 )
-
-# Define the cost
-cost = pybop.GravimetricEnergyDensity(problem)
-
-# Run optimisation
-optim = pybop.XNES(
-    cost, verbose=True, allow_infeasible_solutions=False, max_iterations=10
+problem = pybop.DesignProblem(
+    simulator,
+    parameters,
+    output_variables=["Voltage [V]", "Gravimetric energy density [Wh.kg-1]"],
 )
-results = optim.run()
-print(f"Initial gravimetric energy density: {cost(optim.x0):.2f} Wh.kg-1")
-print(f"Optimised gravimetric energy density: {cost(results.x):.2f} Wh.kg-1")
+cost = pybop.DesignCost(problem, target="Gravimetric energy density [Wh.kg-1]")
+
+# Set up the optimiser
+options = pybop.PintsOptions(verbose=True, max_iterations=10)
+optim = pybop.XNES(cost, options=options)
+
+# Run the optimisation
+result = optim.run()
+print(f"Initial gravimetric energy density: {cost(result.x0):.2f} Wh.kg-1")
+print(f"Optimised gravimetric energy density: {cost(result.x):.2f} Wh.kg-1")
 
 # Plot the timeseries output
-pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.problem(problem, problem_inputs=result.x, title="Optimised Comparison")
 
-# Plot the cost landscape with optimisation path
+# Plot the optimisation result
 pybop.plot.surface(optim)

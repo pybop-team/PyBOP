@@ -8,15 +8,16 @@ import pybop
 # Set parallelization if on macOS / Unix
 parallel = True if sys.platform != "win32" else False
 
-# Parameter set and model definition
-parameter_set = pybamm.ParameterValues("Chen2020")
-parameter_set.update(
+# Define model and parameter values
+synth_model = pybamm.lithium_ion.SPMe()
+parameter_values = pybamm.ParameterValues("Chen2020")
+parameter_values.update(
     {
         "Negative electrode active material volume fraction": 0.63,
         "Positive electrode active material volume fraction": 0.71,
     }
 )
-synth_model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
+parameter_values.set_initial_state(0.5)
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -32,50 +33,49 @@ parameters = pybop.Parameters(
     ),
 )
 
-# Generate data
-init_soc = 0.5
+# Generate a synthetic dataset
 sigma = 0.005
-experiment = pybamm.Experiment(
-    [
-        ("Discharge at 0.5C for 3 minutes (5 second period)",),
-    ]
+experiment = pybamm.Experiment(["Discharge at 0.5C for 3 minutes (5 second period)"])
+sim = pybamm.Simulation(
+    synth_model, parameter_values=parameter_values, experiment=experiment
 )
-values = synth_model.predict(
-    initial_state={"Initial SoC": init_soc}, experiment=experiment
-)
+sol = sim.solve()
 
 
 def noisy(data, sigma):
     return data + np.random.normal(0, sigma, len(data))
 
 
-# Form dataset
 dataset = pybop.Dataset(
     {
-        "Time [s]": values["Time [s]"].data,
-        "Current function [A]": values["Current [A]"].data,
-        "Voltage [V]": noisy(values["Voltage [V]"].data, sigma),
+        "Time [s]": sol.t,
+        "Current function [A]": sol["Current [A]"].data,
+        "Voltage [V]": noisy(sol["Voltage [V]"].data, sigma),
     }
 )
 
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
-signal = ["Voltage [V]"]
+# Define model (and use existing parameter values)
+model = pybamm.lithium_ion.SPM()
 
-# Generate problem, likelihood, and sampler
-problem = pybop.FittingProblem(
-    model, parameters, dataset, signal=signal, initial_state={"Initial SoC": init_soc}
+# Build the problem
+simulator = pybop.pybamm.Simulator(
+    model,
+    parameter_values=parameter_values,
+    input_parameter_names=parameters.names,
+    protocol=dataset,
 )
+problem = pybop.FittingProblem(simulator, parameters, dataset)
 likelihood = pybop.GaussianLogLikelihood(problem)
 posterior = pybop.LogPosterior(likelihood)
 
-sampler = pybop.DifferentialEvolutionMCMC(
-    posterior,
-    chains=3,
+# Create and run the sampler
+options = pybop.PintsSamplerOptions(
+    n_chains=3,
     max_iterations=250,  # Reduced for CI, increase for improved posteriors
-    warm_up=100,
+    warm_up_iterations=100,
     verbose=True,
-    parallel=parallel,  # (macOS/WSL/Linux only)
 )
+sampler = pybop.DifferentialEvolutionMCMC(posterior, options=options)
 chains = sampler.run()
 
 # Summary statistics

@@ -3,9 +3,9 @@ import pybamm
 
 import pybop
 
-# Define model and use high-performant solver for sensitivities
-parameter_set = pybamm.ParameterValues("Chen2020")
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
+# Define model and parameter values
+model = pybamm.lithium_ion.SPM()
+parameter_values = pybamm.ParameterValues("Chen2020")
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -21,49 +21,49 @@ parameters = pybop.Parameters(
     ),
 )
 
-# Generate data
+# Generate a synthetic dataset
 sigma = 0.001
 t_eval = np.arange(0, 900, 3)
-values = model.predict(t_eval=t_eval)
-corrupt_values = values["Voltage [V]"].data + np.random.normal(
-    0, sigma, len(values["Voltage [V]"].data)
-)
-
-# Form dataset
+sol = pybamm.Simulation(model, parameter_values=parameter_values).solve(t_eval=t_eval)
+corrupt_values = sol["Voltage [V]"](t_eval) + np.random.normal(0, sigma, len(t_eval))
 dataset = pybop.Dataset(
     {
-        "Time [s]": values["Time [s]"].data,
-        "Current function [A]": values["Current [A]"].data,
+        "Time [s]": t_eval,
+        "Current function [A]": sol["Current [A]"](t_eval),
         "Voltage [V]": corrupt_values,
     }
 )
 
-# Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(model, parameters, dataset)
+# Build the problem
+simulator = pybop.pybamm.Simulator(
+    model,
+    parameter_values=parameter_values,
+    input_parameter_names=parameters.names,
+    protocol=dataset,
+)
+problem = pybop.FittingProblem(simulator, parameters, dataset)
 cost = pybop.RootMeanSquaredError(problem)
-optim = pybop.SimulatedAnnealing(
-    cost,
+
+# Set up the optimiser
+options = pybop.PintsOptions(
+    verbose=True,
     max_iterations=120,
     max_unchanged_iterations=60,
 )
+optim = pybop.SimulatedAnnealing(cost, options=options)
 
 # Update initial temperature and cooling rate
 # for the reduced number of iterations
 optim.optimiser.temperature = 0.9
 optim.optimiser.cooling_rate = 0.8
 
-# Run optimisation
-results = optim.run()
+# Run the optimisation
+result = optim.run()
 
 # Plot the timeseries output
-pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.problem(problem, problem_inputs=result.x, title="Optimised Comparison")
 
-# Plot convergence
+# Plot the optimisation result
 pybop.plot.convergence(optim)
-
-# Plot the parameter traces
 pybop.plot.parameters(optim)
-
-# Plot the cost landscape with optimisation path
-bounds = np.asarray([[0.5, 0.8], [0.4, 0.7]])
-pybop.plot.surface(optim, bounds=bounds)
+pybop.plot.surface(optim, bounds=[[0.5, 0.8], [0.4, 0.7]])

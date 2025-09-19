@@ -11,9 +11,21 @@ dataset_path = os.path.join(
     current_dir, "../../data/synthetic/spm_charge_discharge_75.csv"
 )
 
-# Define model
-parameter_set = pybamm.ParameterValues("Chen2020")
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
+# Import the synthetic dataset
+csv_data = np.loadtxt(dataset_path, delimiter=",", skiprows=1)
+dataset = pybop.Dataset(
+    {
+        "Time [s]": csv_data[:, 0],
+        "Current function [A]": csv_data[:, 1],
+        "Voltage [V]": csv_data[:, 2],
+        "Bulk open-circuit voltage [V]": csv_data[:, 3],
+    }
+)
+
+# Define model and parameter values
+model = pybamm.lithium_ion.SPM()
+parameter_values = pybamm.ParameterValues("Chen2020")
+parameter_values.set_initial_state(f"{csv_data[0, 2]} V")
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -27,45 +39,33 @@ parameters = pybop.Parameters(
     ),
 )
 
-# Import the synthetic dataset, set model initial state
-csv_data = np.loadtxt(dataset_path, delimiter=",", skiprows=1)
-initial_state = {"Initial open-circuit voltage [V]": csv_data[0, 2]}
-model.set_initial_state(initial_state=initial_state)
-
-# Form dataset
-dataset = pybop.Dataset(
-    {
-        "Time [s]": csv_data[:, 0],
-        "Current function [A]": csv_data[:, 1],
-        "Voltage [V]": csv_data[:, 2],
-        "Bulk open-circuit voltage [V]": csv_data[:, 3],
-    }
-)
-
-
-signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
-# Construct the problem and cost classes
-problem = pybop.FittingProblem(
+# Build the problem
+simulator = pybop.pybamm.Simulator(
     model,
+    parameter_values=parameter_values,
+    input_parameter_names=parameters.names,
+    protocol=dataset,
+)
+problem = pybop.FittingProblem(
+    simulator,
     parameters,
     dataset,
-    signal=signal,
+    output_variables=["Voltage [V]", "Bulk open-circuit voltage [V]"],
 )
 cost = pybop.Minkowski(problem, p=2)
 
-# We construct the optimiser class the same as normal
-# but will be using the `optimiser` attribute directly
-# for this example. This interface works for all
-# non SciPy-based optimisers.
-# Warning: not all arguments are supported via this
-# interface.
-optim = pybop.AdamW(cost)
+# We construct the optimiser class the same as normal but will be using the
+# `optimiser` attribute directly for this example. This interface works for
+# all PINTS-based optimisers.
+# Warning: not all arguments are supported via this interface.
+options = pybop.PintsOptions(verbose=True)
+optim = pybop.AdamW(cost, options=options)
 
 # Create storage vars
 x_best = []
 f_best = []
 
-# Run optimisation
+# Run the optimisation
 for i in range(50):
     x = optim.optimiser.ask()
     f = [cost(x[0], calculate_grad=True)]

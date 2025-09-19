@@ -20,9 +20,12 @@ which can lead to better results and higher optimisation efficiency
 when good timescale guesses are available.
 """
 
-# Define the initial parameter set
-parameter_set = pybamm.ParameterValues("ECM_Example")
-parameter_set.update(
+# Define the model
+model = pybamm.equivalent_circuit.Thevenin(options={"number of rc elements": 2})
+
+# Define the parameter
+parameter_values = pybamm.ParameterValues("ECM_Example")
+parameter_values.update(
     {
         "Initial SoC": 0.75,
         "Cell capacity [A.h]": 5,
@@ -30,7 +33,7 @@ parameter_set.update(
         "Current function [A]": 5,
         "Upper voltage cut-off [V]": 4.2,
         "Lower voltage cut-off [V]": 3.0,
-        "Open-circuit voltage [V]": pybop.empirical.Thevenin().default_parameter_values[
+        "Open-circuit voltage [V]": model.default_parameter_values[
             "Open-circuit voltage [V]"
         ],
         "R0 [Ohm]": 0.001,
@@ -40,7 +43,7 @@ parameter_set.update(
     }
 )
 # Add definitions for R's, C's, and initial overpotentials for any additional RC elements
-parameter_set.update(
+parameter_values.update(
     {
         "R2 [Ohm]": 0.0003,
         "C2 [F]": 5000,
@@ -97,7 +100,7 @@ def get_parameter_checker(
 
     def check_params(
         inputs: dict[str, float] = None,
-        parameter_set=None,
+        parameter_values=None,
         allow_infeasible_solutions: bool = False,
     ) -> bool:
         """Checks if the given inputs are within the tau bounds."""
@@ -116,15 +119,6 @@ def get_parameter_checker(
 
     return check_params
 
-
-# Define the model
-model = pybop.empirical.Thevenin(
-    parameter_set=parameter_set,
-    check_params=get_parameter_checker(
-        0, 3.0, 1
-    ),  # Set the model up to automatically check parameters
-    options={"number of rc elements": 2},
-)
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -145,38 +139,41 @@ parameters = pybop.Parameters(
     ),
 )
 
+# Generate a synthetic dataset
 sigma = 0.001
 t_eval = np.arange(0, 600, 3)
-values = model.predict(t_eval=t_eval)
-corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
-
-# Form dataset
+sol = pybamm.Simulation(model, parameter_values=parameter_values).solve(t_eval=t_eval)
+corrupt_values = sol["Voltage [V]"](t_eval) + np.random.normal(0, sigma, len(t_eval))
 dataset = pybop.Dataset(
     {
         "Time [s]": t_eval,
-        "Current function [A]": values["Current [A]"].data,
+        "Current function [A]": sol["Current [A]"](t_eval),
         "Voltage [V]": corrupt_values,
     }
 )
 
-# Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(model, parameters, dataset)
+# Build the problem
+simulator = pybop.pybamm.Simulator(
+    model, parameter_values, input_parameter_names=parameters.names, protocol=dataset
+)
+problem = pybop.FittingProblem(simulator, parameters, dataset)
 cost = pybop.RootMeanSquaredError(problem)
-optim = pybop.XNES(
-    cost,
-    sigma0=[1e-4, 1e-4, 100],  # Set parameter specific step size
-    allow_infeasible_solutions=False,
+
+# Set up the optimiser
+options = pybop.PintsOptions(
+    sigma=[1e-4, 1e-4, 100],  # Set parameter specific step size
     max_unchanged_iterations=30,
     max_iterations=125,
 )
+optim = pybop.XNES(cost, options=options)
 
-results = optim.run()
+# Run the optimisation
+result = optim.run()
+print(result)
 
 # Plot the timeseries output
-pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.problem(problem, problem_inputs=result.x, title="Optimised Comparison")
 
-# Plot convergence
+# Plot the optimisation result
 pybop.plot.convergence(optim)
-
-# Plot the parameter traces
 pybop.plot.parameters(optim)

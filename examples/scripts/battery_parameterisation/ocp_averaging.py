@@ -5,14 +5,17 @@ from pybamm import CasadiSolver
 import pybop
 
 # Generate some synthetic data for testing
-parameter_set = pybamm.ParameterValues("Chen2020")
-model = pybop.lithium_ion.SPMe(parameter_set=parameter_set, solver=CasadiSolver())
+model = pybamm.lithium_ion.SPMe()
+parameter_values = pybamm.ParameterValues("Chen2020")
 
 # Create representative charge and discharge datasets
-discharge_solution = model.predict(
-    initial_state={"Initial SoC": 1},
+parameter_values.set_initial_state(1.0)
+discharge_solution = pybamm.Simulation(
+    model,
+    parameter_values=parameter_values,
     experiment=pybamm.Experiment(["Discharge at C/10 until 2.5 V"]),
-)
+    solver=CasadiSolver(),
+).solve()
 discharge_dataset_fullcell = pybop.Dataset(
     {
         "Stoichiometry": discharge_solution["Negative electrode stoichiometry"].data,
@@ -41,10 +44,13 @@ charge_dataset_negative = pybop.Dataset(
         ),
     }
 )
-charge_solution = model.predict(
-    initial_state={"Initial SoC": 0},
+parameter_values.set_initial_state(0.0)
+charge_solution = pybamm.Simulation(
+    model,
+    parameter_values=parameter_values,
     experiment=pybamm.Experiment(["Charge at C/10 until 4.2 V"]),
-)
+    solver=CasadiSolver(),
+).solve()
 charge_dataset_fullcell = pybop.Dataset(
     {
         "Stoichiometry": charge_solution["Negative electrode stoichiometry"].data,

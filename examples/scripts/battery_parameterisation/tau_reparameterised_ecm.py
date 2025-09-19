@@ -10,9 +10,12 @@ on tau1 = R1 * C1. Here, tau1 is introduced as a parameter of the model
 and C1 is replaced by 1/R1 so that the bounds can be applied directly.
 """
 
+# Define model
+model = pybamm.equivalent_circuit.Thevenin(options={"number of rc elements": 2})
+
 # Define the initial parameter set
-parameter_set = pybamm.ParameterValues("ECM_Example")
-parameter_set.update(
+parameter_values = pybamm.ParameterValues("ECM_Example")
+parameter_values.update(
     {
         "Initial SoC": 0.75,
         "Cell capacity [A.h]": 5,
@@ -20,7 +23,7 @@ parameter_set.update(
         "Current function [A]": 5,
         "Upper voltage cut-off [V]": 4.2,
         "Lower voltage cut-off [V]": 3.0,
-        "Open-circuit voltage [V]": pybop.empirical.Thevenin().default_parameter_values[
+        "Open-circuit voltage [V]": model.default_parameter_values[
             "Open-circuit voltage [V]"
         ],
         "R0 [Ohm]": 0.001,
@@ -30,7 +33,7 @@ parameter_set.update(
     }
 )
 # Add definitions for R's, C's, and initial overpotentials for any additional RC elements
-parameter_set.update(
+parameter_values.update(
     {
         "R2 [Ohm]": 0.0003,
         "C2 [F]": 5000,
@@ -38,24 +41,18 @@ parameter_set.update(
     },
     check_already_exists=False,
 )
-
-# Define the model
-parameter_set.update(
+parameter_values.update(
     {
-        "tau1 [s]": parameter_set["R1 [Ohm]"] * parameter_set["C1 [F]"],
-        "tau2 [s]": parameter_set["R2 [Ohm]"] * parameter_set["C2 [F]"],
+        "tau1 [s]": parameter_values["R1 [Ohm]"] * parameter_values["C1 [F]"],
+        "tau2 [s]": parameter_values["R2 [Ohm]"] * parameter_values["C2 [F]"],
     },
     check_already_exists=False,
 )
-parameter_set.update(
+parameter_values.update(
     {
         "C1 [F]": pybamm.Parameter("tau1 [s]") / pybamm.Parameter("R1 [Ohm]"),
         "C2 [F]": pybamm.Parameter("tau2 [s]") / pybamm.Parameter("R2 [Ohm]"),
     }
-)
-model = pybop.empirical.Thevenin(
-    parameter_set=parameter_set,
-    options={"number of rc elements": 2},
 )
 
 # Fitting parameters
@@ -77,48 +74,51 @@ parameters = pybop.Parameters(
     ),
 )
 
+# Generate a synthetic dataset
 sigma = 0.001
 t_eval = np.arange(0, 600, 3)
-values = model.predict(t_eval=t_eval)
-corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
-
-# Form dataset
+sol = pybamm.Simulation(model, parameter_values=parameter_values).solve(t_eval=t_eval)
+corrupt_values = sol["Voltage [V]"](t_eval) + np.random.normal(0, sigma, len(t_eval))
 dataset = pybop.Dataset(
     {
         "Time [s]": t_eval,
-        "Current function [A]": values["Current [A]"].data,
+        "Current function [A]": sol["Current [A]"](t_eval),
         "Voltage [V]": corrupt_values,
     }
 )
 
-# Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(model, parameters, dataset)
+# Build the problem
+simulator = pybop.pybamm.Simulator(
+    model, parameter_values, input_parameter_names=parameters.names, protocol=dataset
+)
+problem = pybop.FittingProblem(simulator, parameters, dataset)
 cost = pybop.RootMeanSquaredError(problem)
-optim = pybop.XNES(
-    cost,
-    sigma0=[1e-4, 1e-4, 0.02],  # Set parameter specific step size
-    allow_infeasible_solutions=False,
+
+# Set up the optimiser
+options = pybop.PintsOptions(
+    sigma=[1e-4, 1e-4, 0.02],  # Set parameter specific step size
     max_unchanged_iterations=30,
     max_iterations=125,
 )
+optim = pybop.XNES(cost, options=options)
 
-results = optim.run()
+# Run the optimisation
+result = optim.run()
+print(result)
 print(
     "True parameters:",
     [
-        parameter_set["R0 [Ohm]"],
-        parameter_set["R1 [Ohm]"],
-        parameter_set["tau1 [s]"],
-        parameter_set.parameter_values.evaluate(pybamm.Parameter("C1 [F]")),
+        parameter_values["R0 [Ohm]"],
+        parameter_values["R1 [Ohm]"],
+        parameter_values["tau1 [s]"],
+        parameter_values.evaluate(pybamm.Parameter("C1 [F]")),
     ],
 )
-print("Estimated parameters:", results.x.tolist() + [results.x[2] / results.x[1]])
+print("Estimated parameters:", result.x.tolist() + [result.x[2] / result.x[1]])
 
 # Plot the timeseries output
-pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.problem(problem, problem_inputs=result.x, title="Optimised Comparison")
 
-# Plot convergence
+# Plot the optimisation result
 pybop.plot.convergence(optim)
-
-# Plot the parameter traces
 pybop.plot.parameters(optim)

@@ -3,28 +3,27 @@ import pybamm
 
 import pybop
 
-# Define model
-parameter_set = pybamm.ParameterValues("Chen2020")
-parameter_set["Contact resistance [Ohm]"] = 0.0
-initial_state = {"Initial SoC": 0.5}
+# Define model and parameter values
+model = pybamm.lithium_ion.SPM(
+    options={"surface form": "differential", "contact resistance": "true"},
+)
+parameter_values = pybamm.ParameterValues("Chen2020")
+parameter_values["Contact resistance [Ohm]"] = 0.0
+parameter_values.update(
+    {
+        "Negative electrode active material volume fraction": 0.531,
+        "Positive electrode active material volume fraction": 0.732,
+    }
+)
+parameter_values.set_initial_state = 0.5
 n_frequency = 20
 sigma0 = 1e-4
 f_eval = np.logspace(-4, 5, n_frequency)
-model = pybop.lithium_ion.SPM(
-    parameter_set=parameter_set,
-    eis=True,
-    options={"surface form": "differential", "contact resistance": "true"},
-)
 
 # Create synthetic data for parameter inference
-sim = model.simulateEIS(
-    inputs={
-        "Negative electrode active material volume fraction": 0.531,
-        "Positive electrode active material volume fraction": 0.732,
-    },
-    f_eval=f_eval,
-    initial_state=initial_state,
-)
+solution = pybop.pybamm.EISSimulator(
+    model, parameter_values=parameter_values, f_eval=f_eval
+).solve()
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -56,27 +55,35 @@ def noisy(data, sigma):
 dataset = pybop.Dataset(
     {
         "Frequency [Hz]": f_eval,
-        "Current function [A]": np.ones(n_frequency) * 0.0,
-        "Impedance": noisy(sim["Impedance"], sigma0),
+        "Current function [A]": np.zeros_like(f_eval),
+        "Impedance": noisy(solution["Impedance"], sigma0),
     }
 )
 
-signal = ["Impedance"]
-# Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
+# Build the problem
+simulator = pybop.pybamm.EISSimulator(
+    model,
+    parameter_values=parameter_values,
+    input_parameter_names=parameters.names,
+    f_eval=dataset["Frequency [Hz]"],
+)
+problem = pybop.FittingProblem(simulator, parameters, dataset)
 cost = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=sigma0)
-optim = pybop.CMAES(cost, max_iterations=100, sigma0=0.25, max_unchanged_iterations=30)
 
-results = optim.run()
+# Set up the optimiser
+options = pybop.PintsOptions(
+    max_iterations=100, sigma=0.25, max_unchanged_iterations=30
+)
+optim = pybop.CMAES(cost, options=options)
+
+# Run the optimisation
+result = optim.run()
+print(result)
 
 # Plot the nyquist
-pybop.plot.nyquist(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.nyquist(problem, problem_inputs=result.x, title="Optimised Comparison")
 
-# Plot convergence
+# Plot the optimisation result
 pybop.plot.convergence(optim)
-
-# Plot the parameter traces
 pybop.plot.parameters(optim)
-
-# Plot 2d landscape
 pybop.plot.surface(optim)

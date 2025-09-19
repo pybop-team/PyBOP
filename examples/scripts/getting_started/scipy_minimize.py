@@ -3,9 +3,9 @@ import pybamm
 
 import pybop
 
-# Define model
-parameter_set = pybamm.ParameterValues("Chen2020")
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
+# Define model and parameter values
+model = pybamm.lithium_ion.SPM()
+parameter_values = pybamm.ParameterValues("Chen2020")
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -21,43 +21,43 @@ parameters = pybop.Parameters(
     ),
 )
 
-sigma = 0.001
-t_eval = np.arange(0, 900, 3)
-values = model.predict(t_eval=t_eval)
-corrupt_values = values["Voltage [V]"].data + np.random.normal(
-    0, sigma, len(values["Voltage [V]"].data)
-)
-
+# Generate a synthetic dataset
+sigma = 2e-3
+t_eval = np.linspace(0, 500, 240)
+sol = pybamm.Simulation(model, parameter_values=parameter_values).solve(t_eval=t_eval)
 dataset = pybop.Dataset(
     {
-        "Time [s]": values["Time [s]"].data,
-        "Current function [A]": values["Current [A]"].data,
-        "Voltage [V]": corrupt_values,
+        "Time [s]": t_eval,
+        "Voltage [V]": sol["Voltage [V]"](t_eval)
+        + np.random.normal(0, sigma, len(t_eval)),
+        "Current function [A]": sol["Current [A]"](t_eval),
     }
 )
 
-# Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(model, parameters, dataset)
-cost = pybop.SumSquaredError(problem)
-optim = pybop.SciPyMinimize(
-    cost,
-    max_iterations=100,
-    multistart=1,
-    method="L-BFGS-B",
-    jac=True,
-    n_sensitivity_samples=256,
+# Build the problem
+simulator = pybop.pybamm.Simulator(
+    model,
+    parameter_values=parameter_values,
+    input_parameter_names=parameters.names,
+    protocol=dataset,
 )
+problem = pybop.FittingProblem(simulator, parameters, dataset)
+cost = pybop.SumSquaredError(problem)
 
-results = optim.run()
+# Set up the optimiser
+options = pybop.SciPyMinimizeOptions(
+    verbose=True, maxiter=100, method="L-BFGS-B", jac=True
+)
+optim = pybop.SciPyMinimize(cost, options=options)
+
+# Run the optimisation
+result = optim.run()
+print("True values:", [parameter_values[p] for p in parameters.keys()])
 
 # Plot the timeseries output
-pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.problem(problem, problem_inputs=result.x, title="Optimised Comparison")
 
-# Plot convergence
+# Plot the optimisation result
 pybop.plot.convergence(optim)
-
-# Plot the parameter traces
 pybop.plot.parameters(optim)
-
-# Plot the cost landscape with optimisation path
 pybop.plot.surface(optim)

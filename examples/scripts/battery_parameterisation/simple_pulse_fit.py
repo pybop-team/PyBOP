@@ -14,11 +14,20 @@ import pybop
 current_dir = os.path.dirname(os.path.abspath(__file__))
 dataset_path = os.path.join(current_dir, "../../data/synthetic/spme_pulse_15.csv")
 
-# Define model and use high-performant solver for sensitivities
-parameter_set = pybamm.ParameterValues("Chen2020")
-model = pybop.lithium_ion.SPMe(
-    parameter_set=parameter_set,
+# Import the synthetic dataset
+csv_data = np.loadtxt(dataset_path, delimiter=",", skiprows=1)
+dataset = pybop.Dataset(
+    {
+        "Time [s]": csv_data[:, 0],
+        "Current function [A]": csv_data[:, 1],
+        "Voltage [V]": csv_data[:, 2],
+    }
 )
+
+# Define model and parameter values
+model = pybamm.lithium_ion.SPMe()
+parameter_values = pybamm.ParameterValues("Chen2020")
+parameter_values.set_initial_state(f"{csv_data[0, 2]} V")
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -36,56 +45,33 @@ parameters = pybop.Parameters(
     ),
 )
 
-# Import the synthetic dataset
-csv_data = np.loadtxt(dataset_path, delimiter=",", skiprows=1)
-
-
-# Form dataset
-dataset = pybop.Dataset(
-    {
-        "Time [s]": csv_data[:, 0],
-        "Current function [A]": csv_data[:, 1],
-        "Voltage [V]": csv_data[:, 2],
-    }
+# Build the problem
+simulator = pybop.pybamm.Simulator(
+    model, parameter_values, input_parameter_names=parameters.names, protocol=dataset
 )
-
-# Generate problem, cost function, and optimisation class
-# In this example, we initialise the SPMe at the first voltage
-# point in `csv_data`, an optimise without rebuilding the
-# model on every evaluation.
-initial_state = {"Initial open-circuit voltage [V]": csv_data[0, 2]}
-model.set_initial_state(initial_state=initial_state)
-problem = pybop.FittingProblem(
-    model,
-    parameters,
-    dataset,
-)
+problem = pybop.FittingProblem(simulator, parameters, dataset)
 
 likelihood = pybop.SumSquaredError(problem)
-optim = pybop.CMAES(
-    likelihood,
-    verbose=True,
-    sigma0=0.02,
+
+# Set up the optimiser
+options = pybop.PintsOptions(
+    sigma=0.02,
     max_iterations=100,
     max_unchanged_iterations=30,
-    # compute_sensitivities=True,
-    # n_sensitivity_samples=64,  # Decrease samples for CI (increase for higher accuracy)
 )
+optim = pybop.CMAES(likelihood, options=options)
 
 # Slow the step-size shrinking (default is 0.5)
 optim.optimiser.eta_min = 0.7
 
-# Run optimisation
-results = optim.run()
+# Run the optimisation
+result = optim.run()
+print(result)
 
 # Plot the timeseries output
-pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.problem(problem, problem_inputs=result.x, title="Optimised Comparison")
 
-# Plot convergence
+# Plot the optimisation result
 pybop.plot.convergence(optim)
-
-# Plot the parameter traces
 pybop.plot.parameters(optim)
-
-# Plot the cost landscape with optimisation path
 pybop.plot.contour(optim)

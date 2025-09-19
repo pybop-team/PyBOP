@@ -11,9 +11,21 @@ dataset_path = os.path.join(
     current_dir, "../../data/synthetic/dfn_charge_discharge_75.csv"
 )
 
-# Define model
-parameter_set = pybamm.ParameterValues("Chen2020")
-model = pybop.lithium_ion.DFN(parameter_set=parameter_set)
+# Import the synthetic dataset
+csv_data = np.loadtxt(dataset_path, delimiter=",", skiprows=1)
+dataset = pybop.Dataset(
+    {
+        "Time [s]": csv_data[:, 0],
+        "Current function [A]": csv_data[:, 1],
+        "Voltage [V]": csv_data[:, 2],
+        "Bulk open-circuit voltage [V]": csv_data[:, 3],
+    }
+)
+
+# Define model and parameter values
+model = pybamm.lithium_ion.DFN()
+parameter_values = pybamm.ParameterValues("Chen2020")
+parameter_values.set_initial_state(f"{csv_data[0, 2]} V")
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -31,51 +43,29 @@ parameters = pybop.Parameters(
     ),
 )
 
-# Import the synthetic dataset, set model initial state
-csv_data = np.loadtxt(dataset_path, delimiter=",", skiprows=1)
-initial_state = {"Initial open-circuit voltage [V]": csv_data[0, 2]}
-model.set_initial_state(initial_state=initial_state)
-
-# Form dataset
-dataset = pybop.Dataset(
-    {
-        "Time [s]": csv_data[:, 0],
-        "Current function [A]": csv_data[:, 1],
-        "Voltage [V]": csv_data[:, 2],
-        "Bulk open-circuit voltage [V]": csv_data[:, 3],
-    }
+# Build the problem
+simulator = pybop.pybamm.Simulator(
+    model, parameter_values, input_parameter_names=parameters.names, protocol=dataset
 )
-
 signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
-# Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(
-    model,
-    parameters,
-    dataset,
-    signal=signal,
-)
+problem = pybop.FittingProblem(simulator, parameters, dataset, output_variables=signal)
 cost = pybop.RootMeanSquaredError(problem)
 
-optim = pybop.IRPropPlus(
-    cost,
-    verbose=True,
+# Set up the optimiser
+options = pybop.PintsOptions(
     max_iterations=60,
     max_unchanged_iterations=15,
-    compute_sensitivities=True,
-    n_sensitivity_samples=64,  # Decrease samples for CI (increase for higher accuracy)
 )
+optim = pybop.IRPropPlus(cost, options=options)
 
-# Run optimisation
-results = optim.run()
+# Run the optimisation
+result = optim.run()
+print(result)
 
 # Plot the timeseries output
-pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.problem(problem, problem_inputs=result.x, title="Optimised Comparison")
 
-# Plot convergence
+# Plot the optimisation result
 pybop.plot.convergence(optim)
-
-# Plot the parameter traces
 pybop.plot.parameters(optim)
-
-# Plot the cost landscape with optimisation path
 pybop.plot.surface(optim)

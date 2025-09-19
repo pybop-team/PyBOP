@@ -11,15 +11,26 @@ dataset_path = os.path.join(
     current_dir, "../../data/synthetic/spm_charge_discharge_75.csv"
 )
 
-# Define model and set initial parameter values
-parameter_set = pybamm.ParameterValues("Chen2020")
-parameter_set.update(
+# Import the synthetic dataset
+csv_data = np.loadtxt(dataset_path, delimiter=",", skiprows=1)
+dataset = pybop.Dataset(
+    {
+        "Time [s]": csv_data[:, 0],
+        "Current function [A]": csv_data[:, 1],
+        "Voltage [V]": csv_data[:, 2],
+        "Bulk open-circuit voltage [V]": csv_data[:, 3],
+    }
+)
+
+# Define model and parameter values
+model = pybamm.lithium_ion.SPMe()
+parameter_values = pybamm.ParameterValues("Chen2020")
+parameter_values.update(
     {
         "Negative electrode active material volume fraction": 0.63,
         "Positive electrode active material volume fraction": 0.51,
     }
 )
-model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -34,47 +45,33 @@ parameters = pybop.Parameters(
     ),
 )
 
-# Import the synthetic dataset, set model initial state
-csv_data = np.loadtxt(dataset_path, delimiter=",", skiprows=1)
-initial_state = {"Initial open-circuit voltage [V]": csv_data[0, 2]}
-model.set_initial_state(initial_state=initial_state)
-
-# Form dataset
-dataset = pybop.Dataset(
-    {
-        "Time [s]": csv_data[:, 0],
-        "Current function [A]": csv_data[:, 1],
-        "Voltage [V]": csv_data[:, 2],
-        "Bulk open-circuit voltage [V]": csv_data[:, 3],
-    }
-)
-
-# Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(
+# Build the problem
+simulator = pybop.pybamm.Simulator(
     model,
-    parameters,
-    dataset,
+    parameter_values=parameter_values,
+    input_parameter_names=parameters.names,
+    protocol=dataset,
+    initial_state={"Initial open-circuit voltage [V]": csv_data[0, 2]},
 )
+problem = pybop.FittingProblem(simulator, parameters, dataset)
 likelihood = pybop.GaussianLogLikelihood(problem, sigma0=8e-3)
-optim = pybop.IRPropMin(
-    likelihood,
+
+# Set up the optimiser
+options = pybop.PintsOptions(
+    verbose=True,
     max_unchanged_iterations=20,
     min_iterations=20,
-    max_iterations=100,
+    max_iterations=50,
 )
+optim = pybop.XNES(likelihood, options=options)
 
 # Run the optimisation
-results = optim.run()
+result = optim.run()
 
 # Plot the timeseries output
-pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.problem(problem, problem_inputs=result.x[:2], title="Optimised Comparison")
 
-# Plot convergence
+# Plot the optimisation result
 pybop.plot.convergence(optim)
-
-# Plot the parameter traces
 pybop.plot.parameters(optim)
-
-# Plot the cost landscape with optimisation path
-bounds = np.asarray([[0.55, 0.77], [0.48, 0.68]])
-pybop.plot.contour(optim, bounds=bounds, steps=15)
+pybop.plot.contour(optim, bounds=[[0.5, 0.8], [0.4, 0.7]], steps=10)

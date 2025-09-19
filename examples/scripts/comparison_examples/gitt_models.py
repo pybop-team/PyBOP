@@ -3,15 +3,14 @@ import pybamm
 
 import pybop
 
-# Define model
-parameter_set = pybamm.ParameterValues("Xu2019")
-model = pybop.lithium_ion.SPMe(
-    parameter_set=parameter_set, options={"working electrode": "positive"}
-)
+# Define model and parameter values
+model_options = {"working electrode": "positive"}
+model = pybamm.lithium_ion.SPMe(options=model_options)
+parameter_values = pybamm.ParameterValues("Xu2019")
+parameter_values.set_initial_state(0.9, options=model_options)
 
-# Generate data
+# Generate a synthetic dataset
 sigma = 1e-3
-initial_state = {"Initial SoC": 0.9}
 experiment = pybamm.Experiment(
     [
         "Rest for 1 second",
@@ -19,32 +18,30 @@ experiment = pybamm.Experiment(
         "Rest for 20 minutes",
     ]
 )
-values = model.predict(initial_state=initial_state, experiment=experiment)
-corrupt_values = values["Voltage [V]"].data + np.random.normal(
-    0, sigma, len(values["Voltage [V]"].data)
-)
-
-# Form dataset and locate the pulse
+sol = pybamm.Simulation(
+    model, parameter_values=parameter_values, experiment=experiment
+).solve()
+corrupt_values = sol["Voltage [V]"].data + np.random.normal(0, sigma, len(sol.t))
 dataset = pybop.Dataset(
     {
-        "Time [s]": values["Time [s]"].data,
-        "Current function [A]": values["Current [A]"].data,
-        "Discharge capacity [A.h]": values["Discharge capacity [A.h]"].data,
+        "Time [s]": sol.t,
+        "Current function [A]": sol["Current [A]"].data,
+        "Discharge capacity [A.h]": sol["Discharge capacity [A.h]"].data,
         "Voltage [V]": corrupt_values,
     }
 )
 
-for model_type in [pybop.lithium_ion.WeppnerHuggins, pybop.lithium_ion.SPDiffusion]:
+for model in [pybop.lithium_ion.WeppnerHuggins(), pybop.lithium_ion.SPDiffusion()]:
     # GITT target parameter
     diffusion_parameter = pybop.Parameter(
         "Particle diffusion time scale [s]",
         prior=pybop.Gaussian(5000, 1000),
     )
 
-    if model_type == pybop.lithium_ion.WeppnerHuggins:
-        # Define parameter set
-        parameter_set = pybop.lithium_ion.WeppnerHuggins.apply_parameter_grouping(
-            model.parameter_set, electrode="positive"
+    if isinstance(model, pybop.lithium_ion.WeppnerHuggins):
+        # Group parameter values
+        grouped_parameter_values = (
+            pybop.lithium_ion.WeppnerHuggins.create_grouped_parameters(parameter_values)
         )
 
         # We can fit only the duration of the pulse
@@ -57,9 +54,9 @@ for model_type in [pybop.lithium_ion.WeppnerHuggins, pybop.lithium_ion.SPDiffusi
                 dataset["Discharge capacity [A.h]"][-1]
                 - dataset["Discharge capacity [A.h]"][0]
             )
-            * (parameter_set["Theoretical electrode capacity [A.s]"] / 3600)
+            * (grouped_parameter_values["Theoretical electrode capacity [A.s]"] / 3600)
         )
-        parameter_set.update(
+        grouped_parameter_values.update(
             {
                 "Reference voltage [V]": dataset["Voltage [V]"][pulse_index[0]],
                 "Derivative of the OCP wrt stoichiometry [V]": ocp_derivative,
@@ -71,14 +68,14 @@ for model_type in [pybop.lithium_ion.WeppnerHuggins, pybop.lithium_ion.SPDiffusi
             diffusion_parameter,
             pybop.Parameter(
                 "Reference voltage [V]",
-                initial_value=parameter_set["Reference voltage [V]"],
+                initial_value=grouped_parameter_values["Reference voltage [V]"],
             ),
         )
 
     else:
-        # Define parameter set
-        parameter_set = pybop.lithium_ion.SPDiffusion.apply_parameter_grouping(
-            model.parameter_set, electrode="positive"
+        # Group parameter values
+        grouped_parameter_values = (
+            pybop.lithium_ion.SPDiffusion.create_grouped_parameters(parameter_values)
         )
 
         # Fitting parameters
@@ -86,30 +83,35 @@ for model_type in [pybop.lithium_ion.WeppnerHuggins, pybop.lithium_ion.SPDiffusi
             diffusion_parameter,
             pybop.Parameter(
                 "Series resistance [Ohm]",
-                initial_value=parameter_set["Series resistance [Ohm]"],
+                initial_value=grouped_parameter_values["Series resistance [Ohm]"],
             ),
         )
 
     # Define the model, problem and cost to optimise
-    gitt_model = model_type(parameter_set=parameter_set, electrode="positive")
-    problem = pybop.FittingProblem(
-        gitt_model,
-        parameters,
+    gitt_dataset = (
         dataset.get_subset(pulse_index)
-        if model_type == pybop.lithium_ion.WeppnerHuggins
-        else dataset,
+        if isinstance(model, pybop.lithium_ion.WeppnerHuggins)
+        else dataset
     )
+    simulator = pybop.pybamm.Simulator(
+        model,
+        parameter_values=grouped_parameter_values,
+        input_parameter_names=parameters.names,
+        protocol=gitt_dataset,
+    )
+    problem = pybop.FittingProblem(simulator, parameters, gitt_dataset)
     cost = pybop.RootMeanSquaredError(problem, weighting="domain")
 
     # Build the optimisation problem
-    optim = pybop.SciPyMinimize(cost=cost)
+    optim = pybop.SciPyMinimize(cost)
 
     # Run the optimisation problem
-    results = optim.run()
-    print("Diffusion time [s]:", results.x[0])
+    result = optim.run()
+    print(result)
+    print("Diffusion time [s]:", result.x[0])
 
     # Plot the timeseries output
-    pybop.plot.problem(problem, problem_inputs=results.x, title=model_type().name)
+    pybop.plot.problem(problem, problem_inputs=result.x, title=model.name)
 
 print(
     "Note the different optimised values for the particle diffusion time scale,"

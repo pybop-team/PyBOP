@@ -4,9 +4,9 @@ import pybamm
 import pybop
 
 # Generate some synthetic data for testing
-parameter_set = pybamm.ParameterValues("Chen2020")
-ocv_function = parameter_set["Positive electrode OCP [V]"]
-nom_capacity = parameter_set["Nominal cell capacity [A.h]"]
+parameter_values = pybamm.ParameterValues("Chen2020")
+ocv_function = parameter_values["Positive electrode OCP [V]"]
+nom_capacity = parameter_values["Nominal cell capacity [A.h]"]
 
 
 def noise(sigma):
@@ -30,7 +30,7 @@ stoichiometry = np.linspace(0, 1, 101)
 fig = pybop.plot.trajectories(
     x=[stoichiometry, fitted_dataset["Stoichiometry"]],
     y=[
-        parameter_set["Positive electrode OCP [V]"](stoichiometry),
+        parameter_values["Positive electrode OCP [V]"](stoichiometry),
         fitted_dataset["Voltage [V]"],
     ],
     trace_names=["Ground truth", "Data vs. stoichiometry"],
