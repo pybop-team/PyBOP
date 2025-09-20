@@ -55,30 +55,44 @@ The Python Battery Optimisation and Parameterisation (`PyBOP`) package provides 
 
 # Architecture
 
-`PyBOP` has a layered structure enabling the necessary functionality to compute forward predictions, process  results, and run optimisation and sampling algorithms. The forward model is solved using the battery modelling software `PyBaMM`, with construction, parameterisation, and discretisation managed by `PyBOP`'s model interface to `PyBaMM`. This provides a robust object construction process with a consistent interface between forward models and optimisers. Furthermore, identifiability metrics are provided along with the estimated parameters (through Hessian approximation of the cost functions around the optimum point in frequentist workflows, and posterior distributions in Bayesian workflows).
+`PyBOP` formulates the inference process into three core classes: `Problem`, `Optimiser`, and `Sampler`, as shown in \autoref{fig:classes}. Each of these objects represents a base class with child classes constructing specialised functionality for different workflows. Management of these different workflows is achieved through a builder pattern for the `Problem` class aiming to provide a robust, flexible interface. The `Problem` object offers the required functionality to compute the forward model, generate residuals if needed, and compute the corresponding cost for parameter value candidates. Multiple `Problem` builders are provided to construct optimisation `Problem`'s for both time-series and electrochemical impedance spectroscopy PyBaMM domains alongside a pure python problem for general optimisation. The builder structure allows for extendability and flexibility when new optimisation problems are required without requiring refactoring of PyBOP's core classes. An example of this is the `MultiFittingProblem` and corresponding builder which generalises the pure python problem and builder for optimisation tasks where multiple objects are minimised. One such common use-case for the `MultiFittingProblem` is parameter identification workflows where the initial model state varies for each corresponding set of observations; however, many other use-cases are available through this generalised interface. The syntax for building a `PyBaMM` based parameter inference workflow is shown below.
+
+```python
+builder = (
+    pybop.builders.Pybamm()
+    .set_dataset(dataset)
+    .set_simulation(model, parameter_values=parameter_values)
+    .add_parameter(pybop.Parameter("Negative electrode thickness [m]"))
+    .add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
+)
+problem = builder.build()
+optim = pybop.CMAES(problem)
+result = optim.run()
+```
+
+The `PyBaMMProblem` class interfaces with the `PyBaMM` forward solution via a composed `Pipeline` object that manages the `PyBaMM` model, including initial state calculation, discretising and meshing the model, and exception catches with mocks for improved convergence. This `Pipeline` provides a singular interface for `PyBOP` to manage the `PyBaMM` simulation, allowing for the `Problem` and optimisation classes to be agnostic to the various context required to acquire the forward solution. In addition, the `Pipeline` also manages multiprocessing for the `PyBaMMProblem` as this is completed within the numerical C++ solver. The `Optimiser` and `Sampler` classes orchestrate the parameter inference process through either optimisation algorithms or Monte-Carlo sampling. For the `PyBaMM` based `Problem` classes, `PyBOP` constructs the cost functions as a PyBaMM expression which is applied to the user provided model after a defensive copy is performed. This implementation allows for the cost to be computed alongside the forward solution with gradient information available through `PyBaMM`'s automatic differentiation capabilities. Custom cost definitions are support through a generalised `UserCost` subclass. 
+
+
+Furthermore, for PyBaMM based builders, PyBOP supports user-provided PyBaMM models for optimisation and parameter inference workflows. This allows users to use both canonical models offered from PyBaMM and custom formulations with PyBOP's optimisation methods. Under these conditions, PyBOP aims to apply the minimal amount of modifications to the provided model in the effort to improve optimisation convergence, as well as corresponding goodness-of-fit criteria. One such example is spatial re-discretisation, which is required for the standard PyBaMM mesh construction for optimisation of geometric parameters. In this situation, `PyBOP` rebuilds the `PyBaMM` model only when necessary, aiming to limit the affect on workflow performance. In addition to the convergence information, identifiability metrics are provided with the correspondingly estimated parameter values through Hessian approximation, as well as SOBOL sampling from the `salib` package.
 
 ![The core `PyBOP` architecture with base class interfaces. Each class provides a direct mapping to a step in the optimisation workflow. \label{fig:classes}](figures/PyBOP_components.drawio.png){ width=80% }
 
-`PyBOP` formulates the inference process into four key classes: model, problem, cost (or likelihood), and optimiser (or sampler), as shown in \autoref{fig:classes}. Each of these objects represents a base class with child classes constructing specialised functionality for different workflows. The model class constructs a `PyBaMM` forward model with a specified set of equations, initial conditions, spatial discretisation, and numerical solver. By composing `PyBaMM` directly into `PyBOP`, specialised models can be constructed alongside the standard models that can also be modified for different inference tasks. One such example is spatial re-discretisation, which is required when one or more geometric parameters are being optimised. In this situation, `PyBOP` rebuilds the `PyBaMM` model only when necessary, reducing the total number of rebuilds, providing improved performance. Alongside construction of the forward model, `PyBOP`'s model class provides methods for obtaining sensitivities from the prediction, enabling gradient-based optimisation. A forward prediction, along with its corresponding sensitivities, is provided to the problem class for processing and exception control. A standardised data structure is then provided to the cost classes, which computes a distance, design, or likelihood-based metric for optimisation. For point-based optimisation, the optimisers minimise the cost function or the negative log-likelihood if a likelihood class is provided. Bayesian inference is provided by sampler classes, which accept the `LogPosterior` class and sample from it using `PINTS`-based Monte Carlo algorithms at the time of submission. In the typical workflow, the classes in \autoref{fig:classes} are constructed in sequence, from left to right in the figure.
+Alongside construction of the simulation process, the `Pipeline` object provides methods for obtaining sensitivities from the prediction, enabling gradient-based optimisation. A forward prediction, along with its corresponding sensitivities, is provided to the problem class for processing and exception control. A standardised data structure is then provided to the cost classes, which computes a distance, design, or likelihood-based metric for optimisation. For point-based optimisation, the optimisers minimise the cost function or the negative log-likelihood if a likelihood class is provided. Bayesian inference is provided by sampler classes, which accept the `LogPosterior` class and sample from it using `PINTS`-based Monte Carlo algorithms at the time of submission. In the typical workflow, the classes in \autoref{fig:classes} are constructed in sequence, from left to right in the figure.
 
-In addition to the core architecture, `PyBOP` provides several specialised inference and optimisation features. One example is parameter inference from electrochemical impedance spectroscopy (EIS) simulations, where PyBOP discretises and linearises the EIS forward model into a sparse mass matrix form with accompanying auto-differentiated Jacobian. This is then translated into the frequency domain, giving a direct solution to compute the input-output impedance. In this situation, the forward models are constructed within the spatial re-discretisation workflow, allowing for geometric parameter inference from EIS simulations and data.
+In addition to the core architecture, `PyBOP` provides several specialised inference and optimisation features. One example is parameter inference from electrochemical impedance spectroscopy (EIS) simulations, where PyBOP discretises and linearises the EIS forward model into a sparse mass matrix form with accompanying auto-differentiated Jacobian. This is then translated into the frequency domain, giving a direct solution to compute the input-output impedance. In this situation, the forward models are constructed within the spatial re-discretisation workflow, allowing for geometric parameter inference from EIS simulations and data. The currently implemented cost classes are listed in \autoref{tab:subclasses}. 
 
-The currently implemented subclasses for the model, problem, and cost classes are listed in \autoref{tab:subclasses}. The model and optimiser classes can be selected in combination with any problem-cost pair.
+:List of default cost (or likelihood) classes. \label{tab:subclasses}
 
-:List of available model, problem and cost (or likelihood) classes. \label{tab:subclasses}
+| Error Measures / Likelihoods | Design Metrics |
+|:----------------------------|:--------------------------|
+| Sum-squared error           | Volumetric energy density |
+| Root-mean-squared error     | Gravimetric energy density |
+| Minkowski                   | |
+| Sum-of-power                | |
+| Gaussian log likelihood     | |
+| Maximum a Posteriori        | |
 
-| Battery Models                      | Problem Types   | Cost / Likelihood Functions |
-|:------------------------------------|:----------------|:----------------------------|
-| Single-particle model (SPM)         | Fitting problem | Sum-squared error           |
-| SPM with electrolyte (SPMe)         | Design problem  | Root-mean-squared error     |
-| Doyle-Fuller-Newman (DFN)           | Observer        | Minkowski                   |
-| Many-particle model (MPM)           |                 | Sum-of-power                |
-| Multi-species multi-reaction (MSMR) |                 | Gaussian log likelihood     |
-| Weppner Huggins                     |                 | Maximum a posteriori        |
-| Equivalent circuit model (ECM)      |                 | Volumetric energy density   |
-|                                     |                 | Gravimetric energy density  |
-
-Similarly, the current algorithms available for optimisation are presented in \autoref{tab:optimisers}. It should be noted that SciPy minimize includes several gradient and non-gradient methods. From here on, the point-based parameterisation and design-optimisation tasks will simply be referred to as optimisation tasks. This simplification can be justified by comparing \autoref{eqn:parameterisation} and \autoref{eqn:design}; deterministic parameterisation is just an optimisation task to minimise a distance-based cost between model output and measured values.
+Similarly, the current optimisation algorithms are presented in \autoref{tab:optimisers}. It should be noted that SciPy minimize includes several gradient and non-gradient methods. From here on, the point-based parameterisation and design-optimisation tasks will simply be referred to as optimisation tasks. This simplification can be justified by comparing \autoref{eqn:parameterisation} and \autoref{eqn:design}; deterministic parameterisation is just an optimisation task to minimise a distance-based cost between model output and measured values.
 
 : Currently supported optimisers classified by candidate solution type, including gradient information. \label{tab:optimisers}
 
@@ -87,7 +101,7 @@ Similarly, the current algorithms available for optimisation are presented in \a
 | Weight decayed adaptive moment estimation (AdamW) | Covariance matrix adaptation (CMA-ES) | Particle swarm (PSO)      |
 | Improved resilient backpropagation (iRProp-)      | Exponential natural (xNES)            | Nelder-Mead               |
 | Gradient descent                                  | Separable natural (sNES)              | Cuckoo search             |
-| SciPy minimize                                    | SciPy differential evolution          |                           |
+| SciPy minimize                                    | SciPy differential evolution          | Simulated Annealing       |
 
 
 In addition to deterministic optimisers (\autoref{tab:optimisers}), `PyBOP` also provides Monte Carlo sampling routines to estimate distributions of parameters within a Bayesian framework. These methods construct a posterior parameter distribution that can be used to assess uncertainty and practical identifiability. The individual sampler classes are currently composed within `PyBOP` from the `PINTS` library, with a base sampler class implemented for interoperability and direct integration with `PyBOP`'s model, problem, and likelihood classes. The currently supported samplers are listed in \autoref{tab:samplers}.
