@@ -8,7 +8,7 @@ from benchmarks.benchmark_utils import set_random_seed
 class BenchmarkTrackParameterisation:
     param_names = ["model", "parameter_set", "optimiser"]
     params = [
-        [pybamm.lithium_ion.SPM, pybamm.lithium_ion.SPMe],
+        [pybamm.lithium_ion.SPM(), pybamm.lithium_ion.SPMe()],
         ["Chen2020"],
         [
             pybop.SciPyMinimize,
@@ -35,15 +35,14 @@ class BenchmarkTrackParameterisation:
         # Set random seed
         set_random_seed()
 
-        # Create model instance
-        params = pybamm.ParameterValues(parameter_set)
-        params.update(
+        # Create parameter values
+        parameter_values = pybamm.ParameterValues(parameter_set)
+        parameter_values.update(
             {
                 "Negative electrode active material volume fraction": 0.63,
                 "Positive electrode active material volume fraction": 0.51,
             }
         )
-        model_instance = model(parameter_set=params)
 
         # Define fitting parameters
         parameters = pybop.Parameters(
@@ -62,8 +61,10 @@ class BenchmarkTrackParameterisation:
         # Generate synthetic data
         sigma = 0.003
         t_eval = np.arange(0, 900, 2)
-        values = model_instance.predict(t_eval=t_eval)
-        corrupt_values = values["Voltage [V]"].data + np.random.normal(
+        solution = pybamm.Simulation(model, parameter_values=parameter_values).solve(
+            t_eval=t_eval
+        )
+        corrupt_values = solution["Voltage [V]"](t_eval) + np.random.normal(
             0, sigma, len(t_eval)
         )
 
@@ -71,37 +72,36 @@ class BenchmarkTrackParameterisation:
         dataset = pybop.Dataset(
             {
                 "Time [s]": t_eval,
-                "Current function [A]": values["Current [A]"].data,
+                "Current function [A]": solution["Current [A]"](t_eval),
                 "Voltage [V]": corrupt_values,
             }
         )
 
         # Create fitting problem
-        problem = pybop.FittingProblem(model_instance, parameters, dataset)
+        simulator = pybop.pybamm.Simulator(
+            model,
+            parameter_values=parameter_values,
+            input_parameter_names=parameters.names,
+            protocol=dataset,
+        )
+        problem = pybop.FittingProblem(simulator, parameters, dataset)
 
         # Create cost function
         cost = pybop.SumSquaredError(problem=problem)
 
         # Create optimization instance and set options for consistent benchmarking
-        if optimiser in [pybop.GradientDescent]:
-            self.optim = pybop.Optimisation(
-                cost,
-                optimiser=optimiser,
-                max_iterations=250,
-                max_unchanged_iterations=25,
-                threshold=1e-5,
-                min_iterations=2,
-                learning_rate=0.008,  # Compromise between stability & performance
-            )
+        if optimiser is pybop.SciPyDifferentialEvolution:
+            options = pybop.SciPyDifferentialEvolutionOptions(maxiter=50)
+        elif optimiser is pybop.SciPyMinimize:
+            options = pybop.SciPyMinimizeOptions(maxiter=250)
         else:
-            self.optim = pybop.Optimisation(
-                cost,
-                optimiser=optimiser,
+            options = pybop.PintsOptions(
                 max_iterations=250,
                 max_unchanged_iterations=25,
                 threshold=1e-5,
                 min_iterations=2,
             )
+        self.optim = optimiser(cost, options=options)
 
         # Track output results
         self.x = self.results_tracking(model, parameter_set, optimiser)

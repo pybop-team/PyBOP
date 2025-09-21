@@ -8,7 +8,7 @@ from benchmarks.benchmark_utils import set_random_seed
 class BenchmarkOptimisationConstruction:
     param_names = ["model", "parameter_set", "optimiser"]
     params = [
-        [pybamm.lithium_ion.SPM, pybamm.lithium_ion.SPMe],
+        [pybamm.lithium_ion.SPM(), pybamm.lithium_ion.SPMe()],
         ["Chen2020"],
         [pybop.CMAES],
     ]
@@ -25,8 +25,8 @@ class BenchmarkOptimisationConstruction:
         # Set random seed
         set_random_seed()
 
-        # Create model instance
-        model_instance = model(parameter_set=pybamm.ParameterValues(parameter_set))
+        # Create parameter values
+        parameter_values = pybamm.ParameterValues(parameter_set)
 
         # Define fitting parameters
         parameters = pybop.Parameters(
@@ -47,8 +47,10 @@ class BenchmarkOptimisationConstruction:
         # Generate synthetic data
         sigma = 0.001
         t_eval = np.arange(0, 900, 2)
-        values = model_instance.predict(t_eval=t_eval)
-        corrupt_values = values["Voltage [V]"].data + np.random.normal(
+        solution = pybamm.Simulation(model, parameter_values=parameter_values).solve(
+            t_eval=t_eval
+        )
+        corrupt_values = solution["Voltage [V]"](t_eval) + np.random.normal(
             0, sigma, len(t_eval)
         )
 
@@ -56,15 +58,19 @@ class BenchmarkOptimisationConstruction:
         dataset = pybop.Dataset(
             {
                 "Time [s]": t_eval,
-                "Current function [A]": values["Current [A]"].data,
+                "Current function [A]": solution["Current [A]"](t_eval),
                 "Voltage [V]": corrupt_values,
             }
         )
 
         # Create fitting problem
-        problem = pybop.FittingProblem(
-            model=model_instance, dataset=dataset, parameters=parameters
+        simulator = pybop.pybamm.Simulator(
+            model,
+            parameter_values=parameter_values,
+            input_parameter_names=parameters.names,
+            protocol=dataset,
         )
+        problem = pybop.FittingProblem(simulator, parameters, dataset)
 
         # Create cost function
         self.cost = pybop.SumSquaredError(problem=problem)
