@@ -45,12 +45,7 @@ class BaseEvaluator(PintsEvaluator):
                     return np.empty(0), np.empty(0)
 
                 inputs_list = self.cost.parameters.to_inputs(x_model)
-                cost, grad = [], []
-                for inputs in inputs_list:
-                    out = self.cost.single_call(inputs, calculate_grad=True)
-                    cost.append(out[0])
-                    grad.append(out[1])
-                cost, grad = np.asarray(cost), np.asarray(grad)
+                cost, grad = self.cost.batch_call(inputs_list, calculate_grad=True)
 
                 # Apply the inverse parameter transformation to the gradient
                 for i, x in enumerate(x_search):
@@ -71,10 +66,7 @@ class BaseEvaluator(PintsEvaluator):
                     return np.empty(0)
 
                 inputs_list = self.cost.parameters.to_inputs(x_model)
-                cost = []
-                for inputs in inputs_list:
-                    cost.append(self.cost.single_call(inputs, calculate_grad=False))
-                cost = np.atleast_1d(cost)
+                cost = self.cost.batch_call(inputs_list, calculate_grad=False)
 
                 logger.extend_log(x_search=x_search, x_model=x_model, cost=cost)
                 return cost
@@ -88,12 +80,7 @@ class BaseEvaluator(PintsEvaluator):
                     return np.empty(0), np.empty(0)
 
                 inputs_list = self.cost.parameters.to_inputs(x_model)
-                cost, grad = [], []
-                for inputs in inputs_list:
-                    out = self.cost.single_call(inputs, calculate_grad=True)
-                    cost.append(out[0])
-                    grad.append(out[1])
-                cost, grad = np.asarray(cost), np.asarray(grad)
+                cost, grad = self.cost.batch_call(inputs_list, calculate_grad=True)
 
                 # Apply the inverse parameter transformation to the gradient
                 for i, x in enumerate(x_search):
@@ -114,10 +101,7 @@ class BaseEvaluator(PintsEvaluator):
                     return np.empty(0), np.empty(0)
 
                 inputs_list = self.cost.parameters.to_inputs(x_model)
-                cost = []
-                for inputs in inputs_list:
-                    cost.append(self.cost.single_call(inputs, calculate_grad=False))
-                cost = np.atleast_1d(cost)
+                cost = self.cost.batch_call(inputs_list, calculate_grad=False)
 
                 logger.extend_log(x_search=x_search, x_model=x_model, cost=cost)
                 return -cost

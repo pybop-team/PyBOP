@@ -134,6 +134,23 @@ class BaseCost:
 
         return self.compute(y, dy=dy)
 
+    def batch_call(
+        self, inputs_list: list[Inputs], calculate_grad: bool
+    ) -> list[float] | list[tuple[float, np.ndarray]]:
+        """Evaluate the cost and (optionally) the gradient for a list of inputs."""
+        if calculate_grad:
+            costs, grads = [], []
+            for inputs in inputs_list:
+                out = self.single_call(inputs, calculate_grad=True)
+                costs.append(out[0])
+                grads.append(out[1])
+            return np.asarray(costs), np.asarray(grads)
+
+        costs = []
+        for inputs in inputs_list:
+            costs.append(self.single_call(inputs, calculate_grad=False))
+        return np.atleast_1d(costs)
+
     def compute(self, y: dict, dy: np.ndarray | None):
         """
         Compute the cost and, if dy is not None, its gradient with respect to the
