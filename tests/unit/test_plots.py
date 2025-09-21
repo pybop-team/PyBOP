@@ -116,43 +116,39 @@ class TestPlots:
         pybop.plot.contour(cost, bounds=np.array([[0.5, 0.8], [0.4, 0.7]]), steps=5)
 
     @pytest.fixture
-    def optim(self, cost):
+    def result(self, cost):
         # Define and run an example optimisation
         optim = pybop.XNES(cost)
-        optim.run()
-        return optim
+        return optim.run()
 
-    def test_optim_plots(self, optim):
+    def test_optim_plots(self, result):
         bounds = np.asarray([[0.5, 0.8], [0.4, 0.7]])
 
         # Plot convergence
-        pybop.plot.convergence(optim)
+        result.plot_parameters()
 
         # Plot the parameter traces
-        pybop.plot.parameters(optim)
+        result.plot_parameters()
 
         # Plot the cost landscape with optimisation path
-        pybop.plot.contour(optim, steps=3)
+        result.plot_contour(steps=3)
 
         # Plot the cost landscape w/ optim & bounds
-        pybop.plot.contour(optim, steps=3, bounds=bounds)
-
-        # Plot the cost landscape using optimisation path
-        pybop.plot.contour(optim, steps=3, use_optim_log=True)
+        result.plot_contour(steps=3, bounds=bounds)
 
         # Plot gradient cost landscape
-        pybop.plot.contour(optim, gradient=True, steps=5)
+        result.plot_contour(gradient=True, steps=5)
 
         # Plot voronoi
-        pybop.plot.surface(optim, normalise=False)
+        result.plot_surface(normalise=False)
 
         # Plot voronoi w/ bounds
-        pybop.plot.surface(optim, bounds=bounds)
+        result.plot_surface(bounds=bounds)
 
         with pytest.raises(
             ValueError, match="Lower bounds must be strictly less than upper bounds."
         ):
-            pybop.plot.surface(optim, bounds=[[0.5, 0.8], [0.7, 0.4]])
+            result.plot_surface(bounds=[[0.5, 0.8], [0.7, 0.4]])
 
     @pytest.fixture
     def posterior_summary(self, fitting_problem):
@@ -177,25 +173,25 @@ class TestPlots:
         # Plot summary table
         posterior_summary.summary_table()
 
-    def test_with_ipykernel(self, dataset, cost, optim):
+    def test_with_ipykernel(self, dataset, cost, result):
         import ipykernel
 
         assert version.parse(ipykernel.__version__) >= version.parse("0.6")
         pybop.plot.dataset(dataset, signal=["Voltage [V]"])
         pybop.plot.contour(cost, gradient=True, steps=5)
-        pybop.plot.convergence(optim)
-        pybop.plot.parameters(optim)
-        pybop.plot.contour(optim, steps=5)
+        result.plot_parameters()
+        result.plot_parameters()
+        result.plot_contour(steps=5)
 
     def test_gaussianloglikelihood_plots(self, fitting_problem):
         # Test plot of GaussianLogLikelihood
         likelihood = pybop.GaussianLogLikelihood(fitting_problem)
         options = pybop.PintsOptions(max_iterations=5)
         optim = pybop.CMAES(likelihood, options=options)
-        optim.run()
+        result = optim.run()
 
         # Plot parameters
-        pybop.plot.parameters(optim)
+        result.plot_parameters()
 
     def test_contour_incorrect_number_of_parameters(self, model, dataset):
         # Test with less than two paramters

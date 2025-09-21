@@ -72,5 +72,5 @@ for cost in [weighted_cost, cost1, cost2]:
     pybop.plot.problem(problem, problem_inputs=result.x, title="Optimised Comparison")
 
     # Plot the optimisation result
-    pybop.plot.convergence(optim)
-    pybop.plot.surface(optim)
+    result.plot_convergence()
+    result.plot_surface()

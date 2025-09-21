@@ -48,5 +48,5 @@ pybop.plot.problem(
 )
 
 # Plot the optimisation result
-pybop.plot.convergence(gitt_fit.optim)
-pybop.plot.parameters(gitt_fit.optim)
+gitt_result.plot_convergence()
+gitt_result.plot_parameters()

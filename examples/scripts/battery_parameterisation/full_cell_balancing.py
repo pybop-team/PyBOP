@@ -89,6 +89,6 @@ print("True values:", [parameter_values[p] for p in parameters.keys()])
 pybop.plot.problem(problem, problem_inputs=result.x, title="Optimised Comparison")
 
 # Plot the optimisation result
-pybop.plot.convergence(optim)
-pybop.plot.parameters(optim)
-pybop.plot.contour(optim, steps=5)
+result.plot_convergence()
+result.plot_parameters()
+result.plot_contour(steps=5)

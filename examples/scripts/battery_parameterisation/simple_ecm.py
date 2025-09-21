@@ -101,6 +101,6 @@ print("True values:", [parameter_values[p] for p in parameters.keys()])
 pybop.plot.problem(problem, problem_inputs=result.x, title="Optimised Comparison")
 
 # Plot the result
-pybop.plot.convergence(optim)
-pybop.plot.parameters(optim)
-pybop.plot.surface(optim)
+result.plot_convergence()
+result.plot_parameters()
+result.plot_surface()

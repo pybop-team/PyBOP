@@ -120,5 +120,5 @@ print("Estimated parameters:", result.x.tolist() + [result.x[2] / result.x[1]])
 pybop.plot.problem(problem, problem_inputs=result.x, title="Optimised Comparison")
 
 # Plot the optimisation result
-pybop.plot.convergence(optim)
-pybop.plot.parameters(optim)
+result.plot_convergence()
+result.plot_parameters()

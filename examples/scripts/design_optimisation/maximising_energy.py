@@ -101,4 +101,4 @@ print(f"Optimised volumetric energy density: {cost2(result.x):.2f} Wh.m-3")
 pybop.plot.problem(problem, problem_inputs=result.x, title="Optimised Comparison")
 
 # Plot the optimisation result
-pybop.plot.surface(optim)
+result.plot_surface()

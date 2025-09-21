@@ -72,6 +72,6 @@ result = optim.run()
 pybop.plot.problem(problem, problem_inputs=result.x[:2], title="Optimised Comparison")
 
 # Plot the optimisation result
-pybop.plot.convergence(optim)
-pybop.plot.parameters(optim)
-pybop.plot.contour(optim, bounds=[[0.5, 0.8], [0.4, 0.7]], steps=10)
+result.plot_convergence()
+result.plot_parameters()
+result.plot_contour(bounds=[[0.5, 0.8], [0.4, 0.7]], steps=10)

@@ -1,14 +1,19 @@
+from typing import TYPE_CHECKING
+
 from pybop.plot.standard_plots import StandardPlot
 
+if TYPE_CHECKING:
+    from pybop._result import OptimisationResult
 
-def convergence(optim, show=True, **layout_kwargs):
+
+def convergence(result: "OptimisationResult", show=True, **layout_kwargs):
     """
     Plot the convergence of the optimisation algorithm.
 
     Parameters
     -----------
-    optim : object
-        Optimisation object containing the cost function and optimiser.
+    result : pybop.OptimisationResult
+        Optimisation result containing the history of parameter values and associated cost.
     show : bool, optional
         If True, the figure is shown upon creation (default: True).
     **layout_kwargs : optional
@@ -23,7 +28,7 @@ def convergence(optim, show=True, **layout_kwargs):
     """
 
     # Extract log from the optimisation object
-    cost_log = optim.logger.cost_convergence
+    cost_log = result.cost
 
     # Generate a list of iteration numbers
     iteration_numbers = list(range(1, len(cost_log) + 1))
@@ -37,7 +42,7 @@ def convergence(optim, show=True, **layout_kwargs):
             yaxis_title="Cost",
             title="Convergence",
         ),
-        trace_names=optim.name,
+        trace_names=result.optim_name,
     )
 
     # Generate and display the figure

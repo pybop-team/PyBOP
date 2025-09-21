@@ -92,4 +92,4 @@ print(f"Optimised gravimetric energy density: {cost(result.x):.2f} Wh.kg-1")
 pybop.plot.problem(problem, problem_inputs=result.x, title="Optimised Comparison")
 
 # Plot the optimisation result
-pybop.plot.surface(optim)
+result.plot_surface()

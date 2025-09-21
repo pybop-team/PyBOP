@@ -1,7 +1,10 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
 from scipy.spatial import Voronoi, cKDTree
 
-from pybop import BaseOptimiser
+if TYPE_CHECKING:
+    from pybop._result import OptimisationResult
 from pybop.plot.plotly_manager import PlotlyManager
 
 
@@ -224,7 +227,7 @@ def assign_nearest_value(x, y, f, xi, yi):
 
 
 def surface(
-    optim: BaseOptimiser,
+    result: "OptimisationResult",
     bounds=None,
     normalise=True,
     resolution=250,
@@ -236,8 +239,8 @@ def surface(
 
     Parameters:
     -----------
-    optim : pybop.BaseOptimiser
-        Solved optimisation object
+    result : pybop.OptimisationResult
+        Optimisation result containing the history of parameter values and associated cost.
     bounds : numpy.ndarray, optional
         A 2x2 array specifying the [min, max] bounds for each parameter. If None, uses
         `cost.parameters.get_bounds_for_plotly`.
@@ -253,7 +256,8 @@ def surface(
         e.g. `xaxis_title="Time [s]"` or
         `xaxis={"title": "Time [s]", font={"size":14}}`
     """
-    points = optim.logger.x_model
+    points = result.x_model
+    parameters = result.optim.cost.parameters
 
     if points[0].shape[0] != 2:
         raise ValueError("This plot method requires two parameters.")
@@ -268,13 +272,11 @@ def surface(
     x_optim, y_optim = x_optim[index], y_optim[index]
 
     # Get corresponding cost values
-    f = np.asarray(optim.logger.cost)[index]
+    f = np.asarray(result.cost)[index]
 
     # Translate bounds, taking only the first two elements
     xlim, ylim = (
-        bounds
-        if bounds is not None
-        else [param.bounds for param in optim.cost.parameters]
+        bounds if bounds is not None else [param.bounds for param in parameters]
     )[:2]
 
     # Create a grid for plot
@@ -374,8 +376,8 @@ def surface(
     )
 
     # Plot the initial guess
-    if len(optim.logger.x_model) > 0:
-        x0 = optim.logger.x_model[0]
+    if len(result.x_model) > 0:
+        x0 = result.x_model[0]
         fig.add_trace(
             go.Scatter(
                 x=[x0[0]],
@@ -394,8 +396,8 @@ def surface(
         )
 
         # Plot optimised value
-        if optim.logger.x_model_best is not None:
-            x_best = optim.logger.x_model_best
+        if result.x is not None:
+            x_best = result.x
             fig.add_trace(
                 go.Scatter(
                     x=[x_best[0]],
@@ -413,7 +415,7 @@ def surface(
                 )
             )
 
-    names = list(optim.cost.parameters.keys())
+    names = parameters.names
     fig.update_layout(
         title="Voronoi Cost Landscape",
         title_x=0.5,

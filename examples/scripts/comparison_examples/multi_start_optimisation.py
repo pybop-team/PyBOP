@@ -53,6 +53,6 @@ print(result)
 pybop.plot.problem(problem, problem_inputs=result.x, title="Optimised Comparison")
 
 # Plot the optimisation result
-pybop.plot.convergence(optim)
-pybop.plot.parameters(optim)
-pybop.plot.surface(optim, bounds=[[0.5, 0.8], [0.4, 0.7]])
+result.plot_convergence()
+result.plot_parameters()
+result.plot_surface(bounds=[[0.5, 0.8], [0.4, 0.7]])

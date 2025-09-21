@@ -175,5 +175,5 @@ print(result)
 pybop.plot.problem(problem, problem_inputs=result.x, title="Optimised Comparison")
 
 # Plot the optimisation result
-pybop.plot.convergence(optim)
-pybop.plot.parameters(optim)
+result.plot_convergence()
+result.plot_parameters()

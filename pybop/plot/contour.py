@@ -1,21 +1,24 @@
 import warnings
+from collections.abc import Callable
 from functools import partial
+from typing import TYPE_CHECKING
 
 import numpy as np
-from scipy.interpolate import griddata
 
-from pybop import BaseCost, BaseOptimiser
+from pybop import BaseCost
 from pybop.plot.plotly_manager import PlotlyManager
+
+if TYPE_CHECKING:
+    from pybop._result import OptimisationResult
 
 
 def contour(
-    call_object: BaseCost | BaseOptimiser,
+    call_object: "BaseCost | OptimisationResult",
     gradient: bool = False,
     bounds: np.ndarray | None = None,
     transformed: bool = False,
     steps: int = 10,
     show: bool = True,
-    use_optim_log: bool = False,
     **layout_kwargs,
 ):
     """
@@ -26,13 +29,13 @@ def contour(
 
     Parameters
     ----------
-    call_object : pybop.BaseCost | pybop.BaseOptimiser
+    call_object : pybop.BaseCost | pybop.OptimisationResult
         Either:
         - the cost function to be evaluated. Must accept a list of parameter values and return a cost value.
-        - an optimiser object which provides a specific optimisation trace overlaid on the cost landscape.
+        - an optimiser result which provides a specific optimisation trace overlaid on the cost landscape.
     gradient : bool, optional
         If True, the gradient is shown (default: False).
-    bounds : numpy.ndarray, optional
+    bounds : numpy.ndarray | list[list[float]], optional
         A 2x2 array specifying the [min, max] bounds for each parameter. If None, uses
         `parameters.get_bounds_for_plotly`.
     transformed : bool, optional
@@ -41,8 +44,6 @@ def contour(
         The number of grid points to divide the parameter space into along each dimension (default: 10).
     show : bool, optional
         If True, the figure is shown upon creation (default: True).
-    use_optim_log : bool, optional
-        If True, the optimisation log is used to shape the cost landscape (default: False).
     **layout_kwargs : optional
         Valid Plotly layout keys and their values,
         e.g. `xaxis_title="Time [s]"` or
@@ -61,14 +62,14 @@ def contour(
     plot_optim = False
     cost = cost_call = call_object
 
-    # Assign input as a cost or optimisation object
-    if isinstance(call_object, BaseOptimiser):
-        plot_optim = True
-        optim = call_object
-        cost = optim.cost
-        cost_call = partial(optim.cost)
-    elif isinstance(call_object, BaseCost):
+    # Assign input as a cost or optimisation result
+    if isinstance(call_object, BaseCost):
         cost = call_object
+        cost_call = partial(cost)
+    elif not isinstance(call_object, Callable):
+        plot_optim = True
+        optim = call_object.optim
+        cost = optim.cost
         cost_call = partial(cost)
 
     parameters = cost.parameters
@@ -136,24 +137,6 @@ def contour(
     # Append the arrays to the grad_parameter_costs list
     if gradient:
         grad_parameter_costs.extend(grads)
-
-    if plot_optim and use_optim_log:
-        # Flatten the cost matrix and parameter values
-        flat_x = np.tile(x, len(y))
-        flat_y = np.repeat(y, len(x))
-        flat_costs = costs.flatten()
-
-        # Append the optimisation trace to the data
-        parameter_log = np.asarray(optim.logger.x_model)
-        flat_x = np.concatenate((flat_x, parameter_log[:, 0]))
-        flat_y = np.concatenate((flat_y, parameter_log[:, 1]))
-        flat_costs = np.concatenate((flat_costs, optim.logger.cost))
-
-        # Order the parameter values and estimate the cost using interpolation
-        x = np.unique(flat_x)
-        y = np.unique(flat_y)
-        xf, yf = np.meshgrid(x, y)
-        costs = griddata((flat_x, flat_y), flat_costs, (xf, yf), method="linear")
 
     # Apply any transformation if requested
     def transform_array_of_values(list_of_values, parameter):
