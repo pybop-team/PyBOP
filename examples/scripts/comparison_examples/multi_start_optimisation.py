@@ -37,7 +37,7 @@ simulator = pybop.pybamm.Simulator(
     model, parameter_values, input_parameter_names=parameters.names, protocol=dataset
 )
 cost = pybop.RootMeanSquaredError(dataset)
-problem = pybop.FittingProblem(simulator, parameters, cost)
+problem = pybop.Problem(simulator, parameters, cost)
 
 # Construct the optimiser with 10 multistart runs
 # Each of these runs has a random starting position sampled

@@ -66,7 +66,7 @@ simulator = pybop.pybamm.Simulator(
 )
 likelihood = pybop.GaussianLogLikelihood(dataset)
 posterior = pybop.LogPosterior(likelihood)
-problem = pybop.FittingProblem(simulator, parameters, posterior)
+problem = pybop.Problem(simulator, parameters, posterior)
 
 # Create and run the sampler
 options = pybop.PintsSamplerOptions(

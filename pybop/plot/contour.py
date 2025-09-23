@@ -5,14 +5,14 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from pybop.plot.plotly_manager import PlotlyManager
-from pybop.problems.base_problem import BaseProblem
+from pybop.problems.base_problem import Problem
 
 if TYPE_CHECKING:
     from pybop._result import OptimisationResult
 
 
 def contour(
-    call_object: "BaseProblem | OptimisationResult",
+    call_object: "Problem | OptimisationResult",
     gradient: bool = False,
     bounds: np.ndarray | None = None,
     transformed: bool = False,
@@ -28,7 +28,7 @@ def contour(
 
     Parameters
     ----------
-    call_object : pybop.BaseProblem | pybop.OptimisationResult
+    call_object : pybop.Problem | pybop.OptimisationResult
         Either:
         - the cost function to be evaluated. Must accept a list of parameter values and return a cost value.
         - an optimiser result which provides a specific optimisation trace overlaid on the cost landscape.

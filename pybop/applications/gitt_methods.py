@@ -68,7 +68,7 @@ class GITTPulseFit(BaseApplication):
             protocol=gitt_pulse,
         )
         cost = self.cost(gitt_pulse, weighting="domain")
-        self.problem = pybop.FittingProblem(
+        self.problem = pybop.Problem(
             simulator=simulator,
             parameters=self.parameters,
             cost=cost,

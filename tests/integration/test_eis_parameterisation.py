@@ -126,7 +126,7 @@ class TestEISParameterisation:
             cost = cost_class(dataset, target=target, p=2)
         else:
             cost = cost_class(dataset, target=target)
-        problem = pybop.FittingProblem(simulator, parameters, cost)
+        problem = pybop.Problem(simulator, parameters, cost)
 
         # Construct optimisation object
         if optimiser is pybop.SciPyDifferentialEvolution:

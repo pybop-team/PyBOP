@@ -40,7 +40,7 @@ class TestClassifier:
             model, input_parameter_names=parameters.names, protocol=dataset
         )
         cost = pybop.SumSquaredError(dataset)
-        return pybop.FittingProblem(simulator, parameters, cost)
+        return pybop.Problem(simulator, parameters, cost)
 
     def test_classify_using_hessian_invalid(self, problem):
         optim = pybop.XNES(problem)

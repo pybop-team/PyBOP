@@ -115,7 +115,7 @@ class TestGroupedModels:
         cost_1 = pybop.SumSquaredError(dataset)
         cost_2 = pybop.MeanAbsoluteError(dataset)
         cost = pybop.WeightedCost(cost_1, cost_2)
-        problem = pybop.FittingProblem(simulator, parameters, cost)
+        problem = pybop.Problem(simulator, parameters, cost)
 
         # Test parameter sensitivity
         initial_params = parameters.get_initial_values()
@@ -154,7 +154,7 @@ class TestGroupedModels:
         cost = pybop.MeanSquaredError(
             eis_dataset, target="Impedance", weighting="equal"
         )
-        eis_problem = pybop.FittingProblem(simulator, parameters, cost)
+        eis_problem = pybop.Problem(simulator, parameters, cost)
 
         # Test parameter sensitivity
         initial_params = parameters.get_initial_values()

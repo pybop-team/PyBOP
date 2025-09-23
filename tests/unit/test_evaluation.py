@@ -90,7 +90,7 @@ class TestEvaluation:
             )
         else:
             cost = cost_class(dataset)
-        return pybop.FittingProblem(simulator, parameters, cost)
+        return pybop.Problem(simulator, parameters, cost)
 
     def test_evaluator_transformations(self, problem):
         if isinstance(problem.cost, pybop.GaussianLogLikelihood):

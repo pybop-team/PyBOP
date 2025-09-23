@@ -92,7 +92,7 @@ class TestLikelihoods:
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(
             dataset, target=target, sigma0=np.array([0.01])
         )
-        problem = pybop.FittingProblem(simulator, parameters, likelihood)
+        problem = pybop.Problem(simulator, parameters, likelihood)
         result = problem([0.5])
         grad_result, grad_likelihood = problem([0.5], calculate_grad=True)
         assert isinstance(result, float)
@@ -102,7 +102,7 @@ class TestLikelihoods:
 
     def test_gaussian_log_likelihood(self, simulator, parameters, dataset):
         likelihood = pybop.GaussianLogLikelihood(dataset, sigma0=0.01)
-        problem = pybop.FittingProblem(simulator, parameters, likelihood)
+        problem = pybop.Problem(simulator, parameters, likelihood)
         result = problem(np.array([0.8, 0.02]))
         grad_result, grad_likelihood = problem(
             np.array([0.8, 0.025]), calculate_grad=True
@@ -124,7 +124,7 @@ class TestLikelihoods:
             match=r"Expected sigma0 to contain Parameter objects or numeric values.",
         ):
             likelihood = pybop.GaussianLogLikelihood(dataset, sigma0="Invalid string")
-            pybop.FittingProblem(simulator, parameters, likelihood)
+            pybop.Problem(simulator, parameters, likelihood)
 
     def test_gaussian_log_likelihood_dsigma_scale(self, dataset):
         likelihood = pybop.GaussianLogLikelihood(dataset, dsigma_scale=0.05)
@@ -140,7 +140,7 @@ class TestLikelihoods:
         self, simulator, parameters, dataset
     ):
         likelihood = pybop.GaussianLogLikelihood(dataset)
-        problem = pybop.FittingProblem(simulator, parameters, likelihood)
+        problem = pybop.Problem(simulator, parameters, likelihood)
         assert problem(np.array([0.01, 0.1])) == -np.inf  # parameter value too small
         assert (
             problem(np.array([0.01, 0.1]), calculate_grad=True)[0] == -np.inf
@@ -152,7 +152,7 @@ class TestLikelihoods:
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(
             dataset, sigma0=np.array([0.2])
         )
-        problem = pybop.FittingProblem(simulator, parameters, likelihood)
+        problem = pybop.Problem(simulator, parameters, likelihood)
         assert problem(np.array([0.01])) == -np.inf  # parameter value too small
         assert (
             problem(np.array([0.01]), calculate_grad=True)[0] == -np.inf

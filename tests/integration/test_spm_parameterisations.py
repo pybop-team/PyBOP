@@ -115,7 +115,7 @@ class Test_SPM_Parameterisation:
             cost = cost_class(dataset, p=2.5)
         else:
             cost = cost_class(dataset)
-        problem = pybop.FittingProblem(simulator, parameters, cost)
+        problem = pybop.Problem(simulator, parameters, cost)
 
         max_unchanged_iter = 100
         sigma0 = (
@@ -221,7 +221,7 @@ class Test_SPM_Parameterisation:
             cost = cost_class(dataset, target=target, p=2.5)
         else:
             cost = cost_class(dataset, target=target)
-        return pybop.FittingProblem(simulator, parameters, cost)
+        return pybop.Problem(simulator, parameters, cost)
 
     @pytest.mark.parametrize(
         "multi_optimiser",
@@ -303,7 +303,7 @@ class Test_SPM_Parameterisation:
             protocol=dataset,
         )
         cost = pybop.RootMeanSquaredError(dataset)
-        problem = pybop.FittingProblem(simulator, parameters, cost)
+        problem = pybop.Problem(simulator, parameters, cost)
 
         # Build the optimisation problem
         optim = pybop.XNES(problem)

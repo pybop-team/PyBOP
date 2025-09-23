@@ -90,7 +90,7 @@ class TestHalfCellModel:
             protocol=dataset,
         )
         cost = pybop.SumSquaredError(dataset)
-        return pybop.FittingProblem(simulator, parameters, cost)
+        return pybop.Problem(simulator, parameters, cost)
 
     def test_fitting_costs(self, fitting_problem):
         x0 = fitting_problem.parameters.get_initial_values()
@@ -133,7 +133,7 @@ class TestHalfCellModel:
             use_formation_concentrations=True,
         )
         cost = pybop.DesignCost(target="Gravimetric energy density [Wh.kg-1]")
-        return pybop.DesignProblem(simulator, parameters, cost)
+        return pybop.Problem(simulator, parameters, cost)
 
     def test_design_costs(self, design_problem):
         options = pybop.PintsOptions(max_iterations=15)

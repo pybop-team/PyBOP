@@ -71,7 +71,7 @@ class BenchmarkOptimisationConstruction:
             protocol=dataset,
         )
         cost = pybop.SumSquaredError(dataset)
-        self.problem = pybop.FittingProblem(simulator, parameters, cost)
+        self.problem = pybop.Problem(simulator, parameters, cost)
 
     def time_optimisation_construction(self, model, parameter_set, optimiser):
         """

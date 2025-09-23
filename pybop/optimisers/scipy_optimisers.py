@@ -13,7 +13,7 @@ from pybop import (
     ScalarEvaluator,
 )
 from pybop._logging import Logger
-from pybop.problems.base_problem import BaseProblem
+from pybop.problems.base_problem import Problem
 
 __all__: list[str] = [
     "SciPyMinimize",
@@ -27,7 +27,7 @@ class BaseSciPyOptimiser(BaseOptimiser):
 
     Parameters
     ----------
-    problem : pybop.BaseProblem
+    problem : pybop.Problem
         The problem to optimise.
     options : pybop.OptimiserOptions
         Valid SciPy option keys and their values.
@@ -35,7 +35,7 @@ class BaseSciPyOptimiser(BaseOptimiser):
 
     def __init__(
         self,
-        problem: BaseProblem,
+        problem: Problem,
         options: pybop.OptimiserOptions | None,
     ):
         super().__init__(problem, options=options)
@@ -142,7 +142,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
 
     Parameters
     ----------
-    problem : pybop.BaseProblem
+    problem : pybop.Problem
         The problem to optimise.
     options: ScipyMinizeOptions, optional
         Options for the SciPy minimize method (default: None).
@@ -159,7 +159,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
 
     def __init__(
         self,
-        problem: BaseProblem,
+        problem: Problem,
         options: SciPyMinimizeOptions | None = None,
     ):
         options = options or self.default_options()
@@ -358,7 +358,7 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
 
     Parameters
     ----------
-    problem : pybop.BaseProblem
+    problem : pybop.Problem
         The problem to optimise.
     options: SciPyDifferentialEvolutionOptions, optional
         Options for the SciPy differential evolution method (default: None).
@@ -379,7 +379,7 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
 
     def __init__(
         self,
-        problem: BaseProblem,
+        problem: Problem,
         options: SciPyDifferentialEvolutionOptions | None = None,
     ):
         options = options or self.default_options()

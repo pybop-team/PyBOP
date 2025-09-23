@@ -8,7 +8,7 @@ from pybop.parameters.parameter import Inputs, Parameter, Parameters
 from pybop.pybamm import EISSimulator, Simulator
 
 
-class BaseProblem:
+class Problem:
     """
     Base class for defining a problem within the PyBOP framework, compatible with PINTS.
 

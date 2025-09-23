@@ -185,7 +185,7 @@ class OCPAverage(BaseApplication):
             )
 
         # Create the fitting problem
-        class FunctionFitting(pybop.FittingProblem):
+        class FunctionFitting(pybop.Problem):
             if self.allow_stretching:
 
                 def simulate(self, inputs):
@@ -316,7 +316,7 @@ class OCPCapacityToStoichiometry(BaseApplication):
         # Create the fitting problem
         ocv_function = self.ocv_function
 
-        class FunctionFitting(pybop.FittingProblem):
+        class FunctionFitting(pybop.Problem):
             def simulate(self, inputs):
                 return {
                     "Voltage [V]": ocv_function(

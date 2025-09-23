@@ -12,7 +12,7 @@ def sensitivity_analysis(
 
     Parameters
     ----------
-    problem : pybop.BaseProblem
+    problem : pybop.Problem
         The optimisation problem.
     n_samples : int, optional
         Number of samples for SOBOL sensitivity analysis,

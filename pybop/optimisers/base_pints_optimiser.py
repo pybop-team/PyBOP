@@ -13,7 +13,7 @@ from pybop._logging import Logger
 from pybop.optimisers._adamw import AdamWImpl
 from pybop.optimisers._gradient_descent import GradientDescentImpl
 from pybop.optimisers.base_optimiser import BaseOptimiser, OptimiserOptions
-from pybop.problems.base_problem import BaseProblem
+from pybop.problems.base_problem import Problem
 
 
 @dataclass
@@ -95,7 +95,7 @@ class BasePintsOptimiser(BaseOptimiser):
 
     Parameters
     ----------
-    problem: pybop.BaseProblem
+    problem: pybop.Problem
         The problem to minimise.
     pints_optimiser : pints.Optimiser
         The PINTS optimiser class to be used.
@@ -105,7 +105,7 @@ class BasePintsOptimiser(BaseOptimiser):
 
     def __init__(
         self,
-        problem: BaseProblem,
+        problem: Problem,
         pints_optimiser: pints.Optimiser,
         options: PintsOptions | None = None,
     ):

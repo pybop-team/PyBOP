@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from pybop.problems.base_problem import BaseProblem
+from pybop.problems.base_problem import Problem
 
 
 @dataclass
@@ -40,7 +40,7 @@ class BaseSampler:
 
     Parameters
     ----------
-    log_pdf : pybop.BaseProblem
+    log_pdf : pybop.Problem
         The negative unnormalised posterior distribution.
     options : SamplerOptions, optional
         Options for the sampler. If None, default options are used.
@@ -48,7 +48,7 @@ class BaseSampler:
 
     def __init__(
         self,
-        log_pdf: BaseProblem,
+        log_pdf: Problem,
         options: SamplerOptions | None = None,
     ):
         self._log_pdf = log_pdf
@@ -80,7 +80,7 @@ class BaseSampler:
         return self._cov0
 
     @property
-    def log_pdf(self) -> BaseProblem:
+    def log_pdf(self) -> Problem:
         return self._log_pdf
 
     @property

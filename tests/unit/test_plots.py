@@ -77,7 +77,7 @@ class TestPlots:
             model, input_parameter_names=parameters.names, protocol=dataset
         )
         cost = pybop.SumSquaredError(dataset)
-        return pybop.FittingProblem(simulator, parameters, cost)
+        return pybop.Problem(simulator, parameters, cost)
 
     @pytest.fixture
     def experiment(self):
@@ -91,7 +91,7 @@ class TestPlots:
             protocol=experiment,
             use_formation_concentrations=True,
         )
-        return pybop.DesignProblem(simulator, parameters)
+        return pybop.Problem(simulator, parameters)
 
     def test_problem_plots(self, fitting_problem, design_problem):
         # Test plot of Problem objects
@@ -159,7 +159,7 @@ class TestPlots:
         )
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=2e-3)
         posterior = pybop.LogPosterior(likelihood)
-        problem = pybop.FittingProblem(simulator, parameters, posterior)
+        problem = pybop.Problem(simulator, parameters, posterior)
         options = pybop.PintsSamplerOptions(n_chains=1, max_iterations=1)
         sampler = pybop.SliceStepoutMCMC(problem, options=options)
         results = sampler.run()
@@ -201,7 +201,7 @@ class TestPlots:
             model, input_parameter_names=parameters.names, protocol=dataset
         )
         cost = pybop.SumSquaredError(dataset)
-        fitting_problem = pybop.FittingProblem(simulator, parameters, cost)
+        fitting_problem = pybop.Problem(simulator, parameters, cost)
         with pytest.raises(
             ValueError, match="This cost function takes fewer than 2 parameters."
         ):
@@ -229,7 +229,7 @@ class TestPlots:
             model, input_parameter_names=parameters.names, protocol=dataset
         )
         cost = pybop.SumSquaredError(dataset)
-        fitting_problem = pybop.FittingProblem(simulator, parameters, cost)
+        fitting_problem = pybop.Problem(simulator, parameters, cost)
         pybop.plot.contour(fitting_problem)
 
     def test_nyquist(self):
@@ -262,7 +262,7 @@ class TestPlots:
             f_eval=dataset["Frequency [Hz]"],
         )
         cost = pybop.MeanAbsoluteError(dataset, target="Impedance")
-        problem = pybop.FittingProblem(simulator, parameters, cost)
+        problem = pybop.Problem(simulator, parameters, cost)
 
         # Plot the nyquist
         inputs = parameters.to_dict([60e-6])

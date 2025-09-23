@@ -98,7 +98,7 @@ class InverseOCV:
         )
 
         # Set up a root-finding cost function
-        class OCVRoot(pybop.BaseProblem):
+        class OCVRoot(pybop.Problem):
             def __init__(self, parameters):
                 super().__init__(simulator=None, parameters=parameters)
 

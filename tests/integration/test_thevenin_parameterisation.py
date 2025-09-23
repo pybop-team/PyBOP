@@ -101,7 +101,7 @@ class TestTheveninParameterisation:
         )
         # Define the cost to optimise
         cost = cost_class(dataset)
-        problem = pybop.FittingProblem(simulator, parameters, cost)
+        problem = pybop.Problem(simulator, parameters, cost)
 
         x0 = problem.parameters.get_initial_values()
         if optimiser is pybop.SciPyMinimize:

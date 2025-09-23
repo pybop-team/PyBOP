@@ -74,7 +74,7 @@ class TestPintsSamplers:
         prior2 = pybop.Gaussian(0.6, 0.02)
         composed_prior = pybop.JointPrior(prior1, prior2)
         posterior = pybop.LogPosterior(likelihood, prior=composed_prior)
-        return pybop.FittingProblem(simulator, parameters, posterior)
+        return pybop.Problem(simulator, parameters, posterior)
 
     @pytest.fixture
     def chains(self):
@@ -173,7 +173,7 @@ class TestPintsSamplers:
         )
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=0.01)
         posterior = pybop.LogPosterior(likelihood)
-        posterior = pybop.FittingProblem(simulator, parameters, posterior)
+        posterior = pybop.Problem(simulator, parameters, posterior)
 
         # Skip RelativisticMCMC as it requires > 1 parameter
         if issubclass(MCMC, RelativisticMCMC):

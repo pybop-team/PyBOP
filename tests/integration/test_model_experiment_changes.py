@@ -143,7 +143,7 @@ class TestModelAndExperimentChanges:
             }
         )
         cost = pybop.RootMeanSquaredError(dataset)
-        problem = pybop.FittingProblem(simulator, parameters, cost)
+        problem = pybop.Problem(simulator, parameters, cost)
         optim = pybop.NelderMead(problem)
         results = optim.run()
         return results.best_cost
@@ -190,8 +190,8 @@ class TestModelAndExperimentChanges:
         # Define a problem for each dataset and combine them into one
         cost_1 = pybop.RootMeanSquaredError(dataset_1)
         cost_2 = pybop.RootMeanSquaredError(dataset_2)
-        problem_1 = pybop.FittingProblem(simulator_1, parameters, cost_1)
-        problem_2 = pybop.FittingProblem(simulator_2, parameters, cost_2)
+        problem_1 = pybop.Problem(simulator_1, parameters, cost_1)
+        problem_2 = pybop.Problem(simulator_2, parameters, cost_2)
         problem = pybop.MetaProblem(problem_1, problem_2)
 
         # Test with a gradient and non-gradient-based optimiser

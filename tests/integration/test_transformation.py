@@ -109,7 +109,7 @@ class TestTransformation:
             cost = cost_class(likelihood)
         else:
             cost = cost_class(dataset)
-        return pybop.FittingProblem(simulator, parameters, cost)
+        return pybop.Problem(simulator, parameters, cost)
 
     @pytest.mark.parametrize(
         "optimiser",

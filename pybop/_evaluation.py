@@ -2,7 +2,7 @@ import numpy as np
 from pints import Evaluator as PintsEvaluator
 
 from pybop._logging import Logger
-from pybop.problems.base_problem import BaseProblem
+from pybop.problems.base_problem import Problem
 
 
 class BaseEvaluator(PintsEvaluator):
@@ -15,7 +15,7 @@ class BaseEvaluator(PintsEvaluator):
 
     Parameters
     ----------
-    problem : pybop.BaseProblem
+    problem : pybop.Problem
         The problem to be optimised.
     minimise : bool
         If True, the cost function is minimised, otherwise maximisation is performed by
@@ -28,7 +28,7 @@ class BaseEvaluator(PintsEvaluator):
 
     def __init__(
         self,
-        problem: BaseProblem,
+        problem: Problem,
         minimise: bool,
         with_sensitivities: bool,
         logger: Logger,

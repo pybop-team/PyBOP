@@ -53,7 +53,7 @@ simulator = pybop.pybamm.Simulator(
 cost = pybop.SumOfPower(
     dataset, target=["Voltage [V]", "Bulk open-circuit voltage [V]"], p=2.5
 )
-problem = pybop.FittingProblem(simulator, parameters, cost)
+problem = pybop.Problem(simulator, parameters, cost)
 
 # Set up the optimiser
 options = pybop.PintsOptions(

@@ -61,7 +61,7 @@ class TestOptimisation:
             model, input_parameter_names=[one_parameter.name], protocol=dataset
         )
         cost = pybop.SumSquaredError(dataset)
-        return pybop.FittingProblem(simulator, one_parameter, cost)
+        return pybop.Problem(simulator, one_parameter, cost)
 
     @pytest.fixture
     def two_param_problem(self, model, two_parameters, dataset):
@@ -69,7 +69,7 @@ class TestOptimisation:
             model, input_parameter_names=two_parameters.names, protocol=dataset
         )
         cost = pybop.SumSquaredError(dataset)
-        return pybop.FittingProblem(simulator, two_parameters, cost)
+        return pybop.Problem(simulator, two_parameters, cost)
 
     @pytest.mark.parametrize(
         "optimiser, expected_name, sensitivities",
@@ -374,9 +374,7 @@ class TestOptimisation:
 
     def test_invalid_problem(self):
         # Test without valid problem
-        with pytest.raises(
-            Exception, match="Expected a pybop.BaseProblem instance, got"
-        ):
+        with pytest.raises(Exception, match="Expected a pybop.Problem instance, got"):
             pybop.XNES(problem="Invalid string")
 
     def test_incorrect_optimiser_class(self, problem):

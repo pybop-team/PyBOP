@@ -67,22 +67,22 @@ class TestProblem:
 
     def test_base_problem(self, parameters, model, dataset):
         # Construct Problem
-        pybop.BaseProblem(parameters=parameters)
+        pybop.Problem(parameters=parameters)
 
         # Different types of parameters
         parameter_list = list(parameters._parameters.values())
-        pybop.BaseProblem(parameters=parameter_list)
-        pybop.BaseProblem(parameters=parameter_list[0])
+        pybop.Problem(parameters=parameter_list)
+        pybop.Problem(parameters=parameter_list[0])
         with pytest.raises(
             TypeError,
             match="The input parameters must be a pybop.Parameter, a list of pybop.Parameter objects, or a pybop.Parameters object.",
         ):
-            pybop.BaseProblem(parameters="Invalid string")
+            pybop.Problem(parameters="Invalid string")
         with pytest.raises(
             TypeError,
             match="All elements in the list must be pybop.Parameter objects.",
         ):
-            pybop.BaseProblem(parameters=[parameter_list[0], "Invalid string"])
+            pybop.Problem(parameters=[parameter_list[0], "Invalid string"])
 
     @pytest.fixture
     def simulator(self, parameters, dataset, model):
@@ -95,7 +95,7 @@ class TestProblem:
 
     def test_fitting_problem(self, simulator, parameters, dataset):
         cost = pybop.MeanAbsoluteError(dataset)
-        problem = pybop.FittingProblem(simulator, parameters, cost)
+        problem = pybop.Problem(simulator, parameters, cost)
 
         # Test get target
         target_data = problem.target_data["Voltage [V]"]
@@ -104,7 +104,7 @@ class TestProblem:
         # Test set target
         dataset["Voltage [V]"] += np.random.normal(0, 0.05, len(dataset["Voltage [V]"]))
         cost.set_target(dataset)
-        problem = pybop.FittingProblem(simulator, parameters, cost)
+        problem = pybop.Problem(simulator, parameters, cost)
 
         # Assert
         target_data = problem.target_data["Voltage [V]"]
@@ -139,7 +139,7 @@ class TestProblem:
             f_eval=dataset["Frequency [Hz]"],
         )
         cost = pybop.MeanAbsoluteError(dataset, target=["Impedance"])
-        problem = pybop.FittingProblem(simulator, parameters, cost)
+        problem = pybop.Problem(simulator, parameters, cost)
         assert problem.domain == "Frequency [Hz]"
 
         # Test try-except
@@ -153,7 +153,7 @@ class TestProblem:
             model, input_parameter_names=parameters.names, protocol=dataset
         )
         cost = pybop.MeanAbsoluteError(dataset)
-        problem_1 = pybop.FittingProblem(simulator, parameters, cost)
+        problem_1 = pybop.Problem(simulator, parameters, cost)
 
         # Generate a second fitting problem
         experiment = pybamm.Experiment(
@@ -173,7 +173,7 @@ class TestProblem:
             model, input_parameter_names=parameters.names, protocol=dataset_2
         )
         cost_2 = pybop.MeanAbsoluteError(dataset_2)
-        problem_2 = pybop.FittingProblem(simulator, parameters, cost_2)
+        problem_2 = pybop.Problem(simulator, parameters, cost_2)
         combined_problem = pybop.MetaProblem(problem_1, problem_2, weights=[0.1, 1.0])
 
         assert combined_problem._simulator is None
@@ -192,7 +192,7 @@ class TestProblem:
             initial_state={"Initial SoC": 0.7},
             use_formation_concentrations=True,
         )
-        problem = pybop.DesignProblem(simulator, parameters)
+        problem = pybop.Problem(simulator, parameters)
 
         # Test evaluation
         inputs = parameters.to_dict([1e-5, 1e-5])
@@ -212,7 +212,7 @@ class TestProblem:
 
         # Test problem evaluate
         cost = pybop.MeanAbsoluteError(dataset)
-        problem = pybop.FittingProblem(simulator, parameters, cost)
+        problem = pybop.Problem(simulator, parameters, cost)
         problem_out = problem.simulate(inputs)
         assert_allclose(out["Voltage [V]"].data, problem_out["Voltage [V]"], atol=1e-6)
 
@@ -227,7 +227,7 @@ class TestProblem:
 
     def test_parameter_sensitivities(self, simulator, parameters, dataset):
         cost = pybop.MeanAbsoluteError(dataset)
-        problem = pybop.FittingProblem(simulator, parameters, cost)
+        problem = pybop.Problem(simulator, parameters, cost)
         n_params = len(problem.parameters)
         result = problem.sensitivity_analysis(4, calc_second_order=True)
 

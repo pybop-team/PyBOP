@@ -75,7 +75,7 @@ class TestLogPosterior:
     def test_log_posterior_construction(self, simulator, parameter, likelihood, prior):
         # Test log posterior construction
         posterior = pybop.LogPosterior(likelihood, prior=prior)
-        problem = pybop.FittingProblem(simulator, parameter, posterior)
+        problem = pybop.Problem(simulator, parameter, posterior)
 
         assert problem._cost == posterior
         assert problem._cost.log_likelihood == likelihood
@@ -88,7 +88,7 @@ class TestLogPosterior:
     ):
         # Test log posterior construction without prior
         posterior = pybop.LogPosterior(likelihood, prior=None)
-        problem = pybop.FittingProblem(simulator, parameter, posterior)
+        problem = pybop.Problem(simulator, parameter, posterior)
 
         problem._cost.set_joint_prior()
         assert problem._cost.joint_prior is not None
@@ -100,7 +100,7 @@ class TestLogPosterior:
     @pytest.fixture
     def problem(self, simulator, parameter, likelihood, prior):
         posterior = pybop.LogPosterior(likelihood, prior=prior)
-        return pybop.FittingProblem(simulator, parameter, posterior)
+        return pybop.Problem(simulator, parameter, posterior)
 
     def test_log_posterior(self, problem):
         # Test log posterior
@@ -115,7 +115,7 @@ class TestLogPosterior:
     @pytest.fixture
     def posterior_uniform_prior(self, simulator, parameter, likelihood):
         posterior = pybop.LogPosterior(likelihood, prior=pybop.Uniform(0.45, 0.55))
-        return pybop.FittingProblem(simulator, parameter, posterior)
+        return pybop.Problem(simulator, parameter, posterior)
 
     def test_log_posterior_inf(self, posterior_uniform_prior):
         # Test prior np.inf
@@ -123,13 +123,13 @@ class TestLogPosterior:
         assert not np.isfinite(posterior_uniform_prior([1], calculate_grad=True)[0])
 
     def test_non_logpdfS1_prior(self, simulator, parameter, likelihood):
-        problem = pybop.FittingProblem(simulator, parameter, likelihood)
+        problem = pybop.Problem(simulator, parameter, likelihood)
         l, dl = problem([0.6], calculate_grad=True)
 
         # Scipy distribution
         prior = st.norm(loc=0.8, scale=0.01)
         posterior = pybop.LogPosterior(likelihood, prior=prior)
-        problem = pybop.FittingProblem(simulator, parameter, posterior)
+        problem = pybop.Problem(simulator, parameter, posterior)
         p, dp = problem([0.6], calculate_grad=True)
 
         # Assert to pybop.Gaussian

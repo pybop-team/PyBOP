@@ -49,7 +49,7 @@ for init_soc, experiment in zip(init_socs, experiments, strict=False):
         protocol=dataset,
     )
     cost = pybop.SumSquaredError(dataset)
-    problems.append(pybop.FittingProblem(simulator, parameters, cost))
+    problems.append(pybop.Problem(simulator, parameters, cost))
 
 # Combine the problems into one
 problem = pybop.MetaProblem(*problems)

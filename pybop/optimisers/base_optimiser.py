@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from pybop._logging import Logger
 from pybop._result import OptimisationResult
-from pybop.problems.base_problem import BaseProblem
+from pybop.problems.base_problem import Problem
 
 
 @dataclass
@@ -50,7 +50,7 @@ class BaseOptimiser:
 
     Parameters
     ----------
-    problem : pybop.BaseProblem
+    problem : pybop.Problem
         The problem to optimise.
     options: pybop.OptimiserOptions , optional
         Options for the optimiser, such as multistart.
@@ -60,13 +60,11 @@ class BaseOptimiser:
 
     def __init__(
         self,
-        problem: BaseProblem,
+        problem: Problem,
         options: OptimiserOptions | None = None,
     ):
-        if not isinstance(problem, BaseProblem):
-            raise TypeError(
-                f"Expected a pybop.BaseProblem instance, got {type(problem)}"
-            )
+        if not isinstance(problem, Problem):
+            raise TypeError(f"Expected a pybop.Problem instance, got {type(problem)}")
         self._problem = problem
         self._problem.parameters.reset_to_initial()
         self._logger = None
@@ -89,7 +87,7 @@ class BaseOptimiser:
         return OptimiserOptions()
 
     @property
-    def problem(self) -> BaseProblem:
+    def problem(self) -> Problem:
         """Returns the optimisation problem object."""
         return self._problem
 

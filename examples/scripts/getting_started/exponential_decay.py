@@ -45,7 +45,7 @@ simulator = pybop.pybamm.Simulator(
     protocol=dataset,
 )
 cost = pybop.Minkowski(dataset, target=["y_0", "y_1"], p=2)
-problem = pybop.FittingProblem(simulator, parameters, cost)
+problem = pybop.Problem(simulator, parameters, cost)
 
 # Set up the optimiser
 options = pybop.PintsOptions(

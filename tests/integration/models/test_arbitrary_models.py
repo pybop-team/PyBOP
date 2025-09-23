@@ -148,7 +148,7 @@ class TestArbitraryModels:
             model, input_parameter_names=parameter.name, protocol=dataset
         )
         cost = pybop.SumSquaredError(dataset, target=["u at x_0.5"])
-        problem = pybop.FittingProblem(simulator, parameter, cost)
+        problem = pybop.Problem(simulator, parameter, cost)
 
         # Optimise
         optim = pybop.SciPyMinimize(problem)
@@ -187,7 +187,7 @@ class TestArbitraryModels:
             model, input_parameter_names=parameters.names, protocol=dataset
         )
         cost = pybop.SumSquaredError(dataset, target=["u", "v"])
-        problem = pybop.FittingProblem(simulator, parameters, cost)
+        problem = pybop.Problem(simulator, parameters, cost)
 
         # Optimise
         options = pybop.PintsOptions(sigma=0.02)
@@ -243,7 +243,7 @@ class TestArbitraryModels:
             protocol=dataset,
         )
         cost = pybop.SumSquaredError(dataset, target=["u", "v"])
-        problem = pybop.FittingProblem(simulator, parameters, cost)
+        problem = pybop.Problem(simulator, parameters, cost)
 
         # Optimise
         optim = pybop.NelderMead(problem)

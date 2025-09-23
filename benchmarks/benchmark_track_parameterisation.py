@@ -85,7 +85,7 @@ class BenchmarkTrackParameterisation:
             protocol=dataset,
         )
         cost = pybop.SumSquaredError(dataset)
-        problem = pybop.FittingProblem(simulator, parameters, cost)
+        problem = pybop.Problem(simulator, parameters, cost)
 
         # Create optimization instance and set options for consistent benchmarking
         if optimiser is pybop.SciPyDifferentialEvolution:

@@ -72,9 +72,9 @@ simulator = pybop.pybamm.Simulator(
     use_formation_concentrations=True,
 )
 cost_1 = pybop.DesignCost(target="Gravimetric power density [W.kg-1]")
-problem_1 = pybop.DesignProblem(simulator, parameters, cost_1)
+problem_1 = pybop.Problem(simulator, parameters, cost_1)
 cost_2 = pybop.DesignCost(target="Volumetric power density [W.m-3]")
-problem_2 = pybop.DesignProblem(simulator, parameters, cost_2)
+problem_2 = pybop.Problem(simulator, parameters, cost_2)
 problem = pybop.MetaProblem(problem_1, problem_2, weights=[1, 1e-3])
 
 # Run the optimisation

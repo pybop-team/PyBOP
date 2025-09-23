@@ -1,10 +1,10 @@
 import numpy as np
 
-from pybop import BaseProblem
+from pybop import Problem
 from pybop.parameters.parameter import Inputs, Parameters
 
 
-class MetaProblem(BaseProblem):
+class MetaProblem(Problem):
     """
     Problem class for joining mulitple problems into one combined problem.
 
@@ -12,13 +12,13 @@ class MetaProblem(BaseProblem):
 
     Parameters
     ----------
-    problems : pybop.FittingProblem
+    problems : pybop.Problem
         The individual PyBOP fitting problems.
     """
 
     def __init__(self, *problems, weights: list[float] | None = None):
-        if not all(isinstance(problem, BaseProblem) for problem in problems):
-            raise TypeError("All problems must be instances of BaseProblem.")
+        if not all(isinstance(problem, Problem) for problem in problems):
+            raise TypeError("All problems must be instances of Problem.")
         self.problems = [problem for problem in problems]
 
         # Compile the set of parameters, ignoring duplicates

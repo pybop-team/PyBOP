@@ -69,7 +69,7 @@ simulator = pybop.pybamm.EISSimulator(
     f_eval=dataset["Frequency [Hz]"],
 )
 cost = pybop.GaussianLogLikelihoodKnownSigma(dataset, target="Impedance", sigma0=sigma0)
-problem = pybop.FittingProblem(simulator, parameters, cost)
+problem = pybop.Problem(simulator, parameters, cost)
 
 # Set up the optimiser
 options = pybop.PintsOptions(

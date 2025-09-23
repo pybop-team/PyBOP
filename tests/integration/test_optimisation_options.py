@@ -67,7 +67,7 @@ class TestOptimisation:
             protocol=dataset,
         )
         cost = pybop.SumSquaredError(dataset)
-        return pybop.FittingProblem(simulator, parameters, cost)
+        return pybop.Problem(simulator, parameters, cost)
 
     @pytest.mark.parametrize(
         "f_guessed",

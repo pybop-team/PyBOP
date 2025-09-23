@@ -82,10 +82,8 @@ from . import pybamm
 #
 # Problem classes
 #
-from .problems.base_problem import BaseProblem
-from .problems.fitting_problem import FittingProblem
+from .problems.base_problem import Problem
 from .problems.meta_problem import MetaProblem
-from .problems.design_problem import DesignProblem
 
 #
 # Cost classes

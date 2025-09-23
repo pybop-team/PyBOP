@@ -81,7 +81,7 @@ class TestDecayModel:
         cost_1 = pybop.SumSquaredError(dataset, target=["y_0"])
         cost_2 = pybop.MeanAbsoluteError(dataset, target=["y_0"])
         cost = pybop.WeightedCost(cost_1, cost_2)
-        problem = pybop.FittingProblem(simulator, parameters, cost)
+        problem = pybop.Problem(simulator, parameters, cost)
 
         # Test parameter sensitivity
         initial_params = parameters.get_initial_values()

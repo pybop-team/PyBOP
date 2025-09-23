@@ -54,7 +54,7 @@ simulator = pybop.pybamm.Simulator(
     initial_state={"Initial open-circuit voltage [V]": csv_data[0, 2]},
 )
 likelihood = pybop.GaussianLogLikelihood(dataset, sigma0=8e-3)
-problem = pybop.FittingProblem(simulator, parameters, likelihood)
+problem = pybop.Problem(simulator, parameters, likelihood)
 
 # Set up the optimiser
 options = pybop.PintsOptions(
