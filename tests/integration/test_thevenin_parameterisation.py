@@ -100,10 +100,10 @@ class TestTheveninParameterisation:
             protocol=dataset,
         )
         # Define the cost to optimise
-        problem = pybop.FittingProblem(simulator, parameters, dataset)
-        cost = cost_class(problem)
+        cost = cost_class(dataset)
+        problem = pybop.FittingProblem(simulator, parameters, cost)
 
-        x0 = cost.parameters.get_initial_values()
+        x0 = problem.parameters.get_initial_values()
         if optimiser is pybop.SciPyMinimize:
             options = pybop.SciPyMinimizeOptions(maxiter=150)
         else:
@@ -117,12 +117,12 @@ class TestTheveninParameterisation:
         else:
             options.sigma0 = 0.02
             options.method = method
-        optim = optimiser(cost=cost, options=options)
+        optim = optimiser(problem, options=options)
 
         if isinstance(optimiser, pybop.BasePintsOptimiser):
             optim.set_max_unchanged_iterations(iterations=35, absolute_tolerance=1e-5)
 
-        initial_cost = optim.cost(optim.cost.parameters.get_initial_values())
+        initial_cost = optim.problem(optim.problem.parameters.get_initial_values())
         results = optim.run()
 
         # Assertions

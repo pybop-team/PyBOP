@@ -85,12 +85,12 @@ simulator = pybop.pybamm.Simulator(
     input_parameter_names=parameters.names,
     protocol=dataset,
 )
-problem = pybop.FittingProblem(simulator, parameters, dataset)
-cost = pybop.SumSquaredError(problem)
+cost = pybop.SumSquaredError(dataset)
+problem = pybop.FittingProblem(simulator, parameters, cost)
 
 # Set up the optimiser
 options = pybop.PintsOptions(max_iterations=100)
-optim = pybop.CMAES(cost, options=options)
+optim = pybop.CMAES(problem, options=options)
 
 # Run the optimisation
 result = optim.run()

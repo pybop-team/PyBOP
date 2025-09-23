@@ -41,14 +41,14 @@ simulator = pybop.pybamm.Simulator(
     input_parameter_names=parameters.names,
     protocol=dataset,
 )
-problem = pybop.FittingProblem(simulator, parameters, dataset)
-cost = pybop.SumSquaredError(problem)
+cost = pybop.SumSquaredError(dataset)
+problem = pybop.FittingProblem(simulator, parameters, cost)
 
 # Set up the optimiser
 options = pybop.SciPyMinimizeOptions(
     verbose=True, maxiter=100, method="L-BFGS-B", jac=True
 )
-optim = pybop.SciPyMinimize(cost, options=options)
+optim = pybop.SciPyMinimize(problem, options=options)
 
 # Run the optimisation
 result = optim.run()

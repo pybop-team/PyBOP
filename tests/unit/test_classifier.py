@@ -39,17 +39,17 @@ class TestClassifier:
         simulator = pybop.pybamm.Simulator(
             model, input_parameter_names=parameters.names, protocol=dataset
         )
-        return pybop.FittingProblem(simulator, parameters, dataset)
+        cost = pybop.SumSquaredError(dataset)
+        return pybop.FittingProblem(simulator, parameters, cost)
 
     def test_classify_using_hessian_invalid(self, problem):
-        cost = pybop.SumSquaredError(problem)
-        optim = pybop.XNES(cost=cost)
+        optim = pybop.XNES(problem)
         logger = pybop.Logger(minimising=True)
         logger.iteration = 1
         logger.extend_log(
             x_search=[np.asarray([1e-3])],
             x_model=[np.asarray([1e-3])],
-            cost=[cost(np.asarray([1e-3]))],
+            cost=[problem(np.asarray([1e-3]))],
         )
         result = pybop.OptimisationResult(optim=optim, logger=logger, time=1.0)
 

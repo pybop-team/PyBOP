@@ -96,6 +96,8 @@ class EISSimulator:
             build_every_time=build_every_time,
         )
 
+        self.debug_mode = False
+
         # Initialise
         self.M = None
         self._jac = None
@@ -238,6 +240,20 @@ class EISSimulator:
                 stacklevel=2,
             )
 
+        return self._catch_errors(inputs)
+
+    def _catch_errors(self, inputs: "Inputs"):
+        if not self.debug_mode:
+            try:
+                return self._solve(inputs)
+            except (ZeroDivisionError, RuntimeError, ValueError) as e:
+                if isinstance(e, ValueError) and str(e) not in self.exception:
+                    raise  # Raise the error if it doesn't match the expected list
+                return {"Impedance": np.asarray(np.inf)}
+
+        return self._solve(inputs)
+
+    def _solve(self, inputs: "Inputs"):
         # Always run initialise_eis_matrices, after rebuilding the model if necessary
         self._model_rebuild(inputs)
 

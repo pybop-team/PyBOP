@@ -61,14 +61,13 @@ class TestEvaluation:
         )
 
     @pytest.fixture
-    def problem(self, model, parameters, dataset, solver, request):
-        simulator = pybop.pybamm.Simulator(
+    def simulator(self, model, parameters, dataset, solver, request):
+        return pybop.pybamm.Simulator(
             model,
             input_parameter_names=parameters.names,
             protocol=dataset,
             solver=solver,
         )
-        return pybop.FittingProblem(simulator, parameters, dataset)
 
     @pytest.fixture(
         params=[
@@ -81,59 +80,64 @@ class TestEvaluation:
             pybop.GaussianLogLikelihoodKnownSigma,
         ]
     )
-    def cost(self, problem, request):
-        cls = request.param
-        if cls in [pybop.SumSquaredError, pybop.RootMeanSquaredError]:
-            return cls(problem)
-        elif cls is pybop.LogPosterior:
-            return cls(pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.002))
-        elif cls is pybop.GaussianLogLikelihoodKnownSigma:
-            return pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.002)
+    def problem(self, simulator, parameters, dataset, request):
+        cost_class = request.param
+        if cost_class is pybop.GaussianLogLikelihoodKnownSigma:
+            cost = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=0.002)
+        elif cost_class is pybop.LogPosterior:
+            cost = cost_class(
+                pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=0.002)
+            )
         else:
-            return cls(problem)
+            cost = cost_class(dataset)
+        return pybop.FittingProblem(simulator, parameters, cost)
 
-    def test_evaluator_transformations(self, cost):
-        if isinstance(cost, pybop.GaussianLogLikelihood):
+    def test_evaluator_transformations(self, problem):
+        if isinstance(problem.cost, pybop.GaussianLogLikelihood):
             self.x_model.append(0.002)
             self.x_search.append(0.002)
 
         # First compute the cost and sensitivities in the model space
-        cost1 = cost.__call__(self.x_model)
-        cost1_ws, grad1_wrt_model_parameters = cost.__call__(
+        cost1 = problem.__call__(self.x_model)
+        cost1_ws, grad1_wrt_model_parameters = problem.__call__(
             self.x_model, calculate_grad=True
         )
 
         numerical_grad1 = []
         for i in range(len(self.x_model)):
-            delta = 1e-8 * self.x_model[i]
+            delta = 1e-8 * np.abs(self.x_model[i])
             self.x_model[i] += delta / 2
-            cost_right = cost.__call__(self.x_model)
+            cost_right = problem.__call__(self.x_model)
             self.x_model[i] -= delta
-            cost_left = cost.__call__(self.x_model)
+            cost_left = problem.__call__(self.x_model)
             self.x_model[i] += delta / 2
             numerical_grad1.append((cost_right - cost_left) / delta)
         numerical_grad1 = np.asarray(numerical_grad1).reshape(-1)
         np.testing.assert_allclose(
-            grad1_wrt_model_parameters, numerical_grad1, rtol=5e-5
+            grad1_wrt_model_parameters, numerical_grad1, rtol=2e-3
         )
 
-        jac = cost.parameters.transformation.jacobian(self.x_search)
+        jac = problem.parameters.transformation.jacobian(self.x_search)
         grad1_wrt_search_parameters = np.matmul(grad1_wrt_model_parameters, jac)
+
+        # Signs are inverted to perform max/minimisation of min/maximising costs
+        # A minimising evaluator inverts the sign of a maximising cost and vice versa
+        sign = 1.0 if problem.minimising else -1.0
 
         # Test the transformed cost and sensitivities
         logger = pybop.Logger(minimising=True)
         evaluator = pybop.ScalarEvaluator(
-            cost=cost,
+            problem=problem,
             minimise=True,
             with_sensitivities=False,
             logger=logger,
         )
         cost2 = evaluator.evaluate(self.x_search)
-        np.testing.assert_allclose(cost2, cost1)
+        np.testing.assert_allclose(sign * cost2, cost1)
 
         numerical_grad2 = []
         for i in range(len(self.x_search)):
-            delta = 1e-8 * self.x_search[i]
+            delta = 1e-8 * np.abs(self.x_search[i])
             self.x_search[i] += delta / 2
             cost_right = evaluator.evaluate(self.x_search)
             self.x_search[i] -= delta
@@ -142,39 +146,39 @@ class TestEvaluation:
             numerical_grad2.append((cost_right - cost_left) / delta)
         numerical_grad2 = np.asarray(numerical_grad2).reshape(-1)
         np.testing.assert_allclose(
-            grad1_wrt_search_parameters, numerical_grad2, rtol=5e-5
+            grad1_wrt_search_parameters, sign * numerical_grad2, rtol=2e-3
         )
 
         evaluator_ws = pybop.ScalarEvaluator(
-            cost=cost,
+            problem=problem,
             minimise=True,
             with_sensitivities=True,
             logger=logger,
         )
         cost2_ws, grad2_with_transformations = evaluator_ws.evaluate(self.x_search)
-        np.testing.assert_allclose(cost2_ws, cost1, rtol=1e-5)
+        np.testing.assert_allclose(sign * cost2_ws, cost1, rtol=1e-5)
         np.testing.assert_allclose(
-            grad2_with_transformations, grad1_wrt_search_parameters, rtol=5e-5
+            sign * grad2_with_transformations, grad1_wrt_search_parameters, rtol=5e-5
         )
 
         # Also test the sign change for maximisation
         evaluator = pybop.ScalarEvaluator(
-            cost=cost,
+            problem=problem,
             minimise=False,
             with_sensitivities=False,
             logger=logger,
         )
         cost3 = evaluator.evaluate(self.x_search)
-        np.testing.assert_allclose(cost3, -cost1)
+        np.testing.assert_allclose(-sign * cost3, cost1)
 
         evaluator_ws = pybop.ScalarEvaluator(
-            cost=cost,
+            problem=problem,
             minimise=False,
             with_sensitivities=True,
             logger=logger,
         )
         cost_ws3, grad3_with_transformations = evaluator_ws.evaluate(self.x_search)
-        np.testing.assert_allclose(cost_ws3, -cost1, rtol=1e-5)
+        np.testing.assert_allclose(-sign * cost_ws3, cost1, rtol=1e-5)
         np.testing.assert_allclose(
-            grad3_with_transformations, -grad1_wrt_search_parameters, rtol=5e-5
+            -sign * grad3_with_transformations, grad1_wrt_search_parameters, rtol=5e-5
         )

@@ -105,9 +105,9 @@ class TestSamplingThevenin:
             input_parameter_names=parameters.names,
             protocol=dataset,
         )
-        problem = pybop.FittingProblem(simulator, parameters, dataset)
-        likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=self.sigma0)
-        return pybop.LogPosterior(likelihood)
+        likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=self.sigma0)
+        posterior = pybop.LogPosterior(likelihood)
+        return pybop.FittingProblem(simulator, parameters, posterior)
 
     @pytest.fixture
     def map_estimate(self, posterior):

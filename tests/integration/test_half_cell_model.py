@@ -78,7 +78,7 @@ class TestHalfCellModel:
         return data + np.random.normal(0, sigma, len(data))
 
     @pytest.fixture
-    def fitting_cost(self, model, parameter_values, parameters):
+    def fitting_problem(self, model, parameter_values, parameters):
         parameter_values.set_initial_state(0.4, options=model.options)
         dataset = self.get_data(model, parameter_values)
 
@@ -89,21 +89,21 @@ class TestHalfCellModel:
             input_parameter_names=parameters.names,
             protocol=dataset,
         )
-        problem = pybop.FittingProblem(simulator, parameters, dataset)
-        return pybop.SumSquaredError(problem)
+        cost = pybop.SumSquaredError(dataset)
+        return pybop.FittingProblem(simulator, parameters, cost)
 
-    def test_fitting_costs(self, fitting_cost):
-        x0 = fitting_cost.parameters.get_initial_values()
+    def test_fitting_costs(self, fitting_problem):
+        x0 = fitting_problem.parameters.get_initial_values()
         options = pybop.PintsOptions(
             sigma=0.03,
             max_iterations=250,
             max_unchanged_iterations=35,
         )
-        optim = pybop.CuckooSearch(cost=fitting_cost, options=options)
+        optim = pybop.CuckooSearch(fitting_problem, options=options)
         results = optim.run()
 
         # Assertions
-        initial_cost = optim.cost(x0)
+        initial_cost = optim.problem(x0)
         if not np.allclose(x0, self.ground_truth, atol=1e-5):
             if results.minimising:
                 assert initial_cost > results.best_cost
@@ -112,7 +112,7 @@ class TestHalfCellModel:
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
 
     @pytest.fixture
-    def design_cost(self, model, parameter_values):
+    def design_problem(self, model, parameter_values):
         initial_state = {"Initial SoC": 1.0}
         parameters = pybop.Parameters(
             pybop.Parameter(
@@ -130,19 +130,16 @@ class TestHalfCellModel:
             input_parameter_names=parameters.names,
             protocol=experiment,
             initial_state=initial_state,
+            use_formation_concentrations=True,
         )
-        problem = pybop.DesignProblem(
-            simulator,
-            parameters,
-            output_variables=["Gravimetric energy density [Wh.kg-1]"],
-        )
-        return pybop.DesignCost(problem, target="Gravimetric energy density [Wh.kg-1]")
+        cost = pybop.DesignCost(target="Gravimetric energy density [Wh.kg-1]")
+        return pybop.DesignProblem(simulator, parameters, cost)
 
-    def test_design_costs(self, design_cost):
+    def test_design_costs(self, design_problem):
         options = pybop.PintsOptions(max_iterations=15)
-        optim = pybop.CuckooSearch(cost=design_cost, options=options)
-        initial_values = optim.cost.parameters.get_initial_values()
-        initial_cost = optim.cost(initial_values)
+        optim = pybop.CuckooSearch(design_problem, options=options)
+        initial_values = optim.problem.parameters.get_initial_values()
+        initial_cost = optim.problem(initial_values)
         results = optim.run()
 
         # Assertions

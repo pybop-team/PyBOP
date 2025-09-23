@@ -257,7 +257,7 @@ def surface(
         `xaxis={"title": "Time [s]", font={"size":14}}`
     """
     points = result.x_model
-    parameters = result.optim.cost.parameters
+    parameters = result.optim.problem.parameters
 
     if points[0].shape[0] != 2:
         raise ValueError("This plot method requires two parameters.")

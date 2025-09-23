@@ -68,7 +68,7 @@ class TestEISParameterisation:
             pybop.LogPosterior,
         ]
     )
-    def cost(self, request):
+    def cost_class(self, request):
         return request.param
 
     def noisy(self, data, sigma):
@@ -93,7 +93,9 @@ class TestEISParameterisation:
         return request.param
 
     @pytest.fixture
-    def optim(self, optimiser, model, parameter_values, parameters, cost, init_soc):
+    def optim(
+        self, optimiser, model, parameter_values, parameters, cost_class, init_soc
+    ):
         n_frequency = 15
         f_eval = np.logspace(-4, 5, n_frequency)
         parameter_values.set_initial_state(init_soc)
@@ -106,21 +108,25 @@ class TestEISParameterisation:
             input_parameter_names=parameters.names,
             f_eval=dataset["Frequency [Hz]"],
         )
-        problem = pybop.FittingProblem(simulator, parameters, dataset)
 
         # Construct the cost
-        if cost is pybop.GaussianLogLikelihoodKnownSigma:
-            cost = cost(problem, sigma0=self.sigma0)
-        elif cost is pybop.GaussianLogLikelihood:
-            cost = cost(problem, sigma0=self.sigma0 * 4)  # Initial sigma0 guess
-        elif cost is pybop.LogPosterior:
-            cost = cost(
-                pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=self.sigma0)
+        target = "Impedance"
+        if cost_class is pybop.GaussianLogLikelihoodKnownSigma:
+            cost = cost_class(dataset, target=target, sigma0=self.sigma0)
+        elif cost_class is pybop.GaussianLogLikelihood:
+            cost = cost_class(
+                dataset, target=target, sigma0=self.sigma0 * 4
+            )  # Initial sigma0 guess
+        elif cost_class is pybop.LogPosterior:
+            likelihood = pybop.GaussianLogLikelihoodKnownSigma(
+                dataset, target=target, sigma0=self.sigma0
             )
-        elif cost in [pybop.SumOfPower, pybop.Minkowski]:
-            cost = cost(problem, p=2)
+            cost = cost_class(likelihood)
+        elif cost_class in [pybop.SumOfPower, pybop.Minkowski]:
+            cost = cost_class(dataset, target=target, p=2)
         else:
-            cost = cost(problem)
+            cost = cost_class(dataset, target=target)
+        problem = pybop.FittingProblem(simulator, parameters, cost)
 
         # Construct optimisation object
         if optimiser is pybop.SciPyDifferentialEvolution:
@@ -143,18 +149,18 @@ class TestEISParameterisation:
             )
 
         # Create optimiser
-        return optimiser(cost=cost, options=options)
+        return optimiser(problem, options=options)
 
     def test_eis_optimisers(self, optim):
-        x0 = optim.cost.parameters.get_initial_values()
+        x0 = optim.problem.parameters.get_initial_values()
 
         # Add sigma0 to ground truth for GaussianLogLikelihood
-        if isinstance(optim.cost, pybop.GaussianLogLikelihood):
+        if isinstance(optim.problem.cost, pybop.GaussianLogLikelihood):
             self.ground_truth = np.concatenate(
                 (self.ground_truth, np.asarray([self.sigma0]))
             )
 
-        initial_cost = optim.cost(x0)
+        initial_cost = optim.problem(x0)
         results = optim.run()
 
         # Assertions
@@ -187,5 +193,6 @@ class TestEISParameterisation:
                 "Frequency [Hz]": f_eval,
                 "Current function [A]": np.zeros_like(f_eval),
                 "Impedance": self.noisy(solution["Impedance"], self.sigma0),
-            }
+            },
+            domain="Frequency [Hz]",
         )

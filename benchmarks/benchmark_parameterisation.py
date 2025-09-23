@@ -84,10 +84,8 @@ class BenchmarkParameterisation:
             input_parameter_names=parameters.names,
             protocol=dataset,
         )
-        problem = pybop.FittingProblem(simulator, parameters, dataset)
-
-        # Create cost function
-        cost = pybop.SumSquaredError(problem=problem)
+        cost = pybop.SumSquaredError(dataset)
+        problem = pybop.FittingProblem(simulator, parameters, cost)
 
         # Create optimiser instance and set options for consistent benchmarking
         if optimiser is pybop.SciPyDifferentialEvolution:
@@ -101,7 +99,7 @@ class BenchmarkParameterisation:
                 threshold=1e-5,
                 min_iterations=2,
             )
-        self.optim = optimiser(cost, options=options)
+        self.optim = optimiser(problem, options=options)
 
     def time_parameterisation(self, model, parameter_set, optimiser):
         """

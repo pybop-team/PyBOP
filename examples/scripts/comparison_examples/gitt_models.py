@@ -99,11 +99,11 @@ for model in [pybop.lithium_ion.WeppnerHuggins(), pybop.lithium_ion.SPDiffusion(
         input_parameter_names=parameters.names,
         protocol=gitt_dataset,
     )
-    problem = pybop.FittingProblem(simulator, parameters, gitt_dataset)
-    cost = pybop.RootMeanSquaredError(problem, weighting="domain")
+    cost = pybop.RootMeanSquaredError(gitt_dataset, weighting="domain")
+    problem = pybop.FittingProblem(simulator, parameters, cost)
 
     # Build the optimisation problem
-    optim = pybop.SciPyMinimize(cost)
+    optim = pybop.SciPyMinimize(problem)
 
     # Run the optimisation problem
     result = optim.run()

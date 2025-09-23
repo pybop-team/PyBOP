@@ -49,9 +49,8 @@ parameters = pybop.Parameters(
 simulator = pybop.pybamm.Simulator(
     model, parameter_values, input_parameter_names=parameters.names, protocol=dataset
 )
-problem = pybop.FittingProblem(simulator, parameters, dataset)
-
-likelihood = pybop.SumSquaredError(problem)
+likelihood = pybop.SumSquaredError(dataset)
+problem = pybop.FittingProblem(simulator, parameters, likelihood)
 
 # Set up the optimiser
 options = pybop.PintsOptions(
@@ -59,7 +58,7 @@ options = pybop.PintsOptions(
     max_iterations=100,
     max_unchanged_iterations=30,
 )
-optim = pybop.CMAES(likelihood, options=options)
+optim = pybop.CMAES(problem, options=options)
 
 # Slow the step-size shrinking (default is 0.5)
 optim.optimiser.eta_min = 0.7

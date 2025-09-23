@@ -93,13 +93,14 @@ class InverseOCV:
         """
         ocv_function = self.ocv_function
 
+        self.parameters = pybop.Parameters(
+            pybop.Parameter("Root", initial_value=0.5, bounds=[0, 1])
+        )
+
         # Set up a root-finding cost function
-        class OCVRoot(pybop.BaseCost):
-            def __init__(self):
-                super().__init__()
-                self._parameters = pybop.Parameters(
-                    pybop.Parameter("Root", initial_value=0.5, bounds=[0, 1])
-                )
+        class OCVRoot(pybop.BaseProblem):
+            def __init__(self, parameters):
+                super().__init__(simulator=None, parameters=parameters)
 
             def single_call(
                 self, inputs: Inputs, calculate_grad: bool = False
@@ -108,7 +109,8 @@ class InverseOCV:
                 return np.abs(ocv_function(inputs["Root"]) - ocv_value)
 
         # Minimise to find the stoichiometry
+        problem = OCVRoot(parameters=self.parameters)
         options = pybop.SciPyMinimizeOptions(verbose=self.verbose)
-        optim = self.optimiser(cost=OCVRoot(), options=options)
+        optim = self.optimiser(problem=problem, options=options)
         results = optim.run()
         return results.x[0]

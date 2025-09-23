@@ -54,114 +54,80 @@ class TestLikelihoods:
         )
 
     @pytest.fixture
-    def one_signal_problem(self, model_and_parameter_values, parameters, dataset):
+    def simulator(self, model_and_parameter_values, parameters, dataset):
         model, parameter_values = model_and_parameter_values
-        simulator = pybop.pybamm.Simulator(
+        return pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
             input_parameter_names=parameters.names,
             protocol=dataset,
         )
-        return pybop.FittingProblem(simulator, parameters, dataset)
 
-    @pytest.fixture
-    def two_signal_problem(self, model_and_parameter_values, parameters, dataset):
-        model, parameter_values = model_and_parameter_values
-        output_variables = ["Time [s]", "Voltage [V]"]
-        simulator = pybop.pybamm.Simulator(
-            model,
-            parameter_values=parameter_values,
-            input_parameter_names=parameters.names,
-            protocol=dataset,
-        )
-        return pybop.FittingProblem(
-            simulator, parameters, dataset, output_variables=output_variables
-        )
-
-    @pytest.mark.parametrize(
-        "problem_name, n_outputs",
-        [("one_signal_problem", 1), ("two_signal_problem", 2)],
-    )
-    def test_base_likelihood_init(self, problem_name, n_outputs, request):
-        problem = request.getfixturevalue(problem_name)
-        likelihood = pybop.BaseLikelihood(problem)
-        assert likelihood.problem == problem
-        assert likelihood.n_outputs == n_outputs
-        assert likelihood.n_data == problem.n_data
-        assert likelihood.n_parameters == 1
-        assert np.array_equal(likelihood.target, problem.target)
-
-    def test_base_likelihood_call_raises_not_implemented_error(
-        self, one_signal_problem
-    ):
-        likelihood = pybop.BaseLikelihood(one_signal_problem)
+    def test_base_likelihood(self, dataset):
+        likelihood = pybop.LogLikelihood(dataset)
         with pytest.raises(NotImplementedError):
             likelihood(np.array([0.5]))
 
-    def test_likelihood_check_sigma0(self, one_signal_problem):
-        with pytest.raises(
-            ValueError,
-            match="Sigma0 must be positive",
-        ):
-            pybop.GaussianLogLikelihoodKnownSigma(one_signal_problem, sigma0=None)
+    def test_likelihood_check_sigma0(self, dataset):
+        with pytest.raises(ValueError, match="Sigma0 must be positive"):
+            pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=None)
 
-        likelihood = pybop.GaussianLogLikelihoodKnownSigma(one_signal_problem, 0.1)
-        sigma = likelihood.check_sigma0(0.2)
-        assert sigma == np.array(0.2)
+        likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, 0.1)
+        likelihood.set_sigma0(0.2)
+        assert likelihood.sigma2 == 0.2**2.0
 
         with pytest.raises(
             ValueError,
             match=r"sigma0 must be either a scalar value",
         ):
-            pybop.GaussianLogLikelihoodKnownSigma(one_signal_problem, sigma0=[0.2, 0.3])
-
-    def test_base_likelihood_n_parameters_property(self, one_signal_problem):
-        likelihood = pybop.BaseLikelihood(one_signal_problem)
-        assert likelihood.n_parameters == 1
+            pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=[0.2, 0.3])
 
     @pytest.mark.parametrize(
-        "problem_name", ["one_signal_problem", "two_signal_problem"]
+        "target",
+        [["Voltage [V]"], ["Time [s]", "Voltage [V]"]],
     )
-    def test_gaussian_log_likelihood_known_sigma(self, problem_name, request):
-        problem = request.getfixturevalue(problem_name)
+    def test_gaussian_log_likelihood_known_sigma(
+        self, simulator, parameters, dataset, target
+    ):
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(
-            problem, sigma0=np.array([1.0])
+            dataset, target=target, sigma0=np.array([0.01])
         )
-        result = likelihood(np.array([0.5]))
-        grad_result, grad_likelihood = likelihood(np.array([0.5]), calculate_grad=True)
+        problem = pybop.FittingProblem(simulator, parameters, likelihood)
+        result = problem([0.5])
+        grad_result, grad_likelihood = problem([0.5], calculate_grad=True)
         assert isinstance(result, float)
         np.testing.assert_allclose(result, grad_result, atol=1e-5)
         # Since 0.5 < ground_truth, the likelihood should be increasing
         assert grad_likelihood >= 0
 
-    def test_gaussian_log_likelihood(self, one_signal_problem):
-        likelihood = pybop.GaussianLogLikelihood(one_signal_problem)
-        result = likelihood(np.array([0.8, 0.2]))
-        grad_result, grad_likelihood = likelihood(
-            np.array([0.8, 0.2]), calculate_grad=True
+    def test_gaussian_log_likelihood(self, simulator, parameters, dataset):
+        likelihood = pybop.GaussianLogLikelihood(dataset, sigma0=0.01)
+        problem = pybop.FittingProblem(simulator, parameters, likelihood)
+        result = problem(np.array([0.8, 0.02]))
+        grad_result, grad_likelihood = problem(
+            np.array([0.8, 0.025]), calculate_grad=True
         )
         assert isinstance(result, float)
         np.testing.assert_allclose(result, grad_result, atol=1e-5)
         # Since 0.8 > ground_truth, the likelihood should be decreasing
         assert grad_likelihood[0] <= 0
-        # Since sigma < 0.5, the likelihood should be decreasing
+        # Since sigma < 0.02, the likelihood should be decreasing
         assert grad_likelihood[1] <= 0
 
         # Test construction with sigma as a Parameter
         sigma = pybop.Parameter("sigma", prior=pybop.Uniform(0.4, 0.6))
-        likelihood = pybop.GaussianLogLikelihood(one_signal_problem, sigma0=sigma)
+        likelihood = pybop.GaussianLogLikelihood(dataset, sigma0=sigma)
 
         # Test invalid sigma
         with pytest.raises(
             TypeError,
             match=r"Expected sigma0 to contain Parameter objects or numeric values.",
         ):
-            likelihood = pybop.GaussianLogLikelihood(
-                one_signal_problem, sigma0="Invalid string"
-            )
+            likelihood = pybop.GaussianLogLikelihood(dataset, sigma0="Invalid string")
+            pybop.FittingProblem(simulator, parameters, likelihood)
 
-    def test_gaussian_log_likelihood_dsigma_scale(self, one_signal_problem):
-        likelihood = pybop.GaussianLogLikelihood(one_signal_problem, dsigma_scale=0.05)
+    def test_gaussian_log_likelihood_dsigma_scale(self, dataset):
+        likelihood = pybop.GaussianLogLikelihood(dataset, dsigma_scale=0.05)
         assert likelihood.dsigma_scale == 0.05
         likelihood.dsigma_scale = 1e3
         assert likelihood.dsigma_scale == 1e3
@@ -170,46 +136,24 @@ class TestLikelihoods:
         with pytest.raises(ValueError):
             likelihood.dsigma_scale = -1e3
 
-    def test_gaussian_log_likelihood_returns_negative_inf(self, one_signal_problem):
-        likelihood = pybop.GaussianLogLikelihood(one_signal_problem)
-        assert likelihood(np.array([0.01, 0.1])) == -np.inf  # parameter value too small
+    def test_gaussian_log_likelihood_returns_negative_inf(
+        self, simulator, parameters, dataset
+    ):
+        likelihood = pybop.GaussianLogLikelihood(dataset)
+        problem = pybop.FittingProblem(simulator, parameters, likelihood)
+        assert problem(np.array([0.01, 0.1])) == -np.inf  # parameter value too small
         assert (
-            likelihood(np.array([0.01, 0.1]), calculate_grad=True)[0] == -np.inf
+            problem(np.array([0.01, 0.1]), calculate_grad=True)[0] == -np.inf
         )  # parameter value too small
 
     def test_gaussian_log_likelihood_known_sigma_returns_negative_inf(
-        self, one_signal_problem
+        self, simulator, parameters, dataset
     ):
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(
-            one_signal_problem, sigma0=np.array([0.2])
+            dataset, sigma0=np.array([0.2])
         )
-        assert likelihood(np.array([0.01])) == -np.inf  # parameter value too small
+        problem = pybop.FittingProblem(simulator, parameters, likelihood)
+        assert problem(np.array([0.01])) == -np.inf  # parameter value too small
         assert (
-            likelihood(np.array([0.01]), calculate_grad=True)[0] == -np.inf
+            problem(np.array([0.01]), calculate_grad=True)[0] == -np.inf
         )  # parameter value too small
-
-    def test_scaled_log_likelihood(self, one_signal_problem):
-        likelihood = pybop.GaussianLogLikelihoodKnownSigma(
-            one_signal_problem, sigma0=0.02
-        )
-        scaled_likelihood = pybop.ScaledLogLikelihood(likelihood)
-
-        assert scaled_likelihood._log_likelihood == likelihood
-        assert (
-            scaled_likelihood(np.array([0.01])) == -np.inf
-        )  # parameter value too small
-        assert (
-            likelihood(np.array([0.01]), calculate_grad=True)[0] == -np.inf
-        )  # parameter value too small
-
-        # Test scaling
-        scaled_values = likelihood([0.6]) / likelihood.n_data
-        np.testing.assert_allclose(scaled_values, scaled_likelihood([0.6]))
-
-        # Test w/ gradient
-        values, grad = tuple(
-            i / likelihood.n_data for i in likelihood([0.6], calculate_grad=True)
-        )
-        np.testing.assert_allclose(
-            grad, scaled_likelihood([0.6], calculate_grad=True)[1]
-        )

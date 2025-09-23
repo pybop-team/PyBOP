@@ -84,7 +84,6 @@ class TestWeightedCost:
                 pybop.GaussianLogLikelihoodKnownSigma,
                 pybop.RootMeanSquaredError,
                 pybop.SumSquaredError,
-                pybop.LogPosterior,
             )
         ]
     )
@@ -95,45 +94,37 @@ class TestWeightedCost:
         return data + np.random.normal(0, sigma, len(data))
 
     @pytest.fixture
-    def weighted_fitting_cost(self, model, parameter_values, parameters, cost_class):
+    def weighted_fitting_problem(self, model, parameter_values, parameters, cost_class):
         parameter_values.set_initial_state(0.4)
         dataset = self.get_data(model, parameter_values)
 
-        # Define the cost to optimise
+        # Define the problem
         simulator = pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
             input_parameter_names=parameters.names,
             protocol=dataset,
         )
-        problem = pybop.FittingProblem(simulator, parameters, dataset)
         costs = []
         for cost in cost_class:
-            if issubclass(cost, pybop.LogPosterior):
-                costs.append(
-                    cost(
-                        pybop.GaussianLogLikelihoodKnownSigma(
-                            problem, sigma0=self.sigma0
-                        ),
-                    )
-                )
-            elif issubclass(cost, pybop.BaseLikelihood):
-                costs.append(cost(problem, sigma0=self.sigma0))
+            if issubclass(cost, pybop.LogLikelihood):
+                costs.append(cost(dataset, sigma0=self.sigma0))
             else:
-                costs.append(cost(problem))
+                costs.append(cost(dataset))
 
-        return pybop.WeightedCost(*costs, weights=[0.1, 1, 0.5, 0.6])
+        weighted_cost = pybop.WeightedCost(*costs, weights=[0.1, 1, 0.5])
+        return pybop.FittingProblem(simulator, parameters, weighted_cost)
 
-    def test_fitting_costs(self, weighted_fitting_cost):
-        x0 = weighted_fitting_cost.parameters.get_initial_values()
+    def test_fitting_costs(self, weighted_fitting_problem):
+        x0 = weighted_fitting_problem.parameters.get_initial_values()
         options = pybop.PintsOptions(
             sigma=0.03,
             max_iterations=250,
             max_unchanged_iterations=35,
         )
-        optim = pybop.CuckooSearch(cost=weighted_fitting_cost, options=options)
+        optim = pybop.CuckooSearch(problem=weighted_fitting_problem, options=options)
 
-        initial_cost = optim.cost(optim.cost.parameters.get_initial_values())
+        initial_cost = optim.problem(optim.problem.parameters.get_initial_values())
         results = optim.run()
 
         # Assertions
@@ -175,20 +166,18 @@ class TestWeightedCost:
             input_parameter_names=parameters.names,
             protocol=experiment,
             initial_state=initial_state,
+            use_formation_concentrations=True,
         )
-        problem = pybop.DesignProblem(
-            simulator, parameters, output_variables=design_targets
-        )
-        costs = [pybop.DesignCost(problem, target=target) for target in design_targets]
-
-        return pybop.WeightedCost(*costs, weights=[1.0, 0.1])
+        costs = [pybop.DesignCost(target=target) for target in design_targets]
+        cost = pybop.WeightedCost(*costs, weights=[1.0, 0.1])
+        return pybop.DesignProblem(simulator, parameters, cost)
 
     def test_design_costs(self, weighted_design_cost):
-        cost = weighted_design_cost
+        problem = weighted_design_cost
         options = pybop.PintsOptions(max_iterations=15)
-        optim = pybop.CuckooSearch(cost=cost, options=options)
-        initial_values = optim.cost.parameters.get_initial_values()
-        initial_cost = optim.cost(initial_values)
+        optim = pybop.CuckooSearch(problem, options=options)
+        initial_values = optim.problem.parameters.get_initial_values()
+        initial_cost = optim.problem(initial_values)
         results = optim.run()
 
         # Assertions

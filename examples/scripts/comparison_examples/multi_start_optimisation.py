@@ -36,14 +36,14 @@ dataset = pybop.Dataset(
 simulator = pybop.pybamm.Simulator(
     model, parameter_values, input_parameter_names=parameters.names, protocol=dataset
 )
-problem = pybop.FittingProblem(simulator, parameters, dataset)
-cost = pybop.RootMeanSquaredError(problem)
+cost = pybop.RootMeanSquaredError(dataset)
+problem = pybop.FittingProblem(simulator, parameters, cost)
 
 # Construct the optimiser with 10 multistart runs
 # Each of these runs has a random starting position sampled
 # from the parameter priors
 options = pybop.PintsOptions(sigma=[0.6, 0.02], max_iterations=50, multistart=10)
-optim = pybop.GradientDescent(cost, options=options)
+optim = pybop.GradientDescent(problem, options=options)
 
 # Run the optimisation
 result = optim.run()

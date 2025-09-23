@@ -76,12 +76,12 @@ simulator = pybop.pybamm.Simulator(
     input_parameter_names=parameters.names,
     protocol=dataset,
 )
-problem = pybop.FittingProblem(simulator, parameters, dataset)
-cost = pybop.RootMeanSquaredError(problem)
+cost = pybop.RootMeanSquaredError(dataset)
+problem = pybop.FittingProblem(simulator, parameters, cost)
 
 # Set up the optimiser
 options = pybop.SciPyMinimizeOptions(maxiter=125, verbose=True)
-optim = pybop.SciPyMinimize(cost, options=options)
+optim = pybop.SciPyMinimize(problem, options=options)
 
 # Run the optimisation
 result = optim.run()

@@ -1,19 +1,18 @@
 import warnings
 from collections.abc import Callable
-from functools import partial
 from typing import TYPE_CHECKING
 
 import numpy as np
 
-from pybop import BaseCost
 from pybop.plot.plotly_manager import PlotlyManager
+from pybop.problems.base_problem import BaseProblem
 
 if TYPE_CHECKING:
     from pybop._result import OptimisationResult
 
 
 def contour(
-    call_object: "BaseCost | OptimisationResult",
+    call_object: "BaseProblem | OptimisationResult",
     gradient: bool = False,
     bounds: np.ndarray | None = None,
     transformed: bool = False,
@@ -29,7 +28,7 @@ def contour(
 
     Parameters
     ----------
-    call_object : pybop.BaseCost | pybop.OptimisationResult
+    call_object : pybop.BaseProblem | pybop.OptimisationResult
         Either:
         - the cost function to be evaluated. Must accept a list of parameter values and return a cost value.
         - an optimiser result which provides a specific optimisation trace overlaid on the cost landscape.
@@ -60,20 +59,16 @@ def contour(
         If the cost function does not return a valid cost when called with a parameter list.
     """
     plot_optim = False
-    cost = cost_call = call_object
+    problem = call_object
 
     # Assign input as a cost or optimisation result
-    if isinstance(call_object, BaseCost):
-        cost = call_object
-        cost_call = partial(cost)
-    elif not isinstance(call_object, Callable):
+    if not isinstance(call_object, Callable):
         plot_optim = True
-        optim = call_object.optim
-        cost = optim.cost
-        cost_call = partial(cost)
+        result = call_object
+        problem = result.optim.problem
 
-    parameters = cost.parameters
-    names = list(parameters.keys())
+    parameters = problem.parameters
+    names = parameters.names
     additional_values = []
 
     if len(parameters) < 2:
@@ -111,7 +106,7 @@ def contour(
         grad_parameter_costs = []
 
         # Determine the number of gradient outputs from cost.compute
-        num_gradients = cost_call(
+        num_gradients = problem(
             np.asarray([x[0], y[0]] + additional_values),
             calculate_grad=True,
         )[1].shape[0]
@@ -123,14 +118,14 @@ def contour(
     for i, xi in enumerate(x):
         for j, yj in enumerate(y):
             if gradient:
-                costs[j, i], (*current_grads,) = cost_call(
+                costs[j, i], (*current_grads,) = problem(
                     np.asarray([xi, yj] + additional_values),
                     calculate_grad=True,
                 )
                 for k, grad_output in enumerate(current_grads):
                     grads[k][j, i] = grad_output
             else:
-                costs[j, i] = cost_call(
+                costs[j, i] = problem(
                     np.asarray([xi, yj] + additional_values),
                 )
 
@@ -182,7 +177,7 @@ def contour(
 
     if plot_optim:
         # Plot the optimisation trace
-        optim_trace = np.asarray([item[:2] for item in optim.logger.x_model])
+        optim_trace = np.asarray([item[:2] for item in result.x_model])
         optim_trace = optim_trace.reshape(-1, 2)
 
         fig.add_trace(
@@ -201,8 +196,8 @@ def contour(
         )
 
         # Plot the initial guess
-        if len(optim.logger.x_model) > 0:
-            x0 = optim.logger.x_model[0]
+        if len(result.x_model) > 0:
+            x0 = result.x_model[0]
             fig.add_trace(
                 go.Scatter(
                     x=transform_array_of_values([x0[0]], parameters[names[0]]),
@@ -221,8 +216,8 @@ def contour(
             )
 
         # Plot optimised value
-        if optim.logger.x_model_best is not None:
-            x_best = optim.logger.x_model_best
+        if result.x is not None:
+            x_best = result.x
             fig.add_trace(
                 go.Scatter(
                     x=transform_array_of_values([x_best[0]], parameters[names[0]]),

@@ -72,11 +72,11 @@ class TestGITTModels:
         )
 
     def assert_parameter_sensitivity(
-        self, cost, initial_inputs, example_inputs, tolerance=RELATIVE_TOLERANCE
+        self, problem, initial_inputs, example_inputs, tolerance=RELATIVE_TOLERANCE
     ):
         """Reusable assertion for parameter sensitivity."""
-        value1 = cost(initial_inputs)
-        value2 = cost(example_inputs)
+        value1 = problem(initial_inputs)
+        value2 = problem(example_inputs)
 
         relative_change = abs((value1 - value2) / value1)
         assert relative_change > tolerance, (
@@ -92,13 +92,13 @@ class TestGITTModels:
             solver=model_config["solver"],
             protocol=dataset,
         )
-        problem = pybop.FittingProblem(simulator, parameters, dataset)
-        cost_1 = pybop.SumSquaredError(problem)
-        cost_2 = pybop.MeanAbsoluteError(problem)
+        cost_1 = pybop.SumSquaredError(dataset)
+        cost_2 = pybop.MeanAbsoluteError(dataset)
         cost = pybop.WeightedCost(cost_1, cost_2)
+        problem = pybop.FittingProblem(simulator, parameters, cost)
 
         # Test parameter sensitivity
         initial_params = parameters.get_initial_values()
         initial_inputs = parameters.to_dict(initial_params)
         example_inputs = parameters.to_dict(TEST_PARAM_VALUES)
-        self.assert_parameter_sensitivity(cost, initial_inputs, example_inputs)
+        self.assert_parameter_sensitivity(problem, initial_inputs, example_inputs)

@@ -1,8 +1,10 @@
+import warnings
 from copy import copy, deepcopy
 from typing import TYPE_CHECKING
 
 import numpy as np
 import pybamm
+from pybamm import SolverError
 
 if TYPE_CHECKING:
     from pybop.parameters.parameter import Inputs
@@ -85,6 +87,7 @@ class Simulator:
             if parameter_values is not None
             else model.default_parameter_values
         )
+        self._output_variables = output_variables
         self.use_formation_concentrations = use_formation_concentrations
 
         # Simulation params
@@ -112,6 +115,17 @@ class Simulator:
         self._var_pts = var_pts or model.default_var_pts
         self._spatial_methods = spatial_methods or model.default_spatial_methods
         self._discretisation_kwargs = discretisation_kwargs or {"check_model": True}
+
+        # Warnings
+        self.exception = [
+            "These parameter values are infeasible."
+        ]  # TODO: Update to a utility function and add to it on exception creation
+        self.warning_patterns = [
+            "Ah is greater than",
+            "Non-physical point encountered",
+        ]
+        self.debug_mode = False
+        self.verbose = False
 
         # State
         self._built_model = None
@@ -304,14 +318,45 @@ class Simulator:
             )
 
         # Set whether to compute the sensitivities
+        if calculate_sensitivities and not self.has_sensitivities:
+            raise ValueError("Sensitivities are not available.")
         self._calculate_sensitivities = calculate_sensitivities
 
         # The underlying solve method is one of four methods set during initialisation
-        solutions = self._process_solutions(self._solve(inputs_list))
+        solutions = self._process_solutions(self._catch_errors(inputs_list))
 
         if return_as_list:
             return solutions
         return solutions[0]
+
+    def _catch_errors(self, inputs_list: "list[Inputs]"):
+        if not self.debug_mode:
+            with warnings.catch_warnings():
+                for pattern in self.warning_patterns:
+                    warnings.filterwarnings(
+                        "error", category=UserWarning, message=pattern
+                    )
+
+                try:
+                    return self._solve(inputs_list)
+                except (SolverError, ZeroDivisionError, RuntimeError, ValueError) as e:
+                    if isinstance(e, ValueError) and str(e) not in self.exception:
+                        raise  # Raise the error if it doesn't match the expected list
+                    return [
+                        FailedSolution(
+                            self.output_variables, self._input_parameter_names
+                        )
+                    ]
+                except (UserWarning, Exception) as e:
+                    if self.verbose:
+                        print(f"Ignoring this sample due to: {e}")
+                    return [
+                        FailedSolution(
+                            self.output_variables, self._input_parameter_names
+                        )
+                    ]
+
+        return self._solve(inputs_list)
 
     """ ______ ______ ATTRIBUTES FOR SOLVING IN TIME, WITHOUT AN EXPERIMENT ______ ______  """
 
@@ -433,7 +478,7 @@ class Simulator:
         for solution in solutions:
             if hasattr(solution, "termination") and solution.termination == "failure":
                 failed_solution = FailedSolution(
-                    self._output_variables, list(self._input_parameter_names)
+                    self.output_variables, self._input_parameter_names
                 )
                 processed_solutions.append(failed_solution)
             else:
@@ -471,11 +516,12 @@ class Simulator:
 
     @property
     def output_variables(self):
-        return self._solver.output_variables
+        return self._output_variables
 
-    @output_variables.setter
-    def output_variables(self, value: list[str] | None):
-        self._set_up_solution_method(output_variables=value)
+    def set_output_variables(self, value: list[str] | None):
+        self._output_variables = value
+        if self.experiment is None:
+            self._set_up_solution_method(output_variables=value)
 
     @property
     def requires_model_rebuild(self):
@@ -483,11 +529,13 @@ class Simulator:
 
     @property
     def has_sensitivities(self):
-        return (
-            False
-            if (self._initial_state is not None or not self._solver.supports_interp)
-            else True
-        )
+        if (
+            self._initial_state is not None
+            or self._experiment is not None
+            or not self._solver.supports_interp
+        ):
+            return False
+        return True
 
     def copy(self):
         """Return a copy of the simulation."""

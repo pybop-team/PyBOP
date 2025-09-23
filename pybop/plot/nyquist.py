@@ -42,12 +42,12 @@ def nyquist(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
     if not isinstance(problem_inputs, dict):
         problem_inputs = problem.parameters.to_dict(problem_inputs)
 
-    model_output = problem.evaluate(problem_inputs)
+    model_output = problem.simulate(problem_inputs)
     domain_data = model_output["Impedance"].real
-    target_output = problem.get_target()
+    target_output = problem.target_data
 
     figure_list = []
-    for var in problem.output_variables:
+    for var in problem.target:
         default_layout_options = dict(
             title="Nyquist Plot",
             font=dict(family="Arial", size=14),

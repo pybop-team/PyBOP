@@ -46,20 +46,17 @@ simulator = pybop.pybamm.Simulator(
     input_parameter_names=parameters.names,
     protocol=dataset,
 )
-problem = pybop.FittingProblem(
-    simulator,
-    parameters,
-    dataset,
-    output_variables=["Voltage [V]", "Bulk open-circuit voltage [V]"],
+cost = pybop.Minkowski(
+    dataset, target=["Voltage [V]", "Bulk open-circuit voltage [V]"], p=2
 )
-cost = pybop.Minkowski(problem, p=2)
+problem = pybop.FittingProblem(simulator, parameters, cost)
 
 # We construct the optimiser class the same as normal but will be using the
 # `optimiser` attribute directly for this example. This interface works for
 # all PINTS-based optimisers.
 # Warning: not all arguments are supported via this interface.
 options = pybop.PintsOptions(verbose=True)
-optim = pybop.AdamW(cost, options=options)
+optim = pybop.AdamW(problem, options=options)
 
 # Create storage vars
 x_best = []
@@ -68,7 +65,7 @@ f_best = []
 # Run the optimisation
 for i in range(50):
     x = optim.optimiser.ask()
-    f = [cost(x[0], calculate_grad=True)]
+    f = [problem(x[0], calculate_grad=True)]
     optim.optimiser.tell(f)
 
     # Store best solution so far

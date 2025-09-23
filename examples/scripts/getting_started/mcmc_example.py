@@ -64,9 +64,9 @@ simulator = pybop.pybamm.Simulator(
     input_parameter_names=parameters.names,
     protocol=dataset,
 )
-problem = pybop.FittingProblem(simulator, parameters, dataset)
-likelihood = pybop.GaussianLogLikelihood(problem)
+likelihood = pybop.GaussianLogLikelihood(dataset)
 posterior = pybop.LogPosterior(likelihood)
+problem = pybop.FittingProblem(simulator, parameters, posterior)
 
 # Create and run the sampler
 options = pybop.PintsSamplerOptions(
@@ -75,7 +75,7 @@ options = pybop.PintsSamplerOptions(
     warm_up_iterations=100,
     verbose=True,
 )
-sampler = pybop.DifferentialEvolutionMCMC(posterior, options=options)
+sampler = pybop.DifferentialEvolutionMCMC(problem, options=options)
 chains = sampler.run()
 
 # Summary statistics

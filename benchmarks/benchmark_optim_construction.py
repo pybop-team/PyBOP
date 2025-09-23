@@ -70,10 +70,8 @@ class BenchmarkOptimisationConstruction:
             input_parameter_names=parameters.names,
             protocol=dataset,
         )
-        problem = pybop.FittingProblem(simulator, parameters, dataset)
-
-        # Create cost function
-        self.cost = pybop.SumSquaredError(problem=problem)
+        cost = pybop.SumSquaredError(dataset)
+        self.problem = pybop.FittingProblem(simulator, parameters, cost)
 
     def time_optimisation_construction(self, model, parameter_set, optimiser):
         """
@@ -84,7 +82,7 @@ class BenchmarkOptimisationConstruction:
             parameter_set (str): The name of the parameter set being used.
             optimiser (pybop.Optimiser): The optimiser class being used.
         """
-        self.optim = pybop.Optimisation(self.cost, optimiser=optimiser)
+        self.optim = pybop.Optimisation(self.problem, optimiser=optimiser)
 
     def time_cost_evaluate(self, model, parameter_set, optimiser):
         """
@@ -95,4 +93,4 @@ class BenchmarkOptimisationConstruction:
             parameter_set (str): The name of the parameter set being used.
             optimiser (pybop.Optimiser): The optimiser class being used.
         """
-        self.cost([0.63, 0.51])
+        self.problem([0.63, 0.51])

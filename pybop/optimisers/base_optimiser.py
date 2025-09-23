@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from pybop._logging import Logger
 from pybop._result import OptimisationResult
-from pybop.costs.base_cost import BaseCost
+from pybop.problems.base_problem import BaseProblem
 
 
 @dataclass
@@ -50,8 +50,8 @@ class BaseOptimiser:
 
     Parameters
     ----------
-    cost : pybop.BaseCost
-        An objective function to be optimised.
+    problem : pybop.BaseProblem
+        The problem to optimise.
     options: pybop.OptimiserOptions , optional
         Options for the optimiser, such as multistart.
     """
@@ -60,13 +60,15 @@ class BaseOptimiser:
 
     def __init__(
         self,
-        cost: BaseCost,
+        problem: BaseProblem,
         options: OptimiserOptions | None = None,
     ):
-        if not isinstance(cost, BaseCost):
-            raise TypeError(f"Expected a pybop.BaseCost instance, got {type(cost)}")
-        self._cost = cost
-        self._cost.parameters.reset_to_initial()
+        if not isinstance(problem, BaseProblem):
+            raise TypeError(
+                f"Expected a pybop.BaseProblem instance, got {type(problem)}"
+            )
+        self._problem = problem
+        self._problem.parameters.reset_to_initial()
         self._logger = None
         options = options or self.default_options()
         options.validate()
@@ -76,7 +78,7 @@ class BaseOptimiser:
         self._multistart = options.multistart
         self._needs_sensitivities = None  # to be overridden during set_up_optimiser
         self._set_up_optimiser()
-        if self._needs_sensitivities and not self._cost.has_sensitivities:
+        if self._needs_sensitivities and not self._problem.has_sensitivities:
             raise ValueError(
                 "This optimiser needs sensitivities, but they are not available from this problem."
             )
@@ -87,9 +89,9 @@ class BaseOptimiser:
         return OptimiserOptions()
 
     @property
-    def cost(self) -> BaseCost:
+    def problem(self) -> BaseProblem:
         """Returns the optimisation problem object."""
-        return self._cost
+        return self._problem
 
     @property
     def options(self) -> OptimiserOptions:
@@ -145,16 +147,16 @@ class BaseOptimiser:
         results = []
         for i in range(self._multistart):
             if i >= 1:
-                if not self.cost.parameters.priors():
+                if not self.problem.parameters.priors():
                     raise RuntimeError("Priors must be provided for multi-start")
-                initial_values = self.cost.parameters.sample_from_priors(1)[0]
-                self.cost.parameters.update(initial_values=initial_values)
+                initial_values = self.problem.parameters.sample_from_priors(1)[0]
+                self.problem.parameters.update(initial_values=initial_values)
                 self._set_up_optimiser()
             results.append(self._run())
 
         result = OptimisationResult.combine(results)
 
-        self.cost.parameters.update(values=result.x)
+        self.problem.parameters.update(values=result.x)
 
         if self.options.verbose:
             print(result)

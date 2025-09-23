@@ -41,8 +41,8 @@ simulator = pybop.pybamm.Simulator(
     input_parameter_names=parameters.names,
     protocol=dataset,
 )
-problem = pybop.FittingProblem(simulator, parameters, dataset)
-cost = pybop.RootMeanSquaredError(problem)
+cost = pybop.RootMeanSquaredError(dataset)
+problem = pybop.FittingProblem(simulator, parameters, cost)
 
 # Set up the optimiser
 options = pybop.PintsOptions(
@@ -50,7 +50,7 @@ options = pybop.PintsOptions(
     max_iterations=120,
     max_unchanged_iterations=60,
 )
-optim = pybop.SimulatedAnnealing(cost, options=options)
+optim = pybop.SimulatedAnnealing(problem, options=options)
 
 # Update initial temperature and cooling rate
 # for the reduced number of iterations

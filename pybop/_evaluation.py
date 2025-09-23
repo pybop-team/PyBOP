@@ -1,8 +1,8 @@
 import numpy as np
 from pints import Evaluator as PintsEvaluator
 
-from pybop import BaseCost
 from pybop._logging import Logger
+from pybop.problems.base_problem import BaseProblem
 
 
 class BaseEvaluator(PintsEvaluator):
@@ -15,7 +15,7 @@ class BaseEvaluator(PintsEvaluator):
 
     Parameters
     ----------
-    problem : pybop.Problem
+    problem : pybop.BaseProblem
         The problem to be optimised.
     minimise : bool
         If True, the cost function is minimised, otherwise maximisation is performed by
@@ -28,59 +28,25 @@ class BaseEvaluator(PintsEvaluator):
 
     def __init__(
         self,
-        cost: BaseCost,
+        problem: BaseProblem,
         minimise: bool,
         with_sensitivities: bool,
         logger: Logger,
     ):
-        self.transformation = cost.parameters.transformation
-        self.cost = cost
+        self.transformation = problem.parameters.transformation
+        self.problem = problem
+        invert_cost = minimise != problem.minimising
 
         # Choose which function to evaluate
-        if minimise and with_sensitivities:
+        if invert_cost and with_sensitivities:
 
             def fun(x_search):
                 x_model = [self.transformation.to_model(x) for x in x_search]
                 if len(x_model) == 0:
                     return np.empty(0), np.empty(0)
 
-                inputs_list = self.cost.parameters.to_inputs(x_model)
-                cost, grad = self.cost.batch_call(inputs_list, calculate_grad=True)
-
-                # Apply the inverse parameter transformation to the gradient
-                for i, x in enumerate(x_search):
-                    jac = self.transformation.jacobian(x)
-                    grad[i] = np.matmul(grad[i], jac)
-
-                logger.extend_log(x_search=x_search, x_model=x_model, cost=cost)
-
-                if len(cost) == 1:
-                    return cost, grad.reshape(-1)
-                return cost, grad
-
-        elif minimise:
-
-            def fun(x_search):
-                x_model = [self.transformation.to_model(x) for x in x_search]
-                if len(x_model) == 0:
-                    return np.empty(0)
-
-                inputs_list = self.cost.parameters.to_inputs(x_model)
-                cost = self.cost.batch_call(inputs_list, calculate_grad=False)
-
-                logger.extend_log(x_search=x_search, x_model=x_model, cost=cost)
-                return cost
-
-        # Otherwise, perform maximisation by minimising the negative of the cost
-        elif with_sensitivities:
-
-            def fun(x_search):
-                x_model = [self.transformation.to_model(x) for x in x_search]
-                if len(x_model) == 0:
-                    return np.empty(0), np.empty(0)
-
-                inputs_list = self.cost.parameters.to_inputs(x_model)
-                cost, grad = self.cost.batch_call(inputs_list, calculate_grad=True)
+                inputs_list = self.problem.parameters.to_inputs(x_model)
+                cost, grad = self.problem.batch_call(inputs_list, calculate_grad=True)
 
                 # Apply the inverse parameter transformation to the gradient
                 for i, x in enumerate(x_search):
@@ -93,6 +59,40 @@ class BaseEvaluator(PintsEvaluator):
                     return -cost, -grad.reshape(-1)
                 return -cost, -grad
 
+        elif invert_cost:
+
+            def fun(x_search):
+                x_model = [self.transformation.to_model(x) for x in x_search]
+                if len(x_model) == 0:
+                    return np.empty(0)
+
+                inputs_list = self.problem.parameters.to_inputs(x_model)
+                cost = self.problem.batch_call(inputs_list, calculate_grad=False)
+
+                logger.extend_log(x_search=x_search, x_model=x_model, cost=cost)
+                return -cost
+
+        elif with_sensitivities:
+
+            def fun(x_search):
+                x_model = [self.transformation.to_model(x) for x in x_search]
+                if len(x_model) == 0:
+                    return np.empty(0), np.empty(0)
+
+                inputs_list = self.problem.parameters.to_inputs(x_model)
+                cost, grad = self.problem.batch_call(inputs_list, calculate_grad=True)
+
+                # Apply the inverse parameter transformation to the gradient
+                for i, x in enumerate(x_search):
+                    jac = self.transformation.jacobian(x)
+                    grad[i] = np.matmul(grad[i], jac)
+
+                logger.extend_log(x_search=x_search, x_model=x_model, cost=cost)
+
+                if len(cost) == 1:
+                    return cost, grad.reshape(-1)
+                return cost, grad
+
         else:
 
             def fun(x_search):
@@ -100,11 +100,11 @@ class BaseEvaluator(PintsEvaluator):
                 if len(x_model) == 0:
                     return np.empty(0), np.empty(0)
 
-                inputs_list = self.cost.parameters.to_inputs(x_model)
-                cost = self.cost.batch_call(inputs_list, calculate_grad=False)
+                inputs_list = self.problem.parameters.to_inputs(x_model)
+                cost = self.problem.batch_call(inputs_list, calculate_grad=False)
 
                 logger.extend_log(x_search=x_search, x_model=x_model, cost=cost)
-                return -cost
+                return cost
 
         # Pass function to PintsEvaluator
         super().__init__(fun)

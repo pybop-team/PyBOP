@@ -84,9 +84,9 @@ class Test_Sampling_SPM:
             input_parameter_names=parameters.names,
             protocol=dataset,
         )
-        problem = pybop.FittingProblem(simulator, parameters, dataset)
-        likelihood = pybop.GaussianLogLikelihood(problem, sigma0=0.002 * 1.2)
-        return pybop.LogPosterior(likelihood)
+        likelihood = pybop.GaussianLogLikelihood(dataset, sigma0=0.002 * 1.2)
+        posterior = pybop.LogPosterior(likelihood)
+        return pybop.FittingProblem(simulator, parameters, posterior)
 
     @pytest.fixture
     def map_estimate(self, log_posterior):

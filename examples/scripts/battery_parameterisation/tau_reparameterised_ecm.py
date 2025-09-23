@@ -91,8 +91,8 @@ dataset = pybop.Dataset(
 simulator = pybop.pybamm.Simulator(
     model, parameter_values, input_parameter_names=parameters.names, protocol=dataset
 )
-problem = pybop.FittingProblem(simulator, parameters, dataset)
-cost = pybop.RootMeanSquaredError(problem)
+cost = pybop.RootMeanSquaredError(dataset)
+problem = pybop.FittingProblem(simulator, parameters, cost)
 
 # Set up the optimiser
 options = pybop.PintsOptions(
@@ -100,7 +100,7 @@ options = pybop.PintsOptions(
     max_unchanged_iterations=30,
     max_iterations=125,
 )
-optim = pybop.XNES(cost, options=options)
+optim = pybop.XNES(problem, options=options)
 
 # Run the optimisation
 result = optim.run()

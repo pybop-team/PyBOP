@@ -1,8 +1,10 @@
 import numpy as np
 
-from pybop import DesignProblem, FittingProblem, MultiFittingProblem
+from pybop.costs.design_cost import DesignCost
+from pybop.costs.error_measures import ErrorMeasure
 from pybop.parameters.parameter import Inputs
 from pybop.plot.standard_plots import StandardPlot
+from pybop.problems.meta_problem import MetaProblem
 
 
 def problem(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
@@ -14,8 +16,8 @@ def problem(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
 
     Parameters
     ----------
-    problem : object
-        Problem object with dataset and output_variables attributes.
+    problem : pybop.Problem
+        Problem object with dataset and targets attributes.
     problem_inputs : Inputs
         Optimised (or example) parameter values.
     show : bool, optional
@@ -30,18 +32,36 @@ def problem(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
     plotly.graph_objs.Figure
         The Plotly figure object for the scatter plot.
     """
-    if not isinstance(problem_inputs, dict):
-        problem_inputs = problem.parameters.to_dict(problem_inputs)
+    if isinstance(problem_inputs, dict):
+        problem_inputs = list(problem_inputs.values())
+    problem.parameters.update(values=problem_inputs)
+    problem_inputs = problem.model_parameters.to_dict()
 
-    # Extract the time data and evaluate the model's output and target values
     domain = problem.domain
-    domain_data = problem.domain_data
-    model_output = problem.evaluate(problem_inputs)
-    target_output = problem.get_target()
+    if problem.domain_data is None:
+        # Simulate the model for the both the initial and the given inputs
+        target = problem.target
+        problem.target = target + [domain]
+        initial_inputs = problem.model_parameters.to_dict("initial")
+        target_output = problem.simulate(initial_inputs)
+        target_domain = target_output[domain]
+        model_output = problem.simulate(problem_inputs)
+        model_domain = model_output[domain]
+        problem.target = target
+    else:
+        # Extract the time data and simulate the model for the given inputs
+        target_output = problem.target_data
+        target_domain = problem.domain_data
+        model_output = problem.simulate(problem_inputs)
+        model_domain = (
+            model_output[domain]
+            if domain in model_output.keys()
+            else target_domain[: len(model_output[problem.target[0]])]
+        )
 
     # Create a plot for each output
     figure_list = []
-    for var in problem.output_variables:
+    for var in problem.target:
         # Create a plot dictionary
         plot_dict = StandardPlot(
             layout_options=dict(
@@ -52,18 +72,16 @@ def problem(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
         )
 
         model_trace = plot_dict.create_trace(
-            x=model_output[domain]
-            if domain in model_output.keys()
-            else domain_data[: len(model_output[var])],
+            x=model_domain,
             y=model_output[var],
-            name="Optimised" if isinstance(problem, DesignProblem) else "Model",
-            mode="markers" if isinstance(problem, MultiFittingProblem) else "lines",
+            name="Optimised" if isinstance(problem.cost, DesignCost) else "Model",
+            mode="markers" if isinstance(problem, MetaProblem) else "lines",
             showlegend=True,
         )
         plot_dict.traces.append(model_trace)
 
         target_trace = plot_dict.create_trace(
-            x=domain_data,
+            x=target_domain,
             y=target_output[var],
             name="Reference",
             mode="markers",
@@ -71,14 +89,14 @@ def problem(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
         )
         plot_dict.traces.append(target_trace)
 
-        if isinstance(problem, FittingProblem) and len(model_output[var]) == len(
+        if isinstance(problem.cost, ErrorMeasure) and len(model_output[var]) == len(
             target_output[var]
         ):
             # Compute the standard deviation as proxy for uncertainty
             plot_dict.sigma = np.std(model_output[var] - target_output[var])
 
             # Convert x and upper and lower limits into lists to create a filled trace
-            x = domain_data.tolist()
+            x = target_domain.tolist()
             y_upper = (model_output[var] + plot_dict.sigma).tolist()
             y_lower = (model_output[var] - plot_dict.sigma).tolist()
 

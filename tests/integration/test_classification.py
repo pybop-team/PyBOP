@@ -77,24 +77,24 @@ class TestClassification:
         )
 
     @pytest.fixture
-    def problem(self, model, parameter_values, parameters, dataset):
-        simulator = pybop.pybamm.Simulator(
+    def simulator(self, model, parameter_values, parameters, dataset):
+        return pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
             input_parameter_names=parameters.names,
             protocol=dataset,
         )
-        return pybop.FittingProblem(simulator, parameters, dataset)
 
-    def test_classify_using_hessian(self, problem):
-        cost = pybop.RootMeanSquaredError(problem)
+    def test_classify_using_hessian(self, simulator, parameters, dataset):
+        cost = pybop.RootMeanSquaredError(dataset)
+        problem = pybop.FittingProblem(simulator, parameters, cost)
         x = self.ground_truth
-        bounds = cost.parameters.get_bounds()
+        bounds = problem.parameters.get_bounds()
         x0 = np.clip(x, bounds["lower"], bounds["upper"])
-        optim = pybop.XNES(cost=cost)
-        logger = pybop.Logger(minimising=cost.minimising)
+        optim = pybop.XNES(problem)
+        logger = pybop.Logger(minimising=problem.minimising)
         logger.iteration = 1
-        logger.extend_log(x_search=[x0], x_model=[x0], cost=[cost(x0)])
+        logger.extend_log(x_search=[x0], x_model=[x0], cost=[problem(x0)])
         results = pybop.OptimisationResult(optim=optim, logger=logger, time=1.0)
 
         if np.all(x == np.asarray([0.05, 0.05])):
@@ -116,11 +116,12 @@ class TestClassification:
             raise Exception(f"Please add a check for these values: {x}")
 
         if np.all(x == np.asarray([0.05, 0.05])):
-            cost = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.002)
-            optim = pybop.XNES(cost=cost)
-            logger = pybop.Logger(minimising=cost.minimising)
+            cost = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=0.002)
+            problem = pybop.FittingProblem(simulator, parameters, cost)
+            optim = pybop.XNES(problem)
+            logger = pybop.Logger(minimising=problem.minimising)
             logger.iteration = 1
-            logger.extend_log(x_search=[x], x_model=[x], cost=[cost(x)])
+            logger.extend_log(x_search=[x], x_model=[x], cost=[problem(x)])
             results = pybop.OptimisationResult(optim=optim, logger=logger, time=1.0)
 
             message = pybop.classify_using_hessian(results)
@@ -161,13 +162,13 @@ class TestClassification:
             input_parameter_names=parameters.names,
             protocol=dataset,
         )
-        problem = pybop.FittingProblem(simulator, parameters, dataset)
-        cost = pybop.SumOfPower(problem, p=1)
+        cost = pybop.SumOfPower(dataset, p=1)
+        problem = pybop.FittingProblem(simulator, parameters, cost)
         x = [0.001, 0]
-        optim = pybop.XNES(cost=cost)
-        logger = pybop.Logger(minimising=cost.minimising)
+        optim = pybop.XNES(problem)
+        logger = pybop.Logger(minimising=problem.minimising)
         logger.iteration = 1
-        logger.extend_log(x_search=[x], x_model=[x], cost=[cost(x)])
+        logger.extend_log(x_search=[x], x_model=[x], cost=[problem(x)])
         results = pybop.OptimisationResult(optim=optim, logger=logger, time=1.0)
 
         message = pybop.classify_using_hessian(results)

@@ -66,7 +66,7 @@ from .transformation.transformations import (
 # Parameter classes
 #
 from .parameters.parameter import Parameter, Parameters
-from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential, JointLogPrior
+from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential, JointPrior
 
 #
 # Model classes
@@ -84,15 +84,14 @@ from . import pybamm
 #
 from .problems.base_problem import BaseProblem
 from .problems.fitting_problem import FittingProblem
-from .problems.multi_fitting_problem import MultiFittingProblem
+from .problems.meta_problem import MetaProblem
 from .problems.design_problem import DesignProblem
 
 #
 # Cost classes
 #
-from .costs.base_cost import BaseCost
-from .costs.fitting_costs import FittingCost
 from .costs.error_measures import (
+    ErrorMeasure,
     RootMeanSquaredError,
     MeanAbsoluteError,
     MeanSquaredError,
@@ -100,15 +99,14 @@ from .costs.error_measures import (
     Minkowski,
     SumOfPower,
 )
-from .costs.design_costs import DesignCost
-from .costs._likelihoods import (
-    BaseLikelihood,
+from .costs.likelihoods import (
+    LogLikelihood,
     GaussianLogLikelihood,
     GaussianLogLikelihoodKnownSigma,
-    ScaledLogLikelihood,
     LogPosterior,
 )
-from .costs._weighted_cost import WeightedCost
+from .costs.weighted_cost import WeightedCost
+from .costs.design_cost import DesignCost
 
 #
 # Evaluation

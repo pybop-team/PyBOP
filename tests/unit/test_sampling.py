@@ -65,16 +65,16 @@ class TestPintsSamplers:
         return pybamm.lithium_ion.SPM()
 
     @pytest.fixture
-    def log_posterior(self, model, parameters, dataset):
+    def posterior_problem(self, model, parameters, dataset):
         simulator = pybop.pybamm.Simulator(
             model, input_parameter_names=parameters.names, protocol=dataset
         )
-        problem = pybop.FittingProblem(simulator, parameters, dataset)
-        likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.01)
+        likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=0.01)
         prior1 = pybop.Gaussian(0.7, 0.02)
         prior2 = pybop.Gaussian(0.6, 0.02)
-        composed_prior = pybop.JointLogPrior(prior1, prior2)
-        return pybop.LogPosterior(likelihood, composed_prior)
+        composed_prior = pybop.JointPrior(prior1, prior2)
+        posterior = pybop.LogPosterior(likelihood, prior=composed_prior)
+        return pybop.FittingProblem(simulator, parameters, posterior)
 
     @pytest.fixture
     def chains(self):
@@ -109,16 +109,18 @@ class TestPintsSamplers:
     def MCMC(self, request):
         return request.param
 
-    def test_initialisation_and_run(self, log_posterior, chains, MCMC, multi_samplers):
+    def test_initialisation_and_run(
+        self, posterior_problem, chains, MCMC, multi_samplers
+    ):
         options = pybop.PintsSamplerOptions(
             n_chains=chains,
             max_iterations=1,
             verbose=True,
         )
-        sampler = MCMC(log_pdf=log_posterior, options=options)
+        sampler = MCMC(log_pdf=posterior_problem, options=options)
         assert sampler.options.n_chains == chains
-        assert sampler._log_pdf == log_posterior
-        x0 = log_posterior.parameters.get_initial_values()
+        assert sampler._log_pdf == posterior_problem
+        x0 = posterior_problem.parameters.get_initial_values()
         if isinstance(sampler, multi_samplers):
             np.testing.assert_allclose(sampler._samplers[0]._x0[0], x0)
         else:
@@ -135,7 +137,7 @@ class TestPintsSamplers:
         assert samples is not None
         assert samples.shape == (chains, 1, 2)
 
-    def test_effective_sample_size(self, log_posterior):
+    def test_effective_sample_size(self, posterior_problem):
         chains = np.asarray([[[0, 0]]])
         summary = pybop.PosteriorSummary(chains)
 
@@ -144,18 +146,18 @@ class TestPintsSamplers:
 
         n_chains = 3
         options = pybop.PintsSamplerOptions(n_chains=n_chains, max_iterations=3)
-        sampler = pybop.HaarioBardenetACMC(log_pdf=log_posterior, options=options)
+        sampler = pybop.HaarioBardenetACMC(log_pdf=posterior_problem, options=options)
         chains = sampler.run()
         summary = pybop.PosteriorSummary(chains)
 
         # Non mixed chains
         ess = summary.effective_sample_size()
-        assert len(ess) == log_posterior.n_parameters * n_chains
+        assert len(ess) == posterior_problem.n_parameters * n_chains
         assert all(e > 0 for e in ess)  # ESS should be positive
 
         # Mixed chains
         ess = summary.effective_sample_size(mixed_chains=True)
-        assert len(ess) == log_posterior.n_parameters
+        assert len(ess) == posterior_problem.n_parameters
         assert all(e > 0 for e in ess)
 
     def test_single_parameter_sampling(self, model, dataset, MCMC, chains):
@@ -169,9 +171,9 @@ class TestPintsSamplers:
         simulator = pybop.pybamm.Simulator(
             model, input_parameter_names=parameters.names, protocol=dataset
         )
-        problem = pybop.FittingProblem(simulator, parameters, dataset)
-        likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.01)
-        log_posterior = pybop.LogPosterior(likelihood)
+        likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=0.01)
+        posterior = pybop.LogPosterior(likelihood)
+        posterior = pybop.FittingProblem(simulator, parameters, posterior)
 
         # Skip RelativisticMCMC as it requires > 1 parameter
         if issubclass(MCMC, RelativisticMCMC):
@@ -183,16 +185,16 @@ class TestPintsSamplers:
             max_iterations=3,
             verbose=True,
         )
-        sampler = MCMC(log_pdf=log_posterior, options=options)
+        sampler = MCMC(log_pdf=posterior, options=options)
         result = sampler.run()
         summary = pybop.PosteriorSummary(result)
         autocorr = summary.autocorrelation(result[0, :, 0])
         assert autocorr.shape == (result[0, :, 0].shape[0] - 2,)
 
-    def test_invalid_initialisation(self, log_posterior):
+    def test_invalid_initialisation(self, posterior_problem):
         with pytest.raises(ValueError, match="Number of chains must be greater than 0"):
             options = pybop.PintsSamplerOptions(n_chains=0)
-            AdaptiveCovarianceMCMC(log_pdf=log_posterior, options=options)
+            AdaptiveCovarianceMCMC(log_pdf=posterior_problem, options=options)
 
     # SingleChain & MultiChain Sampler
     @pytest.mark.parametrize(
@@ -202,31 +204,31 @@ class TestPintsSamplers:
             DifferentialEvolutionMCMC,
         ],
     )
-    def test_no_chains_in_memory(self, log_posterior, chains, sampler):
+    def test_no_chains_in_memory(self, posterior_problem, chains, sampler):
         options = sampler.default_options()
         options.n_chains = chains
         options.max_iterations = 1
         options.chains_in_memory = False
-        sampler = sampler(log_posterior, options=options)
+        sampler = sampler(posterior_problem, options=options)
 
         # Run the sampler
         samples = sampler.run()
         assert samples.shape == (
             0,
             options.max_iterations,
-            len(log_posterior.parameters),
+            len(posterior_problem.parameters),
         )
 
     @patch("logging.basicConfig")
     @patch("logging.info")
     def test_initialise_logging(
-        self, mock_info, mock_basicConfig, log_posterior, chains
+        self, mock_info, mock_basicConfig, posterior_problem, chains
     ):
         options = AdaptiveCovarianceMCMC.default_options()
         options.n_chains = chains
         options.evaluation_files = ["eval1.txt", "eval2.txt"]
         options.chain_files = ["chain1.txt", "chain2.txt"]
-        sampler = AdaptiveCovarianceMCMC(log_posterior, options=options)
+        sampler = AdaptiveCovarianceMCMC(posterior_problem, options=options)
         sampler._initialise_logging()
 
         # Check if basicConfig was called with correct arguments
@@ -248,9 +250,9 @@ class TestPintsSamplers:
         sampler._initialise_logging()
         assert mock_info.call_count == len(expected_calls)  # No additional calls
 
-    def test_check_stopping_criteria(self, log_posterior, chains):
+    def test_check_stopping_criteria(self, posterior_problem, chains):
         options = pybop.PintsSamplerOptions(n_chains=chains)
-        sampler = AdaptiveCovarianceMCMC(log_pdf=log_posterior, options=options)
+        sampler = AdaptiveCovarianceMCMC(log_pdf=posterior_problem, options=options)
         # Set stopping criteria
         sampler.set_max_iterations(10)
         assert sampler._max_iterations == 10
@@ -268,18 +270,18 @@ class TestPintsSamplers:
         ):
             sampler.set_max_iterations(-1)
 
-    def test_base_sampler(self, log_posterior):
+    def test_base_sampler(self, posterior_problem):
         options = pybop.SamplerOptions(n_chains=1, cov=0.1)
-        sampler = pybop.BaseSampler(log_pdf=log_posterior, options=options)
+        sampler = pybop.BaseSampler(log_pdf=posterior_problem, options=options)
         with pytest.raises(NotImplementedError):
             sampler.run()
 
-    def test_base_chain_processor(self, log_posterior):
+    def test_base_chain_processor(self, posterior_problem):
         options = pybop.PintsSamplerOptions(n_chains=1)
-        sampler = pybop.MALAMCMC(log_pdf=log_posterior, options=options)
+        sampler = pybop.MALAMCMC(log_pdf=posterior_problem, options=options)
         chain_processor = pybop.ChainProcessor(sampler)
         with pytest.raises(NotImplementedError):
             chain_processor.process_chain()
 
         with pytest.raises(NotImplementedError):
-            chain_processor._extract_log_pdf(log_posterior, 0)
+            chain_processor._extract_log_pdf(posterior_problem, 0)

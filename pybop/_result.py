@@ -38,7 +38,7 @@ class OptimisationResult:
         scipy_result=None,
     ):
         self._optim = optim
-        self._minimising = optim.cost.minimising
+        self._minimising = optim.problem.minimising
         self.optim_name = optim_name
         self.n_runs = 0
         self._best_run = None
@@ -140,7 +140,7 @@ class OptimisationResult:
         """
         if not any(np.isfinite(self._best_cost)):
             raise ValueError(
-                f"Optimised parameters {self._optim.cost.parameters.to_dict(self._x[-1])} do not produce a finite cost value."
+                f"Optimised parameters {self._optim.problem.parameters.to_dict(self._x[-1])} do not produce a finite cost value."
             )
 
     def __str__(self) -> str:

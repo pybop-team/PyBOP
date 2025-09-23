@@ -73,12 +73,12 @@ dataset = pybop.Dataset(
 simulator = pybop.pybamm.Simulator(
     model, parameter_values, input_parameter_names=parameters.names, protocol=dataset
 )
-problem = pybop.FittingProblem(simulator, parameters, dataset)
-cost = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=sigma)
+cost = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=sigma)
+problem = pybop.FittingProblem(simulator, parameters, cost)
 
 # Set up the optimiser
 options = pybop.SciPyMinimizeOptions(maxiter=125)
-optim = pybop.SciPyMinimize(cost, options=options)
+optim = pybop.SciPyMinimize(problem, options=options)
 
 # Run the optimisation for Maximum Likelihood Estimate (MLE)
 result = optim.run()

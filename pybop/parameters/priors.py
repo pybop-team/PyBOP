@@ -363,7 +363,7 @@ class Exponential(BasePrior):
         return None
 
 
-class JointLogPrior(BasePrior):
+class JointPrior(BasePrior):
     """
     Represents a joint prior distribution composed of multiple prior distributions.
 

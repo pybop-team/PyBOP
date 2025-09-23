@@ -142,9 +142,9 @@ class TestModelAndExperimentChanges:
                 "Voltage [V]": solution["Voltage [V]"].data,
             }
         )
-        problem = pybop.FittingProblem(simulator, parameters, dataset)
-        cost = pybop.RootMeanSquaredError(problem)
-        optim = pybop.NelderMead(cost)
+        cost = pybop.RootMeanSquaredError(dataset)
+        problem = pybop.FittingProblem(simulator, parameters, cost)
+        optim = pybop.NelderMead(problem)
         results = optim.run()
         return results.best_cost
 
@@ -188,17 +188,18 @@ class TestModelAndExperimentChanges:
         )
 
         # Define a problem for each dataset and combine them into one
-        problem_1 = pybop.FittingProblem(simulator_1, parameters, dataset_1)
-        problem_2 = pybop.FittingProblem(simulator_2, parameters, dataset_2)
-        problem = pybop.MultiFittingProblem(problem_1, problem_2)
-        cost = pybop.RootMeanSquaredError(problem)
+        cost_1 = pybop.RootMeanSquaredError(dataset_1)
+        cost_2 = pybop.RootMeanSquaredError(dataset_2)
+        problem_1 = pybop.FittingProblem(simulator_1, parameters, cost_1)
+        problem_2 = pybop.FittingProblem(simulator_2, parameters, cost_2)
+        problem = pybop.MetaProblem(problem_1, problem_2)
 
         # Test with a gradient and non-gradient-based optimiser
         for optimiser in [pybop.SNES, pybop.IRPropMin]:
             options = pybop.PintsOptions(
                 sigma=0.05, max_iterations=100, max_unchanged_iterations=30
             )
-            optim = optimiser(cost=cost, options=options)
+            optim = optimiser(problem, options=options)
             results = optim.run()
             np.testing.assert_allclose(results.x, ground_truth, atol=2e-5)
             np.testing.assert_allclose(results.best_cost, 0, atol=3e-5)

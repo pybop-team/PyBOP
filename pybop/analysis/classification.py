@@ -25,12 +25,12 @@ def classify_using_hessian(
     x = result.x
     dx = np.asarray(dx) if dx is not None else np.maximum(x, 1e-40) * 1e-2
     best_cost = result.best_cost
-    cost_object = result.optim.cost
-    parameters = cost_object.parameters
+    problem = result.optim.problem
+    parameters = problem.parameters
     minimising = result.minimising
 
     def cost(x):
-        return cost_object.__call__(x)
+        return problem.__call__(x)
 
     n = len(x)
     if n != 2 or len(dx) != n:

@@ -5,6 +5,7 @@ from pybamm import ParameterValues
 
 import pybop
 from pybop import BaseApplication
+from pybop._utils import add_spaces
 
 
 class GITTPulseFit(BaseApplication):
@@ -23,7 +24,7 @@ class GITTPulseFit(BaseApplication):
         for one pulse obtained from a GITT measurement.
     parameter_values : pybamm.ParameterValues
         A parameter set containing values for the parameters of the SPDiffusion model.
-    cost : pybop.BaseCost, optional
+    cost : pybop.ErrorMeasure | pybop.LogLikelihood, optional
         The cost function to quantify the error (default: pybop.RootMeanSquaredError).
     optimiser : pybop.BaseOptimiser, optional
         The optimisation algorithm to use (default: pybop.SciPyMinimize).
@@ -34,7 +35,7 @@ class GITTPulseFit(BaseApplication):
     def __init__(
         self,
         parameter_values: ParameterValues,
-        cost: pybop.BaseCost | None = pybop.RootMeanSquaredError,
+        cost: pybop.ErrorMeasure | pybop.LogLikelihood | None = None,
         optimiser: pybop.BaseOptimiser | None = pybop.SciPyMinimize,
         verbose: bool = True,
     ):
@@ -44,8 +45,7 @@ class GITTPulseFit(BaseApplication):
             pybop.Parameter("Series resistance [Ohm]", bounds=[0, np.inf]),
         )
         self.model = pybop.lithium_ion.SPDiffusion(build=True)
-        self.problem = None
-        self.cost = cost
+        self.cost = cost or pybop.RootMeanSquaredError
         self.verbose = verbose
         self.optimiser = optimiser
         self.optim = None
@@ -60,23 +60,23 @@ class GITTPulseFit(BaseApplication):
             ]
         )
 
-        # Define the cost
+        # Define the problem
         simulator = pybop.pybamm.Simulator(
             self.model,
             parameter_values=self.parameter_values,
             input_parameter_names=self.parameters.names,
             protocol=gitt_pulse,
         )
+        cost = self.cost(gitt_pulse, weighting="domain")
         self.problem = pybop.FittingProblem(
             simulator=simulator,
             parameters=self.parameters,
-            dataset=gitt_pulse,
+            cost=cost,
         )
-        cost = self.cost(self.problem, weighting="domain")
 
         # Build and run the optimisation problem
         options = pybop.SciPyMinimizeOptions(verbose=self.verbose, tol=1e-8)
-        self.optim = self.optimiser(cost=cost, options=options)
+        self.optim = self.optimiser(problem=self.problem, options=options)
         self.results = self.optim.run()
         self.parameter_values.update(self.parameters.to_dict(self.results.x))
 
@@ -99,7 +99,7 @@ class GITTFit(BaseApplication):
         A nested list of integers representing the indices of each pulse in the dataset.
     parameter_values : pybamm.ParameterValues
         A parameter set containing values for the parameters of the SPDiffusion model.
-    cost : pybop.BaseCost, optional
+    cost : pybop.ErrorMeasure | pybop.LogLikelihood, optional
         The cost function to quantify the error (default: pybop.RootMeanSquaredError).
     optimiser : pybop.BaseOptimiser, optional
         The optimisation algorithm to use (default: pybop.SciPyMinimize).
@@ -112,14 +112,14 @@ class GITTFit(BaseApplication):
         gitt_dataset: pybop.Dataset,
         pulse_index: list[np.ndarray],
         parameter_values: ParameterValues,
-        cost: pybop.BaseCost | None = pybop.RootMeanSquaredError,
+        cost: pybop.ErrorMeasure | pybop.LogLikelihood | None = None,
         optimiser: pybop.BaseOptimiser | None = pybop.SciPyMinimize,
         verbose: bool = False,
     ):
         self.gitt_dataset = gitt_dataset
         self.pulse_index = pulse_index
         self.parameter_values = parameter_values
-        self.cost = cost
+        self.cost = cost or pybop.RootMeanSquaredError
         self.optimiser = optimiser
         self.verbose = verbose
         self.gitt_pulse = pybop.GITTPulseFit(
@@ -181,7 +181,7 @@ class GITTFit(BaseApplication):
                 "Stoichiometry": np.asarray(stoichiometry),
                 "Particle diffusion time scale [s]": np.asarray(diffusion_time),
                 "Series resistance [Ohm]": np.asarray(series_resistance),
-                str(self.cost(problem=None).name) + " [V]": np.asarray(final_costs),
+                add_spaces(self.cost.__name__) + " [V]": np.asarray(final_costs),
             }
             if len(stoichiometry) > 1 and stoichiometry[-1] > stoichiometry[0]
             else {
@@ -190,7 +190,7 @@ class GITTFit(BaseApplication):
                     np.asarray(diffusion_time)
                 ),
                 "Series resistance [Ohm]": np.flipud(np.asarray(series_resistance)),
-                str(self.cost(problem=None).name) + " [V]": np.flipud(
+                add_spaces(self.cost.__name__) + " [V]": np.flipud(
                     np.asarray(final_costs)
                 ),
             },

@@ -69,7 +69,7 @@ class Test_SPM_Parameterisation:
             pybop.LogPosterior,
         ]
     )
-    def cost_cls(self, request):
+    def cost_class(self, request):
         return request.param
 
     def noisy(self, data, sigma):
@@ -87,7 +87,7 @@ class Test_SPM_Parameterisation:
         return request.param
 
     @pytest.fixture
-    def optim(self, optimiser, model_and_parameter_values, parameters, cost_cls):
+    def optim(self, optimiser, model_and_parameter_values, parameters, cost_class):
         model, parameter_values = model_and_parameter_values
         parameter_values.set_initial_state(0.6)
         dataset = self.get_data(model, parameter_values)
@@ -99,21 +99,23 @@ class Test_SPM_Parameterisation:
             input_parameter_names=parameters.names,
             protocol=dataset,
         )
-        problem = pybop.FittingProblem(simulator, parameters, dataset)
 
         # Construct the cost
-        if cost_cls is pybop.GaussianLogLikelihoodKnownSigma:
-            cost = cost_cls(problem, sigma0=self.sigma0)
-        elif cost_cls is pybop.GaussianLogLikelihood:
-            cost = cost_cls(problem, sigma0=self.sigma0 * 4)  # Initial sigma0 guess
-        elif cost_cls is pybop.LogPosterior:
-            cost = cost_cls(
-                pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=self.sigma0)
+        if cost_class is pybop.GaussianLogLikelihoodKnownSigma:
+            cost = cost_class(dataset, sigma0=self.sigma0)
+        elif cost_class is pybop.GaussianLogLikelihood:
+            cost = cost_class(dataset, sigma0=self.sigma0 * 4)  # Initial sigma0 guess
+        elif cost_class is pybop.LogPosterior:
+            cost = cost_class(
+                log_likelihood=pybop.GaussianLogLikelihoodKnownSigma(
+                    dataset, sigma0=self.sigma0
+                )
             )
-        elif cost_cls in [pybop.SumOfPower, pybop.Minkowski]:
-            cost = cost_cls(problem, p=2.5)
+        elif cost_class in [pybop.SumOfPower, pybop.Minkowski]:
+            cost = cost_class(dataset, p=2.5)
         else:
-            cost = cost_cls(problem)
+            cost = cost_class(dataset)
+        problem = pybop.FittingProblem(simulator, parameters, cost)
 
         max_unchanged_iter = 100
         sigma0 = (
@@ -147,10 +149,10 @@ class Test_SPM_Parameterisation:
             if isinstance(cost, pybop.GaussianLogLikelihood):
                 bounds["lower"].append(0.0)
                 bounds["upper"].append(0.05)
-            cost.parameters.update(bounds=bounds)
+            problem.parameters.update(bounds=bounds)
 
         # Create optimiser
-        optim = optimiser(cost=cost, options=options)
+        optim = optimiser(problem, options=options)
 
         # Set Hypers
         if isinstance(optim, pybop.SimulatedAnnealing):
@@ -163,15 +165,15 @@ class Test_SPM_Parameterisation:
         return optim
 
     def test_optimisers(self, optim):
-        x0 = optim.cost.parameters.get_initial_values()
+        x0 = optim.problem.parameters.get_initial_values()
 
         # Add sigma0 to ground truth for GaussianLogLikelihood
-        if isinstance(optim.cost, pybop.GaussianLogLikelihood):
+        if isinstance(optim.problem.cost, pybop.GaussianLogLikelihood):
             self.ground_truth = np.concatenate(
                 (self.ground_truth, np.asarray([self.sigma0]))
             )
 
-        initial_cost = optim.cost(x0)
+        initial_cost = optim.problem(x0)
         results = optim.run()
 
         # Assertions
@@ -184,37 +186,42 @@ class Test_SPM_Parameterisation:
             assert initial_cost < results.best_cost
 
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
-        if isinstance(optim.cost, pybop.GaussianLogLikelihood):
+        if isinstance(optim.problem.cost, pybop.GaussianLogLikelihood):
             np.testing.assert_allclose(results.x[-1], self.sigma0, atol=1e-3)
 
     @pytest.fixture
-    def two_signal_cost(self, parameters, model_and_parameter_values, cost_cls):
+    def two_signal_problem(self, parameters, model_and_parameter_values, cost_class):
         model, parameter_values = model_and_parameter_values
         parameter_values.set_initial_state(0.5)
         dataset = self.get_data(model, parameter_values, include_ocv=True)
 
         # Define the cost to optimise
-        output_variables = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
+        target = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
         simulator = pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
             input_parameter_names=parameters.names,
             protocol=dataset,
         )
-        problem = pybop.FittingProblem(
-            simulator, parameters, dataset, output_variables=output_variables
-        )
 
-        if cost_cls is pybop.GaussianLogLikelihoodKnownSigma:
-            return cost_cls(problem, sigma0=self.sigma0)
-        elif cost_cls is pybop.GaussianLogLikelihood:
-            return cost_cls(problem, sigma0=self.sigma0 * 4)  # Initial sigma0 guess
-        elif cost_cls is pybop.LogPosterior:
-            return cost_cls(
-                pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=self.sigma0)
+        # Construct the cost
+        if cost_class is pybop.GaussianLogLikelihoodKnownSigma:
+            cost = cost_class(dataset, target=target, sigma0=self.sigma0)
+        elif cost_class is pybop.GaussianLogLikelihood:
+            cost = cost_class(
+                dataset, target=target, sigma0=self.sigma0 * 4
+            )  # Initial sigma0 guess
+        elif cost_class is pybop.LogPosterior:
+            cost = cost_class(
+                log_likelihood=pybop.GaussianLogLikelihoodKnownSigma(
+                    dataset, target=target, sigma0=self.sigma0
+                )
             )
+        elif cost_class in [pybop.SumOfPower, pybop.Minkowski]:
+            cost = cost_class(dataset, target=target, p=2.5)
         else:
-            return cost_cls(problem)
+            cost = cost_class(dataset, target=target)
+        return pybop.FittingProblem(simulator, parameters, cost)
 
     @pytest.mark.parametrize(
         "multi_optimiser",
@@ -224,8 +231,8 @@ class Test_SPM_Parameterisation:
             pybop.CMAES,
         ],
     )
-    def test_multiple_signals(self, multi_optimiser, two_signal_cost):
-        x0 = two_signal_cost.parameters.get_initial_values()
+    def test_multiple_signals(self, multi_optimiser, two_signal_problem):
+        x0 = two_signal_problem.parameters.get_initial_values()
         combined_sigma0 = np.asarray([self.sigma0, self.sigma0])
 
         if multi_optimiser is pybop.SciPyDifferentialEvolution:
@@ -237,25 +244,25 @@ class Test_SPM_Parameterisation:
                 max_iterations=250,
                 max_unchanged_iterations=60,
                 sigma=[0.03, 0.03, 6e-3, 6e-3]
-                if isinstance(two_signal_cost, pybop.GaussianLogLikelihood)
+                if isinstance(two_signal_problem.cost, pybop.GaussianLogLikelihood)
                 else 0.03,
             )
 
         if multi_optimiser is pybop.SciPyDifferentialEvolution:
             bounds = {"lower": [0.375, 0.375], "upper": [0.775, 0.775]}
-            if isinstance(two_signal_cost, pybop.GaussianLogLikelihood):
+            if isinstance(two_signal_problem.cost, pybop.GaussianLogLikelihood):
                 bounds["lower"].extend([0.0, 0.0])
                 bounds["upper"].extend([0.05, 0.05])
-            two_signal_cost.parameters.update(bounds=bounds)
+            two_signal_problem.parameters.update(bounds=bounds)
 
         # Test each optimiser
-        optim = multi_optimiser(cost=two_signal_cost, options=options)
+        optim = multi_optimiser(two_signal_problem, options=options)
 
         # Add sigma0 to ground truth for GaussianLogLikelihood
-        if isinstance(two_signal_cost, pybop.GaussianLogLikelihood):
+        if isinstance(two_signal_problem.cost, pybop.GaussianLogLikelihood):
             self.ground_truth = np.concatenate((self.ground_truth, combined_sigma0))
 
-        initial_cost = optim.cost(optim.cost.parameters.get_initial_values())
+        initial_cost = optim.problem(optim.problem.parameters.get_initial_values())
         results = optim.run()
 
         # Assertions
@@ -268,7 +275,7 @@ class Test_SPM_Parameterisation:
             assert initial_cost < results.best_cost
 
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
-        if isinstance(two_signal_cost, pybop.GaussianLogLikelihood):
+        if isinstance(two_signal_problem.cost, pybop.GaussianLogLikelihood):
             np.testing.assert_allclose(results.x[-2:], combined_sigma0, atol=5e-4)
 
     @pytest.mark.parametrize("init_soc", [0.4, 0.6])
@@ -295,12 +302,12 @@ class Test_SPM_Parameterisation:
             input_parameter_names=parameters.names,
             protocol=dataset,
         )
-        problem = pybop.FittingProblem(simulator, parameters, dataset)
-        cost = pybop.RootMeanSquaredError(problem)
+        cost = pybop.RootMeanSquaredError(dataset)
+        problem = pybop.FittingProblem(simulator, parameters, cost)
 
         # Build the optimisation problem
-        optim = pybop.XNES(cost=cost)
-        initial_cost = cost(parameters.get_initial_values())
+        optim = pybop.XNES(problem)
+        initial_cost = problem(parameters.get_initial_values())
 
         # Run the optimisation problem
         results = optim.run()

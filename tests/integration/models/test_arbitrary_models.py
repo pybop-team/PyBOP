@@ -147,16 +147,11 @@ class TestArbitraryModels:
         simulator = pybop.pybamm.Simulator(
             model, input_parameter_names=parameter.name, protocol=dataset
         )
-        problem = pybop.FittingProblem(
-            simulator,
-            parameter,
-            dataset,
-            output_variables=["u at x_0.5"],
-        )
-        cost = pybop.SumSquaredError(problem)
+        cost = pybop.SumSquaredError(dataset, target=["u at x_0.5"])
+        problem = pybop.FittingProblem(simulator, parameter, cost)
 
         # Optimise
-        optim = pybop.SciPyMinimize(cost)
+        optim = pybop.SciPyMinimize(problem)
         results = optim.run()
 
         np.testing.assert_allclose(results.x, [0.05], rtol=5e-3)
@@ -191,14 +186,12 @@ class TestArbitraryModels:
         simulator = pybop.pybamm.Simulator(
             model, input_parameter_names=parameters.names, protocol=dataset
         )
-        problem = pybop.FittingProblem(
-            simulator, parameters, dataset, output_variables=["u", "v"]
-        )
-        cost = pybop.SumSquaredError(problem)
+        cost = pybop.SumSquaredError(dataset, target=["u", "v"])
+        problem = pybop.FittingProblem(simulator, parameters, cost)
 
         # Optimise
         options = pybop.PintsOptions(sigma=0.02)
-        optim = pybop.IRPropPlus(cost, options=options)
+        optim = pybop.IRPropPlus(problem, options=options)
         results = optim.run()
 
         np.testing.assert_allclose(results.x, [-1, -2], rtol=5e-3)
@@ -249,13 +242,11 @@ class TestArbitraryModels:
             input_parameter_names=parameters.names,
             protocol=dataset,
         )
-        problem = pybop.FittingProblem(
-            simulator, parameters, dataset, output_variables=["u", "v"]
-        )
-        cost = pybop.SumSquaredError(problem)
+        cost = pybop.SumSquaredError(dataset, target=["u", "v"])
+        problem = pybop.FittingProblem(simulator, parameters, cost)
 
         # Optimise
-        optim = pybop.NelderMead(cost)
+        optim = pybop.NelderMead(problem)
         results = optim.run()
 
         np.testing.assert_allclose(results.x, [2, -2], rtol=5e-3)

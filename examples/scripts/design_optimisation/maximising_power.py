@@ -69,34 +69,27 @@ simulator = pybop.pybamm.Simulator(
     input_parameter_names=parameters.names,
     protocol=experiment,
     initial_state={"Initial SoC": 1.0},
+    use_formation_concentrations=True,
 )
-problem = pybop.DesignProblem(
-    simulator,
-    parameters,
-    output_variables=[
-        "Voltage [V]",
-        "Gravimetric power density [W.kg-1]",
-        "Volumetric power density [W.m-3]",
-    ],
-)
-
-# Generate multiple cost functions and combine them
-cost1 = pybop.DesignCost(problem, target="Gravimetric power density [W.kg-1]")
-cost2 = pybop.DesignCost(problem, target="Gravimetric power density [W.kg-1]")
-cost = pybop.WeightedCost(cost1, cost2, weights=[1, 1e-3])
+cost_1 = pybop.DesignCost(target="Gravimetric power density [W.kg-1]")
+problem_1 = pybop.DesignProblem(simulator, parameters, cost_1)
+cost_2 = pybop.DesignCost(target="Volumetric power density [W.m-3]")
+problem_2 = pybop.DesignProblem(simulator, parameters, cost_2)
+problem = pybop.MetaProblem(problem_1, problem_2, weights=[1, 1e-3])
 
 # Run the optimisation
 options = pybop.PintsOptions(max_iterations=10)
-optim = pybop.XNES(cost, options=options)
+optim = pybop.XNES(problem, options=options)
 result = optim.run()
 print(result)
-print(f"Initial gravimetric power density: {cost1(result.x0):.2f} W.kg-1")
-print(f"Optimised gravimetric power density: {cost1(result.x):.2f} W.kg-1")
-print(f"Initial volumetric power density: {cost2(result.x0):.2f} W.m-3")
-print(f"Optimised volumetric power density: {cost2(result.x):.2f} W.m-3")
-
-# Plot the timeseries output
-pybop.plot.problem(problem, problem_inputs=result.x, title="Optimised Comparison")
+print(f"Initial gravimetric power density: {problem_1(result.x0):.2f} W.kg-1")
+print(f"Optimised gravimetric power density: {problem_1(result.x):.2f} W.kg-1")
+print(f"Initial volumetric power density: {problem_2(result.x0):.2f} W.m-3")
+print(f"Optimised volumetric power density: {problem_2(result.x):.2f} W.m-3")
 
 # Plot the optimisation result
 result.plot_surface()
+
+# Plot the timeseries output
+problem_1.target = "Voltage [V]"
+pybop.plot.problem(problem_1, problem_inputs=result.x, title="Optimised Comparison")

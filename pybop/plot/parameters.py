@@ -29,7 +29,7 @@ def parameters(result: "OptimisationResult", show=True, **layout_kwargs):
     """
 
     # Extract parameters and log from the optimisation object
-    parameters = result.optim.cost.parameters
+    parameters = result.optim.problem.parameters
     x = list(range(len(result.x_model)))
     y = [list(item) for item in zip(*result.x_model, strict=False)]
 
@@ -39,7 +39,7 @@ def parameters(result: "OptimisationResult", show=True, **layout_kwargs):
     for name in trace_names:
         axis_titles.append(("Function Call", name))
 
-    if isinstance(result.optim.cost, GaussianLogLikelihood):
+    if isinstance(result.optim.problem, GaussianLogLikelihood):
         axis_titles.append(("Function Call", "Sigma"))
         trace_names.append("Sigma")
 

@@ -44,10 +44,8 @@ simulator = pybop.pybamm.Simulator(
     input_parameter_names=parameters.names,
     protocol=dataset,
 )
-problem = pybop.FittingProblem(
-    simulator, parameters, dataset, output_variables=["y_0", "y_1"]
-)
-cost = pybop.Minkowski(problem, p=2)
+cost = pybop.Minkowski(dataset, target=["y_0", "y_1"], p=2)
+problem = pybop.FittingProblem(simulator, parameters, cost)
 
 # Set up the optimiser
 options = pybop.PintsOptions(
@@ -56,7 +54,7 @@ options = pybop.PintsOptions(
     max_iterations=100,
     max_unchanged_iterations=20,
 )
-optim = pybop.AdamW(cost, options=options)
+optim = pybop.AdamW(problem, options=options)
 
 # Run the optimisation
 result = optim.run()

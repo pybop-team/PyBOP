@@ -53,8 +53,8 @@ simulator = pybop.pybamm.Simulator(
     protocol=dataset,
     initial_state={"Initial open-circuit voltage [V]": csv_data[0, 2]},
 )
-problem = pybop.FittingProblem(simulator, parameters, dataset)
-likelihood = pybop.GaussianLogLikelihood(problem, sigma0=8e-3)
+likelihood = pybop.GaussianLogLikelihood(dataset, sigma0=8e-3)
+problem = pybop.FittingProblem(simulator, parameters, likelihood)
 
 # Set up the optimiser
 options = pybop.PintsOptions(
@@ -63,13 +63,13 @@ options = pybop.PintsOptions(
     min_iterations=20,
     max_iterations=50,
 )
-optim = pybop.XNES(likelihood, options=options)
+optim = pybop.XNES(problem, options=options)
 
 # Run the optimisation
 result = optim.run()
 
 # Plot the timeseries output
-pybop.plot.problem(problem, problem_inputs=result.x[:2], title="Optimised Comparison")
+pybop.plot.problem(problem, problem_inputs=result.x, title="Optimised Comparison")
 
 # Plot the optimisation result
 result.plot_convergence()

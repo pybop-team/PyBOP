@@ -89,30 +89,27 @@ class TestTransformation:
             pybop.LogPosterior,
         ]
     )
-    def cost_cls(self, request):
+    def cost_class(self, request):
         return request.param
 
     @pytest.fixture
-    def cost(self, model, parameter_values, parameters, cost_cls):
+    def problem(self, model, parameter_values, parameters, cost_class):
         parameter_values.set_initial_state(0.6)
         dataset = self.get_data(model, parameter_values)
-
-        # Construct problem
         simulator = pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
             input_parameter_names=parameters.names,
             protocol=dataset,
         )
-        problem = pybop.FittingProblem(simulator, parameters, dataset)
 
         # Construct the cost
-        if cost_cls is pybop.GaussianLogLikelihood:
-            return cost_cls(problem)
-        elif cost_cls is pybop.LogPosterior:
-            return cost_cls(log_likelihood=pybop.GaussianLogLikelihood(problem))
+        if cost_class is pybop.LogPosterior:
+            likelihood = pybop.GaussianLogLikelihood(dataset, sigma0=self.sigma0)
+            cost = cost_class(likelihood)
         else:
-            return cost_cls(problem)
+            cost = cost_class(dataset)
+        return pybop.FittingProblem(simulator, parameters, cost)
 
     @pytest.mark.parametrize(
         "optimiser",
@@ -133,8 +130,8 @@ class TestTransformation:
         ),
         ids=lambda val: f"{transformation_id(val)}",
     )
-    def test_thevenin_transformation(self, optimiser, cost):
-        x0 = cost.parameters.get_initial_values()
+    def test_thevenin_transformation(self, optimiser, problem):
+        x0 = problem.parameters.get_initial_values()
         if optimiser is pybop.SciPyDifferentialEvolution:
             options = pybop.SciPyDifferentialEvolutionOptions(
                 maxiter=50,
@@ -143,18 +140,20 @@ class TestTransformation:
         else:
             options = pybop.PintsOptions(
                 sigma=[0.02, 0.02, 2e-3]
-                if isinstance(cost, pybop.GaussianLogLikelihood | pybop.LogPosterior)
+                if isinstance(
+                    problem.cost, pybop.GaussianLogLikelihood | pybop.LogPosterior
+                )
                 else [0.02, 0.02],
                 max_iterations=150,
                 max_unchanged_iterations=45,
             )
-        optim = optimiser(cost=cost, options=options)
+        optim = optimiser(problem, options=options)
 
-        initial_cost = optim.cost(x0)
+        initial_cost = optim.problem(x0)
         results = optim.run()
 
         # Add sigma0 to ground truth for GaussianLogLikelihood
-        if isinstance(optim.cost, pybop.GaussianLogLikelihood | pybop.LogPosterior):
+        if isinstance(problem.cost, pybop.GaussianLogLikelihood | pybop.LogPosterior):
             self.ground_truth = np.concatenate(
                 (self.ground_truth, np.asarray([self.sigma0]))
             )
@@ -163,7 +162,7 @@ class TestTransformation:
         if np.allclose(x0, self.ground_truth, atol=1e-5):
             raise AssertionError("Initial guess is too close to ground truth")
 
-        if isinstance(cost, pybop.GaussianLogLikelihood):
+        if isinstance(problem.cost, pybop.GaussianLogLikelihood):
             np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
             np.testing.assert_allclose(results.x[-1], self.sigma0, atol=5e-4)
         else:

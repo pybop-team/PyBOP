@@ -50,13 +50,10 @@ simulator = pybop.pybamm.Simulator(
     input_parameter_names=parameters.names,
     protocol=dataset,
 )
-problem = pybop.FittingProblem(
-    simulator,
-    parameters,
-    dataset,
-    output_variables=["Voltage [V]", "Bulk open-circuit voltage [V]"],
+cost = pybop.SumOfPower(
+    dataset, target=["Voltage [V]", "Bulk open-circuit voltage [V]"], p=2.5
 )
-cost = pybop.SumOfPower(problem, p=2.5)
+problem = pybop.FittingProblem(simulator, parameters, cost)
 
 # Set up the optimiser
 options = pybop.PintsOptions(
@@ -66,7 +63,7 @@ options = pybop.PintsOptions(
     max_iterations=100,
     max_unchanged_iterations=45,
 )
-optim = pybop.AdamW(cost, options=options)
+optim = pybop.AdamW(problem, options=options)
 
 # Reduce the momentum influence for the reduced number of optimiser iterations
 optim.optimiser.b1 = 0.9

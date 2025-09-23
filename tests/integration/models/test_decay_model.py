@@ -55,11 +55,11 @@ class TestDecayModel:
         )
 
     def assert_parameter_sensitivity(
-        self, cost, initial_inputs, example_inputs, tolerance=RELATIVE_TOLERANCE
+        self, problem, initial_inputs, example_inputs, tolerance=RELATIVE_TOLERANCE
     ):
         """Reusable assertion for parameter sensitivity."""
-        value1 = cost(initial_inputs)
-        value2 = cost(example_inputs)
+        value1 = problem(initial_inputs)
+        value2 = problem(example_inputs)
 
         relative_change = abs((value1 - value2) / value1)
         assert relative_change > tolerance, (
@@ -78,24 +78,22 @@ class TestDecayModel:
             solver=model_config["solver"],
             protocol=dataset,
         )
-        problem = pybop.FittingProblem(
-            simulator, parameters, dataset, output_variables=["y_0"]
-        )
-        cost_1 = pybop.SumSquaredError(problem)
-        cost_2 = pybop.MeanAbsoluteError(problem)
+        cost_1 = pybop.SumSquaredError(dataset, target=["y_0"])
+        cost_2 = pybop.MeanAbsoluteError(dataset, target=["y_0"])
         cost = pybop.WeightedCost(cost_1, cost_2)
+        problem = pybop.FittingProblem(simulator, parameters, cost)
 
         # Test parameter sensitivity
         initial_params = parameters.get_initial_values()
         initial_inputs = parameters.to_dict(initial_params)
         example_inputs = parameters.to_dict(TEST_PARAM_VALUES)
         value1, value2 = self.assert_parameter_sensitivity(
-            cost, initial_inputs, example_inputs
+            problem, initial_inputs, example_inputs
         )
 
         # Test sensitivity computation consistency
-        value1_sens, grad1 = cost.single_call(initial_inputs, calculate_grad=True)
-        value2_sens, grad2 = cost.single_call(example_inputs, calculate_grad=True)
+        value1_sens, grad1 = problem.single_call(initial_inputs, calculate_grad=True)
+        value2_sens, grad2 = problem.single_call(example_inputs, calculate_grad=True)
 
         # Validate gradient shape and value consistency
         assert grad1.shape == (len(parameters),), (

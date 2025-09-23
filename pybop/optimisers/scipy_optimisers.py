@@ -13,7 +13,7 @@ from pybop import (
     ScalarEvaluator,
 )
 from pybop._logging import Logger
-from pybop.costs.base_cost import BaseCost
+from pybop.problems.base_problem import BaseProblem
 
 __all__: list[str] = [
     "SciPyMinimize",
@@ -27,21 +27,21 @@ class BaseSciPyOptimiser(BaseOptimiser):
 
     Parameters
     ----------
-    cost : pybop.BaseCost
-        The cost to optimise.
+    problem : pybop.BaseProblem
+        The problem to optimise.
     options : pybop.OptimiserOptions
         Valid SciPy option keys and their values.
     """
 
     def __init__(
         self,
-        cost: BaseCost,
+        problem: BaseProblem,
         options: pybop.OptimiserOptions | None,
     ):
-        super().__init__(cost, options=options)
+        super().__init__(problem, options=options)
 
     def scipy_bounds(self) -> Bounds:
-        bounds = self.cost.parameters.get_bounds(transformed=True)
+        bounds = self.problem.parameters.get_bounds(transformed=True)
         # Convert bounds to SciPy format
         if isinstance(bounds, dict):
             return Bounds(bounds["lower"], bounds["upper"], True)
@@ -142,8 +142,8 @@ class SciPyMinimize(BaseSciPyOptimiser):
 
     Parameters
     ----------
-    cost : pybop.BaseCost
-        The cost to be optimised.
+    problem : pybop.BaseProblem
+        The problem to optimise.
     options: ScipyMinizeOptions, optional
         Options for the SciPy minimize method (default: None).
 
@@ -159,11 +159,11 @@ class SciPyMinimize(BaseSciPyOptimiser):
 
     def __init__(
         self,
-        cost: BaseCost,
+        problem: BaseProblem,
         options: SciPyMinimizeOptions | None = None,
     ):
         options = options or self.default_options()
-        super().__init__(cost=cost, options=options)
+        super().__init__(problem=problem, options=options)
 
     @staticmethod
     def default_options() -> SciPyMinimizeOptions:
@@ -176,25 +176,25 @@ class SciPyMinimize(BaseSciPyOptimiser):
         """
         self._options_dict = self._options.to_dict()
 
-        self._cost0 = np.abs(self.cost.get_finite_initial_cost())
-        self._x0 = self.cost.parameters.get_initial_values(transformed=True)
+        self._cost0 = np.abs(self.problem.get_finite_initial_cost())
+        self._x0 = self.problem.parameters.get_initial_values(transformed=True)
         self._options_dict["x0"] = self._x0
         self._options_dict["bounds"] = self.scipy_bounds()
 
         # If the problem has sensitivities, enable the Jacobian by default
         if self._options_dict.get("jac", None) is None:
-            self._options_dict["jac"] = self.cost.has_sensitivities
+            self._options_dict["jac"] = self.problem.has_sensitivities
         self._needs_sensitivities = True if self._options_dict["jac"] else False
 
         # Create logger and evaluator objects
         self._logger = Logger(
-            minimising=self._cost.minimising,
+            minimising=self.problem.minimising,
             verbose=self.verbose,
             verbose_print_rate=self.verbose_print_rate,
         )
         self._evaluator = ScalarEvaluator(
-            cost=self._cost,
-            minimise=self._cost.minimising,
+            problem=self._problem,
+            minimise=True,
             with_sensitivities=self._needs_sensitivities,
             logger=self._logger,
         )
@@ -358,8 +358,8 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
 
     Parameters
     ----------
-    cost : pybop.BaseCost
-        The cost to be optimised.
+    problem : pybop.BaseProblem
+        The problem to optimise.
     options: SciPyDifferentialEvolutionOptions, optional
         Options for the SciPy differential evolution method (default: None).
 
@@ -379,11 +379,11 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
 
     def __init__(
         self,
-        cost: BaseCost,
+        problem: BaseProblem,
         options: SciPyDifferentialEvolutionOptions | None = None,
     ):
         options = options or self.default_options()
-        super().__init__(cost=cost, options=options)
+        super().__init__(problem=problem, options=options)
 
     @staticmethod
     def default_options() -> SciPyDifferentialEvolutionOptions:
@@ -408,13 +408,13 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
 
         # Create logger and evaluator objects
         self._logger = Logger(
-            minimising=self._cost.minimising,
+            minimising=self.problem.minimising,
             verbose=self.verbose,
             verbose_print_rate=self.verbose_print_rate,
         )
         self._evaluator = ScalarEvaluator(
-            cost=self._cost,
-            minimise=self._cost.minimising,
+            problem=self._problem,
+            minimise=True,
             with_sensitivities=self._needs_sensitivities,
             logger=self._logger,
         )
@@ -424,8 +424,8 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
         # array of size (N, S) amd expects to receive a set of costs of size (S,)
         self._options_dict["updating"] = "deferred"
         pop_evaluator = PopulationEvaluator(
-            cost=self._cost,
-            minimise=self._cost.minimising,
+            problem=self._problem,
+            minimise=True,
             with_sensitivities=self._needs_sensitivities,
             logger=self._logger,
         )

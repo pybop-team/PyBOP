@@ -47,16 +47,16 @@ parameters = pybop.Parameters(
 simulator = pybop.pybamm.Simulator(
     model, parameter_values, input_parameter_names=parameters.names, protocol=dataset
 )
-signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
-problem = pybop.FittingProblem(simulator, parameters, dataset, output_variables=signal)
-cost = pybop.RootMeanSquaredError(problem)
+target = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
+cost = pybop.RootMeanSquaredError(dataset, target=target)
+problem = pybop.FittingProblem(simulator, parameters, cost)
 
 # Set up the optimiser
 options = pybop.PintsOptions(
     max_iterations=60,
     max_unchanged_iterations=15,
 )
-optim = pybop.IRPropPlus(cost, options=options)
+optim = pybop.IRPropPlus(problem, options=options)
 
 # Run the optimisation
 result = optim.run()

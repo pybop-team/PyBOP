@@ -71,25 +71,23 @@ simulator = pybop.pybamm.Simulator(
     input_parameter_names=parameters.names,
     protocol=experiment,
     initial_state={"Initial SoC": 1.0},
+    use_formation_concentrations=True,
 )
-problem = pybop.DesignProblem(
-    simulator,
-    parameters,
-    output_variables=["Voltage [V]", "Gravimetric energy density [Wh.kg-1]"],
-)
-cost = pybop.DesignCost(problem, target="Gravimetric energy density [Wh.kg-1]")
+cost = pybop.DesignCost(target="Gravimetric energy density [Wh.kg-1]")
+problem = pybop.DesignProblem(simulator, parameters, cost)
 
 # Set up the optimiser
 options = pybop.PintsOptions(verbose=True, max_iterations=10)
-optim = pybop.XNES(cost, options=options)
+optim = pybop.XNES(problem, options=options)
 
 # Run the optimisation
 result = optim.run()
-print(f"Initial gravimetric energy density: {cost(result.x0):.2f} Wh.kg-1")
-print(f"Optimised gravimetric energy density: {cost(result.x):.2f} Wh.kg-1")
-
-# Plot the timeseries output
-pybop.plot.problem(problem, problem_inputs=result.x, title="Optimised Comparison")
+print(f"Initial gravimetric energy density: {problem(result.x0):.2f} Wh.kg-1")
+print(f"Optimised gravimetric energy density: {problem(result.x):.2f} Wh.kg-1")
 
 # Plot the optimisation result
 result.plot_surface()
+
+# Plot the timeseries output
+problem.target = "Voltage [V]"
+pybop.plot.problem(problem, problem_inputs=result.x, title="Optimised Comparison")

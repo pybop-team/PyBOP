@@ -25,11 +25,11 @@ class TestPriors:
 
     @pytest.fixture
     def JointPrior1(self, Gaussian, Uniform):
-        return pybop.JointLogPrior(Gaussian, Uniform)
+        return pybop.JointPrior(Gaussian, Uniform)
 
     @pytest.fixture
     def JointPrior2(self, Gaussian, Exponential):
-        return pybop.JointLogPrior(Gaussian, Exponential)
+        return pybop.JointPrior(Gaussian, Exponential)
 
     def test_base_prior(self):
         base = pybop.BasePrior()
@@ -148,7 +148,7 @@ class TestPriors:
         assert repr(Exponential) == "Exponential, loc: 0, scale: 1"
         assert (
             repr(JointPrior1)
-            == "JointLogPrior(priors: [Gaussian, loc: 0.5, scale: 1, Uniform, loc: 0, scale: 1])"
+            == "JointPrior(priors: [Gaussian, loc: 0.5, scale: 1, Uniform, loc: 0, scale: 1])"
         )
 
     def test_invalid_size(self, Gaussian, Uniform, Exponential):
@@ -163,8 +163,8 @@ class TestPriors:
         with pytest.raises(
             ValueError, match="All priors must be instances of BasePrior"
         ):
-            pybop.JointLogPrior(Gaussian, Uniform, "string")
+            pybop.JointPrior(Gaussian, Uniform, "string")
         with pytest.raises(
             ValueError, match="All priors must be instances of BasePrior"
         ):
-            pybop.JointLogPrior(Gaussian, Uniform, 0.5)
+            pybop.JointPrior(Gaussian, Uniform, 0.5)

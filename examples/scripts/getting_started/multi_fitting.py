@@ -48,20 +48,20 @@ for init_soc, experiment in zip(init_socs, experiments, strict=False):
         input_parameter_names=parameters.names,
         protocol=dataset,
     )
-    problems.append(pybop.FittingProblem(simulator, parameters, dataset))
+    cost = pybop.SumSquaredError(dataset)
+    problems.append(pybop.FittingProblem(simulator, parameters, cost))
 
 # Combine the problems into one
-problem = pybop.MultiFittingProblem(*problems)
+problem = pybop.MetaProblem(*problems)
 
 # Generate the cost function and optimisation class
-cost = pybop.SumSquaredError(problem)
 options = pybop.PintsOptions(
     verbose=True,
     sigma=0.05,
     max_unchanged_iterations=20,
     max_iterations=100,
 )
-optim = pybop.CuckooSearch(cost, options=options)
+optim = pybop.CuckooSearch(problem, options=options)
 
 # Run the optimisation
 result = optim.run()

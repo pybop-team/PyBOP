@@ -10,10 +10,10 @@ from pints import strfloat as PintsStrFloat
 
 from pybop import OptimisationResult, PopulationEvaluator, SequentialEvaluator
 from pybop._logging import Logger
-from pybop.costs.base_cost import BaseCost
 from pybop.optimisers._adamw import AdamWImpl
 from pybop.optimisers._gradient_descent import GradientDescentImpl
 from pybop.optimisers.base_optimiser import BaseOptimiser, OptimiserOptions
+from pybop.problems.base_problem import BaseProblem
 
 
 @dataclass
@@ -95,8 +95,8 @@ class BasePintsOptimiser(BaseOptimiser):
 
     Parameters
     ----------
-    cost: pybop.BaseCost
-        The cost to be minimised.
+    problem: pybop.BaseProblem
+        The problem to minimise.
     pints_optimiser : pints.Optimiser
         The PINTS optimiser class to be used.
     options: PintsOptions, optional
@@ -105,13 +105,13 @@ class BasePintsOptimiser(BaseOptimiser):
 
     def __init__(
         self,
-        cost: BaseCost,
+        problem: BaseProblem,
         pints_optimiser: pints.Optimiser,
         options: PintsOptions | None = None,
     ):
         self._pints_optimiser = pints_optimiser
         options = options or self.default_options()
-        super().__init__(cost, options=options)
+        super().__init__(problem, options=options)
 
     @staticmethod
     def default_options() -> PintsOptions:
@@ -170,7 +170,7 @@ class BasePintsOptimiser(BaseOptimiser):
         if issubclass(self._pints_optimiser, ignored_optimisers):
             print(f"NOTE: Boundaries ignored by {self._pints_optimiser}")
         else:
-            bounds = self.cost.parameters.get_bounds(transformed=True)
+            bounds = self.problem.parameters.get_bounds(transformed=True)
             if bounds is not None:
                 if issubclass(self._pints_optimiser, PSO):
                     if not all(
@@ -189,14 +189,14 @@ class BasePintsOptimiser(BaseOptimiser):
         self._sigma0 = (
             options.sigma
             if options.sigma is not None
-            else self.cost.parameters.get_sigma0(transformed=True)
+            else self.problem.parameters.get_sigma0(transformed=True)
         )
 
         # Create an instance of the PINTS optimiser class
         if issubclass(self._pints_optimiser, PintsOptimiser):
-            x0 = self.cost.parameters.get_initial_values(transformed=True)
+            x0 = self.problem.parameters.get_initial_values(transformed=True)
             if np.isscalar(self._sigma0):
-                param_dims = len(self.cost.parameters)
+                param_dims = len(self.problem.parameters)
                 self._sigma0 = np.ones(param_dims) * self._sigma0
 
             self._optimiser = self._pints_optimiser(
@@ -212,21 +212,21 @@ class BasePintsOptimiser(BaseOptimiser):
 
         # Create logger and evaluator objects
         self._logger = Logger(
-            minimising=self._cost.minimising,
+            minimising=self.problem.minimising,
             verbose=self.verbose,
             verbose_print_rate=self.verbose_print_rate,
         )
         if self._parallel:
             self._evaluator = PopulationEvaluator(
-                cost=self._cost,
-                minimise=self._cost.minimising,
+                problem=self._problem,
+                minimise=True,
                 with_sensitivities=self._needs_sensitivities,
                 logger=self._logger,
             )
         else:
             self._evaluator = SequentialEvaluator(
-                cost=self._cost,
-                minimise=self._cost.minimising,
+                problem=self._problem,
+                minimise=True,
                 with_sensitivities=self._needs_sensitivities,
                 logger=self._logger,
             )

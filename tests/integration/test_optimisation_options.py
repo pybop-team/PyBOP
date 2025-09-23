@@ -55,7 +55,7 @@ class TestOptimisation:
         return data + np.random.normal(0, sigma, len(data))
 
     @pytest.fixture
-    def cost(self, model, parameter_values, parameters):
+    def problem(self, model, parameter_values, parameters):
         parameter_values.set_initial_state(0.5)
         dataset = self.get_data(model, parameter_values)
 
@@ -66,8 +66,8 @@ class TestOptimisation:
             input_parameter_names=parameters.names,
             protocol=dataset,
         )
-        problem = pybop.FittingProblem(simulator, parameters, dataset)
-        return pybop.SumSquaredError(problem)
+        cost = pybop.SumSquaredError(dataset)
+        return pybop.FittingProblem(simulator, parameters, cost)
 
     @pytest.mark.parametrize(
         "f_guessed",
@@ -76,8 +76,8 @@ class TestOptimisation:
             False,
         ],
     )
-    def test_optimisation_f_guessed(self, f_guessed, cost):
-        x0 = cost.parameters.get_initial_values()
+    def test_optimisation_f_guessed(self, f_guessed, problem):
+        x0 = problem.parameters.get_initial_values()
         options = pybop.PintsOptions(
             sigma=0.05,
             max_iterations=100,
@@ -85,9 +85,9 @@ class TestOptimisation:
             absolute_tolerance=1e-5,
             use_f_guessed=f_guessed,
         )
-        optim = pybop.XNES(cost=cost, options=options)
+        optim = pybop.XNES(problem, options=options)
 
-        initial_cost = optim.cost(x0)
+        initial_cost = optim.problem(x0)
         results = optim.run()
 
         # Assertions

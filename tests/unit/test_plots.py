@@ -76,7 +76,8 @@ class TestPlots:
         simulator = pybop.pybamm.Simulator(
             model, input_parameter_names=parameters.names, protocol=dataset
         )
-        return pybop.FittingProblem(simulator, parameters, dataset)
+        cost = pybop.SumSquaredError(dataset)
+        return pybop.FittingProblem(simulator, parameters, cost)
 
     @pytest.fixture
     def experiment(self):
@@ -85,7 +86,10 @@ class TestPlots:
     @pytest.fixture
     def design_problem(self, model, parameters, experiment):
         simulator = pybop.pybamm.Simulator(
-            model, input_parameter_names=parameters.names, protocol=experiment
+            model,
+            input_parameter_names=parameters.names,
+            protocol=experiment,
+            use_formation_concentrations=True,
         )
         return pybop.DesignProblem(simulator, parameters)
 
@@ -97,28 +101,26 @@ class TestPlots:
         # Test conversion of values into inputs
         pybop.plot.problem(fitting_problem, problem_inputs=[0.6, 0.6])
 
-    @pytest.fixture
-    def cost(self, fitting_problem):
-        return pybop.SumSquaredError(fitting_problem)
-
-    def test_cost_plots(self, cost):
+    def test_cost_plots(self, fitting_problem):
         # Test plot of Cost objects
-        pybop.plot.contour(cost, gradient=True, steps=5)
+        pybop.plot.contour(fitting_problem, gradient=True, steps=5)
 
-        pybop.plot.contour(cost, gradient=True, steps=5, transformed=True)
+        pybop.plot.contour(fitting_problem, gradient=True, steps=5, transformed=True)
 
         # Test without bounds
-        cost.parameters.remove_bounds()
+        fitting_problem.parameters.remove_bounds()
         with pytest.raises(ValueError, match="All parameters require bounds for plot."):
-            pybop.plot.contour(cost, steps=5)
+            pybop.plot.contour(fitting_problem, steps=5)
 
         # Test with bounds
-        pybop.plot.contour(cost, bounds=np.array([[0.5, 0.8], [0.4, 0.7]]), steps=5)
+        pybop.plot.contour(
+            fitting_problem, bounds=np.array([[0.5, 0.8], [0.4, 0.7]]), steps=5
+        )
 
     @pytest.fixture
-    def result(self, cost):
+    def result(self, fitting_problem):
         # Define and run an example optimisation
-        optim = pybop.XNES(cost)
+        optim = pybop.XNES(fitting_problem)
         return optim.run()
 
     def test_optim_plots(self, result):
@@ -151,12 +153,15 @@ class TestPlots:
             result.plot_surface(bounds=[[0.5, 0.8], [0.7, 0.4]])
 
     @pytest.fixture
-    def posterior_summary(self, fitting_problem):
-        posterior = pybop.LogPosterior(
-            pybop.GaussianLogLikelihoodKnownSigma(fitting_problem, sigma0=2e-3)
+    def posterior_summary(self, model, parameters, dataset):
+        simulator = pybop.pybamm.Simulator(
+            model, input_parameter_names=parameters.names, protocol=dataset
         )
+        likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=2e-3)
+        posterior = pybop.LogPosterior(likelihood)
+        problem = pybop.FittingProblem(simulator, parameters, posterior)
         options = pybop.PintsSamplerOptions(n_chains=1, max_iterations=1)
-        sampler = pybop.SliceStepoutMCMC(posterior, options=options)
+        sampler = pybop.SliceStepoutMCMC(problem, options=options)
         results = sampler.run()
         return pybop.PosteriorSummary(results)
 
@@ -173,25 +178,15 @@ class TestPlots:
         # Plot summary table
         posterior_summary.summary_table()
 
-    def test_with_ipykernel(self, dataset, cost, result):
+    def test_with_ipykernel(self, dataset, fitting_problem, result):
         import ipykernel
 
         assert version.parse(ipykernel.__version__) >= version.parse("0.6")
         pybop.plot.dataset(dataset, signal=["Voltage [V]"])
-        pybop.plot.contour(cost, gradient=True, steps=5)
+        pybop.plot.contour(fitting_problem, gradient=True, steps=5)
         result.plot_parameters()
         result.plot_parameters()
         result.plot_contour(steps=5)
-
-    def test_gaussianloglikelihood_plots(self, fitting_problem):
-        # Test plot of GaussianLogLikelihood
-        likelihood = pybop.GaussianLogLikelihood(fitting_problem)
-        options = pybop.PintsOptions(max_iterations=5)
-        optim = pybop.CMAES(likelihood, options=options)
-        result = optim.run()
-
-        # Plot parameters
-        result.plot_parameters()
 
     def test_contour_incorrect_number_of_parameters(self, model, dataset):
         # Test with less than two paramters
@@ -205,12 +200,12 @@ class TestPlots:
         simulator = pybop.pybamm.Simulator(
             model, input_parameter_names=parameters.names, protocol=dataset
         )
-        fitting_problem = pybop.FittingProblem(simulator, parameters, dataset)
-        cost = pybop.SumSquaredError(fitting_problem)
+        cost = pybop.SumSquaredError(dataset)
+        fitting_problem = pybop.FittingProblem(simulator, parameters, cost)
         with pytest.raises(
             ValueError, match="This cost function takes fewer than 2 parameters."
         ):
-            pybop.plot.contour(cost)
+            pybop.plot.contour(fitting_problem)
 
         # Test with more than two paramters
         parameters = pybop.Parameters(
@@ -233,9 +228,9 @@ class TestPlots:
         simulator = pybop.pybamm.Simulator(
             model, input_parameter_names=parameters.names, protocol=dataset
         )
-        fitting_problem = pybop.FittingProblem(simulator, parameters, dataset)
-        cost = pybop.SumSquaredError(fitting_problem)
-        pybop.plot.contour(cost)
+        cost = pybop.SumSquaredError(dataset)
+        fitting_problem = pybop.FittingProblem(simulator, parameters, cost)
+        pybop.plot.contour(fitting_problem)
 
     def test_nyquist(self):
         # Define model
@@ -256,7 +251,8 @@ class TestPlots:
                 "Frequency [Hz]": np.logspace(-4, 5, 10),
                 "Current function [A]": np.ones(10) * 0.0,
                 "Impedance": np.ones(10) * 0.0,
-            }
+            },
+            domain="Frequency [Hz]",
         )
 
         # Generate problem, cost function, and optimisation class
@@ -265,9 +261,8 @@ class TestPlots:
             input_parameter_names=parameters.names,
             f_eval=dataset["Frequency [Hz]"],
         )
-        problem = pybop.FittingProblem(
-            simulator, parameters, dataset, output_variables=["Impedance"]
-        )
+        cost = pybop.MeanAbsoluteError(dataset, target="Impedance")
+        problem = pybop.FittingProblem(simulator, parameters, cost)
 
         # Plot the nyquist
         inputs = parameters.to_dict([60e-6])
