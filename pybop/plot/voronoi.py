@@ -263,16 +263,7 @@ def surface(
         raise ValueError("This plot method requires two parameters.")
 
     x_optim, y_optim = map(list, zip(*points, strict=False))
-
-    # Filter out duplicate points
-    x_optim, y_optim = np.asarray(x_optim), np.asarray(y_optim)
-    _, unique_x = np.unique(x_optim, return_index=True)
-    _, unique_y = np.unique(y_optim, return_index=True)
-    index = [i for i in unique_x if i in unique_y]
-    x_optim, y_optim = x_optim[index], y_optim[index]
-
-    # Get corresponding cost values
-    f = np.asarray(result.cost)[index]
+    f = result.cost
 
     # Translate bounds, taking only the first two elements
     xlim, ylim = (
