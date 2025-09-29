@@ -11,7 +11,7 @@ from scipy.sparse.linalg import spsolve
 if TYPE_CHECKING:
     from pybop.parameters.parameter import Inputs
 from pybop._utils import SymbolReplacer
-from pybop.pybamm.rebuildable_simulation import Simulator
+from pybop.pybamm.simulator import Simulator
 
 
 class EISSimulator:
