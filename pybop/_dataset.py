@@ -19,13 +19,18 @@ class Dataset:
         The domain of the dataset. Defaults to "Time [s]".
     """
 
-    def __init__(self, data_dictionary, domain: Optional[str] = None):
+    def __init__(
+        self,
+        data_dictionary,
+        domain: Optional[str] = None,
+        variables: Optional[str] = ["Time [s]", "Current [A]", "Voltage [V]"],
+    ):
         """
         Initialise a Dataset instance with data and a set of names.
         """
 
         if isinstance(data_dictionary, solvers.solution.Solution):
-            data_dictionary = data_dictionary.get_data_dict()
+            data_dictionary = data_dictionary.get_data_dict(variables=variables)
         if not isinstance(data_dictionary, dict):
             raise TypeError("The input to pybop.Dataset must be a dictionary.")
         self.data = data_dictionary
