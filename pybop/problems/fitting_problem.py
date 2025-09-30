@@ -197,7 +197,7 @@ class FittingProblem(BaseProblem):
                 {s: sol[s].data for s in self.output_variables},
                 {
                     p: {
-                        s: sol[s].sensitivities[p].toarray().reshape(-1)
+                        s: sol[s].sensitivities[p].reshape(-1)
                         for s in self.output_variables
                     }
                     for p in param_keys
