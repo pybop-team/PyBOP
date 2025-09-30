@@ -4,6 +4,7 @@ import pytest
 from numpy.testing import assert_allclose, assert_array_equal
 
 import pybop
+from pybop.simulators.base_simulator import BaseSimulator
 
 
 class TestProblem:
@@ -176,7 +177,7 @@ class TestProblem:
         problem_2 = pybop.Problem(simulator, parameters, cost_2)
         combined_problem = pybop.MetaProblem(problem_1, problem_2, weights=[0.1, 1.0])
 
-        assert combined_problem._simulator is None
+        assert isinstance(combined_problem._simulator, BaseSimulator)
         out = combined_problem([1e-5, 1e-5])
         assert isinstance(out, float)
         out1 = problem_1([1e-5, 1e-5])

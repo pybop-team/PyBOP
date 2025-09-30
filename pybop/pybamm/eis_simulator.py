@@ -12,9 +12,10 @@ if TYPE_CHECKING:
     from pybop.parameters.parameter import Inputs
 from pybop._utils import SymbolReplacer
 from pybop.pybamm.simulator import Simulator
+from pybop.simulators.base_simulator import BaseSimulator
 
 
-class EISSimulator:
+class EISSimulator(BaseSimulator):
     """
     A class to extend a PyBaMM model for EIS, automatically build/rebuild a pybamm.Simulation to obtain
     a built model which can be solved to compute the complex impedance for a given set of frequencies.
@@ -217,7 +218,7 @@ class EISSimulator:
         self.b = np.zeros(y0.shape)
         self.b[-1] = -1
 
-    def solve(
+    def simulate(
         self, inputs: "Inputs | None" = None, calculate_sensitivities: bool = False
     ) -> np.ndarray:
         """

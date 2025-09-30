@@ -2,10 +2,9 @@ import numpy as np
 
 from pybop.analysis.sensitivity_analysis import sensitivity_analysis
 from pybop.costs.base_cost import BaseCost
-from pybop.costs.error_measures import ErrorMeasure
 from pybop.costs.likelihoods import LogPosterior
 from pybop.parameters.parameter import Inputs, Parameter, Parameters
-from pybop.pybamm import EISSimulator, Simulator
+from pybop.simulators.base_simulator import BaseSimulator
 
 
 class Problem:
@@ -34,7 +33,7 @@ class Problem:
 
     def __init__(
         self,
-        simulator=None,
+        simulator: BaseSimulator = None,
         parameters: Parameters = None,
         cost: BaseCost = None,
     ):
@@ -55,44 +54,29 @@ class Problem:
                 "The input parameters must be a pybop.Parameter, a list of pybop.Parameter objects, or a pybop.Parameters object."
             )
 
-        self.model_parameters = parameters
+        # Gather information from the simulator
+        self._simulator = simulator.copy() if simulator is not None else BaseSimulator()
+        self._has_sensitivities = self._simulator.has_sensitivities
+
+        # TODO: Move parameters attribute to the simulator
+        self._simulator.parameters = parameters
         self.parameters = Parameters()
-        self.parameters.join(self.model_parameters)
+        self.parameters.join(self._simulator.parameters)
 
-        self._simulator = None
-        self._eis = False
-        self._has_sensitivities = False
+        # Gather information from the cost function
+        self._cost = cost or BaseCost()
+        self._minimising = self._cost.minimising
+        self.domain = self._cost.domain
+        self.target = self._cost.target
 
-        if simulator is not None:
-            self._simulator = simulator.copy()
-            self._eis = True if isinstance(simulator, EISSimulator) else False
-            self._has_sensitivities = self._simulator.has_sensitivities
+        # Share parameters from model with cost
+        self.parameters.join(self._cost.parameters)
+        self._cost.parameters = self.parameters
+        self._cost.set_fail_gradient()
 
-        self.minimising = True
-        self._cost = cost
-        self._domain_data = None
-        self._target_data = None
-
-        # Gather data from the cost function
-        if cost is not None:
-            self.minimising = cost.minimising
-            self.domain = cost.domain
-            self.target = cost.target
-
-            # Share parameters from model with cost
-            self.parameters.join(self._cost.parameters)
-            self._cost.parameters = self.parameters
-            self._cost.set_fail_gradient()
-
-            # Objective-specific configuration
-            if isinstance(cost, LogPosterior):
-                self._cost.set_joint_prior()
-        else:
-            self.domain = "Frequency [Hz]" if self._eis else "Time [s]"
-            self.target = ["Impedance"] if self._eis else ["Voltage [V]"]
-        if isinstance(cost, ErrorMeasure):
-            self._domain_data = cost.domain_data
-            self._target_data = cost.target_data
+        # Objective-specific configuration
+        if isinstance(self._cost, LogPosterior):
+            self._cost.set_joint_prior()
 
         # Reset parameters from both model and cost
         self.parameters.reset_to_initial()
@@ -104,9 +88,7 @@ class Problem:
     @target.setter
     def target(self, value: list[str] | None):
         self._target = [value] if isinstance(value, str) else value or []
-        # Speed up the solver with output variables when not using an experiment
-        if isinstance(self._simulator, Simulator):
-            self._simulator.set_output_variables(self._target)
+        self._simulator.set_output_variables(self._target)
 
     @property
     def n_outputs(self):
@@ -160,7 +142,7 @@ class Problem:
     ) -> float | tuple[float, np.ndarray]:
         """Evaluate the cost and (optionally) the gradient for a single set of inputs."""
         if calculate_grad:
-            calculate_grad = self.has_sensitivities
+            calculate_grad = self._has_sensitivities
 
         # Check the validity of the parameters before evaluating the cost
         if not self.parameters.verify_inputs(inputs):
@@ -169,10 +151,10 @@ class Problem:
         self.parameters.update(values=list(inputs.values()))
 
         if calculate_grad:
-            y, dy = self.simulateS1(self.model_parameters.to_dict())
+            y, dy = self.simulateS1(self._simulator.parameters.to_dict())
             return self._cost.compute(y, dy=dy)
 
-        y = self.simulate(self.model_parameters.to_dict())
+        y = self.simulate(self._simulator.parameters.to_dict())
         return self._cost.compute(y, dy=None)
 
     def batch_call(
@@ -214,11 +196,7 @@ class Problem:
         dict[str, np.ndarray[np.float64]]
             The simulated model output y(t), or y(ω) for EIS, for the given inputs.
         """
-        sol = self._simulator.solve(inputs=inputs, calculate_sensitivities=False)
-
-        if not self.eis:
-            return {s: sol[s].data for s in self.target}
-        return sol
+        return self._simulator.simulate(inputs=inputs, calculate_sensitivities=False)
 
     def simulateS1(self, inputs: Inputs):
         """
@@ -236,15 +214,7 @@ class Problem:
             A tuple containing the simulation result y(t) and the sensitivities dy/dx(t)
             for each parameter x and output variables y simulated with the given inputs.
         """
-        sol = self._simulator.solve(inputs=inputs, calculate_sensitivities=True)
-
-        return (
-            {s: sol[s].data for s in self.target},
-            {
-                p: {s: np.asarray(sol[s].sensitivities[p]) for s in self.target}
-                for p in self.model_parameters.keys()
-            },
-        )
+        return self._simulator.simulate(inputs=inputs, calculate_sensitivities=True)
 
     def get_finite_initial_cost(self):
         """
@@ -300,12 +270,16 @@ class Problem:
         return self._cost
 
     @property
+    def minimising(self):
+        return self._minimising
+
+    @property
     def target_data(self):
-        return self._target_data
+        return self._cost.target_data
 
     @property
     def domain_data(self):
-        return self._domain_data
+        return self._cost.domain_data
 
     @property
     def parameters(self):

@@ -187,7 +187,7 @@ class TestEISParameterisation:
             input_parameter_names=list(inputs.keys()),
             f_eval=f_eval,
         )
-        solution = simulator.solve(inputs=inputs)
+        solution = simulator.simulate(inputs=inputs)
         return pybop.Dataset(
             {
                 "Frequency [Hz]": f_eval,

@@ -11,9 +11,10 @@ if TYPE_CHECKING:
 from pybop._dataset import Dataset
 from pybop._utils import FailedSolution, RecommendedSolver
 from pybop.pybamm.parameter_utils import set_formation_concentrations
+from pybop.simulators.base_simulator import BaseSimulator
 
 
-class Simulator:
+class Simulator(BaseSimulator):
     """
     A class to automatically build/rebuild and solve a pybamm.Simulation for a given model and protocol.
 
@@ -281,6 +282,30 @@ class Simulator:
                 self._solve = self._solve_in_time_without_rebuild
             else:
                 self._solve = self._solve_in_time_with_rebuild
+
+    def simulate(
+        self,
+        inputs: "Inputs | None" = None,
+        calculate_sensitivities: bool = False,
+    ) -> (
+        dict[str, np.ndarray]
+        | tuple[dict[str, np.ndarray], dict[str, dict[str, np.ndarray]]]
+    ):
+        sol = self.solve(inputs=inputs, calculate_sensitivities=calculate_sensitivities)
+
+        if calculate_sensitivities:
+            return (
+                {s: sol[s].data for s in self.output_variables},
+                {
+                    p: {
+                        s: np.asarray(sol[s].sensitivities[p])
+                        for s in self.output_variables
+                    }
+                    for p in self.parameters.keys()
+                },
+            )
+
+        return {s: sol[s].data for s in self.output_variables}
 
     def solve(
         self,

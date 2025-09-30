@@ -23,7 +23,7 @@ f_eval = np.logspace(-4, 5, n_frequency)
 # Create synthetic data for parameter inference
 solution = pybop.pybamm.EISSimulator(
     model, parameter_values=parameter_values, f_eval=f_eval
-).solve()
+).simulate()
 
 # Fitting parameters
 parameters = pybop.Parameters(

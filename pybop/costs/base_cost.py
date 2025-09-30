@@ -23,6 +23,12 @@ class BaseCost:
         self.parameters = Parameters()
         self.minimising = True
 
+        # Default settings, to be overwritten
+        self.domain = "Time [s]"
+        self.target = ["Voltage [V]"]
+        self._domain_data = None
+        self._target_data = None
+
     def compute(
         self,
         y: dict[str, np.ndarray],
@@ -96,3 +102,11 @@ class BaseCost:
     @property
     def n_parameters(self):
         return len(self.parameters)
+
+    @property
+    def domain_data(self):
+        return self._domain_data
+
+    @property
+    def target_data(self):
+        return self._target_data

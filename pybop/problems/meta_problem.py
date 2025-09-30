@@ -54,7 +54,7 @@ class MetaProblem(Problem):
         if all(not problem.minimising for problem in self.problems):
             # If all problems are maximising, convert the weighted problem to maximising
             self.weights = -self.weights
-            self.minimising = False
+            self._minimising = False
 
     def single_call(
         self,
