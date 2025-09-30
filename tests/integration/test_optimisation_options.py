@@ -63,11 +63,11 @@ class TestOptimisation:
         simulator = pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
-            input_parameter_names=parameters.names,
+            parameters=parameters,
             protocol=dataset,
         )
         cost = pybop.SumSquaredError(dataset)
-        return pybop.Problem(simulator, parameters, cost)
+        return pybop.Problem(simulator, cost)
 
     @pytest.mark.parametrize(
         "f_guessed",

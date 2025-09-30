@@ -64,15 +64,11 @@ class GITTPulseFit(BaseApplication):
         simulator = pybop.pybamm.Simulator(
             self.model,
             parameter_values=self.parameter_values,
-            input_parameter_names=self.parameters.names,
+            parameters=self.parameters,
             protocol=gitt_pulse,
         )
         cost = self.cost(gitt_pulse, weighting="domain")
-        self.problem = pybop.Problem(
-            simulator=simulator,
-            parameters=self.parameters,
-            cost=cost,
-        )
+        self.problem = pybop.Problem(simulator=simulator, cost=cost)
 
         # Build and run the optimisation problem
         options = pybop.SciPyMinimizeOptions(verbose=self.verbose, tol=1e-8)

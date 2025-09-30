@@ -88,14 +88,14 @@ class TestGITTModels:
         simulator = pybop.pybamm.Simulator(
             model_config["model"],
             parameter_values=model_config["parameter_values"],
-            input_parameter_names=parameters.names,
+            parameters=parameters,
             solver=model_config["solver"],
             protocol=dataset,
         )
         cost_1 = pybop.SumSquaredError(dataset)
         cost_2 = pybop.MeanAbsoluteError(dataset)
         cost = pybop.WeightedCost(cost_1, cost_2)
-        problem = pybop.Problem(simulator, parameters, cost)
+        problem = pybop.Problem(simulator, cost)
 
         # Test parameter sensitivity
         initial_params = parameters.get_initial_values()

@@ -68,13 +68,13 @@ experiment = pybamm.Experiment(
 simulator = pybop.pybamm.Simulator(
     model,
     parameter_values=parameter_values,
-    input_parameter_names=parameters.names,
+    parameters=parameters,
     protocol=experiment,
     initial_state={"Initial SoC": 1.0},
     use_formation_concentrations=True,
 )
 cost = pybop.DesignCost(target="Gravimetric energy density [Wh.kg-1]")
-problem = pybop.Problem(simulator, parameters, cost)
+problem = pybop.Problem(simulator, cost)
 
 # Set up the optimiser
 options = pybop.PintsOptions(verbose=True, max_iterations=10)

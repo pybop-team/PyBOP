@@ -185,10 +185,14 @@ class OCPAverage(BaseApplication):
             )
 
         # Create the fitting problem
-        class FunctionFitting(pybop.Problem):
+        class OCVCurve(pybop.BaseSimulator):
+            def __init__(self, parameters):
+                super().__init__(parameters=parameters)
+                self.domain_data = interpolated_dataset["Stoichiometry"]
+
             if self.allow_stretching:
 
-                def simulate(self, inputs):
+                def simulate(self, inputs, calculate_sensitivities: bool = False):
                     return {
                         "Voltage [mV]": 1e3
                         * voltage_charge(
@@ -200,7 +204,7 @@ class OCPAverage(BaseApplication):
                     }
             else:
 
-                def simulate(self, inputs):
+                def simulate(self, inputs, calculate_sensitivities: bool = False):
                     return {
                         "Voltage [mV]": 1e3
                         * voltage_charge(self.domain_data + inputs["shift"]),
@@ -214,11 +218,7 @@ class OCPAverage(BaseApplication):
             target=["Voltage [mV]", "Differential capacity [V-1]"],
             weighting="equal",
         )
-        self.problem = FunctionFitting(
-            simulator=None,
-            parameters=self.parameters,
-            cost=cost,
-        )
+        self.problem = pybop.Problem(simulator=OCVCurve(self.parameters), cost=cost)
 
         # Optimise the fit between the charge and discharge branches
         options = pybop.SciPyMinimizeOptions(verbose=self.verbose)
@@ -315,20 +315,21 @@ class OCPCapacityToStoichiometry(BaseApplication):
 
         # Create the fitting problem
         ocv_function = self.ocv_function
+        domain_data = self.ocv_dataset["Charge capacity [A.h]"]
 
-        class FunctionFitting(pybop.Problem):
-            def simulate(self, inputs):
+        class OCVCurve(pybop.BaseSimulator):
+            def __init__(self, parameters):
+                super().__init__(parameters=parameters)
+                self.domain_data = domain_data
+
+            def simulate(self, inputs, calculate_sensitivities: bool = False):
                 return {
                     "Voltage [V]": ocv_function(
                         (self.domain_data - inputs["shift"]) / inputs["stretch"]
                     ),
                 }
 
-        problem = FunctionFitting(
-            simulator=None,
-            parameters=self.parameters,
-            cost=self.cost,
-        )
+        problem = pybop.Problem(simulator=OCVCurve(self.parameters), cost=self.cost)
 
         # Optimise the fit between the OCV function and the dataset
         options = pybop.SciPyMinimizeOptions(verbose=self.verbose)

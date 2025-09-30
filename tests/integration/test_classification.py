@@ -81,13 +81,13 @@ class TestClassification:
         return pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
-            input_parameter_names=parameters.names,
+            parameters=parameters,
             protocol=dataset,
         )
 
-    def test_classify_using_hessian(self, simulator, parameters, dataset):
+    def test_classify_using_hessian(self, simulator, dataset):
         cost = pybop.RootMeanSquaredError(dataset)
-        problem = pybop.Problem(simulator, parameters, cost)
+        problem = pybop.Problem(simulator, cost)
         x = self.ground_truth
         bounds = problem.parameters.get_bounds()
         x0 = np.clip(x, bounds["lower"], bounds["upper"])
@@ -117,7 +117,7 @@ class TestClassification:
 
         if np.all(x == np.asarray([0.05, 0.05])):
             cost = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=0.002)
-            problem = pybop.Problem(simulator, parameters, cost)
+            problem = pybop.Problem(simulator, cost)
             optim = pybop.XNES(problem)
             logger = pybop.Logger(minimising=problem.minimising)
             logger.iteration = 1
@@ -159,11 +159,11 @@ class TestClassification:
         simulator = pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
-            input_parameter_names=parameters.names,
+            parameters=parameters,
             protocol=dataset,
         )
         cost = pybop.SumOfPower(dataset, p=1)
-        problem = pybop.Problem(simulator, parameters, cost)
+        problem = pybop.Problem(simulator, cost)
         x = [0.001, 0]
         optim = pybop.XNES(problem)
         logger = pybop.Logger(minimising=problem.minimising)

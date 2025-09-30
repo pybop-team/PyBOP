@@ -102,7 +102,7 @@ class TestWeightedCost:
         simulator = pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
-            input_parameter_names=parameters.names,
+            parameters=parameters,
             protocol=dataset,
         )
         costs = []
@@ -113,7 +113,7 @@ class TestWeightedCost:
                 costs.append(cost(dataset))
 
         weighted_cost = pybop.WeightedCost(*costs, weights=[0.1, 1, 0.5])
-        return pybop.Problem(simulator, parameters, weighted_cost)
+        return pybop.Problem(simulator, weighted_cost)
 
     def test_fitting_costs(self, weighted_fitting_problem):
         x0 = weighted_fitting_problem.parameters.get_initial_values()
@@ -163,14 +163,14 @@ class TestWeightedCost:
         simulator = pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
-            input_parameter_names=parameters.names,
+            parameters=parameters,
             protocol=experiment,
             initial_state=initial_state,
             use_formation_concentrations=True,
         )
         costs = [pybop.DesignCost(target=target) for target in design_targets]
         cost = pybop.WeightedCost(*costs, weights=[1.0, 0.1])
-        return pybop.Problem(simulator, parameters, cost)
+        return pybop.Problem(simulator, cost)
 
     def test_design_costs(self, weighted_design_cost):
         problem = weighted_design_cost

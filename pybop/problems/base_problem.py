@@ -3,7 +3,7 @@ import numpy as np
 from pybop.analysis.sensitivity_analysis import sensitivity_analysis
 from pybop.costs.base_cost import BaseCost
 from pybop.costs.likelihoods import LogPosterior
-from pybop.parameters.parameter import Inputs, Parameter, Parameters
+from pybop.parameters.parameter import Inputs, Parameters
 from pybop.simulators.base_simulator import BaseSimulator
 
 
@@ -31,36 +31,12 @@ class Problem:
         to maximise by default rather than minimise (default: True).
     """
 
-    def __init__(
-        self,
-        simulator: BaseSimulator = None,
-        parameters: Parameters = None,
-        cost: BaseCost = None,
-    ):
-        # Check if parameters is a list of pybop.Parameter objects
-        if isinstance(parameters, list):
-            if all(isinstance(param, Parameter) for param in parameters):
-                parameters = Parameters(*parameters)
-            else:
-                raise TypeError(
-                    "All elements in the list must be pybop.Parameter objects."
-                )
-        # Check if parameters is a single pybop.Parameter object
-        elif isinstance(parameters, Parameter):
-            parameters = Parameters(parameters)
-        # Check if parameters is already a pybop.Parameters object
-        elif not isinstance(parameters, Parameters):
-            raise TypeError(
-                "The input parameters must be a pybop.Parameter, a list of pybop.Parameter objects, or a pybop.Parameters object."
-            )
+    def __init__(self, simulator: BaseSimulator = None, cost: BaseCost = None):
+        self.parameters = Parameters()
 
         # Gather information from the simulator
         self._simulator = simulator.copy() if simulator is not None else BaseSimulator()
         self._has_sensitivities = self._simulator.has_sensitivities
-
-        # TODO: Move parameters attribute to the simulator
-        self._simulator.parameters = parameters
-        self.parameters = Parameters()
         self.parameters.join(self._simulator.parameters)
 
         # Gather information from the cost function

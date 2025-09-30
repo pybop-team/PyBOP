@@ -74,10 +74,10 @@ class TestPlots:
     @pytest.fixture
     def fitting_problem(self, model, parameters, dataset):
         simulator = pybop.pybamm.Simulator(
-            model, input_parameter_names=parameters.names, protocol=dataset
+            model, parameters=parameters, protocol=dataset
         )
         cost = pybop.SumSquaredError(dataset)
-        return pybop.Problem(simulator, parameters, cost)
+        return pybop.Problem(simulator, cost)
 
     @pytest.fixture
     def experiment(self):
@@ -87,11 +87,11 @@ class TestPlots:
     def design_problem(self, model, parameters, experiment):
         simulator = pybop.pybamm.Simulator(
             model,
-            input_parameter_names=parameters.names,
+            parameters=parameters,
             protocol=experiment,
             use_formation_concentrations=True,
         )
-        return pybop.Problem(simulator, parameters)
+        return pybop.Problem(simulator)
 
     def test_problem_plots(self, fitting_problem, design_problem):
         # Test plot of Problem objects
@@ -155,11 +155,11 @@ class TestPlots:
     @pytest.fixture
     def posterior_summary(self, model, parameters, dataset):
         simulator = pybop.pybamm.Simulator(
-            model, input_parameter_names=parameters.names, protocol=dataset
+            model, parameters=parameters, protocol=dataset
         )
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=2e-3)
         posterior = pybop.LogPosterior(likelihood)
-        problem = pybop.Problem(simulator, parameters, posterior)
+        problem = pybop.Problem(simulator, posterior)
         options = pybop.PintsSamplerOptions(n_chains=1, max_iterations=1)
         sampler = pybop.SliceStepoutMCMC(problem, options=options)
         results = sampler.run()
@@ -198,10 +198,10 @@ class TestPlots:
             ),
         )
         simulator = pybop.pybamm.Simulator(
-            model, input_parameter_names=parameters.names, protocol=dataset
+            model, parameters=parameters, protocol=dataset
         )
         cost = pybop.SumSquaredError(dataset)
-        fitting_problem = pybop.Problem(simulator, parameters, cost)
+        fitting_problem = pybop.Problem(simulator, cost)
         with pytest.raises(
             ValueError, match="This cost function takes fewer than 2 parameters."
         ):
@@ -226,10 +226,10 @@ class TestPlots:
             ),
         )
         simulator = pybop.pybamm.Simulator(
-            model, input_parameter_names=parameters.names, protocol=dataset
+            model, parameters=parameters, protocol=dataset
         )
         cost = pybop.SumSquaredError(dataset)
-        fitting_problem = pybop.Problem(simulator, parameters, cost)
+        fitting_problem = pybop.Problem(simulator, cost)
         pybop.plot.contour(fitting_problem)
 
     def test_nyquist(self):
@@ -258,11 +258,11 @@ class TestPlots:
         # Generate problem, cost function, and optimisation class
         simulator = pybop.pybamm.EISSimulator(
             model,
-            input_parameter_names=parameters.names,
+            parameters=parameters,
             f_eval=dataset["Frequency [Hz]"],
         )
         cost = pybop.MeanAbsoluteError(dataset, target="Impedance")
-        problem = pybop.Problem(simulator, parameters, cost)
+        problem = pybop.Problem(simulator, cost)
 
         # Plot the nyquist
         inputs = parameters.to_dict([60e-6])

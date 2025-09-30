@@ -29,11 +29,8 @@ class MetaProblem(Problem):
             if not problem.has_sensitivities:
                 sensitivities_available = False
 
-        super().__init__(
-            simulator=None,
-            parameters=combined_parameters,
-            cost=None,
-        )
+        super().__init__(simulator=None, cost=None)
+        self.parameters = combined_parameters
         self._has_sensitivities = sensitivities_available
 
         # Check if weights are provided

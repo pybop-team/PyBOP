@@ -96,12 +96,12 @@ class TestTheveninParameterisation:
         simulator = pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
-            input_parameter_names=parameters.names,
+            parameters=parameters,
             protocol=dataset,
         )
         # Define the cost to optimise
         cost = cost_class(dataset)
-        problem = pybop.Problem(simulator, parameters, cost)
+        problem = pybop.Problem(simulator, cost)
 
         x0 = problem.parameters.get_initial_values()
         if optimiser is pybop.SciPyMinimize:

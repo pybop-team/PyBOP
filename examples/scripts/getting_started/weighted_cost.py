@@ -52,7 +52,7 @@ dataset = pybop.Dataset(
 simulator = pybop.pybamm.Simulator(
     model,
     parameter_values=parameter_values,
-    input_parameter_names=parameters.names,
+    parameters=parameters,
     protocol=dataset,
 )
 cost1 = pybop.SumSquaredError(dataset)
@@ -61,7 +61,7 @@ weighted_cost = pybop.WeightedCost(cost1, cost2, weights=[0.1, 1])
 options = pybop.PintsOptions(verbose=True, max_iterations=60)
 
 for cost in [weighted_cost, cost1, cost2]:
-    problem = pybop.Problem(simulator, parameters, cost)
+    problem = pybop.Problem(simulator, cost)
     optim = pybop.IRPropMin(problem, options=options)
 
     # Run the optimisation

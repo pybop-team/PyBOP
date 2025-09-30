@@ -45,11 +45,11 @@ for init_soc, experiment in zip(init_socs, experiments, strict=False):
     simulator = pybop.pybamm.Simulator(
         model,
         parameter_values=parameter_values,
-        input_parameter_names=parameters.names,
+        parameters=parameters,
         protocol=dataset,
     )
     cost = pybop.SumSquaredError(dataset)
-    problems.append(pybop.Problem(simulator, parameters, cost))
+    problems.append(pybop.Problem(simulator, cost))
 
 # Combine the problems into one
 problem = pybop.MetaProblem(*problems)

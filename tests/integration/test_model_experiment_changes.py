@@ -60,7 +60,7 @@ class TestModelAndExperimentChanges:
         simulator_1 = pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
-            input_parameter_names=parameters.names,
+            parameters=parameters,
             initial_state=initial_state,
             protocol=t_eval,
             solver=solver,
@@ -72,7 +72,7 @@ class TestModelAndExperimentChanges:
         simulator_2 = pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
-            input_parameter_names=parameters.names,
+            parameters=parameters,
             initial_state=initial_state,
             protocol=experiment,
         )
@@ -103,7 +103,7 @@ class TestModelAndExperimentChanges:
         simulator_1 = pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
-            input_parameter_names=parameters.names,
+            parameters=parameters,
             protocol=experiment,
             initial_state=initial_state,
             solver=solver,
@@ -115,7 +115,7 @@ class TestModelAndExperimentChanges:
         simulator_2 = pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
-            input_parameter_names=parameters.names,
+            parameters=parameters,
             protocol=experiment,
             initial_state=initial_state,
             solver=solver,
@@ -143,7 +143,7 @@ class TestModelAndExperimentChanges:
             }
         )
         cost = pybop.RootMeanSquaredError(dataset)
-        problem = pybop.Problem(simulator, parameters, cost)
+        problem = pybop.Problem(simulator, cost)
         optim = pybop.NelderMead(problem)
         results = optim.run()
         return results.best_cost
@@ -169,7 +169,7 @@ class TestModelAndExperimentChanges:
         simulator_1 = pybop.pybamm.Simulator(
             model_1,
             parameter_values=parameter_values,
-            input_parameter_names=parameters.names,
+            parameters=parameters,
             protocol=dataset_1,
             solver=solver,
         )
@@ -182,7 +182,7 @@ class TestModelAndExperimentChanges:
         simulator_2 = pybop.pybamm.Simulator(
             model_2,
             parameter_values=parameter_values,
-            input_parameter_names=parameters.names,
+            parameters=parameters,
             protocol=dataset_2,
             solver=solver,
         )
@@ -190,8 +190,8 @@ class TestModelAndExperimentChanges:
         # Define a problem for each dataset and combine them into one
         cost_1 = pybop.RootMeanSquaredError(dataset_1)
         cost_2 = pybop.RootMeanSquaredError(dataset_2)
-        problem_1 = pybop.Problem(simulator_1, parameters, cost_1)
-        problem_2 = pybop.Problem(simulator_2, parameters, cost_2)
+        problem_1 = pybop.Problem(simulator_1, cost_1)
+        problem_2 = pybop.Problem(simulator_2, cost_2)
         problem = pybop.MetaProblem(problem_1, problem_2)
 
         # Test with a gradient and non-gradient-based optimiser

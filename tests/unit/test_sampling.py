@@ -67,14 +67,14 @@ class TestPintsSamplers:
     @pytest.fixture
     def posterior_problem(self, model, parameters, dataset):
         simulator = pybop.pybamm.Simulator(
-            model, input_parameter_names=parameters.names, protocol=dataset
+            model, parameters=parameters, protocol=dataset
         )
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=0.01)
         prior1 = pybop.Gaussian(0.7, 0.02)
         prior2 = pybop.Gaussian(0.6, 0.02)
         composed_prior = pybop.JointPrior(prior1, prior2)
         posterior = pybop.LogPosterior(likelihood, prior=composed_prior)
-        return pybop.Problem(simulator, parameters, posterior)
+        return pybop.Problem(simulator, posterior)
 
     @pytest.fixture
     def chains(self):
@@ -169,11 +169,11 @@ class TestPintsSamplers:
             )
         )
         simulator = pybop.pybamm.Simulator(
-            model, input_parameter_names=parameters.names, protocol=dataset
+            model, parameters=parameters, protocol=dataset
         )
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=0.01)
         posterior = pybop.LogPosterior(likelihood)
-        posterior = pybop.Problem(simulator, parameters, posterior)
+        posterior = pybop.Problem(simulator, posterior)
 
         # Skip RelativisticMCMC as it requires > 1 parameter
         if issubclass(MCMC, RelativisticMCMC):

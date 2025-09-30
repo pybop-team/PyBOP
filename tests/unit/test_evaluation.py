@@ -64,7 +64,7 @@ class TestEvaluation:
     def simulator(self, model, parameters, dataset, solver, request):
         return pybop.pybamm.Simulator(
             model,
-            input_parameter_names=parameters.names,
+            parameters=parameters,
             protocol=dataset,
             solver=solver,
         )
@@ -90,7 +90,7 @@ class TestEvaluation:
             )
         else:
             cost = cost_class(dataset)
-        return pybop.Problem(simulator, parameters, cost)
+        return pybop.Problem(simulator, cost)
 
     def test_evaluator_transformations(self, problem):
         if isinstance(problem.cost, pybop.GaussianLogLikelihood):

@@ -47,10 +47,10 @@ parameters = pybop.Parameters(
 
 # Build the problem
 simulator = pybop.pybamm.Simulator(
-    model, parameter_values, input_parameter_names=parameters.names, protocol=dataset
+    model, parameter_values, parameters=parameters, protocol=dataset
 )
 likelihood = pybop.SumSquaredError(dataset)
-problem = pybop.Problem(simulator, parameters, likelihood)
+problem = pybop.Problem(simulator, likelihood)
 
 # Set up the optimiser
 options = pybop.PintsOptions(

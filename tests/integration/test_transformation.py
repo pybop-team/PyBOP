@@ -99,7 +99,7 @@ class TestTransformation:
         simulator = pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
-            input_parameter_names=parameters.names,
+            parameters=parameters,
             protocol=dataset,
         )
 
@@ -109,7 +109,7 @@ class TestTransformation:
             cost = cost_class(likelihood)
         else:
             cost = cost_class(dataset)
-        return pybop.Problem(simulator, parameters, cost)
+        return pybop.Problem(simulator, cost)
 
     @pytest.mark.parametrize(
         "optimiser",

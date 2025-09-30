@@ -60,7 +60,7 @@ class TestLogPosterior:
         return pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
-            input_parameter_names=parameter.name,
+            parameters=parameter,
             protocol=dataset,
         )
 
@@ -75,7 +75,7 @@ class TestLogPosterior:
     def test_log_posterior_construction(self, simulator, parameter, likelihood, prior):
         # Test log posterior construction
         posterior = pybop.LogPosterior(likelihood, prior=prior)
-        problem = pybop.Problem(simulator, parameter, posterior)
+        problem = pybop.Problem(simulator, posterior)
 
         assert problem._cost == posterior
         assert problem._cost.log_likelihood == likelihood
@@ -83,12 +83,10 @@ class TestLogPosterior:
         assert problem.parameters[parameter.name] is parameter
         assert problem._cost.parameters is problem.parameters
 
-    def test_log_posterior_construction_no_prior(
-        self, simulator, parameter, likelihood
-    ):
+    def test_log_posterior_construction_no_prior(self, simulator, likelihood):
         # Test log posterior construction without prior
         posterior = pybop.LogPosterior(likelihood, prior=None)
-        problem = pybop.Problem(simulator, parameter, posterior)
+        problem = pybop.Problem(simulator, posterior)
 
         problem._cost.set_joint_prior()
         assert problem._cost.joint_prior is not None
@@ -98,9 +96,9 @@ class TestLogPosterior:
             assert p == problem.parameters.priors()[i]
 
     @pytest.fixture
-    def problem(self, simulator, parameter, likelihood, prior):
+    def problem(self, simulator, likelihood, prior):
         posterior = pybop.LogPosterior(likelihood, prior=prior)
-        return pybop.Problem(simulator, parameter, posterior)
+        return pybop.Problem(simulator, posterior)
 
     def test_log_posterior(self, problem):
         # Test log posterior
@@ -113,23 +111,23 @@ class TestLogPosterior:
         assert np.allclose(dp, 0.4266, atol=2e-2)
 
     @pytest.fixture
-    def posterior_uniform_prior(self, simulator, parameter, likelihood):
+    def posterior_uniform_prior(self, simulator, likelihood):
         posterior = pybop.LogPosterior(likelihood, prior=pybop.Uniform(0.45, 0.55))
-        return pybop.Problem(simulator, parameter, posterior)
+        return pybop.Problem(simulator, posterior)
 
     def test_log_posterior_inf(self, posterior_uniform_prior):
         # Test prior np.inf
         assert not np.isfinite(posterior_uniform_prior([1]))
         assert not np.isfinite(posterior_uniform_prior([1], calculate_grad=True)[0])
 
-    def test_non_logpdfS1_prior(self, simulator, parameter, likelihood):
-        problem = pybop.Problem(simulator, parameter, likelihood)
+    def test_non_logpdfS1_prior(self, simulator, likelihood):
+        problem = pybop.Problem(simulator, likelihood)
         l, dl = problem([0.6], calculate_grad=True)
 
         # Scipy distribution
         prior = st.norm(loc=0.8, scale=0.01)
         posterior = pybop.LogPosterior(likelihood, prior=prior)
-        problem = pybop.Problem(simulator, parameter, posterior)
+        problem = pybop.Problem(simulator, posterior)
         p, dp = problem([0.6], calculate_grad=True)
 
         # Assert to pybop.Gaussian

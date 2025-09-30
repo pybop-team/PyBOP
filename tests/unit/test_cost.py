@@ -66,7 +66,7 @@ class TestCosts:
         return pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
-            input_parameter_names=parameters.names,
+            parameters=parameters,
             protocol=dataset,
         )
 
@@ -86,7 +86,7 @@ class TestCosts:
             cost = cost_class(dataset, sigma0=0.002)
         else:
             cost = cost_class(dataset)
-        problem = pybop.Problem(simulator, parameters, cost)
+        problem = pybop.Problem(simulator, cost)
 
         # Test cost direction
         if isinstance(cost, pybop.LogLikelihood):
@@ -127,7 +127,7 @@ class TestCosts:
         cost = cost_class(dataset)
         assert cost.name == expected_name
 
-        problem = pybop.Problem(simulator, parameters, cost)
+        problem = pybop.Problem(simulator, cost)
 
         # Test cost direction
         higher_cost = problem([0.55])
@@ -202,24 +202,24 @@ class TestCosts:
         simulator = pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
-            input_parameter_names=parameters.names,
+            parameters=parameters,
             protocol=dataset,
         )
         cost = cost_class(dataset, weighting=1.0)
-        problem = pybop.Problem(simulator, parameters, cost)
+        problem = pybop.Problem(simulator, cost)
         x = [0.5]
         e, de = problem(x, calculate_grad=True)
 
         # Test that the equal weighting is the same as weighting by one
         costE = cost_class(dataset, weighting="equal")
-        problemE = pybop.Problem(simulator, parameters, costE)
+        problemE = pybop.Problem(simulator, costE)
         eE, deE = problemE(x, calculate_grad=True)
         np.testing.assert_allclose(e, eE)
         np.testing.assert_allclose(de, deE)
 
         # Test that domain-based weighting also matches for evenly spaced data
         costD = cost_class(dataset, weighting="domain")
-        problemD = pybop.Problem(simulator, parameters, costD)
+        problemD = pybop.Problem(simulator, costD)
         eD, deD = problemD(x, calculate_grad=True)
         np.testing.assert_allclose(e, eD)
         np.testing.assert_allclose(de, deD)
@@ -228,11 +228,11 @@ class TestCosts:
         simulator = pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
-            input_parameter_names=parameters.names,
+            parameters=parameters,
             protocol=randomly_spaced_dataset,
         )
         costR = cost_class(randomly_spaced_dataset, weighting="domain")
-        problemR = pybop.Problem(simulator, parameters, costR)
+        problemR = pybop.Problem(simulator, costR)
         eR, deR = problemR(x, calculate_grad=True)
         np.testing.assert_allclose(e, eR, rtol=1e-2, atol=1e-9)
         np.testing.assert_allclose(de, deR, rtol=1e-2, atol=1e-9)
@@ -292,7 +292,7 @@ class TestCosts:
         return pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
-            input_parameter_names=parameters.names,
+            parameters=parameters,
             protocol=experiment,
             initial_state={"Initial SoC": 0.5},
             use_formation_concentrations=True,
@@ -309,7 +309,7 @@ class TestCosts:
     )
     def test_design_costs(self, target, design_simulator, parameters):
         cost = pybop.DesignCost(target=target)
-        design_problem = pybop.Problem(design_simulator, parameters, cost)
+        design_problem = pybop.Problem(design_simulator, cost)
 
         # Test type of returned value
         assert np.isscalar(design_problem([0.5]))
@@ -341,7 +341,7 @@ class TestCosts:
         return noisy_dataset, pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
-            input_parameter_names=parameters.names,
+            parameters=parameters,
             protocol=noisy_dataset,
         )
 
@@ -376,9 +376,9 @@ class TestCosts:
         # Test with identical problems
         weight = 100
         weighted_cost_2 = pybop.WeightedCost(cost1, cost2, weights=[1, weight])
-        problem_1 = pybop.Problem(simulator, parameters, cost1)
-        problem_2 = pybop.Problem(simulator, parameters, cost2)
-        weighted_2 = pybop.Problem(simulator, parameters, weighted_cost_2)
+        problem_1 = pybop.Problem(simulator, cost1)
+        problem_2 = pybop.Problem(simulator, cost2)
+        weighted_2 = pybop.Problem(simulator, weighted_cost_2)
         assert weighted_2([0.5]) >= 0
         np.testing.assert_allclose(
             weighted_2([0.6]),
@@ -389,8 +389,8 @@ class TestCosts:
         # Test with different problems
         cost3 = pybop.RootMeanSquaredError(dataset)
         weighted_cost_3 = pybop.WeightedCost(cost1, cost3, weights=[1, weight])
-        problem_3 = pybop.Problem(simulator, parameters, cost3)
-        weighted_3 = pybop.Problem(simulator, parameters, weighted_cost_3)
+        problem_3 = pybop.Problem(simulator, cost3)
+        weighted_3 = pybop.Problem(simulator, weighted_cost_3)
         assert weighted_3([0.5]) >= 0
         np.testing.assert_allclose(
             weighted_3([0.6]),
@@ -406,8 +406,8 @@ class TestCosts:
         # Test LogPosterior explicitly
         cost4 = pybop.LogPosterior(pybop.GaussianLogLikelihood(dataset))
         weighted_cost_4 = pybop.WeightedCost(cost1, cost4, weights=[1, 1 / weight])
-        problem_4 = pybop.Problem(simulator, parameters, cost4)
-        weighted_4 = pybop.Problem(simulator, parameters, weighted_cost_4)
+        problem_4 = pybop.Problem(simulator, cost4)
+        weighted_4 = pybop.Problem(simulator, weighted_cost_4)
         sigma = 0.01
         assert np.isfinite(cost4.parameters["Sigma for output 1"].prior.logpdf(sigma))
         assert np.isfinite(weighted_4([0.5, sigma]))
@@ -426,11 +426,11 @@ class TestCosts:
     def test_weighted_design_cost(self, design_simulator, parameters):
         cost_1 = pybop.DesignCost(target="Gravimetric energy density [Wh.kg-1]")
         cost_2 = pybop.DesignCost(target="Volumetric energy density [Wh.m-3]")
-        problem_1 = pybop.Problem(design_simulator, parameters, cost_1)
-        problem_2 = pybop.Problem(design_simulator, parameters, cost_2)
+        problem_1 = pybop.Problem(design_simulator, cost_1)
+        problem_2 = pybop.Problem(design_simulator, cost_2)
 
         weighted_cost = pybop.WeightedCost(cost_1, cost_2)
-        problem = pybop.Problem(design_simulator, parameters, weighted_cost)
+        problem = pybop.Problem(design_simulator, weighted_cost)
         assert problem([0.5]) >= 0
         np.testing.assert_allclose(
             problem([0.6]), problem_1([0.6]) + problem_2([0.6]), atol=1e-5

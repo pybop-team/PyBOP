@@ -81,11 +81,11 @@ class BenchmarkTrackParameterisation:
         simulator = pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
-            input_parameter_names=parameters.names,
+            parameters=parameters,
             protocol=dataset,
         )
         cost = pybop.SumSquaredError(dataset)
-        problem = pybop.Problem(simulator, parameters, cost)
+        problem = pybop.Problem(simulator, cost)
 
         # Create optimization instance and set options for consistent benchmarking
         if optimiser is pybop.SciPyDifferentialEvolution:

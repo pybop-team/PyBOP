@@ -43,13 +43,13 @@ parameters = pybop.Parameters(
 simulator = pybop.pybamm.Simulator(
     model,
     parameter_values=parameter_values,
-    input_parameter_names=parameters.names,
+    parameters=parameters,
     protocol=dataset,
 )
 cost = pybop.Minkowski(
     dataset, target=["Voltage [V]", "Bulk open-circuit voltage [V]"], p=2
 )
-problem = pybop.Problem(simulator, parameters, cost)
+problem = pybop.Problem(simulator, cost)
 
 # We construct the optimiser class the same as normal but will be using the
 # `optimiser` attribute directly for this example. This interface works for

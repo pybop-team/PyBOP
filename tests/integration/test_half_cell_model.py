@@ -86,11 +86,11 @@ class TestHalfCellModel:
         simulator = pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
-            input_parameter_names=parameters.names,
+            parameters=parameters,
             protocol=dataset,
         )
         cost = pybop.SumSquaredError(dataset)
-        return pybop.Problem(simulator, parameters, cost)
+        return pybop.Problem(simulator, cost)
 
     def test_fitting_costs(self, fitting_problem):
         x0 = fitting_problem.parameters.get_initial_values()
@@ -127,13 +127,13 @@ class TestHalfCellModel:
         simulator = pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
-            input_parameter_names=parameters.names,
+            parameters=parameters,
             protocol=experiment,
             initial_state=initial_state,
             use_formation_concentrations=True,
         )
         cost = pybop.DesignCost(target="Gravimetric energy density [Wh.kg-1]")
-        return pybop.Problem(simulator, parameters, cost)
+        return pybop.Problem(simulator, cost)
 
     def test_design_costs(self, design_problem):
         options = pybop.PintsOptions(max_iterations=15)

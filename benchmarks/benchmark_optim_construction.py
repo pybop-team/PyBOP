@@ -67,11 +67,11 @@ class BenchmarkOptimisationConstruction:
         simulator = pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
-            input_parameter_names=parameters.names,
+            parameters=parameters,
             protocol=dataset,
         )
         cost = pybop.SumSquaredError(dataset)
-        self.problem = pybop.Problem(simulator, parameters, cost)
+        self.problem = pybop.Problem(simulator, cost)
 
     def time_optimisation_construction(self, model, parameter_set, optimiser):
         """

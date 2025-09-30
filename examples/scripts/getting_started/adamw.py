@@ -47,13 +47,13 @@ parameters = pybop.Parameters(
 simulator = pybop.pybamm.Simulator(
     model,
     parameter_values=parameter_values,
-    input_parameter_names=parameters.names,
+    parameters=parameters,
     protocol=dataset,
 )
 cost = pybop.SumOfPower(
     dataset, target=["Voltage [V]", "Bulk open-circuit voltage [V]"], p=2.5
 )
-problem = pybop.Problem(simulator, parameters, cost)
+problem = pybop.Problem(simulator, cost)
 
 # Set up the optimiser
 options = pybop.PintsOptions(

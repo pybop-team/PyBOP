@@ -59,7 +59,7 @@ class TestLikelihoods:
         return pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
-            input_parameter_names=parameters.names,
+            parameters=parameters,
             protocol=dataset,
         )
 
@@ -86,13 +86,11 @@ class TestLikelihoods:
         "target",
         [["Voltage [V]"], ["Time [s]", "Voltage [V]"]],
     )
-    def test_gaussian_log_likelihood_known_sigma(
-        self, simulator, parameters, dataset, target
-    ):
+    def test_gaussian_log_likelihood_known_sigma(self, simulator, dataset, target):
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(
             dataset, target=target, sigma0=np.array([0.01])
         )
-        problem = pybop.Problem(simulator, parameters, likelihood)
+        problem = pybop.Problem(simulator, likelihood)
         result = problem([0.5])
         grad_result, grad_likelihood = problem([0.5], calculate_grad=True)
         assert isinstance(result, float)
@@ -100,9 +98,9 @@ class TestLikelihoods:
         # Since 0.5 < ground_truth, the likelihood should be increasing
         assert grad_likelihood >= 0
 
-    def test_gaussian_log_likelihood(self, simulator, parameters, dataset):
+    def test_gaussian_log_likelihood(self, simulator, dataset):
         likelihood = pybop.GaussianLogLikelihood(dataset, sigma0=0.01)
-        problem = pybop.Problem(simulator, parameters, likelihood)
+        problem = pybop.Problem(simulator, likelihood)
         result = problem(np.array([0.8, 0.02]))
         grad_result, grad_likelihood = problem(
             np.array([0.8, 0.025]), calculate_grad=True
@@ -124,7 +122,7 @@ class TestLikelihoods:
             match=r"Expected sigma0 to contain Parameter objects or numeric values.",
         ):
             likelihood = pybop.GaussianLogLikelihood(dataset, sigma0="Invalid string")
-            pybop.Problem(simulator, parameters, likelihood)
+            pybop.Problem(simulator, likelihood)
 
     def test_gaussian_log_likelihood_dsigma_scale(self, dataset):
         likelihood = pybop.GaussianLogLikelihood(dataset, dsigma_scale=0.05)
@@ -136,23 +134,21 @@ class TestLikelihoods:
         with pytest.raises(ValueError):
             likelihood.dsigma_scale = -1e3
 
-    def test_gaussian_log_likelihood_returns_negative_inf(
-        self, simulator, parameters, dataset
-    ):
+    def test_gaussian_log_likelihood_returns_negative_inf(self, simulator, dataset):
         likelihood = pybop.GaussianLogLikelihood(dataset)
-        problem = pybop.Problem(simulator, parameters, likelihood)
+        problem = pybop.Problem(simulator, likelihood)
         assert problem(np.array([0.01, 0.1])) == -np.inf  # parameter value too small
         assert (
             problem(np.array([0.01, 0.1]), calculate_grad=True)[0] == -np.inf
         )  # parameter value too small
 
     def test_gaussian_log_likelihood_known_sigma_returns_negative_inf(
-        self, simulator, parameters, dataset
+        self, simulator, dataset
     ):
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(
             dataset, sigma0=np.array([0.2])
         )
-        problem = pybop.Problem(simulator, parameters, likelihood)
+        problem = pybop.Problem(simulator, likelihood)
         assert problem(np.array([0.01])) == -np.inf  # parameter value too small
         assert (
             problem(np.array([0.01]), calculate_grad=True)[0] == -np.inf

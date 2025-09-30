@@ -37,10 +37,10 @@ class TestClassifier:
             ),
         )
         simulator = pybop.pybamm.Simulator(
-            model, input_parameter_names=parameters.names, protocol=dataset
+            model, parameters=parameters, protocol=dataset
         )
         cost = pybop.SumSquaredError(dataset)
-        return pybop.Problem(simulator, parameters, cost)
+        return pybop.Problem(simulator, cost)
 
     def test_classify_using_hessian_invalid(self, problem):
         optim = pybop.XNES(problem)

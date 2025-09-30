@@ -11,6 +11,7 @@ from scipy.sparse.linalg import spsolve
 if TYPE_CHECKING:
     from pybop.parameters.parameter import Inputs
 from pybop._utils import SymbolReplacer
+from pybop.parameters.parameter import Parameters
 from pybop.pybamm.simulator import Simulator
 from pybop.simulators.base_simulator import BaseSimulator
 
@@ -37,8 +38,8 @@ class EISSimulator(BaseSimulator):
         The frequencies at which to evaluate the impedance.
     parameter_values : pybamm.ParameterValues, optional
         The parameter values to be used in the model.
-    input_parameter_names : list[str], optional
-        A list of the input parameter names.
+    parameters : pybop.Parameters, optional
+        The input parameters.
     initial_state : dict, optional
         A valid initial state, e.g. `"Initial open-circuit voltage [V]"` or ``"Initial SoC"`.
         Defaults to None, indicating that the existing initial state of charge (for an ECM)
@@ -66,7 +67,7 @@ class EISSimulator(BaseSimulator):
         model: pybamm.BaseModel,
         f_eval: np.ndarray | list[float],
         parameter_values: pybamm.ParameterValues | None = None,
-        input_parameter_names: list[str] | None = None,
+        parameters: Parameters | None = None,
         initial_state: float | str | None = None,
         solver: pybamm.BaseSolver | None = None,
         geometry: pybamm.Geometry | None = None,
@@ -76,6 +77,8 @@ class EISSimulator(BaseSimulator):
         discretisation_kwargs: dict | None = None,
         build_every_time: bool = False,
     ):
+        super().__init__(parameters=parameters)
+
         # Set-up model for EIS
         self._f_eval = f_eval
         model = self.set_up_for_eis(model)
@@ -86,7 +89,7 @@ class EISSimulator(BaseSimulator):
         self._simulation = Simulator(
             model,
             parameter_values=parameter_values,
-            input_parameter_names=input_parameter_names,
+            parameters=parameters,
             initial_state=initial_state,
             solver=solver,
             geometry=geometry,

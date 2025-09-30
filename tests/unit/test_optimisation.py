@@ -58,18 +58,18 @@ class TestOptimisation:
     @pytest.fixture
     def problem(self, model, one_parameter, dataset):
         simulator = pybop.pybamm.Simulator(
-            model, input_parameter_names=[one_parameter.name], protocol=dataset
+            model, parameters=one_parameter, protocol=dataset
         )
         cost = pybop.SumSquaredError(dataset)
-        return pybop.Problem(simulator, one_parameter, cost)
+        return pybop.Problem(simulator, cost)
 
     @pytest.fixture
     def two_param_problem(self, model, two_parameters, dataset):
         simulator = pybop.pybamm.Simulator(
-            model, input_parameter_names=two_parameters.names, protocol=dataset
+            model, parameters=two_parameters, protocol=dataset
         )
         cost = pybop.SumSquaredError(dataset)
-        return pybop.Problem(simulator, two_parameters, cost)
+        return pybop.Problem(simulator, cost)
 
     @pytest.mark.parametrize(
         "optimiser, expected_name, sensitivities",

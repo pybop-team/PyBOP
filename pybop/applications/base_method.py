@@ -6,7 +6,6 @@ from pybamm import Interpolant as PybammInterpolant
 from scipy import interpolate
 
 import pybop
-from pybop.parameters.parameter import Inputs
 
 
 class BaseApplication:
@@ -98,18 +97,15 @@ class InverseOCV:
         )
 
         # Set up a root-finding cost function
-        class OCVRoot(pybop.Problem):
-            def __init__(self, parameters):
-                super().__init__(simulator=None, parameters=parameters)
-
-            def single_call(
-                self, inputs: Inputs, calculate_grad: bool = False
-            ) -> float:
-                """Evaluate the cost for a single set of inputs."""
-                return np.abs(ocv_function(inputs["Root"]) - ocv_value)
+        class OCVRoot(pybop.BaseSimulator):
+            def simulate(self, inputs, calculate_sensitivities: bool = False):
+                diff = np.abs(ocv_function(inputs["Root"]) - ocv_value)
+                return {"Difference": np.asarray([diff])}
 
         # Minimise to find the stoichiometry
-        problem = OCVRoot(parameters=self.parameters)
+        cost = pybop.DesignCost(target="Difference")
+        cost.minimising = True
+        problem = pybop.Problem(OCVRoot(self.parameters), cost)
         options = pybop.SciPyMinimizeOptions(verbose=self.verbose)
         optim = self.optimiser(problem=problem, options=options)
         results = optim.run()

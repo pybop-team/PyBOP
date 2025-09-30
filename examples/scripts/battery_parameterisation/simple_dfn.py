@@ -45,11 +45,11 @@ parameters = pybop.Parameters(
 
 # Build the problem
 simulator = pybop.pybamm.Simulator(
-    model, parameter_values, input_parameter_names=parameters.names, protocol=dataset
+    model, parameter_values, parameters=parameters, protocol=dataset
 )
 target = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
 cost = pybop.RootMeanSquaredError(dataset, target=target)
-problem = pybop.Problem(simulator, parameters, cost)
+problem = pybop.Problem(simulator, cost)
 
 # Set up the optimiser
 options = pybop.PintsOptions(

@@ -49,12 +49,12 @@ parameters = pybop.Parameters(
 simulator = pybop.pybamm.Simulator(
     model,
     parameter_values=parameter_values,
-    input_parameter_names=parameters.names,
+    parameters=parameters,
     protocol=dataset,
     initial_state={"Initial open-circuit voltage [V]": csv_data[0, 2]},
 )
 likelihood = pybop.GaussianLogLikelihood(dataset, sigma0=8e-3)
-problem = pybop.Problem(simulator, parameters, likelihood)
+problem = pybop.Problem(simulator, likelihood)
 
 # Set up the optimiser
 options = pybop.PintsOptions(

@@ -145,10 +145,10 @@ class TestArbitraryModels:
 
         # Build the problem
         simulator = pybop.pybamm.Simulator(
-            model, input_parameter_names=parameter.name, protocol=dataset
+            model, parameters=parameter, protocol=dataset
         )
         cost = pybop.SumSquaredError(dataset, target=["u at x_0.5"])
-        problem = pybop.Problem(simulator, parameter, cost)
+        problem = pybop.Problem(simulator, cost)
 
         # Optimise
         optim = pybop.SciPyMinimize(problem)
@@ -184,10 +184,10 @@ class TestArbitraryModels:
 
         # Build the problem
         simulator = pybop.pybamm.Simulator(
-            model, input_parameter_names=parameters.names, protocol=dataset
+            model, parameters=parameters, protocol=dataset
         )
         cost = pybop.SumSquaredError(dataset, target=["u", "v"])
-        problem = pybop.Problem(simulator, parameters, cost)
+        problem = pybop.Problem(simulator, cost)
 
         # Optimise
         options = pybop.PintsOptions(sigma=0.02)
@@ -239,11 +239,11 @@ class TestArbitraryModels:
         simulator = pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
-            input_parameter_names=parameters.names,
+            parameters=parameters,
             protocol=dataset,
         )
         cost = pybop.SumSquaredError(dataset, target=["u", "v"])
-        problem = pybop.Problem(simulator, parameters, cost)
+        problem = pybop.Problem(simulator, cost)
 
         # Optimise
         optim = pybop.NelderMead(problem)

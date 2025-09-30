@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from pybop.parameters.parameter import Inputs
 from pybop._dataset import Dataset
 from pybop._utils import FailedSolution, RecommendedSolver
+from pybop.parameters.parameter import Parameters
 from pybop.pybamm.parameter_utils import set_formation_concentrations
 from pybop.simulators.base_simulator import BaseSimulator
 
@@ -32,8 +33,8 @@ class Simulator(BaseSimulator):
         The PyBaMM model to be used.
     parameter_values : pybamm.ParameterValues, optional
         The parameter values to be used in the model.
-    input_parameter_names : list[str], optional
-        A list of the input parameter names.
+    parameters : pybop.Parameters, optional
+        The input parameters.
     initial_state : dict, optional
         A valid initial state, e.g. `"Initial open-circuit voltage [V]"` or ``"Initial SoC"`.
         Defaults to None, indicating that the existing initial state of charge (for an ECM)
@@ -68,7 +69,7 @@ class Simulator(BaseSimulator):
         self,
         model: pybamm.BaseModel,
         parameter_values: pybamm.ParameterValues | None = None,
-        input_parameter_names: str | list[str] | None = None,
+        parameters: Parameters | None = None,
         initial_state: dict | None = None,
         protocol: pybamm.Experiment | Dataset | np.ndarray | None = None,
         solver: pybamm.BaseSolver | None = None,
@@ -81,6 +82,7 @@ class Simulator(BaseSimulator):
         build_every_time: bool = False,
         use_formation_concentrations: bool = False,
     ):
+        super().__init__(parameters=parameters)
         # Core
         self._model = model
         self._parameter_values = (
@@ -135,10 +137,7 @@ class Simulator(BaseSimulator):
         self._calculate_sensitivities = False
 
         # Build
-        input_names = input_parameter_names or []
-        self._input_parameter_names = (
-            input_names if isinstance(input_names, list | None) else [input_names]
-        )
+        self._input_parameter_names = self.parameters.names
         self._requires_model_rebuild = self._determine_rebuild_requirement(
             build_every_time
         )

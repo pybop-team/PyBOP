@@ -61,12 +61,12 @@ model = pybamm.lithium_ion.SPM()
 simulator = pybop.pybamm.Simulator(
     model,
     parameter_values=parameter_values,
-    input_parameter_names=parameters.names,
+    parameters=parameters,
     protocol=dataset,
 )
 likelihood = pybop.GaussianLogLikelihood(dataset)
 posterior = pybop.LogPosterior(likelihood)
-problem = pybop.Problem(simulator, parameters, posterior)
+problem = pybop.Problem(simulator, posterior)
 
 # Create and run the sampler
 options = pybop.PintsSamplerOptions(

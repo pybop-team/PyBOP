@@ -102,12 +102,12 @@ class TestSamplingThevenin:
         simulator = pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
-            input_parameter_names=parameters.names,
+            parameters=parameters,
             protocol=dataset,
         )
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=self.sigma0)
         posterior = pybop.LogPosterior(likelihood)
-        return pybop.Problem(simulator, parameters, posterior)
+        return pybop.Problem(simulator, posterior)
 
     @pytest.fixture
     def map_estimate(self, posterior):

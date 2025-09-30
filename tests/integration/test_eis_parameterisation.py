@@ -105,7 +105,7 @@ class TestEISParameterisation:
         simulator = pybop.pybamm.EISSimulator(
             model,
             parameter_values=parameter_values,
-            input_parameter_names=parameters.names,
+            parameters=parameters,
             f_eval=dataset["Frequency [Hz]"],
         )
 
@@ -126,7 +126,7 @@ class TestEISParameterisation:
             cost = cost_class(dataset, target=target, p=2)
         else:
             cost = cost_class(dataset, target=target)
-        problem = pybop.Problem(simulator, parameters, cost)
+        problem = pybop.Problem(simulator, cost)
 
         # Construct optimisation object
         if optimiser is pybop.SciPyDifferentialEvolution:
@@ -177,6 +177,16 @@ class TestEISParameterisation:
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
 
     def get_data(self, model, parameter_values, f_eval):
+        parameters = [
+            pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                initial_value=self.ground_truth[0],
+            ),
+            pybop.Parameter(
+                "Positive electrode active material volume fraction",
+                initial_value=self.ground_truth[1],
+            ),
+        ]
         inputs = {
             "Negative electrode active material volume fraction": self.ground_truth[0],
             "Positive electrode active material volume fraction": self.ground_truth[1],
@@ -184,7 +194,7 @@ class TestEISParameterisation:
         simulator = pybop.pybamm.EISSimulator(
             model,
             parameter_values=parameter_values,
-            input_parameter_names=list(inputs.keys()),
+            parameters=parameters,
             f_eval=f_eval,
         )
         solution = simulator.simulate(inputs=inputs)
