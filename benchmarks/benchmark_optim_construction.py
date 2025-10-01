@@ -82,7 +82,7 @@ class BenchmarkOptimisationConstruction:
             parameter_set (str): The name of the parameter set being used.
             optimiser (pybop.Optimiser): The optimiser class being used.
         """
-        self.optim = pybop.XNES(self.problem, optimiser=optimiser)
+        self.optim = optimiser(self.problem)
 
     def time_cost_evaluate(self, model, parameter_set, optimiser):
         """
