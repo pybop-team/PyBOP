@@ -32,7 +32,9 @@ class Dataset:
         if isinstance(data_dictionary, solvers.solution.Solution):
             data_dictionary = data_dictionary.get_data_dict(variables=variables)
         if not isinstance(data_dictionary, dict):
-            raise TypeError("The input to pybop.Dataset must be a dictionary.")
+            raise TypeError(
+                "The input to pybop.Dataset must be a dictionary or a pybamm.Solution object."
+            )
         self.data = data_dictionary
         self.domain = domain or "Time [s]"
 
