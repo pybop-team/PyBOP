@@ -16,34 +16,6 @@ cs_p_max = parameter_values["Maximum concentration in positive electrode [mol.m-
 cs_n_init = parameter_values["Initial concentration in negative electrode [mol.m-3]"]
 cs_p_init = parameter_values["Initial concentration in positive electrode [mol.m-3]"]
 
-# Define fitting parameters for OCP balancing
-parameters = pybop.Parameters(
-    pybop.Parameter(
-        "Maximum concentration in negative electrode [mol.m-3]",
-        prior=pybop.Gaussian(cs_n_max, 6e3),
-        bounds=[cs_n_max * 0.75, cs_n_max * 1.25],
-        initial_value=cs_n_max * 0.8,
-    ),
-    pybop.Parameter(
-        "Maximum concentration in positive electrode [mol.m-3]",
-        prior=pybop.Gaussian(cs_p_max, 6e3),
-        bounds=[cs_p_max * 0.75, cs_p_max * 1.25],
-        initial_value=cs_p_max * 0.8,
-    ),
-    pybop.Parameter(
-        "Initial concentration in negative electrode [mol.m-3]",
-        prior=pybop.Gaussian(cs_n_init, 6e3),
-        bounds=[cs_n_max * 0.75, cs_n_max * 1.25],
-        initial_value=cs_n_max * 0.8,
-    ),
-    pybop.Parameter(
-        "Initial concentration in positive electrode [mol.m-3]",
-        prior=pybop.Gaussian(cs_p_init, 6e3),
-        bounds=[0, cs_p_max * 0.5],
-        initial_value=cs_p_max * 0.2,
-    ),
-)
-
 # Generate a synthetic data
 sigma = 5e-4
 experiment = pybamm.Experiment(
@@ -68,11 +40,48 @@ dataset = pybop.Dataset(
         "Voltage [V]": noisy(sol["Voltage [V]"].data, sigma),
     }
 )
+true_values = [
+    parameter_values[p]
+    for p in [
+        "Maximum concentration in negative electrode [mol.m-3]",
+        "Maximum concentration in positive electrode [mol.m-3]",
+        "Initial concentration in negative electrode [mol.m-3]",
+        "Initial concentration in positive electrode [mol.m-3]",
+    ]
+]
+
+# Define fitting parameters for OCP balancing
+parameter_values.update(
+    {
+        "Maximum concentration in negative electrode [mol.m-3]": pybop.Parameter(
+            "Maximum concentration in negative electrode [mol.m-3]",
+            prior=pybop.Gaussian(cs_n_max, 6e3),
+            bounds=[cs_n_max * 0.75, cs_n_max * 1.25],
+            initial_value=cs_n_max * 0.8,
+        ),
+        "Maximum concentration in positive electrode [mol.m-3]": pybop.Parameter(
+            "Maximum concentration in positive electrode [mol.m-3]",
+            prior=pybop.Gaussian(cs_p_max, 6e3),
+            bounds=[cs_p_max * 0.75, cs_p_max * 1.25],
+            initial_value=cs_p_max * 0.8,
+        ),
+        "Initial concentration in negative electrode [mol.m-3]": pybop.Parameter(
+            "Initial concentration in negative electrode [mol.m-3]",
+            prior=pybop.Gaussian(cs_n_init, 6e3),
+            bounds=[cs_n_max * 0.75, cs_n_max * 1.25],
+            initial_value=cs_n_max * 0.8,
+        ),
+        "Initial concentration in positive electrode [mol.m-3]": pybop.Parameter(
+            "Initial concentration in positive electrode [mol.m-3]",
+            prior=pybop.Gaussian(cs_p_init, 6e3),
+            bounds=[0, cs_p_max * 0.5],
+            initial_value=cs_p_max * 0.2,
+        ),
+    }
+)
 
 # Build the problem
-simulator = pybop.pybamm.Simulator(
-    model, parameter_values, parameters=parameters, protocol=dataset
-)
+simulator = pybop.pybamm.Simulator(model, parameter_values, protocol=dataset)
 cost = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=sigma)
 problem = pybop.Problem(simulator, cost)
 
@@ -83,7 +92,7 @@ optim = pybop.SciPyMinimize(problem, options=options)
 # Run the optimisation for Maximum Likelihood Estimate (MLE)
 result = optim.run()
 print(result)
-print("True values:", [parameter_values[p] for p in parameters.keys()])
+print("True values:", true_values)
 
 # Plot the timeseries output
 pybop.plot.problem(problem, problem_inputs=result.x, title="Optimised Comparison")

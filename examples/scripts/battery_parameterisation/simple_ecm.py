@@ -51,20 +51,6 @@ parameter_values.update(
 #     }
 # )
 
-# Fitting parameters
-parameters = pybop.Parameters(
-    pybop.Parameter(
-        "R0 [Ohm]",
-        prior=pybop.Gaussian(0.0002, 0.0001),
-        bounds=[1e-4, 1e-2],
-    ),
-    pybop.Parameter(
-        "R1 [Ohm]",
-        prior=pybop.Gaussian(0.0001, 0.0001),
-        bounds=[1e-5, 1e-3],
-    ),
-)
-
 # Generate a synthetic dataset
 sigma = 0.001
 t_eval = np.arange(0, 900, 3)
@@ -77,13 +63,27 @@ dataset = pybop.Dataset(
         "Voltage [V]": corrupt_values,
     }
 )
+true_values = [parameter_values[p] for p in ["R0 [Ohm]", "R1 [Ohm]"]]
+
+# Fitting parameters
+parameter_values.update(
+    {
+        "R0 [Ohm]": pybop.Parameter(
+            "R0 [Ohm]",
+            prior=pybop.Gaussian(0.0002, 0.0001),
+            bounds=[1e-4, 1e-2],
+        ),
+        "R1 [Ohm]": pybop.Parameter(
+            "R1 [Ohm]",
+            prior=pybop.Gaussian(0.0001, 0.0001),
+            bounds=[1e-5, 1e-3],
+        ),
+    }
+)
 
 # Build the problem
 simulator = pybop.pybamm.Simulator(
-    model,
-    parameter_values=parameter_values,
-    parameters=parameters,
-    protocol=dataset,
+    model, parameter_values=parameter_values, protocol=dataset
 )
 cost = pybop.SumSquaredError(dataset)
 problem = pybop.Problem(simulator, cost)
@@ -95,7 +95,7 @@ optim = pybop.CMAES(problem, options=options)
 # Run the optimisation
 result = optim.run()
 print(result)
-print("True values:", [parameter_values[p] for p in parameters.keys()])
+print("True values:", true_values)
 
 # Plot the timeseries output
 pybop.plot.problem(problem, problem_inputs=result.x, title="Optimised Comparison")

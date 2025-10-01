@@ -25,20 +25,6 @@ solution = pybop.pybamm.EISSimulator(
     model, parameter_values=parameter_values, f_eval=f_eval
 ).simulate()
 
-# Fitting parameters
-parameters = pybop.Parameters(
-    pybop.Parameter(
-        "Negative electrode active material volume fraction",
-        prior=pybop.Uniform(0.4, 0.75),
-        bounds=[0.375, 0.75],
-    ),
-    pybop.Parameter(
-        "Positive electrode active material volume fraction",
-        prior=pybop.Uniform(0.4, 0.75),
-        bounds=[0.375, 0.75],
-    ),
-)
-
 
 def noisy(data, sigma):
     # Generate real part noise
@@ -61,12 +47,25 @@ dataset = pybop.Dataset(
     domain="Frequency [Hz]",
 )
 
+# Fitting parameters
+parameter_values.update(
+    {
+        "Negative electrode active material volume fraction": pybop.Parameter(
+            "Negative electrode active material volume fraction",
+            prior=pybop.Uniform(0.4, 0.75),
+            bounds=[0.375, 0.75],
+        ),
+        "Positive electrode active material volume fraction": pybop.Parameter(
+            "Positive electrode active material volume fraction",
+            prior=pybop.Uniform(0.4, 0.75),
+            bounds=[0.375, 0.75],
+        ),
+    }
+)
+
 # Build the problem
 simulator = pybop.pybamm.EISSimulator(
-    model,
-    parameter_values=parameter_values,
-    parameters=parameters,
-    f_eval=dataset["Frequency [Hz]"],
+    model, parameter_values=parameter_values, f_eval=dataset["Frequency [Hz]"]
 )
 cost = pybop.GaussianLogLikelihoodKnownSigma(dataset, target="Impedance", sigma0=sigma0)
 problem = pybop.Problem(simulator, cost)

@@ -19,20 +19,6 @@ parameter_values.update(
 )
 parameter_values.set_initial_state(0.5)
 
-# Fitting parameters
-parameters = pybop.Parameters(
-    pybop.Parameter(
-        "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.68, 0.02),
-        transformation=pybop.LogTransformation(),
-    ),
-    pybop.Parameter(
-        "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.65, 0.02),
-        transformation=pybop.LogTransformation(),
-    ),
-)
-
 # Generate a synthetic dataset
 sigma = 0.005
 experiment = pybamm.Experiment(["Discharge at 0.5C for 3 minutes (5 second period)"])
@@ -54,15 +40,28 @@ dataset = pybop.Dataset(
     }
 )
 
+# Fitting parameters
+parameter_values.update(
+    {
+        "Negative electrode active material volume fraction": pybop.Parameter(
+            "Negative electrode active material volume fraction",
+            prior=pybop.Gaussian(0.68, 0.02),
+            transformation=pybop.LogTransformation(),
+        ),
+        "Positive electrode active material volume fraction": pybop.Parameter(
+            "Positive electrode active material volume fraction",
+            prior=pybop.Gaussian(0.65, 0.02),
+            transformation=pybop.LogTransformation(),
+        ),
+    }
+)
+
 # Define model (and use existing parameter values)
 model = pybamm.lithium_ion.SPM()
 
 # Build the problem
 simulator = pybop.pybamm.Simulator(
-    model,
-    parameter_values=parameter_values,
-    parameters=parameters,
-    protocol=dataset,
+    model, parameter_values=parameter_values, protocol=dataset
 )
 likelihood = pybop.GaussianLogLikelihood(dataset)
 posterior = pybop.LogPosterior(likelihood)

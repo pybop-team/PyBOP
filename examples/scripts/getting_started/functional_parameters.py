@@ -44,18 +44,6 @@ parameter_values["Positive electrode exchange-current density [A.m-2]"] = (
     positive_electrode_exchange_current_density
 )
 
-# Fitting parameters
-parameters = pybop.Parameters(
-    pybop.Parameter(
-        "Positive electrode reference exchange-current density [A.m-2]",
-        prior=pybop.Gaussian(1, 0.1),
-    ),
-    pybop.Parameter(
-        "Positive electrode charge transfer coefficient",
-        prior=pybop.Gaussian(0.5, 0.1),
-    ),
-)
-
 # Generate a synthetic dataset
 sigma = 0.001
 t_eval = np.arange(0, 900, 3)
@@ -69,12 +57,23 @@ dataset = pybop.Dataset(
     }
 )
 
+# Fitting parameters
+parameter_values.update(
+    {
+        "Positive electrode reference exchange-current density [A.m-2]": pybop.Parameter(
+            "Positive electrode reference exchange-current density [A.m-2]",
+            prior=pybop.Gaussian(1, 0.1),
+        ),
+        "Positive electrode charge transfer coefficient": pybop.Parameter(
+            "Positive electrode charge transfer coefficient",
+            prior=pybop.Gaussian(0.5, 0.1),
+        ),
+    }
+)
+
 # Build the problem
 simulator = pybop.pybamm.Simulator(
-    model,
-    parameter_values=parameter_values,
-    parameters=parameters,
-    protocol=dataset,
+    model, parameter_values=parameter_values, protocol=dataset
 )
 cost = pybop.RootMeanSquaredError(dataset)
 problem = pybop.Problem(simulator, cost)

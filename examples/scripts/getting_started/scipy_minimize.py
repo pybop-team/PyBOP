@@ -7,20 +7,6 @@ import pybop
 model = pybamm.lithium_ion.SPM()
 parameter_values = pybamm.ParameterValues("Chen2020")
 
-# Fitting parameters
-parameters = pybop.Parameters(
-    pybop.Parameter(
-        "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.6, 0.05),
-        bounds=[0.5, 0.8],
-    ),
-    pybop.Parameter(
-        "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.48, 0.05),
-        bounds=[0.4, 0.7],
-    ),
-)
-
 # Generate a synthetic dataset
 sigma = 2e-3
 t_eval = np.linspace(0, 500, 240)
@@ -33,13 +19,33 @@ dataset = pybop.Dataset(
         "Current function [A]": sol["Current [A]"](t_eval),
     }
 )
+true_values = [
+    parameter_values[p]
+    for p in [
+        "Negative electrode active material volume fraction",
+        "Positive electrode active material volume fraction",
+    ]
+]
+
+# Fitting parameters
+parameter_values.update(
+    {
+        "Negative electrode active material volume fraction": pybop.Parameter(
+            "Negative electrode active material volume fraction",
+            prior=pybop.Gaussian(0.6, 0.05),
+            bounds=[0.5, 0.8],
+        ),
+        "Positive electrode active material volume fraction": pybop.Parameter(
+            "Positive electrode active material volume fraction",
+            prior=pybop.Gaussian(0.48, 0.05),
+            bounds=[0.4, 0.7],
+        ),
+    }
+)
 
 # Build the problem
 simulator = pybop.pybamm.Simulator(
-    model,
-    parameter_values=parameter_values,
-    parameters=parameters,
-    protocol=dataset,
+    model, parameter_values=parameter_values, protocol=dataset
 )
 cost = pybop.SumSquaredError(dataset)
 problem = pybop.Problem(simulator, cost)
@@ -52,7 +58,7 @@ optim = pybop.SciPyMinimize(problem, options=options)
 
 # Run the optimisation
 result = optim.run()
-print("True values:", [parameter_values[p] for p in parameters.keys()])
+print("True values:", true_values)
 
 # Plot the timeseries output
 pybop.plot.problem(problem, problem_inputs=result.x, title="Optimised Comparison")

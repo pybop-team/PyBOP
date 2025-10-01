@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from pybop.parameters.parameter import Inputs
 from pybop._dataset import Dataset
 from pybop._utils import FailedSolution, RecommendedSolver
-from pybop.parameters.parameter import Parameters
+from pybop.parameters.parameter import Parameter, Parameters
 from pybop.pybamm.parameter_utils import set_formation_concentrations
 from pybop.simulators.base_simulator import BaseSimulator
 
@@ -33,8 +33,6 @@ class Simulator(BaseSimulator):
         The PyBaMM model to be used.
     parameter_values : pybamm.ParameterValues, optional
         The parameter values to be used in the model.
-    parameters : pybop.Parameters, optional
-        The input parameters.
     initial_state : dict, optional
         A valid initial state, e.g. `"Initial open-circuit voltage [V]"` or ``"Initial SoC"`.
         Defaults to None, indicating that the existing initial state of charge (for an ECM)
@@ -69,7 +67,6 @@ class Simulator(BaseSimulator):
         self,
         model: pybamm.BaseModel,
         parameter_values: pybamm.ParameterValues | None = None,
-        parameters: Parameters | None = None,
         initial_state: dict | None = None,
         protocol: pybamm.Experiment | Dataset | np.ndarray | None = None,
         solver: pybamm.BaseSolver | None = None,
@@ -82,7 +79,6 @@ class Simulator(BaseSimulator):
         build_every_time: bool = False,
         use_formation_concentrations: bool = False,
     ):
-        super().__init__(parameters=parameters)
         # Core
         self._model = model
         self._parameter_values = (
@@ -92,6 +88,13 @@ class Simulator(BaseSimulator):
         )
         self._output_variables = output_variables
         self.use_formation_concentrations = use_formation_concentrations
+
+        # Unpack the uncertain parameters from the parameter values
+        parameters = Parameters()
+        for param in parameter_values.values():
+            if isinstance(param, Parameter):
+                parameters.add(param)
+        super().__init__(parameters=parameters)
 
         # Simulation params
         self._initial_state = self.convert_to_pybamm_initial_state(initial_state)

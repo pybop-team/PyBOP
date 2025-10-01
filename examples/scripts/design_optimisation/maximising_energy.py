@@ -43,17 +43,19 @@ parameter_values.update(
 )
 
 # Fitting parameters
-parameters = pybop.Parameters(
-    pybop.Parameter(
-        "Positive electrode thickness [m]",
-        prior=pybop.Gaussian(7.56e-05, 0.1e-05),
-        bounds=[65e-06, 10e-05],
-    ),
-    pybop.Parameter(
-        "Positive particle radius [m]",
-        prior=pybop.Gaussian(5.22e-06, 0.1e-06),
-        bounds=[2e-06, 9e-06],
-    ),
+parameter_values.update(
+    {
+        "Positive electrode thickness [m]": pybop.Parameter(
+            "Positive electrode thickness [m]",
+            prior=pybop.Gaussian(7.56e-05, 0.1e-05),
+            bounds=[65e-06, 10e-05],
+        ),
+        "Positive particle radius [m]": pybop.Parameter(
+            "Positive particle radius [m]",
+            prior=pybop.Gaussian(5.22e-06, 0.1e-06),
+            bounds=[2e-06, 9e-06],
+        ),
+    }
 )
 
 # Define test protocol
@@ -68,7 +70,6 @@ experiment = pybamm.Experiment(
 simulator = pybop.pybamm.Simulator(
     model,
     parameter_values=parameter_values,
-    parameters=parameters,
     protocol=experiment,
     initial_state={"Initial SoC": 1.0},
     use_formation_concentrations=True,
