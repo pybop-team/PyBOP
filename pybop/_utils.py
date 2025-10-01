@@ -94,11 +94,11 @@ class FailedSolution:
         inf_array = np.asarray([np.inf])
 
         for var_name in self._variable_names:
-            sensitivities = (
-                {"all": [inf_array.copy() for _ in self._parameter_names]}
-                if self._parameter_names
-                else {}
-            )
+            if self._parameter_names:
+                sensitivities = {p: inf_array.copy() for p in self._parameter_names}
+                sensitivities["all"] = [inf_array.copy() for _ in self._parameter_names]
+            else:
+                sensitivities = {}
 
             self._variables[var_name] = FailedVariable(
                 name=var_name, data=inf_array.copy(), sensitivities=sensitivities
