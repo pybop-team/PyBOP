@@ -13,7 +13,7 @@ from pybop._logging import Logger
 from pybop.optimisers._adamw import AdamWImpl
 from pybop.optimisers._gradient_descent import GradientDescentImpl
 from pybop.optimisers.base_optimiser import BaseOptimiser, OptimiserOptions
-from pybop.problems.base_problem import Problem
+from pybop.problems.problem import Problem
 
 
 @dataclass

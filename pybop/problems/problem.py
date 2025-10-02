@@ -13,9 +13,9 @@ class Problem:
 
     Parameters
     ----------
-    simulator : pybop.pybamm.Simulator or pybop.pybamm.EISSimulator
+    simulator : pybop.BaseSimulator
         The model, protocol and optional dataset combined into a simulator object.
-    parameters : pybop.Parameter or pybop.Parameters
+    parameters : list[pybop.Parameter] or pybop.Parameters
         An object or list of the parameters for the problem.
     cost : pybop.BaseCost, optional
         An cost e.g. an error measure, a log-likelihood or a design cost.

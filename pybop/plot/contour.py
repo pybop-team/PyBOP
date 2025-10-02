@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from pybop.plot.plotly_manager import PlotlyManager
-from pybop.problems.base_problem import Problem
+from pybop.problems.problem import Problem
 
 if TYPE_CHECKING:
     from pybop._result import OptimisationResult

@@ -33,7 +33,7 @@ class BaseSimulator:
         self.parameters = parameters
 
     def set_output_variables(self, target: list[str]):
-        pass
+        return NotImplementedError
 
     def simulate(
         self,

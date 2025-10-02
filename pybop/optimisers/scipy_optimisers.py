@@ -13,7 +13,7 @@ from pybop import (
     ScalarEvaluator,
 )
 from pybop._logging import Logger
-from pybop.problems.base_problem import Problem
+from pybop.problems.problem import Problem
 
 __all__: list[str] = [
     "SciPyMinimize",

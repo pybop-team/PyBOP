@@ -12,7 +12,7 @@ from pybop import (
     SingleChainProcessor,
 )
 from pybop._logging import Logger
-from pybop.problems.base_problem import Problem
+from pybop.problems.problem import Problem
 from pybop.samplers.base_sampler import SamplerOptions
 
 

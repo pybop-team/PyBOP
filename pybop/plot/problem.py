@@ -5,9 +5,15 @@ from pybop.costs.error_measures import ErrorMeasure
 from pybop.parameters.parameter import Inputs
 from pybop.plot.standard_plots import StandardPlot
 from pybop.problems.meta_problem import MetaProblem
+from pybop.problems.problem import Problem
 
 
-def problem(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
+def problem(
+    problem: Problem,
+    problem_inputs: Inputs = None,
+    show: bool = True,
+    **layout_kwargs,
+):
     """
     Produce a quick plot of the target dataset against optimised model output.
 

@@ -18,7 +18,7 @@ from pints import SliceRankShrinkingMCMC as PintsSliceRankShrinkingMCMC
 from pints import SliceStepoutMCMC as PintsSliceStepoutMCMC
 
 from pybop import BasePintsSampler, PintsSamplerOptions
-from pybop.problems.base_problem import Problem
+from pybop.problems.problem import Problem
 
 __all__: list[str] = [
     "NUTS",
