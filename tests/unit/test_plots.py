@@ -129,7 +129,7 @@ class TestPlots:
         bounds = np.asarray([[0.5, 0.8], [0.4, 0.7]])
 
         # Plot convergence
-        result.plot_parameters()
+        result.plot_convergence()
 
         # Plot the parameter traces
         result.plot_parameters()
@@ -188,7 +188,7 @@ class TestPlots:
         assert version.parse(ipykernel.__version__) >= version.parse("0.6")
         pybop.plot.dataset(dataset, signal=["Voltage [V]"])
         pybop.plot.contour(fitting_problem, gradient=True, steps=5)
-        result.plot_parameters()
+        result.plot_convergence()
         result.plot_parameters()
         result.plot_contour(steps=5)
 
