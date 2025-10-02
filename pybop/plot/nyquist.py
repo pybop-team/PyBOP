@@ -9,7 +9,7 @@ def nyquist(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
     Parameters
     ----------
     problem : pybop.Problem
-        An instance of a problem class (e.g., `pybop.EISProblem`) that contains the parameters and methods
+        An instance of a problem class that contains the parameters and methods
         for evaluation and target retrieval.
     problem_inputs : Inputs, optional
         Input parameters for the problem. If not provided, the default parameters from the problem

@@ -4,7 +4,7 @@ from SALib.sample.sobol import sample
 
 
 def sensitivity_analysis(
-    problem, n_samples: int = 256, calc_second_order: bool = False
+    problem: pybop.Problem, n_samples: int = 256, calc_second_order: bool = False
 ) -> dict:
     """
     Computes the parameter sensitivities on the combined cost function using

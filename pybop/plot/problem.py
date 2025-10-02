@@ -7,7 +7,7 @@ from pybop.plot.standard_plots import StandardPlot
 from pybop.problems.meta_problem import MetaProblem
 
 
-def problem(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
+def problem(problem: pybop.Problem, problem_inputs: Inputs = None, show: bool =True, **layout_kwargs):
     """
     Produce a quick plot of the target dataset against optimised model output.
 
