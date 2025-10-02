@@ -15,7 +15,7 @@ parameter_values.update(
         "Positive electrode active material volume fraction": 0.732,
     }
 )
-parameter_values.set_initial_state = 0.5
+parameter_values.set_initial_state(0.5)
 n_frequency = 20
 sigma0 = 1e-4
 f_eval = np.logspace(-4, 5, n_frequency)
