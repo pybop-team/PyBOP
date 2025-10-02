@@ -170,13 +170,16 @@ class TestProblem:
         np.testing.assert_allclose(out, 0.1 * out1 + out2)
 
     def test_design_problem(self, parameters, experiment, model):
+        parameter_values = model.default_parameter_values
+        pybop.pybamm.set_formation_concentrations(parameter_values)
+
         # Construct Problem
         simulator = pybop.pybamm.Simulator(
             model,
+            parameter_values=parameter_values,
             parameters=parameters,
             protocol=experiment,
             initial_state={"Initial SoC": 0.7},
-            use_formation_concentrations=True,
         )
         problem = pybop.Problem(simulator)
 

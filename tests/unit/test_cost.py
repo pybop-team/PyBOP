@@ -266,6 +266,7 @@ class TestCosts:
         )
 
         parameter_values = pybamm.ParameterValues("Chen2020")
+        pybop.pybamm.set_formation_concentrations(parameter_values)
         parameter_values.update(
             {
                 "Electrolyte density [kg.m-3]": pybamm.Parameter(
@@ -295,7 +296,6 @@ class TestCosts:
             parameters=parameters,
             protocol=experiment,
             initial_state={"Initial SoC": 0.5},
-            use_formation_concentrations=True,
         )
 
     @pytest.mark.parametrize(

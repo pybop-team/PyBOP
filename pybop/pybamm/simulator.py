@@ -11,7 +11,6 @@ if TYPE_CHECKING:
 from pybop._dataset import Dataset
 from pybop._utils import FailedSolution, RecommendedSolver
 from pybop.parameters.parameter import Parameter, Parameters
-from pybop.pybamm.parameter_utils import set_formation_concentrations
 from pybop.simulators.base_simulator import BaseSimulator
 
 
@@ -57,10 +56,6 @@ class Simulator(BaseSimulator):
     build_every_time : bool, optional
         If True, the model will be rebuilt every evaluation. Otherwise, the need to rebuild will be
         determined automatically.
-    use_formation_concentrations : bool, optional
-        If True and "Initial concentration in negative electrode [mol.m-3]" is in the parameter set,
-        the total quantity of lithium will be moved to the positive electrode prior to applying any
-        inputs or initial state (default: False).
     """
 
     def __init__(
@@ -77,7 +72,6 @@ class Simulator(BaseSimulator):
         spatial_methods: dict | None = None,
         discretisation_kwargs: dict | None = None,
         build_every_time: bool = False,
-        use_formation_concentrations: bool = False,
     ):
         # Core
         self._model = model
@@ -87,7 +81,6 @@ class Simulator(BaseSimulator):
             else model.default_parameter_values
         )
         self._output_variables = output_variables
-        self.use_formation_concentrations = use_formation_concentrations
 
         # Unpack the uncertain parameters from the parameter values
         parameters = Parameters()
@@ -202,10 +195,6 @@ class Simulator(BaseSimulator):
 
         # All non-experiment protocols with an initial state require model rebuilding
         if self._experiment is None and self._initial_state is not None:
-            return True
-
-        # All protocols which require resetting to formation conditions require rebuiding
-        if self.use_formation_concentrations:
             return True
 
         # Test whether the model needs rebuilding by marking parameters as inputs
@@ -394,8 +383,6 @@ class Simulator(BaseSimulator):
             return
 
         # Update the parameter values and build again
-        if self.use_formation_concentrations:
-            set_formation_concentrations(self._parameter_values)
         self._parameter_values.update(inputs)
         self.build_model()
 
@@ -488,8 +475,6 @@ class Simulator(BaseSimulator):
         solutions = []
         for x in inputs:
             # Update parameters and create new simulation
-            if self.use_formation_concentrations:
-                set_formation_concentrations(self._parameter_values)
             self._parameter_values.update(x)
             sim = self._create_experiment_simulation()
             solutions.append(sim.solve(initial_soc=self._initial_state))

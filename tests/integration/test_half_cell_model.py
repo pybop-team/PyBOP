@@ -113,6 +113,7 @@ class TestHalfCellModel:
 
     @pytest.fixture
     def design_problem(self, model, parameter_values):
+        pybop.pybamm.set_formation_concentrations(parameter_values)
         initial_state = {"Initial SoC": 1.0}
         parameters = pybop.Parameters(
             pybop.Parameter(
@@ -130,7 +131,6 @@ class TestHalfCellModel:
             parameters=parameters,
             protocol=experiment,
             initial_state=initial_state,
-            use_formation_concentrations=True,
         )
         cost = pybop.DesignCost(target="Gravimetric energy density [Wh.kg-1]")
         return pybop.Problem(simulator, cost)

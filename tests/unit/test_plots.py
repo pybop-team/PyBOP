@@ -85,11 +85,13 @@ class TestPlots:
 
     @pytest.fixture
     def design_problem(self, model, parameters, experiment):
+        parameter_values = model.default_parameter_values
+        pybop.pybamm.set_formation_concentrations(parameter_values)
         simulator = pybop.pybamm.Simulator(
             model,
+            parameter_values=parameter_values,
             parameters=parameters,
             protocol=experiment,
-            use_formation_concentrations=True,
         )
         return pybop.Problem(simulator)
 

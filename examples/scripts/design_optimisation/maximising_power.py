@@ -2,7 +2,6 @@ import pybamm
 from pybamm import Parameter
 
 import pybop
-from pybop.pybamm.parameter_utils import set_formation_concentrations
 
 # Define model
 model = pybamm.lithium_ion.SPMe()
@@ -18,7 +17,7 @@ pybop.pybamm.add_variable_to_model(
 
 # Define parameter set and additional parameters needed for the cost function
 parameter_values = pybamm.ParameterValues("Chen2020")
-set_formation_concentrations(parameter_values)
+pybop.pybamm.set_formation_concentrations(parameter_values)
 parameter_values.update(
     {
         "Electrolyte density [kg.m-3]": Parameter("Separator density [kg.m-3]"),
@@ -70,7 +69,6 @@ simulator = pybop.pybamm.Simulator(
     parameter_values,
     protocol=experiment,
     initial_state={"Initial SoC": 1.0},
-    use_formation_concentrations=True,
 )
 cost_1 = pybop.DesignCost(target="Gravimetric power density [W.kg-1]")
 problem_1 = pybop.Problem(simulator, cost_1)

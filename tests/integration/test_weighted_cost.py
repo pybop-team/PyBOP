@@ -144,6 +144,7 @@ class TestWeightedCost:
 
     @pytest.fixture
     def weighted_design_cost(self, model, parameter_values, design_targets):
+        pybop.pybamm.set_formation_concentrations(parameter_values)
         initial_state = {"Initial SoC": 1.0}
         parameters = pybop.Parameters(
             pybop.Parameter(
@@ -166,7 +167,6 @@ class TestWeightedCost:
             parameters=parameters,
             protocol=experiment,
             initial_state=initial_state,
-            use_formation_concentrations=True,
         )
         costs = [pybop.DesignCost(target=target) for target in design_targets]
         cost = pybop.WeightedCost(*costs, weights=[1.0, 0.1])
