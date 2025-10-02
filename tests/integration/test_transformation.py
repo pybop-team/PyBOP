@@ -63,20 +63,20 @@ class TestTransformation:
 
     @pytest.fixture
     def parameters(self, transformation_r0, transformation_r1):
-        return pybop.Parameters(
-            pybop.Parameter(
+        return {
+            "R0 [Ohm]": pybop.Parameter(
                 "R0 [Ohm]",
                 prior=pybop.Gaussian(0.05, 0.02),
                 bounds=[1e-4, 0.1],
                 transformation=transformation_r0,
             ),
-            pybop.Parameter(
+            "R1 [Ohm]": pybop.Parameter(
                 "R1 [Ohm]",
                 prior=pybop.Gaussian(0.05, 0.02),
                 bounds=[1e-4, 0.1],
                 transformation=transformation_r1,
             ),
-        )
+        }
 
     def noisy(self, data, sigma):
         return data + np.random.normal(0, sigma, len(data))
@@ -96,11 +96,10 @@ class TestTransformation:
     def problem(self, model, parameter_values, parameters, cost_class):
         parameter_values.set_initial_state(0.6)
         dataset = self.get_data(model, parameter_values)
+
+        parameter_values.update(parameters)
         simulator = pybop.pybamm.Simulator(
-            model,
-            parameter_values=parameter_values,
-            parameters=parameters,
-            protocol=dataset,
+            model, parameter_values=parameter_values, protocol=dataset
         )
 
         # Construct the cost

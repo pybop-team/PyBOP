@@ -24,18 +24,18 @@ class TestClassification:
     )
     def parameters(self, request):
         self.ground_truth = request.param
-        return pybop.Parameters(
-            pybop.Parameter(
+        return {
+            "R0 [Ohm]": pybop.Parameter(
                 "R0 [Ohm]",
                 prior=pybop.Gaussian(0.05, 0.01),
                 bounds=[0.02, 0.08],
             ),
-            pybop.Parameter(
+            "R1 [Ohm]": pybop.Parameter(
                 "R1 [Ohm]",
                 prior=pybop.Gaussian(0.05, 0.01),
                 bounds=[0.02, 0.08],
             ),
-        )
+        }
 
     @pytest.fixture
     def model(self):
@@ -54,7 +54,9 @@ class TestClassification:
             check_already_exists=False,
         )
         parameter_values.update({"C1 [F]": 1000})
-        parameter_values.update(parameters.to_dict(self.ground_truth))
+        parameter_values.update(
+            {"R0 [Ohm]": self.ground_truth[0], "R1 [Ohm]": self.ground_truth[1]}
+        )
         return parameter_values
 
     @pytest.fixture
@@ -78,11 +80,9 @@ class TestClassification:
 
     @pytest.fixture
     def simulator(self, model, parameter_values, parameters, dataset):
+        parameter_values.update(parameters)
         return pybop.pybamm.Simulator(
-            model,
-            parameter_values=parameter_values,
-            parameters=parameters,
-            protocol=dataset,
+            model, parameter_values=parameter_values, protocol=dataset
         )
 
     def test_classify_using_hessian(self, simulator, dataset):
@@ -155,12 +155,9 @@ class TestClassification:
             }
         )
 
-        parameters = pybop.Parameters(param_R0_a, param_R0_b)
+        parameter_values.update({"R0_a [Ohm]": param_R0_a, "R0_b [Ohm]": param_R0_b})
         simulator = pybop.pybamm.Simulator(
-            model,
-            parameter_values=parameter_values,
-            parameters=parameters,
-            protocol=dataset,
+            model, parameter_values=parameter_values, protocol=dataset
         )
         cost = pybop.SumOfPower(dataset, p=1)
         problem = pybop.Problem(simulator, cost)

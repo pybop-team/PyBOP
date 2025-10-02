@@ -49,20 +49,20 @@ class Test_Sampling_SPM:
 
     @pytest.fixture
     def parameters(self):
-        return pybop.Parameters(
-            pybop.Parameter(
+        return {
+            "Negative electrode active material volume fraction": pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.575, 0.05),
                 initial_value=pybop.Uniform(0.4, 0.7).rvs()[0],
                 bounds=[0.375, 0.725],
             ),
-            pybop.Parameter(
+            "Positive electrode active material volume fraction": pybop.Parameter(
                 "Positive electrode active material volume fraction",
                 prior=pybop.Gaussian(0.525, 0.05),
                 initial_value=pybop.Uniform(0.4, 0.7).rvs()[0],
                 # no bounds
             ),
-        )
+        }
 
     @pytest.fixture(params=[0.5])
     def init_soc(self, request):
@@ -78,11 +78,9 @@ class Test_Sampling_SPM:
         dataset = self.get_data(model, parameter_values)
 
         # Define the posterior to optimise
+        parameter_values.update(parameters)
         simulator = pybop.pybamm.Simulator(
-            model,
-            parameter_values=parameter_values,
-            parameters=parameters,
-            protocol=dataset,
+            model, parameter_values=parameter_values, protocol=dataset
         )
         likelihood = pybop.GaussianLogLikelihood(dataset, sigma0=0.002 * 1.2)
         posterior = pybop.LogPosterior(likelihood)
