@@ -5,10 +5,11 @@ from pybop.costs.error_measures import ErrorMeasure
 from pybop.parameters.parameter import Inputs
 from pybop.plot.standard_plots import StandardPlot
 from pybop.problems.meta_problem import MetaProblem
+from pybop.problems.problem import Problem
 
 
 def problem(
-    problem: pybop.Problem,
+    problem: Problem,
     problem_inputs: Inputs = None,
     show: bool = True,
     **layout_kwargs,

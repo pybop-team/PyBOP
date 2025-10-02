@@ -2,7 +2,7 @@ import numpy as np
 from pints import Evaluator as PintsEvaluator
 
 from pybop._logging import Logger
-from pybop.problems.base_problem import Problem
+from pybop.problems.problem import Problem
 
 
 class BaseEvaluator(PintsEvaluator):

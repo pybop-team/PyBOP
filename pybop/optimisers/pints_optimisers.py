@@ -13,7 +13,7 @@ from pybop.optimisers._irprop_plus import IRPropPlusImpl
 from pybop.optimisers._random_search import RandomSearchImpl
 from pybop.optimisers._simulated_annealing import SimulatedAnnealingImpl
 from pybop.optimisers.base_pints_optimiser import BasePintsOptimiser
-from pybop.problems.base_problem import Problem
+from pybop.problems.problem import Problem
 
 __all__: list[str] = [
     "GradientDescent",

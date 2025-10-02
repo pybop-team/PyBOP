@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from pybop._logging import Logger
 from pybop._result import OptimisationResult
-from pybop.problems.base_problem import Problem
+from pybop.problems.problem import Problem
 
 
 @dataclass

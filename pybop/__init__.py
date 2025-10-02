@@ -82,7 +82,7 @@ from . import pybamm
 #
 # Problem classes
 #
-from .problems.base_problem import Problem
+from .problems.problem import Problem
 from .problems.meta_problem import MetaProblem
 
 #

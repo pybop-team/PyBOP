@@ -1,10 +1,15 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
 from SALib.analyze import sobol
 from SALib.sample.sobol import sample
 
+if TYPE_CHECKING:
+    from pybop.problems.problem import Problem
+
 
 def sensitivity_analysis(
-    problem: pybop.Problem, n_samples: int = 256, calc_second_order: bool = False
+    problem: "Problem", n_samples: int = 256, calc_second_order: bool = False
 ) -> dict:
     """
     Computes the parameter sensitivities on the combined cost function using

@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from pybop.problems.base_problem import Problem
+from pybop.problems.problem import Problem
 
 
 @dataclass
