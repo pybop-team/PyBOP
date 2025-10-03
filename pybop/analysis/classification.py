@@ -13,7 +13,7 @@ def classify_using_hessian(
     of the Hessian matrix at the optimal point using central finite differences.
 
     Parameters
-    ---------
+    ----------
     result : OptimisationResult
         The optimisation result.
     dx : array-like, optional
@@ -30,7 +30,7 @@ def classify_using_hessian(
     minimising = result.minimising
 
     def cost(x):
-        return problem.__call__(x)
+        return problem.evaluate(x)
 
     n = len(x)
     if n != 2 or len(dx) != n:

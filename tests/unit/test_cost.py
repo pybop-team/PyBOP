@@ -100,11 +100,11 @@ class TestCosts:
         )
 
         # Test type of returned value
-        assert np.isscalar(problem([0.5]))
-        assert np.isscalar(problem(parameters.to_dict()))
+        assert np.isscalar(problem.evaluate([0.5]))
+        assert np.isscalar(problem.evaluate(parameters.to_dict()))
 
         if isinstance(cost, pybop.MeanAbsoluteError):
-            assert problem([0.5]) >= 0
+            assert problem.evaluate([0.5]) >= 0
 
             # Test option setting
             problem._cost.set_fail_gradient(10)
@@ -130,13 +130,13 @@ class TestCosts:
         problem = pybop.Problem(simulator, cost)
 
         # Test cost direction
-        higher_cost = problem([0.55])
-        lower_cost = problem([0.52])
+        higher_cost = problem.evaluate([0.55])
+        lower_cost = problem.evaluate([0.52])
         assert higher_cost > lower_cost or (
             higher_cost == lower_cost and not np.isfinite(higher_cost)
         )
 
-        e, de = problem([0.5], calculate_grad=True)
+        e, de = problem.evaluate([0.5], calculate_sensitivities=True)
 
         assert np.isscalar(e)
         assert isinstance(de, np.ndarray)
@@ -208,19 +208,19 @@ class TestCosts:
         cost = cost_class(dataset, weighting=1.0)
         problem = pybop.Problem(simulator, cost)
         x = [0.5]
-        e, de = problem(x, calculate_grad=True)
+        e, de = problem.evaluate(x, calculate_sensitivities=True)
 
         # Test that the equal weighting is the same as weighting by one
         costE = cost_class(dataset, weighting="equal")
         problemE = pybop.Problem(simulator, costE)
-        eE, deE = problemE(x, calculate_grad=True)
+        eE, deE = problemE.evaluate(x, calculate_sensitivities=True)
         np.testing.assert_allclose(e, eE)
         np.testing.assert_allclose(de, deE)
 
         # Test that domain-based weighting also matches for evenly spaced data
         costD = cost_class(dataset, weighting="domain")
         problemD = pybop.Problem(simulator, costD)
-        eD, deD = problemD(x, calculate_grad=True)
+        eD, deD = problemD.evaluate(x, calculate_sensitivities=True)
         np.testing.assert_allclose(e, eD)
         np.testing.assert_allclose(de, deD)
 
@@ -233,7 +233,7 @@ class TestCosts:
         )
         costR = cost_class(randomly_spaced_dataset, weighting="domain")
         problemR = pybop.Problem(simulator, costR)
-        eR, deR = problemR(x, calculate_grad=True)
+        eR, deR = problemR.evaluate(x, calculate_sensitivities=True)
         np.testing.assert_allclose(e, eR, rtol=1e-2, atol=1e-9)
         np.testing.assert_allclose(de, deR, rtol=1e-2, atol=1e-9)
 
@@ -245,8 +245,8 @@ class TestCosts:
 
         # Check gradient calculation using finite difference
         delta = 1e-6 * x[0]
-        cost_right = problemR([x[0] + delta / 2])
-        cost_left = problemR([x[0] - delta / 2])
+        cost_right = problemR.evaluate([x[0] + delta / 2])
+        cost_left = problemR.evaluate([x[0] - delta / 2])
         numerical_grad = (cost_right - cost_left) / delta
         np.testing.assert_allclose(deR, numerical_grad, rtol=6e-3)
 
@@ -312,13 +312,15 @@ class TestCosts:
         design_problem = pybop.Problem(design_simulator, cost)
 
         # Test type of returned value
-        assert np.isscalar(design_problem([0.5]))
-        assert design_problem([0.4]) >= 0  # Should be a viable design
+        assert np.isscalar(design_problem.evaluate([0.5]))
+        assert design_problem.evaluate([0.4]) >= 0  # Should be a viable design
         assert (
-            design_problem([0.8]) == -np.inf
+            design_problem.evaluate([0.8]) == -np.inf
         )  # Should exceed active material + porosity < 1
-        assert design_problem([1.4]) == -np.inf  # Definitely not viable
-        assert design_problem([-0.1]) == -np.inf  # Should not be a viable design
+        assert design_problem.evaluate([1.4]) == -np.inf  # Definitely not viable
+        assert (
+            design_problem.evaluate([-0.1]) == -np.inf
+        )  # Should not be a viable design
 
     @pytest.fixture
     def noisy_problem(self, ground_truth, parameters, experiment):
@@ -379,10 +381,10 @@ class TestCosts:
         problem_1 = pybop.Problem(simulator, cost1)
         problem_2 = pybop.Problem(simulator, cost2)
         weighted_2 = pybop.Problem(simulator, weighted_cost_2)
-        assert weighted_2([0.5]) >= 0
+        assert weighted_2.evaluate([0.5]) >= 0
         np.testing.assert_allclose(
-            weighted_2([0.6]),
-            problem_1([0.6]) + weight * problem_2([0.6]),
+            weighted_2.evaluate([0.6]),
+            problem_1.evaluate([0.6]) + weight * problem_2.evaluate([0.6]),
             atol=1e-5,
         )
 
@@ -391,15 +393,19 @@ class TestCosts:
         weighted_cost_3 = pybop.WeightedCost(cost1, cost3, weights=[1, weight])
         problem_3 = pybop.Problem(simulator, cost3)
         weighted_3 = pybop.Problem(simulator, weighted_cost_3)
-        assert weighted_3([0.5]) >= 0
+        assert weighted_3.evaluate([0.5]) >= 0
         np.testing.assert_allclose(
-            weighted_3([0.6]),
-            problem_1([0.6]) + weight * problem_3([0.6]),
+            weighted_3.evaluate([0.6]),
+            problem_1.evaluate([0.6]) + weight * problem_3.evaluate([0.6]),
             atol=1e-5,
         )
 
-        errors_2, sensitivities_2 = weighted_2([0.5], calculate_grad=True)
-        errors_3, sensitivities_3 = weighted_3([0.5], calculate_grad=True)
+        errors_2, sensitivities_2 = weighted_2.evaluate(
+            [0.5], calculate_sensitivities=True
+        )
+        errors_3, sensitivities_3 = weighted_3.evaluate(
+            [0.5], calculate_sensitivities=True
+        )
         np.testing.assert_allclose(errors_2, errors_3, atol=1e-5)
         np.testing.assert_allclose(sensitivities_2, sensitivities_3, atol=1e-5)
 
@@ -410,16 +416,16 @@ class TestCosts:
         weighted_4 = pybop.Problem(simulator, weighted_cost_4)
         sigma = 0.01
         assert np.isfinite(cost4.parameters["Sigma for output 1"].prior.logpdf(sigma))
-        assert np.isfinite(weighted_4([0.5, sigma]))
+        assert np.isfinite(weighted_4.evaluate([0.5, sigma]))
         np.testing.assert_allclose(
-            weighted_4([0.6, sigma]),
-            problem_1([0.6]) - 1 / weight * problem_4([0.6, sigma]),
+            weighted_4.evaluate([0.6, sigma]),
+            problem_1.evaluate([0.6]) - 1 / weight * problem_4.evaluate([0.6, sigma]),
             atol=1e-5,
         )
-        assert np.isfinite(weighted_4([0.5, sigma]))
+        assert np.isfinite(weighted_4.evaluate([0.5, sigma]))
         np.testing.assert_allclose(
-            weighted_4([0.6, sigma]),
-            problem_1([0.6]) - 1 / weight * problem_4([0.6, sigma]),
+            weighted_4.evaluate([0.6, sigma]),
+            problem_1.evaluate([0.6]) - 1 / weight * problem_4.evaluate([0.6, sigma]),
             atol=1e-5,
         )
 
@@ -431,9 +437,11 @@ class TestCosts:
 
         weighted_cost = pybop.WeightedCost(cost_1, cost_2)
         problem = pybop.Problem(design_simulator, weighted_cost)
-        assert problem([0.5]) >= 0
+        assert problem.evaluate([0.5]) >= 0
         np.testing.assert_allclose(
-            problem([0.6]), problem_1([0.6]) + problem_2([0.6]), atol=1e-5
+            problem.evaluate([0.6]),
+            problem_1.evaluate([0.6]) + problem_2.evaluate([0.6]),
+            atol=1e-5,
         )
 
     def test_mixed_problem_classes(self, dataset, design_simulator):

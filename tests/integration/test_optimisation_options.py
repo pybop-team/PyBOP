@@ -87,7 +87,7 @@ class TestOptimisation:
         )
         optim = pybop.XNES(problem, options=options)
 
-        initial_cost = optim.problem(x0)
+        initial_cost = optim.problem.evaluate(x0)
         results = optim.run()
 
         # Assertions

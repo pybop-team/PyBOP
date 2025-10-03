@@ -98,18 +98,18 @@ class TestEvaluation:
             self.x_search.append(0.002)
 
         # First compute the cost and sensitivities in the model space
-        cost1 = problem.__call__(self.x_model)
-        cost1_ws, grad1_wrt_model_parameters = problem.__call__(
-            self.x_model, calculate_grad=True
+        cost1 = problem.evaluate(self.x_model)
+        cost1_ws, grad1_wrt_model_parameters = problem.evaluate(
+            self.x_model, calculate_sensitivities=True
         )
 
         numerical_grad1 = []
         for i in range(len(self.x_model)):
             delta = 1e-8 * np.abs(self.x_model[i])
             self.x_model[i] += delta / 2
-            cost_right = problem.__call__(self.x_model)
+            cost_right = problem.evaluate(self.x_model)
             self.x_model[i] -= delta
-            cost_left = problem.__call__(self.x_model)
+            cost_left = problem.evaluate(self.x_model)
             self.x_model[i] += delta / 2
             numerical_grad1.append((cost_right - cost_left) / delta)
         numerical_grad1 = np.asarray(numerical_grad1).reshape(-1)

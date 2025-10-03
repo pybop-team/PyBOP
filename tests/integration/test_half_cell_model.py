@@ -103,7 +103,7 @@ class TestHalfCellModel:
         results = optim.run()
 
         # Assertions
-        initial_cost = optim.problem(x0)
+        initial_cost = optim.problem.evaluate(x0)
         if not np.allclose(x0, self.ground_truth, atol=1e-5):
             if results.minimising:
                 assert initial_cost > results.best_cost
@@ -139,7 +139,7 @@ class TestHalfCellModel:
         options = pybop.PintsOptions(max_iterations=15)
         optim = pybop.CuckooSearch(design_problem, options=options)
         initial_values = optim.problem.parameters.get_initial_values()
-        initial_cost = optim.problem(initial_values)
+        initial_cost = optim.problem.evaluate(initial_values)
         results = optim.run()
 
         # Assertions

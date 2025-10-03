@@ -75,8 +75,8 @@ class TestGITTModels:
         self, problem, initial_inputs, example_inputs, tolerance=RELATIVE_TOLERANCE
     ):
         """Reusable assertion for parameter sensitivity."""
-        value1 = problem(initial_inputs)
-        value2 = problem(example_inputs)
+        value1 = problem.evaluate(initial_inputs)
+        value2 = problem.evaluate(example_inputs)
 
         relative_change = abs((value1 - value2) / value1)
         assert relative_change > tolerance, (

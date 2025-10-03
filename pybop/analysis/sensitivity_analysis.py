@@ -45,6 +45,6 @@ def sensitivity_analysis(
 
     # Create samples, compute cost
     param_values = sample(salib_dict, n_samples)
-    costs = np.asarray(problem(param_values))
+    costs = np.asarray(problem.evaluate(param_values))
 
     return sobol.analyze(salib_dict, costs, calc_second_order=calc_second_order)

@@ -93,8 +93,8 @@ class TestGroupedModels:
         self, problem, initial_inputs, example_inputs, tolerance=RELATIVE_TOLERANCE
     ):
         """Reusable assertion for parameter sensitivity."""
-        value1 = problem(initial_inputs)
-        value2 = problem(example_inputs)
+        value1 = problem.evaluate(initial_inputs)
+        value2 = problem.evaluate(example_inputs)
 
         relative_change = abs((value1 - value2) / value1)
         assert relative_change > tolerance, (
@@ -126,8 +126,12 @@ class TestGroupedModels:
         )
 
         # Test sensitivity computation consistency
-        value1_sens, grad1 = problem.single_call(initial_inputs, calculate_grad=True)
-        value2_sens, grad2 = problem.single_call(example_inputs, calculate_grad=True)
+        value1_sens, grad1 = problem.evaluate(
+            initial_inputs, calculate_sensitivities=True
+        )
+        value2_sens, grad2 = problem.evaluate(
+            example_inputs, calculate_sensitivities=True
+        )
 
         # Validate gradient shape and value consistency
         assert grad1.shape == (len(parameters),), (

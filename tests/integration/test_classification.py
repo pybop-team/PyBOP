@@ -94,7 +94,7 @@ class TestClassification:
         optim = pybop.XNES(problem)
         logger = pybop.Logger(minimising=problem.minimising)
         logger.iteration = 1
-        logger.extend_log(x_search=[x0], x_model=[x0], cost=[problem(x0)])
+        logger.extend_log(x_search=[x0], x_model=[x0], cost=[problem.evaluate(x0)])
         results = pybop.OptimisationResult(optim=optim, logger=logger, time=1.0)
 
         if np.all(x == np.asarray([0.05, 0.05])):
@@ -121,7 +121,7 @@ class TestClassification:
             optim = pybop.XNES(problem)
             logger = pybop.Logger(minimising=problem.minimising)
             logger.iteration = 1
-            logger.extend_log(x_search=[x], x_model=[x], cost=[problem(x)])
+            logger.extend_log(x_search=[x], x_model=[x], cost=[problem.evaluate(x)])
             results = pybop.OptimisationResult(optim=optim, logger=logger, time=1.0)
 
             message = pybop.classify_using_hessian(results)
@@ -168,7 +168,7 @@ class TestClassification:
         optim = pybop.XNES(problem)
         logger = pybop.Logger(minimising=problem.minimising)
         logger.iteration = 1
-        logger.extend_log(x_search=[x], x_model=[x], cost=[problem(x)])
+        logger.extend_log(x_search=[x], x_model=[x], cost=[problem.evaluate(x)])
         results = pybop.OptimisationResult(optim=optim, logger=logger, time=1.0)
 
         message = pybop.classify_using_hessian(results)

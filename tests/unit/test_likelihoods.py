@@ -91,8 +91,10 @@ class TestLikelihoods:
             dataset, target=target, sigma0=np.array([0.01])
         )
         problem = pybop.Problem(simulator, likelihood)
-        result = problem([0.5])
-        grad_result, grad_likelihood = problem([0.5], calculate_grad=True)
+        result = problem.evaluate([0.5])
+        grad_result, grad_likelihood = problem.evaluate(
+            [0.5], calculate_sensitivities=True
+        )
         assert isinstance(result, float)
         np.testing.assert_allclose(result, grad_result, atol=1e-5)
         # Since 0.5 < ground_truth, the likelihood should be increasing
@@ -101,9 +103,9 @@ class TestLikelihoods:
     def test_gaussian_log_likelihood(self, simulator, dataset):
         likelihood = pybop.GaussianLogLikelihood(dataset, sigma0=0.01)
         problem = pybop.Problem(simulator, likelihood)
-        result = problem(np.array([0.8, 0.02]))
-        grad_result, grad_likelihood = problem(
-            np.array([0.8, 0.025]), calculate_grad=True
+        result = problem.evaluate(np.array([0.8, 0.02]))
+        grad_result, grad_likelihood = problem.evaluate(
+            np.array([0.8, 0.025]), calculate_sensitivities=True
         )
         assert isinstance(result, float)
         np.testing.assert_allclose(result, grad_result, atol=1e-5)
@@ -137,9 +139,12 @@ class TestLikelihoods:
     def test_gaussian_log_likelihood_returns_negative_inf(self, simulator, dataset):
         likelihood = pybop.GaussianLogLikelihood(dataset)
         problem = pybop.Problem(simulator, likelihood)
-        assert problem(np.array([0.01, 0.1])) == -np.inf  # parameter value too small
         assert (
-            problem(np.array([0.01, 0.1]), calculate_grad=True)[0] == -np.inf
+            problem.evaluate(np.array([0.01, 0.1])) == -np.inf
+        )  # parameter value too small
+        assert (
+            problem.evaluate(np.array([0.01, 0.1]), calculate_sensitivities=True)[0]
+            == -np.inf
         )  # parameter value too small
 
     def test_gaussian_log_likelihood_known_sigma_returns_negative_inf(
@@ -149,7 +154,10 @@ class TestLikelihoods:
             dataset, sigma0=np.array([0.2])
         )
         problem = pybop.Problem(simulator, likelihood)
-        assert problem(np.array([0.01])) == -np.inf  # parameter value too small
         assert (
-            problem(np.array([0.01]), calculate_grad=True)[0] == -np.inf
+            problem.evaluate(np.array([0.01])) == -np.inf
+        )  # parameter value too small
+        assert (
+            problem.evaluate(np.array([0.01]), calculate_sensitivities=True)[0]
+            == -np.inf
         )  # parameter value too small

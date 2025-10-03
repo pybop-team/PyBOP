@@ -160,7 +160,7 @@ class TestEISParameterisation:
                 (self.ground_truth, np.asarray([self.sigma0]))
             )
 
-        initial_cost = optim.problem(x0)
+        initial_cost = optim.problem.evaluate(x0)
         results = optim.run()
 
         # Assertions

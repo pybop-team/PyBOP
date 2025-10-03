@@ -108,7 +108,7 @@ def contour(
         # Determine the number of gradient outputs from cost.compute
         num_gradients = problem(
             np.asarray([x[0], y[0]] + additional_values),
-            calculate_grad=True,
+            calculate_sensitivities=True,
         )[1].shape[0]
 
         # Create an array to hold each gradient output
@@ -120,7 +120,7 @@ def contour(
             if gradient:
                 costs[j, i], (*current_grads,) = problem(
                     np.asarray([xi, yj] + additional_values),
-                    calculate_grad=True,
+                    calculate_sensitivities=True,
                 )
                 for k, grad_output in enumerate(current_grads):
                     grads[k][j, i] = grad_output

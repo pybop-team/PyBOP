@@ -163,7 +163,7 @@ class TestProblem:
         combined_problem = pybop.MetaProblem(problem_1, problem_2, weights=[0.1, 1.0])
 
         assert isinstance(combined_problem._simulator, BaseSimulator)
-        out = combined_problem([1e-5, 1e-5])
+        out = combined_problem.evaluate([1e-5, 1e-5])
         assert isinstance(out, float)
         out1 = problem_1([1e-5, 1e-5])
         out2 = problem_2([1e-5, 1e-5])
