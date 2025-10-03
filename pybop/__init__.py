@@ -53,7 +53,7 @@ from ._experiment import Experiment
 #
 # Dataset class
 #
-from ._dataset import Dataset
+from ._dataset import Dataset, import_pybrobe_result
 
 #
 # Transformation classes

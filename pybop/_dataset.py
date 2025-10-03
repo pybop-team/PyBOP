@@ -1,7 +1,22 @@
-from typing import Optional, Union
+import warnings
+from typing import Optional, Protocol, Union
 
 import numpy as np
 from pybamm import solvers
+
+
+class PyprobeResult(Protocol):
+    """Protocol defining required PyProBE Result interface"""
+
+    def get(
+        self,
+        *column_names: str,
+    ) -> np.typing.NDArray[np.float64] | tuple[np.typing.NDArray[np.float64], ...]:
+        """Get result data as numpy ndarray"""
+
+    @property
+    def column_list(self) -> list[str]:
+        """List of column data"""
 
 
 class Dataset:
@@ -162,3 +177,55 @@ class Dataset:
             data[key] = self[key][index]
 
         return Dataset(data, domain=self.domain)
+
+
+def import_pybrobe_result(
+    result: PyprobeResult,
+    columns: list[str],
+    pyprobe_columns: list[str] | None = None,
+) -> Dataset:
+    """Import a PyprobeResult into a dictionary
+
+    Args:
+        result (str):
+            A pybrobe Result object
+        columns (list of strings):
+            A list of columns to import.
+        pyprobe_columns:
+            An optional list of pyprobe columns names if any of them are not the same as in PyBoP.
+            Otherwise the column names are assumed to be identical with PyBoP.
+
+    """
+    if pyprobe_columns is None:
+        pyprobe_columns = columns
+
+    data_dict = {}
+    for i, col in enumerate(columns):
+        if (
+            pyprobe_columns[i] == "Cycle"
+            and "Cycle" not in result.column_list
+            and "Step" in result.column_list
+        ):
+            warnings.warn(
+                "No cycle information present. Cycles will be inferred from the step numbers.",
+                UserWarning,
+                stacklevel=2,
+            )
+            steps = result.get("Step")
+            cycle_ends = np.argwhere(steps - np.roll(steps, 1) < 0)
+            cycle_ends = np.append(cycle_ends, len(steps))
+            data_dict[col] = np.concatenate(
+                [
+                    (i - 1) * np.ones(cycle_ends[i] - cycle_ends[i - 1])
+                    for i in range(1, len(cycle_ends))
+                ]
+            )
+        elif pyprobe_columns[i] in [
+            "Current [A]",
+            "Capacity [Ah]",
+            "Discharge capacity [A.h]",
+        ]:
+            data_dict[col] = -1.0 * result.get(pyprobe_columns[i])
+        else:
+            data_dict[col] = result.get(pyprobe_columns[i])
+    return Dataset(data_dict)

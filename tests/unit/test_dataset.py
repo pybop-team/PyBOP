@@ -1,3 +1,5 @@
+import sys
+
 import numpy as np
 import pybamm
 import pytest
@@ -91,3 +93,109 @@ class TestDataset:
         dataset_dictionary = pybop.Dataset(data_dictionary)
 
         assert dataset_dictionary.data == dataset_pybamm.data
+
+    @pytest.mark.skipif(
+        sys.version_info < (3, 11), reason="requires python3.11 or higher"
+    )
+    def test_pyrobe_import(self):
+        model = pybamm.lithium_ion.SPM(
+            {
+                "SEI": "ec reaction limited",
+                "SEI film resistance": "distributed",
+                "SEI porosity change": "true",
+                "lithium plating": "irreversible",
+                "lithium plating porosity change": "true",
+            }
+        )
+
+        param = pybamm.ParameterValues("Mohtat2020")
+
+        experiment = pybamm.Experiment(
+            [
+                (
+                    "Charge at 1 C until 4.2 V",
+                    "Hold at 4.2 V until C/10",
+                    "Rest for 5 minutes",
+                    "Discharge at 1 C until 2.8 V",
+                    "Rest for 5 minutes",
+                )
+            ]
+            * 2
+            + [
+                (
+                    "Charge at 1 C until 4.2 V",
+                    "Hold at 4.2 V until C/20",
+                    "Rest for 30 minutes",
+                    "Discharge at C/3 until 2.8 V",
+                    "Rest for 30 minutes",
+                ),
+                (
+                    "Charge at 1 C until 4.2 V",
+                    "Hold at 4.2 V until C/20",
+                    "Rest for 30 minutes",
+                    "Discharge at 1 C until 2.8 V",
+                    "Rest for 30 minutes",
+                ),
+                (
+                    "Charge at 1 C until 4.2 V",
+                    "Hold at 4.2 V until C/20",
+                    "Rest for 30 minutes",
+                    "Discharge at 2 C until 2.8 V",
+                    "Rest for 30 minutes",
+                ),
+                (
+                    "Charge at 1 C until 4.2 V",
+                    "Hold at 4.2 V until C/20",
+                    "Rest for 30 minutes",
+                    "Discharge at 3 C until 2.8 V",
+                    "Rest for 30 minutes",
+                ),
+            ]
+        )
+
+        sim = pybamm.Simulation(model, experiment=experiment, parameter_values=param)
+        solution = sim.solve()
+
+        import pyprobe
+
+        cell = pyprobe.Cell(info={"Model": "US06"})
+        cell.import_pybamm_solution("US06 DFN", ["US06"], solution)
+
+        dataset = pybop.import_pybrobe_result(
+            cell.procedure["US06 DFN"],
+            [
+                "Time [s]",
+                "Current [A]",
+                "Voltage [V]",
+                "Step",
+                "Cycle",
+                "Discharge capacity [A.h]",
+            ],
+            pyprobe_columns=[
+                "Time [s]",
+                "Current [A]",
+                "Voltage [V]",
+                "Step",
+                "Cycle",
+                "Capacity [Ah]",
+            ],
+        )
+
+        dataset2 = pybop.Dataset(
+            solution,
+            variables=[
+                "Time [s]",
+                "Current [A]",
+                "Voltage [V]",
+                "Discharge capacity [A.h]",
+            ],
+        )
+
+        assert (dataset2["Time [s]"] == dataset["Time [s]"]).all()
+        assert (dataset2["Current [A]"] == dataset["Current [A]"]).all()
+        assert (dataset2["Voltage [V]"] == dataset["Voltage [V]"]).all()
+        assert (dataset2["Step"] == dataset["Step"]).all()
+        assert (dataset2["Cycle"] == dataset["Cycle"]).all()
+        assert (
+            dataset2["Discharge capacity [A.h]"] == dataset["Discharge capacity [A.h]"]
+        ).all()
