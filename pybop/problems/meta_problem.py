@@ -58,7 +58,23 @@ class MetaProblem(Problem):
         inputs: list[Inputs],
         calculate_sensitivities: bool,
     ) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
-        """Evaluate the problem and (optionally) the gradient for a single set of inputs."""
+        """
+        Evaluate each problem for each set of inputs and return the cost values and (optionally)
+        the sensitivities with respect to each input parameter.
+
+        Parameters
+        ----------
+        inputs : list[Inputs]
+            A list of input parameters.
+        calculate_sensitivities : bool
+            Whether to also return the sensitivities (default: False).
+
+        Returns
+        -------
+        np.ndarray | CostsAndSensitivities
+            Cost values of len(inputs) and (optionally) the gradient of the cost with respect to
+            each input parameter with shape (len(inputs), len(parameters)).
+        """
         n_inputs = len(inputs)
         n_problems = len(self.problems)
         e = np.empty((n_inputs, n_problems))
