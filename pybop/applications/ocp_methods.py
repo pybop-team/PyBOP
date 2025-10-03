@@ -192,26 +192,36 @@ class OCPAverage(BaseApplication):
 
             if self.allow_stretching:
 
-                def simulate(self, inputs, calculate_sensitivities: bool = False):
-                    return {
-                        "Voltage [mV]": 1e3
-                        * voltage_charge(
-                            inputs["stretch"] * self.domain_data + inputs["shift"]
-                        ),
-                        "Differential capacity [V-1]": differential_capacity_charge(
-                            inputs["stretch"] * self.domain_data + inputs["shift"]
-                        ),
-                    }
+                def batch_simulate(self, inputs, calculate_sensitivities: bool = False):
+                    simulations = []
+                    for x in inputs:
+                        simulations.append(
+                            {
+                                "Voltage [mV]": 1e3
+                                * voltage_charge(
+                                    x["stretch"] * self.domain_data + x["shift"]
+                                ),
+                                "Differential capacity [V-1]": differential_capacity_charge(
+                                    x["stretch"] * self.domain_data + x["shift"]
+                                ),
+                            }
+                        )
+                    return simulations
             else:
 
-                def simulate(self, inputs, calculate_sensitivities: bool = False):
-                    return {
-                        "Voltage [mV]": 1e3
-                        * voltage_charge(self.domain_data + inputs["shift"]),
-                        "Differential capacity [V-1]": differential_capacity_charge(
-                            self.domain_data + inputs["shift"]
-                        ),
-                    }
+                def batch_simulate(self, inputs, calculate_sensitivities: bool = False):
+                    simulations = []
+                    for x in inputs:
+                        simulations.append(
+                            {
+                                "Voltage [mV]": 1e3
+                                * voltage_charge(self.domain_data + x["shift"]),
+                                "Differential capacity [V-1]": differential_capacity_charge(
+                                    self.domain_data + x["shift"]
+                                ),
+                            }
+                        )
+                    return simulations
 
         cost = self.cost(
             interpolated_dataset,
@@ -322,12 +332,17 @@ class OCPCapacityToStoichiometry(BaseApplication):
                 super().__init__(parameters=parameters)
                 self.domain_data = domain_data
 
-            def simulate(self, inputs, calculate_sensitivities: bool = False):
-                return {
-                    "Voltage [V]": ocv_function(
-                        (self.domain_data - inputs["shift"]) / inputs["stretch"]
-                    ),
-                }
+            def batch_simulate(self, inputs, calculate_sensitivities: bool = False):
+                simulations = []
+                for x in inputs:
+                    simulations.append(
+                        {
+                            "Voltage [V]": ocv_function(
+                                (self.domain_data - x["shift"]) / x["stretch"]
+                            ),
+                        }
+                    )
+                return simulations
 
         problem = pybop.Problem(simulator=OCVCurve(self.parameters), cost=self.cost)
 

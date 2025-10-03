@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 from pybop._utils import SymbolReplacer
 from pybop.parameters.parameter import Parameters
 from pybop.pybamm.simulator import Simulator
-from pybop.simulators.base_simulator import BaseSimulator
+from pybop.simulators.base_simulator import BaseSimulator, SimulationType
 
 
 class EISSimulator(BaseSimulator):
@@ -222,21 +222,55 @@ class EISSimulator(BaseSimulator):
         self.b[-1] = -1
 
     def simulate(
-        self, inputs: "Inputs | None" = None, calculate_sensitivities: bool = False
-    ) -> np.ndarray:
+        self,
+        inputs: "Inputs | list[Inputs] | None" = None,
+        calculate_sensitivities: bool = False,
+    ) -> SimulationType | list[SimulationType]:
         """
-        Run the EIS simulation to calculate impedance at all specified frequencies.
+        Run the EIS simulation for one or more sets of inputs and return the result(s).
 
         Parameters
-        ---------
-        calculate_sensitivities : bool, optional
-            Whether to calculate sensitivities or not (default: False).
+        ----------
+        inputs : Inputs | list[Inputs], optional
+            Input parameters (default: None).
+        calculate_sensitivities : bool
+            Whether to also return the sensitivities (default: False).
             Currently not implemented for EIS.
 
         Returns
         -------
-        np.ndarray
-            Complex array containing the impedance values with corresponding frequencies.
+        SimulationType | list[SimulationType]
+            Complex impedance results.
+        """
+        if calculate_sensitivities:
+            warnings.warn(
+                "Sensitivity calculation not implemented for EIS simulations",
+                stacklevel=2,
+            )
+
+        if not isinstance(inputs, list):
+            return self._catch_errors([inputs])[0]
+
+        return self._catch_errors(inputs)
+
+    def batch_simulate(
+        self, inputs: "list[Inputs]" = None, calculate_sensitivities: bool = False
+    ) -> list[SimulationType]:
+        """
+        Run the EIS simulation for each set of inputs and return dict-like results.
+
+        Parameters
+        ----------
+        inputs : list[Inputs]
+            A list of input parameters.
+        calculate_sensitivities : bool
+            Whether to calculate sensitivities (default: False).
+            Currently not implemented for EIS.
+
+        Returns
+        -------
+        list[SimulationType]
+            A list of len(inputs) containing the complex impedance results.
         """
         if calculate_sensitivities:
             warnings.warn(
@@ -246,18 +280,40 @@ class EISSimulator(BaseSimulator):
 
         return self._catch_errors(inputs)
 
-    def _catch_errors(self, inputs: "Inputs"):
+    def _catch_errors(self, inputs: "list[Inputs]"):
         if not self.debug_mode:
-            try:
-                return self._solve(inputs)
-            except (ZeroDivisionError, RuntimeError, ValueError) as e:
-                if isinstance(e, ValueError) and str(e) not in self.exception:
-                    raise  # Raise the error if it doesn't match the expected list
-                return {"Impedance": np.asarray(np.inf)}
+            simulations = []
+            for x in inputs:
+                try:
+                    simulations.append(self._solve(x))
+                except (ZeroDivisionError, RuntimeError, ValueError) as e:
+                    if isinstance(e, ValueError) and str(e) not in self.exception:
+                        raise  # Raise the error if it doesn't match the expected list
+                    simulations.append({"Impedance": np.asarray(np.inf)})
+            return simulations
 
-        return self._solve(inputs)
+        simulations = []
+        for x in inputs:
+            simulations.append(self._solve(x))
+        return simulations
 
     def _solve(self, inputs: "Inputs"):
+        """
+        Run the EIS simulation to calculate impedance at all specified frequencies.
+
+        Parameters
+        ----------
+        inputs : Inputs
+            Input parameters.
+        calculate_sensitivities : bool
+            Whether to calculate sensitivities (default: False).
+            Currently not implemented for EIS.
+
+        Returns
+        -------
+        SimulationType
+            Complex impedance results.
+        """
         # Always run initialise_eis_matrices, after rebuilding the model if necessary
         self._model_rebuild(inputs)
 

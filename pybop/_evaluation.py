@@ -46,7 +46,9 @@ class BaseEvaluator(PintsEvaluator):
                     return np.empty(0), np.empty(0)
 
                 inputs_list = self.problem.parameters.to_inputs(x_model)
-                cost, grad = self.problem.batch_call(inputs_list, calculate_grad=True)
+                cost, grad = self.problem.batch_evaluate(
+                    inputs_list, calculate_sensitivities=True
+                )
 
                 # Apply the inverse parameter transformation to the gradient
                 for i, x in enumerate(x_search):
@@ -67,7 +69,9 @@ class BaseEvaluator(PintsEvaluator):
                     return np.empty(0)
 
                 inputs_list = self.problem.parameters.to_inputs(x_model)
-                cost = self.problem.batch_call(inputs_list, calculate_grad=False)
+                cost = self.problem.batch_evaluate(
+                    inputs_list, calculate_sensitivities=False
+                )
 
                 logger.extend_log(x_search=x_search, x_model=x_model, cost=cost)
                 return -cost
@@ -80,7 +84,9 @@ class BaseEvaluator(PintsEvaluator):
                     return np.empty(0), np.empty(0)
 
                 inputs_list = self.problem.parameters.to_inputs(x_model)
-                cost, grad = self.problem.batch_call(inputs_list, calculate_grad=True)
+                cost, grad = self.problem.batch_evaluate(
+                    inputs_list, calculate_sensitivities=True
+                )
 
                 # Apply the inverse parameter transformation to the gradient
                 for i, x in enumerate(x_search):
@@ -101,7 +107,9 @@ class BaseEvaluator(PintsEvaluator):
                     return np.empty(0), np.empty(0)
 
                 inputs_list = self.problem.parameters.to_inputs(x_model)
-                cost = self.problem.batch_call(inputs_list, calculate_grad=False)
+                cost = self.problem.batch_evaluate(
+                    inputs_list, calculate_sensitivities=False
+                )
 
                 logger.extend_log(x_search=x_search, x_model=x_model, cost=cost)
                 return cost

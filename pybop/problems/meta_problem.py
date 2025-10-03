@@ -53,25 +53,29 @@ class MetaProblem(Problem):
             self.weights = -self.weights
             self._minimising = False
 
-    def single_call(
+    def batch_evaluate(
         self,
-        inputs: Inputs,
-        calculate_grad: bool,
-    ) -> float | tuple[float, np.ndarray]:
+        inputs: list[Inputs],
+        calculate_sensitivities: bool,
+    ) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
         """Evaluate the problem and (optionally) the gradient for a single set of inputs."""
-        e = np.empty_like(self.problems)
-        de = np.empty((len(self.parameters), len(self.problems)))
+        n_inputs = len(inputs)
+        n_problems = len(self.problems)
+        e = np.empty((n_inputs, n_problems))
+        de = np.empty((n_inputs, len(self.parameters), n_problems))
 
         for i, problem in enumerate(self.problems):
-            if calculate_grad:
-                e[i], de[:, i] = problem.single_call(
-                    inputs, calculate_grad=calculate_grad
+            if calculate_sensitivities:
+                e[:, i], de[:, :, i] = problem.batch_evaluate(
+                    inputs, calculate_sensitivities=calculate_sensitivities
                 )
             else:
-                e[i] = problem.single_call(inputs, calculate_grad=calculate_grad)
+                e[:, i] = problem.batch_evaluate(
+                    inputs, calculate_sensitivities=calculate_sensitivities
+                )
 
         e = np.dot(e, self.weights)
-        if calculate_grad:
+        if calculate_sensitivities:
             de = np.dot(de, self.weights)
             return e, de
 

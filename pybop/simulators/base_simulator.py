@@ -4,6 +4,12 @@ import numpy as np
 
 from pybop.parameters.parameter import Inputs, Parameter, Parameters
 
+# Type aliases
+SimulationType = dict[str, np.ndarray]
+SimulationWithSensitivities = tuple[SimulationType, dict[str, dict[str, np.ndarray]]]
+CostWithSensitivities = tuple[float, np.ndarray]
+CostsAndSensitivities = tuple[np.ndarray, np.ndarray]
+
 
 class BaseSimulator:
     """
@@ -37,16 +43,49 @@ class BaseSimulator:
 
     def simulate(
         self,
-        inputs: "Inputs | None" = None,
+        inputs: "Inputs | list[Inputs] | None" = None,
         calculate_sensitivities: bool = False,
     ) -> (
-        dict[str, np.ndarray]
-        | tuple[dict[str, np.ndarray], dict[str, dict[str, np.ndarray]]]
+        SimulationType
+        | SimulationWithSensitivities
+        | list[SimulationType]
+        | list[SimulationWithSensitivities]
     ):
         """
-        Returns the output of a simulation for the given inputs as a dictionary, along
-        with the sensitivities of the output with respect to the input parameters if
+        Returns the output of a simulation for one or more sets of inputs as a dictionary,
+        along with the sensitivities of the output with respect to the input parameters if
         calculate_sensitivities=True.
+        """
+        if not isinstance(inputs, list):
+            return self.batch_simulate(
+                inputs=[inputs], calculate_sensitivities=calculate_sensitivities
+            )[0]
+
+        return self.batch_simulate(
+            inputs=inputs, calculate_sensitivities=calculate_sensitivities
+        )
+
+    def batch_simulate(
+        self,
+        inputs: "list[Inputs]",
+        calculate_sensitivities: bool = False,
+    ) -> list[SimulationType] | list[SimulationWithSensitivities]:
+        """
+        Run the simulation for each set of inputs and return dict-like simulation results
+        and (optionally) the sensitivities with respect to each input parameter.
+
+        Parameters
+        ----------
+        inputs : list[Inputs]
+            A list of input parameters.
+        calculate_sensitivities : bool
+            Whether to also return the sensitivities (default: False).
+
+        Returns
+        -------
+        list[SimulationType] | list[SimulationWithSensitivities]
+            A list of len(inputs) containing the simulation result(s) and (optionally)
+            the sensitivities with respect to each input parameter.
         """
         return NotImplementedError
 
