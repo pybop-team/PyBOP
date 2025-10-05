@@ -113,7 +113,6 @@ class TestSamplingThevenin:
     def map_estimate(self, posterior):
         options = pybop.PintsOptions(
             max_iterations=80,
-            sigma=[3e-4, 3e-4],
             verbose=True,
         )
         optim = pybop.CMAES(posterior, options=options)

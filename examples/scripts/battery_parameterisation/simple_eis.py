@@ -72,9 +72,7 @@ cost = pybop.GaussianLogLikelihoodKnownSigma(dataset, target="Impedance", sigma0
 problem = pybop.Problem(simulator, cost)
 
 # Set up the optimiser
-options = pybop.PintsOptions(
-    max_iterations=100, sigma=0.25, max_unchanged_iterations=30
-)
+options = pybop.PintsOptions(max_iterations=100, max_unchanged_iterations=30)
 optim = pybop.CMAES(problem, options=options)
 
 # Run the optimisation

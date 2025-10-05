@@ -139,11 +139,6 @@ class TestTransformation:
             )
         else:
             options = pybop.PintsOptions(
-                sigma=[0.02, 0.02, 2e-3]
-                if isinstance(
-                    problem.cost, pybop.GaussianLogLikelihood | pybop.LogPosterior
-                )
-                else [0.02, 0.02],
                 max_iterations=150,
                 max_unchanged_iterations=45,
             )

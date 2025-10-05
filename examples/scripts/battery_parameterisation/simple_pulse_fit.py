@@ -54,7 +54,6 @@ problem = pybop.Problem(simulator, likelihood)
 
 # Set up the optimiser
 options = pybop.PintsOptions(
-    sigma=0.02,
     max_iterations=100,
     max_unchanged_iterations=30,
 )

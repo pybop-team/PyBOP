@@ -122,17 +122,16 @@ class TestLogPosterior:
             posterior_uniform_prior([1], calculate_sensitivities=True)[0]
         )
 
-    def test_non_logpdfS1_prior(self, simulator, likelihood):
+    def test_non_logpdf_prior(self, simulator, likelihood):
         problem = pybop.Problem(simulator, likelihood)
-        l, dl = problem.evaluate([0.6], calculate_sensitivities=True)
+        l = problem.evaluate([0.6])
 
         # Scipy distribution
         prior = st.norm(loc=0.8, scale=0.01)
         posterior = pybop.LogPosterior(likelihood, prior=prior)
         problem = pybop.Problem(simulator, posterior)
-        p, dp = problem.evaluate([0.6], calculate_sensitivities=True)
+        p = problem.evaluate([0.6])
 
         # Assert to pybop.Gaussian
-        p2, dp2 = pybop.Gaussian(mean=0.8, sigma=0.01).logpdfS1(0.6)
+        p2 = pybop.Gaussian(mean=0.8, sigma=0.01).logpdf(0.6)
         np.testing.assert_allclose(p - l, p2, atol=2e-3)
-        np.testing.assert_allclose(dp - dl, dp2, atol=2e-3)

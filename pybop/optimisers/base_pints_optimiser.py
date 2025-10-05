@@ -29,8 +29,6 @@ class PintsOptions(OptimiserOptions):
         Maximum number of iterations for the optimisation (default: None).
     min_iterations : int
         Minimum number of iterations required (default: 2).
-    sigma : float | np.ndarray | list
-        Standard deviation or step-size parameter for the optimiser (default: 5e-2).
     max_unchanged_iterations : int
         Maximum iterations without improvement before stopping (default: 15).
     use_f_guessed : bool
@@ -48,7 +46,6 @@ class PintsOptions(OptimiserOptions):
     default_max_iterations = 1000
     max_iterations: int = default_max_iterations
     min_iterations: int = 2
-    sigma: float | np.ndarray | list | None = None
     max_unchanged_iterations: int = 15
     use_f_guessed: bool = False
     absolute_tolerance: float = 1e-5
@@ -69,11 +66,6 @@ class PintsOptions(OptimiserOptions):
             raise ValueError(
                 "Maximum number of unchanged iterations cannot be negative."
             )
-        if isinstance(self.sigma, np.ndarray) and any(self.sigma <= 0):
-            raise ValueError("Sigma must be positive.")
-        elif np.isscalar(self.sigma):
-            if self.sigma <= 0:
-                raise ValueError("Sigma must be positive.")
         if self.absolute_tolerance < 0:
             raise ValueError("Absolute tolerance cannot be negative.")
         if self.relative_tolerance < 0:
@@ -186,11 +178,7 @@ class BasePintsOptimiser(BaseOptimiser):
                 )
 
         # Set the covariance / step size parameter
-        self._sigma0 = (
-            options.sigma
-            if options.sigma is not None
-            else self.problem.parameters.get_sigma0(transformed=True)
-        )
+        self._sigma0 = self.problem.parameters.get_sigma0(transformed=True)
 
         # Create an instance of the PINTS optimiser class
         if issubclass(self._pints_optimiser, PintsOptimiser):

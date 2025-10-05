@@ -95,7 +95,6 @@ class TestHalfCellModel:
     def test_fitting_costs(self, fitting_problem):
         x0 = fitting_problem.parameters.get_initial_values()
         options = pybop.PintsOptions(
-            sigma=0.03,
             max_iterations=250,
             max_unchanged_iterations=35,
         )

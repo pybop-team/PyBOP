@@ -141,11 +141,6 @@ class TestEISParameterisation:
                 max_iterations=100,
                 absolute_tolerance=1e-6,
                 max_unchanged_iterations=35,
-                sigma=(
-                    [0.05, 0.05, 1e-3]
-                    if isinstance(cost, pybop.GaussianLogLikelihood)
-                    else 0.02
-                ),
             )
 
         # Create optimiser

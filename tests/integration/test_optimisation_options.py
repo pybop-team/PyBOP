@@ -79,7 +79,6 @@ class TestOptimisation:
     def test_optimisation_f_guessed(self, f_guessed, problem):
         x0 = problem.parameters.get_initial_values()
         options = pybop.PintsOptions(
-            sigma=0.05,
             max_iterations=100,
             max_unchanged_iterations=25,
             absolute_tolerance=1e-5,

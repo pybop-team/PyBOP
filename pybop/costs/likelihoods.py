@@ -197,15 +197,12 @@ class LogPosterior(LogLikelihood):
         The prior class of type ``BasePrior`` or ``stats.rv_continuous``.
         If not provided, the prior class will be taken from the parameter priors
         constructed in the `pybop.Parameters` class.
-    gradient_step : float, default: 1e-3
-        The step size for the finite-difference gradient calculation
     """
 
     def __init__(
         self,
         log_likelihood: LogLikelihood,
         prior: BasePrior | stats.rv_continuous | None = None,
-        gradient_step: float = 1e-3,
     ):
         dataset = Dataset(log_likelihood.dataset)
         dataset.domain = log_likelihood.domain
@@ -214,7 +211,6 @@ class LogPosterior(LogLikelihood):
         self.parameters = self.log_likelihood.parameters
         self.prior = prior
         self.joint_prior = None  # must be built with model parameters included
-        self.gradient_step = gradient_step
 
     def set_joint_prior(self):
         if self.prior is None:
@@ -229,28 +225,7 @@ class LogPosterior(LogLikelihood):
     ) -> float | tuple[float, np.ndarray]:
         # Compute log prior (and gradient)
         if dy is not None:
-            if isinstance(self.joint_prior, BasePrior):
-                log_prior, dp = self.joint_prior.logpdfS1(self.parameters.get_values())
-            else:
-                # Compute log prior first
-                log_prior = self.joint_prior.logpdf(self.parameters.get_values())
-
-                # Compute a finite difference approximation of the gradient of the log prior
-                delta = self.parameters.get_values() * self.gradient_step
-                dp = []
-
-                for parameter, step_size in zip(self.parameters, delta, strict=False):
-                    param_value = parameter.current_value
-                    upper_value = param_value + step_size
-                    lower_value = param_value - step_size
-
-                    log_prior_upper = self.joint_prior.logpdf(upper_value)
-                    log_prior_lower = self.joint_prior.logpdf(lower_value)
-
-                    gradient = (log_prior_upper - log_prior_lower) / (
-                        2 * step_size + np.finfo(float).eps
-                    )
-                    dp.append(gradient)
+            log_prior, dp = self.joint_prior.logpdfS1(self.parameters.get_values())
         else:
             log_prior = self.joint_prior.logpdf(self.parameters.get_values())
 
