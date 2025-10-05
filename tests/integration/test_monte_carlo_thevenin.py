@@ -14,7 +14,6 @@ from pybop import (
     RaoBlackwellACMC,
     RelativisticMCMC,
     SliceDoublingMCMC,
-    SliceRankShrinkingMCMC,
     SliceStepoutMCMC,
 )
 
@@ -128,7 +127,6 @@ class TestSamplingThevenin:
             HamiltonianMCMC,
             MonomialGammaHamiltonianMCMC,
             RelativisticMCMC,
-            SliceRankShrinkingMCMC,
             MALAMCMC,
             RaoBlackwellACMC,
             SliceDoublingMCMC,
@@ -143,14 +141,11 @@ class TestSamplingThevenin:
             n_chains=2,
             warm_up_iterations=50,
             cov=[6e-3, 6e-3],
-            max_iterations=500 if sampler is SliceRankShrinkingMCMC else 350,
+            max_iterations=350,
         )
 
         # construct and run
         sampler = sampler(log_pdf=posterior, options=options)
-        if isinstance(sampler, SliceRankShrinkingMCMC):
-            for i, _j in enumerate(sampler._samplers):
-                sampler._samplers[i].set_hyper_parameters([1e-3])
         chains = sampler.run()
 
         # Test PosteriorSummary

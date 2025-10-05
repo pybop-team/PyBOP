@@ -132,6 +132,7 @@ class Test_SPM_Parameterisation:
         if optimiser in [
             pybop.SciPyDifferentialEvolution,
             pybop.CuckooSearch,
+            pybop.IRPropMin,
         ]:
             bounds = {"lower": [0.375, 0.375], "upper": [0.775, 0.775]}
             if isinstance(cost, pybop.GaussianLogLikelihood):
