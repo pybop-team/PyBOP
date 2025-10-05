@@ -58,6 +58,7 @@ class Problem:
 
         # Objective-specific configuration
         if isinstance(self._cost, LogPosterior):
+            self._cost.log_likelihood.parameters = self.parameters
             self._cost.set_joint_prior()
 
     def get_model_inputs(self, inputs):
@@ -144,21 +145,19 @@ class Problem:
         if calculate_sensitivities:
             calculate_sensitivities = self._has_sensitivities
 
+        validity = []
         valid_inputs = []
-        model_inputs = []
-        cost_inputs = []
         for x in inputs:
             # Check the validity of the inputs so we only evaluate valid parameters
             if self.parameters.verify_inputs(x):
-                valid_inputs.append(True)
-                model_inputs.append(self.get_model_inputs(x))
-                cost_inputs.append(x)
+                validity.append(True)
+                valid_inputs.append(x)
             else:
-                valid_inputs.append(False)
+                validity.append(False)
 
         # Run simulations for the valid parameters
         simulations = self.batch_simulate(
-            model_inputs, calculate_sensitivities=calculate_sensitivities
+            valid_inputs, calculate_sensitivities=calculate_sensitivities
         )
 
         # Evaluate the cost for the valid parameters
@@ -167,17 +166,17 @@ class Problem:
             costs, grads = [], []
             for i, sim in enumerate(simulations):
                 y, dy = sim
-                out = self._cost.evaluate(y, dy=dy, inputs=cost_inputs[i])
+                out = self._cost.evaluate(y, dy=dy, inputs=valid_inputs[i])
                 costs.append(out[0])
                 grads.append(out[1])
         else:
             costs = []
             for i, y in enumerate(simulations):
-                costs.append(self._cost.evaluate(y, dy=None, inputs=cost_inputs[i]))
+                costs.append(self._cost.evaluate(y, dy=None, inputs=valid_inputs[i]))
 
-        if False in valid_inputs:
+        if False in validity:
             # Insert failure outputs for the invalid parameters into the lists of results
-            invalid_indices = [i for i, valid in enumerate(valid_inputs) if not valid]
+            invalid_indices = [i for i, valid in enumerate(validity) if not valid]
             if calculate_sensitivities:
                 y, dy = self._cost.failure(dy=True)
                 for i in invalid_indices:
@@ -245,8 +244,9 @@ class Problem:
             A list of length(inputs) containing the simulated model output y(t) and (optionally)
             the sensitivities dy/dx(t) for output variable(s) y, domain t and parameter(s) x.
         """
+        model_inputs = [self.get_model_inputs(x) for x in inputs]
         return self._simulator.batch_simulate(
-            inputs=inputs, calculate_sensitivities=calculate_sensitivities
+            inputs=model_inputs, calculate_sensitivities=calculate_sensitivities
         )
 
     def get_finite_initial_cost(self):
