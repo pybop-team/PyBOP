@@ -60,8 +60,10 @@ class Problem:
         if isinstance(self._cost, LogPosterior):
             self._cost.set_joint_prior()
 
-        # Reset parameters from both model and cost
-        self.parameters.reset_to_initial()
+    def get_model_inputs(self, inputs):
+        all_values = list(inputs.values())
+        n = len(self._simulator.parameters)
+        return self._simulator.parameters.to_dict(all_values[:n])
 
     @property
     def target(self):
@@ -149,9 +151,8 @@ class Problem:
             # Check the validity of the inputs so we only evaluate valid parameters
             if self.parameters.verify_inputs(x):
                 valid_inputs.append(True)
-                self.parameters.update(values=list(x.values()))
-                model_inputs.append(self._simulator.parameters.to_dict())
-                cost_inputs.append(self.parameters.to_dict())
+                model_inputs.append(self.get_model_inputs(x))
+                cost_inputs.append(x)
             else:
                 valid_inputs.append(False)
 
@@ -166,15 +167,13 @@ class Problem:
             costs, grads = [], []
             for i, sim in enumerate(simulations):
                 y, dy = sim
-                self.parameters.update(values=list(cost_inputs[i].values()))
-                out = self._cost.compute(y, dy=dy)
+                out = self._cost.evaluate(y, dy=dy, inputs=cost_inputs[i])
                 costs.append(out[0])
                 grads.append(out[1])
         else:
             costs = []
             for i, y in enumerate(simulations):
-                self.parameters.update(values=list(cost_inputs[i].values()))
-                costs.append(self._cost.compute(y, dy=None))
+                costs.append(self._cost.evaluate(y, dy=None, inputs=cost_inputs[i]))
 
         if False in valid_inputs:
             # Insert failure outputs for the invalid parameters into the lists of results

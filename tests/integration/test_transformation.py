@@ -157,16 +157,12 @@ class TestTransformation:
         if np.allclose(x0, self.ground_truth, atol=1e-5):
             raise AssertionError("Initial guess is too close to ground truth")
 
-        if isinstance(problem.cost, pybop.GaussianLogLikelihood):
-            np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
-            np.testing.assert_allclose(results.x[-1], self.sigma0, atol=5e-4)
-        else:
-            assert (
-                (initial_cost > results.best_cost)
-                if results.minimising
-                else (initial_cost < results.best_cost)
-            )
-            np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
+        assert (
+            (initial_cost > results.best_cost)
+            if results.minimising
+            else (initial_cost < results.best_cost)
+        )
+        np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
 
     def get_data(self, model, parameter_values):
         experiment = pybamm.Experiment(

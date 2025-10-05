@@ -2,6 +2,7 @@ import numpy as np
 
 from pybop.costs.base_cost import BaseCost
 from pybop.costs.design_cost import DesignCost
+from pybop.parameters.parameter import Inputs
 
 
 class WeightedCost(BaseCost):
@@ -55,10 +56,11 @@ class WeightedCost(BaseCost):
             self.weights = -self.weights
             self.minimising = False
 
-    def compute(
+    def evaluate(
         self,
         y: dict[str, np.ndarray],
         dy: dict | None = None,
+        inputs: Inputs | None = None,
     ) -> float | tuple[float, np.ndarray]:
         """
         Computes the cost function for the given predictions.
@@ -81,9 +83,9 @@ class WeightedCost(BaseCost):
 
         for i, cost in enumerate(self.costs):
             if dy is not None:
-                e[i], de[:, i] = cost.compute(y, dy=dy)
+                e[i], de[:, i] = cost.evaluate(y, dy=dy, inputs=inputs)
             else:
-                e[i] = cost.compute(y)
+                e[i] = cost.evaluate(y, inputs=inputs)
 
         e = np.dot(e, self.weights)
         if dy is not None:

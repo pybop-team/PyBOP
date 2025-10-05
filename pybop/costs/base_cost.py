@@ -1,6 +1,6 @@
 import numpy as np
 
-from pybop.parameters.parameter import Parameters
+from pybop.parameters.parameter import Inputs, Parameters
 
 
 class BaseCost:
@@ -29,10 +29,11 @@ class BaseCost:
         self._domain_data = None
         self._target_data = None
 
-    def compute(
+    def evaluate(
         self,
         y: dict[str, np.ndarray],
         dy: dict | None = None,
+        inputs: Inputs | None = None,
     ) -> float | tuple[float, np.ndarray]:
         """
         Computes the cost function for the given predictions.

@@ -100,8 +100,6 @@ class Parameter:
         Parameter name
     initial_value : NumericValue, optional
         Initial parameter value
-    current_value : NumericValue, optional
-        Current parameter value (defaults to initial_value)
     bounds : tuple[float, float], optional
         Parameter bounds as (lower, upper)
     prior : pybop.BasePrior, optional
@@ -117,7 +115,6 @@ class Parameter:
         name: str,
         *,
         initial_value: float = None,
-        current_value: float = None,
         bounds: BoundsPair | None = None,
         prior: BasePrior | None = None,
         transformation: Transformation | None = None,
@@ -140,9 +137,6 @@ class Parameter:
             initial_value = self.sample_from_prior()[0]
         self._initial_value = (
             float(initial_value) if initial_value is not None else None
-        )
-        self._current_value = (
-            float(current_value) if current_value is not None else self._initial_value
         )
 
         # Validate initial values are within bounds
@@ -190,17 +184,6 @@ class Parameter:
 
         return samples
 
-    def update_value(self, value: NumericValue) -> None:
-        """
-        Update the current parameter value.
-
-        Parameters
-        ----------
-        value : NumericValue
-            New parameter value.
-        """
-        self._current_value = float(value)
-
     def update_initial_value(self, value: NumericValue) -> None:
         """
         Update the initial parameter value.
@@ -211,11 +194,10 @@ class Parameter:
             New initial value
         """
         self._initial_value = float(value)
-        self._current_value = float(value)
 
     def __repr__(self) -> str:
         """String representation of the parameter."""
-        return f"Parameter: {self.name} \n Prior: {self.prior} \n Bounds: {self.bounds} \n Value: {self.current_value}"
+        return f"Parameter: {self.name} \n Prior: {self.prior} \n Bounds: {self.bounds}"
 
     def _set_margin(self, margin: float) -> None:
         """
@@ -255,17 +237,6 @@ class Parameter:
                 f"is outside bounds {self.bounds}"
             )
 
-    def reset_to_initial(self) -> None:
-        """Reset current value to initial value."""
-        if self._initial_value is None:
-            if self._prior is None:
-                raise ParameterError(
-                    f"Parameter '{self._name}' has no initial value or prior."
-                )
-            else:
-                self.update_initial_value(self.sample_from_prior()[0])
-        self._current_value = self._initial_value
-
     def get_initial_value_transformed(self) -> NDArray | None:
         """Get initial value in transformed space."""
         if self._initial_value is None:
@@ -279,10 +250,6 @@ class Parameter:
     @property
     def initial_value(self) -> float:
         return self._initial_value
-
-    @property
-    def current_value(self) -> float:
-        return self._current_value
 
     @property
     def bounds(self) -> BoundsPair | None:
@@ -446,7 +413,6 @@ class Parameters:
     def update(
         self,
         *,
-        values: ArrayLike | Inputs | None = None,
         initial_values: ArrayLike | Inputs | None = None,
         bounds: Sequence[BoundsPair] | dict[str, BoundsPair] | None = None,
         **individual_updates: dict[str, Any],
@@ -456,8 +422,6 @@ class Parameters:
 
         Parameters
         ----------
-        values : array-like or dict, optional
-            New current values (by position or name)
         initial_values : array-like or dict, optional
             New initial values (by position or name)
         bounds : sequence or dict, optional
@@ -470,18 +434,12 @@ class Parameters:
             param = self.get(param_name)  # Raises if not found
 
             if isinstance(updates, dict):
-                if "value" in updates:
-                    param.update_value(updates["value"])
                 if "initial_value" in updates:
                     param.update_initial_value(updates["initial_value"])
                 if "bounds" in updates:
                     param.set_bounds(updates["bounds"])
-            else:
-                param.update_value(updates)
 
         # Handle bulk updates
-        if values is not None:
-            self._bulk_update_values(values)
         if initial_values is not None:
             self._bulk_update_initial_values(initial_values)
         if bounds is not None:
@@ -496,18 +454,6 @@ class Parameters:
     def remove_bounds(self) -> None:
         for param in self._parameters.values():
             param.set_bounds(None)
-
-    def _bulk_update_values(self, values: ArrayLike | Inputs) -> None:
-        """Update current values in bulk."""
-        if isinstance(values, dict):
-            for name, value in values.items():
-                self.get(name).update_value(value)
-        else:
-            values_array = np.atleast_1d(values)
-            param_list = list(self._parameters.values())
-
-            for param, value in zip(param_list, values_array.T, strict=False):
-                param.update_value(value)
 
     def _bulk_update_initial_values(self, values: ArrayLike | Inputs) -> None:
         """Update initial values in bulk."""
@@ -648,44 +594,6 @@ class Parameters:
 
         return np.asarray(values)
 
-    def reset_to_initial(self, names: Sequence[str] | None = None) -> None:
-        """Reset parameters to initial values."""
-        target_params = (
-            [self.get(name) for name in names]
-            if names
-            else list(self._parameters.values())
-        )
-
-        for param in target_params:
-            param.reset_to_initial()
-
-    def get_values(self, *, transformed: bool = False) -> NDArray[np.floating]:
-        """
-        Get current values as array.
-
-        Parameters
-        ----------
-        transformed : bool, default=False
-            Whether to apply transformations
-
-        Returns
-        -------
-        NDArray[np.floating]
-            Array of current values
-        """
-        values = []
-        for param in self._parameters.values():
-            value = param.current_value
-            if value is None:
-                raise ParameterError(f"Parameter '{param.name}' has no current value")
-
-            if transformed:
-                value = param.transformation.to_search(value)[0]
-
-            values.append(value)
-
-        return np.asarray(values)
-
     @property
     def transformation(self) -> Transformation:
         """Get the transformation for the parameters."""
@@ -729,7 +637,7 @@ class Parameters:
         Parameters
         ----------
         values : str or array-like, optional
-            Which values to use ('current', 'initial') or custom array. Default is "current".
+            Which values to use ('initial') or custom array. Default is "initial".
 
         Returns
         -------
@@ -737,14 +645,11 @@ class Parameters:
             Dictionary mapping parameter names to values
         """
         if values is None:
-            values = "current"
+            values = "initial"
         params = self._parameters.items()
 
-        if isinstance(values, str):
-            if values == "current":
-                return {name: param.current_value for name, param in params}
-            elif values == "initial":
-                return {name: param.initial_value for name, param in params}
+        if isinstance(values, str) and values == "initial":
+            return {name: param.initial_value for name, param in params}
         else:
             # Custom values array
             values_array = np.atleast_1d(values)
@@ -766,7 +671,7 @@ class Parameters:
 
     def __repr__(self) -> str:
         param_summary = "\n".join(
-            f" {name}: prior= {param.prior}, value={param.current_value}, bounds={param.bounds}"
+            f" {name}: prior= {param.prior}, bounds={param.bounds}"
             for name, param in self._parameters.items()
         )
         return f"Parameters({len(self)}):\n{param_summary}"

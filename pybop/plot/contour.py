@@ -86,8 +86,9 @@ def contour(
             param,
         ) in enumerate(parameters):
             if i > 1:
-                additional_values.append(param.current_value)
-                print(f"Fixed {param.name}:", param.current_value)
+                # TODO: Update from the initial to the intended value
+                additional_values.append(param.initial_value)
+                print(f"Fixed {param.name}:", param.initial_value)
 
     # Set up parameter bounds
     if bounds is None:
@@ -105,7 +106,7 @@ def contour(
     if gradient:
         grad_parameter_costs = []
 
-        # Determine the number of gradient outputs from cost.compute
+        # Determine the number of gradient outputs
         num_gradients = problem(
             np.asarray([x[0], y[0]] + additional_values),
             calculate_sensitivities=True,

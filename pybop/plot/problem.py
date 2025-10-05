@@ -38,10 +38,8 @@ def problem(
     plotly.graph_objs.Figure
         The Plotly figure object for the scatter plot.
     """
-    if isinstance(problem_inputs, dict):
-        problem_inputs = list(problem_inputs.values())
-    problem.parameters.update(values=problem_inputs)
-    problem_inputs = problem.simulator.parameters.to_dict()
+    if not isinstance(problem_inputs, dict):
+        problem_inputs = problem.parameters.to_dict(problem_inputs)
 
     domain = problem.domain
     if problem.domain_data is None:

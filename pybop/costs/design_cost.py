@@ -1,6 +1,7 @@
 import numpy as np
 
 from pybop.costs.base_cost import BaseCost
+from pybop.parameters.parameter import Inputs
 
 
 class DesignCost(BaseCost):
@@ -23,10 +24,11 @@ class DesignCost(BaseCost):
         self.target = target or ["Voltage [V]"]
         self.domain = "Time [s]"
 
-    def compute(
+    def evaluate(
         self,
         y: dict,
         dy: np.ndarray | None = None,
+        inputs: Inputs | None = None,
     ) -> float:
         """
         Returns the value of the cost variable.

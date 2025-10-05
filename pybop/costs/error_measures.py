@@ -3,6 +3,7 @@ import numpy as np
 from pybop._dataset import Dataset
 from pybop._utils import add_spaces
 from pybop.costs.base_cost import BaseCost
+from pybop.parameters.parameter import Inputs
 
 
 class ErrorMeasure(BaseCost):
@@ -86,10 +87,11 @@ class ErrorMeasure(BaseCost):
         else:
             self.weighting = np.asarray(weighting)
 
-    def compute(
+    def evaluate(
         self,
         y: dict[str, np.ndarray],
         dy: dict | None = None,
+        inputs: Inputs | None = None,
     ) -> float | tuple[float, np.ndarray]:
         """
         Computes the cost function for the given predictions.
@@ -118,7 +120,7 @@ class ErrorMeasure(BaseCost):
         if dy is not None:
             dy = self.stack_sensitivities(dy)
 
-        return self.__call__(r=r, dy=dy)
+        return self.__call__(r=r, dy=dy, inputs=inputs)
 
     def verify_prediction(self, y: dict):
         """
@@ -146,6 +148,7 @@ class ErrorMeasure(BaseCost):
         self,
         r: np.ndarray,
         dy: np.ndarray | None = None,
+        inputs: Inputs | None = None,
     ) -> float | tuple[float, np.ndarray]:
         """
         Computes the cost function for the given predictions.
@@ -201,6 +204,7 @@ class MeanSquaredError(ErrorMeasure):
         self,
         r: np.ndarray,
         dy: np.ndarray | None = None,
+        inputs: Inputs | None = None,
     ) -> float | tuple[float, np.ndarray]:
         e = np.mean((np.abs(r) ** 2) * self.weighting)
 
@@ -224,6 +228,7 @@ class RootMeanSquaredError(ErrorMeasure):
         self,
         r: np.ndarray,
         dy: np.ndarray | None = None,
+        inputs: Inputs | None = None,
     ) -> float | tuple[float, np.ndarray]:
         e = np.sqrt(np.mean((np.abs(r) ** 2) * self.weighting))
 
@@ -249,6 +254,7 @@ class MeanAbsoluteError(ErrorMeasure):
         self,
         r: np.ndarray,
         dy: np.ndarray | None = None,
+        inputs: Inputs | None = None,
     ) -> float | tuple[float, np.ndarray]:
         e = np.mean(np.abs(r) * self.weighting)
 
@@ -272,6 +278,7 @@ class SumSquaredError(ErrorMeasure):
         self,
         r: np.ndarray,
         dy: np.ndarray | None = None,
+        inputs: Inputs | None = None,
     ) -> float | tuple[float, np.ndarray]:
         e = np.sum(np.abs(r) ** 2 * self.weighting)
 
@@ -333,6 +340,7 @@ class Minkowski(ErrorMeasure):
         self,
         r: np.ndarray,
         dy: np.ndarray | None = None,
+        inputs: Inputs | None = None,
     ) -> float | tuple[float, np.ndarray]:
         e = np.sum((np.abs(r) ** self.p) * self.weighting) ** (1 / self.p)
 
@@ -395,6 +403,7 @@ class SumOfPower(ErrorMeasure):
         self,
         r: np.ndarray,
         dy: np.ndarray | None = None,
+        inputs: Inputs | None = None,
     ) -> float | tuple[float, np.ndarray]:
         e = np.sum((np.abs(r) ** self.p) * self.weighting)
 
