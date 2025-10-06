@@ -30,26 +30,28 @@ class TestOptimisation:
 
     @pytest.fixture
     def one_parameter(self):
-        return pybop.Parameter(
-            "Positive electrode active material volume fraction",
-            prior=pybop.Gaussian(0.5, 0.02),
-            bounds=[0.48, 0.52],
-        )
+        return {
+            "Positive electrode active material volume fraction": pybop.Parameter(
+                "Positive electrode active material volume fraction",
+                prior=pybop.Gaussian(0.5, 0.02),
+                bounds=[0.48, 0.52],
+            )
+        }
 
     @pytest.fixture
     def two_parameters(self):
-        return pybop.Parameters(
-            pybop.Parameter(
+        return {
+            "Negative electrode active material volume fraction": pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.6, 0.02),
                 bounds=[0.58, 0.62],
             ),
-            pybop.Parameter(
+            "Positive electrode active material volume fraction": pybop.Parameter(
                 "Positive electrode active material volume fraction",
                 prior=pybop.Gaussian(0.5, 0.05),
                 bounds=[0.48, 0.52],
             ),
-        )
+        }
 
     @pytest.fixture
     def model(self):
@@ -57,16 +59,20 @@ class TestOptimisation:
 
     @pytest.fixture
     def problem(self, model, one_parameter, dataset):
+        parameter_values = model.default_parameter_values
+        parameter_values.update(one_parameter)
         simulator = pybop.pybamm.Simulator(
-            model, parameters=one_parameter, protocol=dataset
+            model, parameter_values=parameter_values, protocol=dataset
         )
         cost = pybop.SumSquaredError(dataset)
         return pybop.Problem(simulator, cost)
 
     @pytest.fixture
     def two_param_problem(self, model, two_parameters, dataset):
+        parameter_values = model.default_parameter_values
+        parameter_values.update(two_parameters)
         simulator = pybop.pybamm.Simulator(
-            model, parameters=two_parameters, protocol=dataset
+            model, parameter_values=parameter_values, protocol=dataset
         )
         cost = pybop.SumSquaredError(dataset)
         return pybop.Problem(simulator, cost)

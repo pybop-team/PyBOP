@@ -20,18 +20,18 @@ class TestProblem:
 
     @pytest.fixture
     def parameters(self):
-        return pybop.Parameters(
-            pybop.Parameter(
+        return {
+            "Negative particle radius [m]": pybop.Parameter(
                 "Negative particle radius [m]",
                 prior=pybop.Gaussian(2e-05, 0.1e-5),
                 bounds=[1e-6, 5e-5],
             ),
-            pybop.Parameter(
+            "Positive particle radius [m]": pybop.Parameter(
                 "Positive particle radius [m]",
                 prior=pybop.Gaussian(0.5e-05, 0.1e-5),
                 bounds=[1e-6, 5e-5],
             ),
-        )
+        }
 
     @pytest.fixture
     def experiment(self):
@@ -72,14 +72,16 @@ class TestProblem:
 
     @pytest.fixture
     def simulator(self, parameters, dataset, model):
+        parameter_values = model.default_parameter_values
+        parameter_values.update(parameters)
         return pybop.pybamm.Simulator(
             model,
-            parameters=parameters,
+            parameter_values=parameter_values,
             protocol=dataset,
             initial_state={"Initial open-circuit voltage [V]": 4.0},
         )
 
-    def test_fitting_problem(self, simulator, parameters, dataset):
+    def test_fitting_problem(self, simulator, dataset):
         cost = pybop.MeanAbsoluteError(dataset)
         problem = pybop.Problem(simulator, cost)
 
@@ -97,12 +99,12 @@ class TestProblem:
         assert_array_equal(target_data, dataset["Voltage [V]"])
 
         # Test model.evaluate
-        inputs = parameters.to_dict([1e-5, 1e-5])
+        inputs = problem.parameters.to_dict([1e-5, 1e-5])
         problem.simulate(inputs)
 
         # Test try-except
         problem.verbose = True
-        inputs = parameters.to_dict([0.0, 0.0])
+        inputs = problem.parameters.to_dict([0.0, 0.0])
         out = problem.simulate(inputs)
         assert not np.isfinite(out["Voltage [V]"])
 
@@ -118,9 +120,11 @@ class TestProblem:
         )
 
         # Construct Problem
+        parameter_values = model.default_parameter_values
+        parameter_values.update(parameters)
         simulator = pybop.pybamm.EISSimulator(
             model,
-            parameters=parameters,
+            parameter_values=parameter_values,
             initial_state={"Initial open-circuit voltage [V]": 4.0},
             f_eval=dataset["Frequency [Hz]"],
         )
@@ -130,13 +134,15 @@ class TestProblem:
 
         # Test try-except
         problem.verbose = True
-        inputs = parameters.to_dict([0.0, 0.0])
+        inputs = problem.parameters.to_dict([0.0, 0.0])
         out = problem.simulate(inputs)
         assert not np.isfinite(out["Impedance"])
 
     def test_multi_fitting_problem(self, model, parameters, dataset):
+        parameter_values = model.default_parameter_values
+        parameter_values.update(parameters)
         simulator = pybop.pybamm.Simulator(
-            model, parameters=parameters, protocol=dataset
+            model, parameter_values=parameter_values, protocol=dataset
         )
         cost = pybop.MeanAbsoluteError(dataset)
         problem_1 = pybop.Problem(simulator, cost)
@@ -156,7 +162,7 @@ class TestProblem:
             }
         )
         simulator = pybop.pybamm.Simulator(
-            model, parameters=parameters, protocol=dataset_2
+            model, parameter_values=parameter_values, protocol=dataset_2
         )
         cost_2 = pybop.MeanAbsoluteError(dataset_2)
         problem_2 = pybop.Problem(simulator, cost_2)
@@ -170,30 +176,36 @@ class TestProblem:
         np.testing.assert_allclose(out, 0.1 * out1 + out2)
 
     def test_design_problem(self, parameters, experiment, model):
+        parameter_values = model.default_parameter_values
+        pybop.pybamm.set_formation_concentrations(parameter_values)
+        parameter_values.update(parameters)
+
         # Construct Problem
         simulator = pybop.pybamm.Simulator(
             model,
-            parameters=parameters,
+            parameter_values=parameter_values,
             protocol=experiment,
             initial_state={"Initial SoC": 0.7},
-            use_formation_concentrations=True,
         )
         problem = pybop.Problem(simulator)
 
         # Test evaluation
-        inputs = parameters.to_dict([1e-5, 1e-5])
+        inputs = problem.parameters.to_dict([1e-5, 1e-5])
         problem.simulate(inputs)
-        inputs = parameters.to_dict([3e-5, 3e-5])
+        inputs = problem.parameters.to_dict([3e-5, 3e-5])
         problem.simulate(inputs)
 
     def test_problem_construct_with_model_predict(self, parameters, model, dataset):
+        parameter_values = model.default_parameter_values
+        parameter_values.update(parameters)
+
         # Construct model and predict
         simulator = pybop.pybamm.Simulator(
             model,
-            parameters=parameters,
+            parameter_values=parameter_values,
             protocol=np.linspace(0, 10, 100),
         )
-        inputs = parameters.to_dict([1e-5, 1e-5])
+        inputs = simulator.parameters.to_dict([1e-5, 1e-5])
         out = simulator.solve(inputs)
 
         # Test problem evaluate
@@ -202,7 +214,7 @@ class TestProblem:
         problem_out = problem.simulate(inputs)
         assert_allclose(out["Voltage [V]"].data, problem_out["Voltage [V]"], atol=1e-6)
 
-        inputs = parameters.to_dict([2e-5, 2e-5])
+        inputs = problem.parameters.to_dict([2e-5, 2e-5])
         problem_output = problem.simulate(inputs)
         with pytest.raises(AssertionError):
             assert_allclose(

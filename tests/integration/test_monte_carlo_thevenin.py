@@ -69,22 +69,22 @@ class TestSamplingThevenin:
 
     @pytest.fixture
     def parameters(self):
-        return pybop.Parameters(
-            pybop.Parameter(
+        return {
+            "R0 [Ohm]": pybop.Parameter(
                 "R0 [Ohm]",
                 prior=pybop.Gaussian(5e-2, 5e-3),
                 transformation=pybop.LogTransformation(),
                 initial_value=pybop.Uniform(2e-3, 8e-2).rvs()[0],
                 bounds=[1e-4, 1e-1],
             ),
-            pybop.Parameter(
+            "R1 [Ohm]": pybop.Parameter(
                 "R1 [Ohm]",
                 prior=pybop.Gaussian(5e-2, 5e-3),
                 transformation=pybop.LogTransformation(),
                 initial_value=pybop.Uniform(2e-3, 8e-2).rvs()[0],
                 bounds=[1e-4, 1e-1],
             ),
-        )
+        }
 
     @pytest.fixture(params=[0.5])
     def init_soc(self, request):
@@ -99,11 +99,9 @@ class TestSamplingThevenin:
         dataset = self.get_data(model, parameter_values)
 
         # Define the cost to optimise
+        parameter_values.update(parameters)
         simulator = pybop.pybamm.Simulator(
-            model,
-            parameter_values=parameter_values,
-            parameters=parameters,
-            protocol=dataset,
+            model, parameter_values=parameter_values, protocol=dataset
         )
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=self.sigma0)
         posterior = pybop.LogPosterior(likelihood)

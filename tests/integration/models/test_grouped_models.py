@@ -82,12 +82,10 @@ class TestGroupedModels:
     @pytest.fixture(scope="module")
     def parameters(self):
         """Create parameter objects for reuse."""
-        return pybop.Parameters(
-            *[
-                pybop.Parameter(param_name, initial_value=val)
-                for param_name, val in CHARGE_TRANSFER_PARAMS
-            ]
-        )
+        return {
+            param_name: pybop.Parameter(param_name, initial_value=val)
+            for param_name, val in CHARGE_TRANSFER_PARAMS
+        }
 
     def assert_parameter_sensitivity(
         self, problem, initial_inputs, example_inputs, tolerance=RELATIVE_TOLERANCE
@@ -106,11 +104,10 @@ class TestGroupedModels:
     def test_voltage_fitting(self, dataset, model_config, parameters):
         """Test grouped SPMe model with voltage-based cost functions."""
         # Build problem with multiple cost functions
+        parameter_values = model_config["parameter_values"]
+        parameter_values.update(parameters)
         simulator = pybop.pybamm.Simulator(
-            model_config["model"],
-            parameter_values=model_config["parameter_values"],
-            parameters=parameters,
-            protocol=dataset,
+            model_config["model"], parameter_values=parameter_values, protocol=dataset
         )
         cost_1 = pybop.SumSquaredError(dataset)
         cost_2 = pybop.MeanAbsoluteError(dataset)
@@ -118,9 +115,9 @@ class TestGroupedModels:
         problem = pybop.Problem(simulator, cost)
 
         # Test parameter sensitivity
-        initial_params = parameters.get_initial_values()
-        initial_inputs = parameters.to_dict(initial_params)
-        example_inputs = parameters.to_dict(TEST_PARAM_VALUES)
+        initial_params = problem.parameters.get_initial_values()
+        initial_inputs = problem.parameters.to_dict(initial_params)
+        example_inputs = problem.parameters.to_dict(TEST_PARAM_VALUES)
         value1, value2 = self.assert_parameter_sensitivity(
             problem, initial_inputs, example_inputs
         )
@@ -130,10 +127,10 @@ class TestGroupedModels:
         value2_sens, grad2 = problem.single_call(example_inputs, calculate_grad=True)
 
         # Validate gradient shape and value consistency
-        assert grad1.shape == (len(parameters),), (
+        assert grad1.shape == (len(problem.parameters),), (
             f"Gradient shape mismatch: {grad1.shape}"
         )
-        assert grad2.shape == (len(parameters),), (
+        assert grad2.shape == (len(problem.parameters),), (
             f"Gradient shape mismatch: {grad2.shape}"
         )
 
@@ -145,10 +142,11 @@ class TestGroupedModels:
         )
 
     def test_eis_fitting(self, eis_dataset, model_config, parameters):
+        parameter_values = model_config["parameter_values"]
+        parameter_values.update(parameters)
         simulator = pybop.pybamm.EISSimulator(
             model_config["model"],
-            parameter_values=model_config["parameter_values"],
-            parameters=parameters,
+            parameter_values=parameter_values,
             f_eval=eis_dataset["Frequency [Hz]"],
         )
         cost = pybop.MeanSquaredError(
@@ -157,7 +155,7 @@ class TestGroupedModels:
         eis_problem = pybop.Problem(simulator, cost)
 
         # Test parameter sensitivity
-        initial_params = parameters.get_initial_values()
-        initial_inputs = parameters.to_dict(initial_params)
-        example_inputs = parameters.to_dict(TEST_PARAM_VALUES)
+        initial_params = eis_problem.parameters.get_initial_values()
+        initial_inputs = eis_problem.parameters.to_dict(initial_params)
+        example_inputs = eis_problem.parameters.to_dict(TEST_PARAM_VALUES)
         self.assert_parameter_sensitivity(eis_problem, initial_inputs, example_inputs)

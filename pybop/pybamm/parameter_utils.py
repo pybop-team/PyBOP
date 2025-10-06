@@ -1,3 +1,4 @@
+import pybamm
 from pybamm import LithiumIonParameters, Parameter, ParameterValues, Symbol
 
 
@@ -15,7 +16,7 @@ def set_formation_concentrations(parameter_values: ParameterValues) -> None:
         A PyBaMM parameter set containing standard lithium ion parameters.
     """
     param_key = "Initial concentration in negative electrode [mol.m-3]"
-    if param_key in parameter_values.keys() and parameter_values[param_key] > 0:
+    if param_key in parameter_values.keys():
         # Obtain the total amount of lithium in the active material
         Q_Li_particles_init = parameter_values.evaluate(
             LithiumIonParameters().Q_Li_particles_init
@@ -32,13 +33,72 @@ def set_formation_concentrations(parameter_values: ParameterValues) -> None:
             )
         )
 
-        # Update the initial lithium concentrations
+        # Set the ratio between the cyclable and theoretical formation concentrations
+        c_p_max = parameter_values.evaluate(
+            Parameter("Maximum concentration in positive electrode [mol.m-3]")
+        )
         parameter_values.update(
             {
-                "Initial concentration in negative electrode [mol.m-3]": 0.0,
-                "Initial concentration in positive electrode [mol.m-3]": c_init,
-            }
+                "Initial cyclable lithium inventory to positive electrode capacity ratio": c_init
+                / c_p_max
+            },
+            check_already_exists=False,
         )
+
+        # Define the maximum theoretical lithium inventory [A.h]
+        Q_Li_particles_max = (
+            pybamm.Parameter("Maximum concentration in positive electrode [mol.m-3]")
+            * Parameter("Positive electrode active material volume fraction")
+            * Parameter("Positive electrode thickness [m]")
+            * electrode_area()
+            * Parameter("Faraday constant [C.mol-1]")
+        ) / 3600
+
+        # Define an initial lithium inventory that scales with the maximum theoretical lithium inventory
+        Q_Li_particles_init = (
+            pybamm.Parameter(
+                "Initial cyclable lithium inventory to positive electrode capacity ratio"
+            )
+            * Q_Li_particles_max
+        )
+
+        def set_initial_state_from_formation(
+            initial_value,
+            parameter_values,
+            direction=None,
+            param=None,
+            known_value="cyclable lithium capacity",
+            inplace=True,
+            options=None,
+            inputs=None,
+            tol=1e-6,
+        ):
+            if known_value != "cyclable lithium capacity":
+                raise ValueError(
+                    "The known value must be cyclable litihum capacity to use formation concentrations."
+                )
+            if param is not None and not isinstance(param, LithiumIonParameters):
+                raise TypeError(
+                    "Expecting param to be an instance of PyBaMM's LithiumIonParameters class."
+                )
+
+            # Employ the scalable definition of the cyclable lithium inventory
+            param = param or LithiumIonParameters()
+            param.Q_Li_particles_init = Q_Li_particles_init
+
+            return pybamm.lithium_ion.set_initial_state(
+                initial_value=initial_value,
+                parameter_values=parameter_values,
+                direction=direction,
+                param=param,
+                known_value=known_value,
+                inplace=inplace,
+                options=options,
+                inputs=inputs,
+                tol=tol,
+            )
+
+        parameter_values._set_initial_state = set_initial_state_from_formation  # noqa: SLF001
 
 
 def electrode_area() -> Symbol:

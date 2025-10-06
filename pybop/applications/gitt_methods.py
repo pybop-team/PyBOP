@@ -40,10 +40,14 @@ class GITTPulseFit(BaseApplication):
         verbose: bool = True,
     ):
         self.parameter_values = parameter_values
-        self.parameters = pybop.Parameters(
-            pybop.Parameter("Particle diffusion time scale [s]", bounds=[0, np.inf]),
-            pybop.Parameter("Series resistance [Ohm]", bounds=[0, np.inf]),
-        )
+        self.parameters = {
+            "Particle diffusion time scale [s]": pybop.Parameter(
+                "Particle diffusion time scale [s]", bounds=[0, np.inf]
+            ),
+            "Series resistance [Ohm]": pybop.Parameter(
+                "Series resistance [Ohm]", bounds=[0, np.inf]
+            ),
+        }
         self.model = pybop.lithium_ion.SPDiffusion(build=True)
         self.cost = cost or pybop.RootMeanSquaredError
         self.verbose = verbose
@@ -53,18 +57,14 @@ class GITTPulseFit(BaseApplication):
 
     def __call__(self, gitt_pulse: pybop.Dataset) -> pybop.OptimisationResult:
         # Update starting point
-        self.parameters.update(
-            initial_values=[
-                self.parameter_values["Particle diffusion time scale [s]"],
-                self.parameter_values["Series resistance [Ohm]"],
-            ]
-        )
+        for key, param in self.parameters.items():
+            param.update_initial_value(self.parameter_values[key])
+        self.parameter_values.update(self.parameters)
 
         # Define the problem
         simulator = pybop.pybamm.Simulator(
             self.model,
             parameter_values=self.parameter_values,
-            parameters=self.parameters,
             protocol=gitt_pulse,
         )
         cost = self.cost(gitt_pulse, weighting="domain")
@@ -74,7 +74,7 @@ class GITTPulseFit(BaseApplication):
         options = pybop.SciPyMinimizeOptions(verbose=self.verbose, tol=1e-8)
         self.optim = self.optimiser(problem=self.problem, options=options)
         self.results = self.optim.run()
-        self.parameter_values.update(self.parameters.to_dict(self.results.x))
+        self.parameter_values.update(self.problem.parameters.to_dict(self.results.x))
 
         # pybop.plot.problem(problem=problem, problem_inputs=self.results.x)
 

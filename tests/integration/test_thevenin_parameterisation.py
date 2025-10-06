@@ -49,20 +49,20 @@ class TestTheveninParameterisation:
 
     @pytest.fixture
     def parameters(self):
-        return pybop.Parameters(
-            pybop.Parameter(
+        return {
+            "R0 [Ohm]": pybop.Parameter(
                 "R0 [Ohm]",
                 prior=pybop.Gaussian(0.05, 0.01),
                 bounds=[1e-6, 0.1],
                 transformation=pybop.LogTransformation(),
             ),
-            pybop.Parameter(
+            "R1 [Ohm]": pybop.Parameter(
                 "R1 [Ohm]",
                 prior=pybop.Gaussian(0.05, 0.01),
                 bounds=[1e-6, 0.1],
                 transformation=pybop.LogTransformation(),
             ),
-        )
+        }
 
     @pytest.fixture
     def dataset(self, model, parameter_values):
@@ -93,11 +93,9 @@ class TestTheveninParameterisation:
         optimiser,
         method,
     ):
+        parameter_values.update(parameters)
         simulator = pybop.pybamm.Simulator(
-            model,
-            parameter_values=parameter_values,
-            parameters=parameters,
-            protocol=dataset,
+            model, parameter_values=parameter_values, protocol=dataset
         )
         # Define the cost to optimise
         cost = cost_class(dataset)

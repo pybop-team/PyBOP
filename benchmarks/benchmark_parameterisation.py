@@ -44,20 +44,6 @@ class BenchmarkParameterisation:
             }
         )
 
-        # Define fitting parameters
-        parameters = pybop.Parameters(
-            pybop.Parameter(
-                "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.55, 0.03),
-                bounds=[0.375, 0.7],
-            ),
-            pybop.Parameter(
-                "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.55, 0.03),
-                bounds=[0.375, 0.7],
-            ),
-        )
-
         # Generate synthetic data
         sigma = 0.003
         t_eval = np.arange(0, 900, 2)
@@ -77,12 +63,25 @@ class BenchmarkParameterisation:
             }
         )
 
+        # Define fitting parameters
+        parameter_values.update(
+            {
+                "Negative electrode active material volume fraction": pybop.Parameter(
+                    "Negative electrode active material volume fraction",
+                    prior=pybop.Gaussian(0.55, 0.03),
+                    bounds=[0.375, 0.7],
+                ),
+                "Positive electrode active material volume fraction": pybop.Parameter(
+                    "Positive electrode active material volume fraction",
+                    prior=pybop.Gaussian(0.55, 0.03),
+                    bounds=[0.375, 0.7],
+                ),
+            }
+        )
+
         # Create fitting problem
         simulator = pybop.pybamm.Simulator(
-            model,
-            parameter_values=parameter_values,
-            parameters=parameters,
-            protocol=dataset,
+            model, parameter_values=parameter_values, protocol=dataset
         )
         cost = pybop.SumSquaredError(dataset)
         problem = pybop.Problem(simulator, cost)

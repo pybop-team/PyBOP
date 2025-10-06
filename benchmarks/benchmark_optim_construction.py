@@ -28,22 +28,6 @@ class BenchmarkOptimisationConstruction:
         # Create parameter values
         parameter_values = pybamm.ParameterValues(parameter_set)
 
-        # Define fitting parameters
-        parameters = pybop.Parameters(
-            pybop.Parameter(
-                "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.6, 0.02),
-                bounds=[0.375, 0.7],
-                initial_value=0.63,
-            ),
-            pybop.Parameter(
-                "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.5, 0.02),
-                bounds=[0.375, 0.625],
-                initial_value=0.51,
-            ),
-        )
-
         # Generate synthetic data
         sigma = 0.001
         t_eval = np.arange(0, 900, 2)
@@ -63,12 +47,27 @@ class BenchmarkOptimisationConstruction:
             }
         )
 
+        # Define fitting parameters
+        parameter_values.update(
+            {
+                "Negative electrode active material volume fraction": pybop.Parameter(
+                    "Negative electrode active material volume fraction",
+                    prior=pybop.Gaussian(0.6, 0.02),
+                    bounds=[0.375, 0.7],
+                    initial_value=0.63,
+                ),
+                "Positive electrode active material volume fraction": pybop.Parameter(
+                    "Positive electrode active material volume fraction",
+                    prior=pybop.Gaussian(0.5, 0.02),
+                    bounds=[0.375, 0.625],
+                    initial_value=0.51,
+                ),
+            }
+        )
+
         # Create fitting problem
         simulator = pybop.pybamm.Simulator(
-            model,
-            parameter_values=parameter_values,
-            parameters=parameters,
-            protocol=dataset,
+            model, parameter_values=parameter_values, protocol=dataset
         )
         cost = pybop.SumSquaredError(dataset)
         self.problem = pybop.Problem(simulator, cost)

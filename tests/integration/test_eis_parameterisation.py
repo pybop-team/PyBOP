@@ -39,20 +39,20 @@ class TestEISParameterisation:
 
     @pytest.fixture
     def parameters(self):
-        return pybop.Parameters(
-            pybop.Parameter(
+        return {
+            "Negative electrode active material volume fraction": pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Uniform(0.3, 0.9),
                 initial_value=pybop.Uniform(0.4, 0.75).rvs()[0],
                 bounds=[0.375, 0.775],
             ),
-            pybop.Parameter(
+            "Positive electrode active material volume fraction": pybop.Parameter(
                 "Positive electrode active material volume fraction",
                 prior=pybop.Uniform(0.3, 0.9),
                 initial_value=pybop.Uniform(0.4, 0.75).rvs()[0],
                 bounds=[0.375, 0.775],
             ),
-        )
+        }
 
     @pytest.fixture(params=[0.5])
     def init_soc(self, request):
@@ -102,10 +102,10 @@ class TestEISParameterisation:
         dataset = self.get_data(model, parameter_values, f_eval)
 
         # Define the problem
+        parameter_values.update(parameters)
         simulator = pybop.pybamm.EISSimulator(
             model,
             parameter_values=parameter_values,
-            parameters=parameters,
             f_eval=dataset["Frequency [Hz]"],
         )
 
@@ -177,27 +177,20 @@ class TestEISParameterisation:
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
 
     def get_data(self, model, parameter_values, f_eval):
-        parameters = [
-            pybop.Parameter(
-                "Negative electrode active material volume fraction",
-                initial_value=self.ground_truth[0],
-            ),
-            pybop.Parameter(
-                "Positive electrode active material volume fraction",
-                initial_value=self.ground_truth[1],
-            ),
-        ]
-        inputs = {
-            "Negative electrode active material volume fraction": self.ground_truth[0],
-            "Positive electrode active material volume fraction": self.ground_truth[1],
-        }
-        simulator = pybop.pybamm.EISSimulator(
-            model,
-            parameter_values=parameter_values,
-            parameters=parameters,
-            f_eval=f_eval,
+        parameter_values.update(
+            {
+                "Negative electrode active material volume fraction": self.ground_truth[
+                    0
+                ],
+                "Positive electrode active material volume fraction": self.ground_truth[
+                    1
+                ],
+            }
         )
-        solution = simulator.simulate(inputs=inputs)
+        simulator = pybop.pybamm.EISSimulator(
+            model, parameter_values=parameter_values, f_eval=f_eval
+        )
+        solution = simulator.simulate()
         return pybop.Dataset(
             {
                 "Frequency [Hz]": f_eval,

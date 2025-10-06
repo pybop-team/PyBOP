@@ -31,12 +31,14 @@ class TestLogPosterior:
 
     @pytest.fixture
     def parameter(self, ground_truth):
-        return pybop.Parameter(
-            "Negative electrode active material volume fraction",
-            prior=pybop.Gaussian(0.5, 0.01),
-            bounds=[0.375, 0.625],
-            initial_value=ground_truth,
-        )
+        return {
+            "Negative electrode active material volume fraction": pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                prior=pybop.Gaussian(0.5, 0.01),
+                bounds=[0.375, 0.625],
+                initial_value=ground_truth,
+            )
+        }
 
     @pytest.fixture
     def experiment(self):
@@ -57,11 +59,9 @@ class TestLogPosterior:
 
     @pytest.fixture
     def simulator(self, model, parameter_values, parameter, dataset):
+        parameter_values.update(parameter)
         return pybop.pybamm.Simulator(
-            model,
-            parameter_values=parameter_values,
-            parameters=parameter,
-            protocol=dataset,
+            model, parameter_values=parameter_values, protocol=dataset
         )
 
     @pytest.fixture
@@ -80,7 +80,8 @@ class TestLogPosterior:
         assert problem._cost == posterior
         assert problem._cost.log_likelihood == likelihood
         assert problem._cost.prior == prior
-        assert problem.parameters[parameter.name] is parameter
+        key = "Negative electrode active material volume fraction"
+        assert problem.parameters[key] is parameter[key]
         assert problem._cost.parameters is problem.parameters
 
     def test_log_posterior_construction_no_prior(self, simulator, likelihood):

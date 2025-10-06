@@ -41,20 +41,20 @@ class Test_SPM_Parameterisation:
 
     @pytest.fixture
     def parameters(self):
-        return pybop.Parameters(
-            pybop.Parameter(
+        return {
+            "Negative electrode active material volume fraction": pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Uniform(0.3, 0.9),
                 initial_value=pybop.Uniform(0.4, 0.75).rvs()[0],
                 bounds=[0.3, 0.8],
             ),
-            pybop.Parameter(
+            "Positive electrode active material volume fraction": pybop.Parameter(
                 "Positive electrode active material volume fraction",
                 prior=pybop.Uniform(0.3, 0.9),
                 initial_value=pybop.Uniform(0.4, 0.75).rvs()[0],
                 # no bounds
             ),
-        )
+        }
 
     @pytest.fixture(
         params=[
@@ -93,11 +93,9 @@ class Test_SPM_Parameterisation:
         dataset = self.get_data(model, parameter_values)
 
         # Define the problem
+        parameter_values.update(parameters)
         simulator = pybop.pybamm.Simulator(
-            model,
-            parameter_values=parameter_values,
-            parameters=parameters,
-            protocol=dataset,
+            model, parameter_values=parameter_values, protocol=dataset
         )
 
         # Construct the cost
@@ -197,11 +195,9 @@ class Test_SPM_Parameterisation:
 
         # Define the cost to optimise
         target = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
+        parameter_values.update(parameters)
         simulator = pybop.pybamm.Simulator(
-            model,
-            parameter_values=parameter_values,
-            parameters=parameters,
-            protocol=dataset,
+            model, parameter_values=parameter_values, protocol=dataset
         )
 
         # Construct the cost
@@ -296,18 +292,16 @@ class Test_SPM_Parameterisation:
         dataset = self.get_data(second_model, second_parameter_values)
 
         # Define the cost to optimise
+        parameter_values.update(parameters)
         simulator = pybop.pybamm.Simulator(
-            model,
-            parameter_values=parameter_values,
-            parameters=parameters,
-            protocol=dataset,
+            model, parameter_values=parameter_values, protocol=dataset
         )
         cost = pybop.RootMeanSquaredError(dataset)
         problem = pybop.Problem(simulator, cost)
 
         # Build the optimisation problem
         optim = pybop.XNES(problem)
-        initial_cost = problem(parameters.get_initial_values())
+        initial_cost = problem(problem.parameters.get_initial_values())
 
         # Run the optimisation problem
         results = optim.run()
