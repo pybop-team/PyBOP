@@ -192,36 +192,43 @@ class OCPAverage(BaseApplication):
 
             if self.allow_stretching:
 
-                def batch_simulate(self, inputs, calculate_sensitivities: bool = False):
-                    simulations = []
+                def batch_solve(self, inputs, calculate_sensitivities: bool = False):
+                    solutions = []
                     for x in inputs:
-                        simulations.append(
-                            {
-                                "Voltage [mV]": 1e3
-                                * voltage_charge(
-                                    x["stretch"] * self.domain_data + x["shift"]
-                                ),
-                                "Differential capacity [V-1]": differential_capacity_charge(
-                                    x["stretch"] * self.domain_data + x["shift"]
-                                ),
-                            }
+                        sol = pybop.Solution()
+                        sol.set_solution_variable(
+                            "Voltage [mV]",
+                            data=1e3
+                            * voltage_charge(
+                                x["stretch"] * self.domain_data + x["shift"]
+                            ),
                         )
-                    return simulations
+                        sol.set_solution_variable(
+                            "Differential capacity [V-1]",
+                            data=differential_capacity_charge(
+                                x["stretch"] * self.domain_data + x["shift"]
+                            ),
+                        )
+                        solutions.append(sol)
+                    return solutions
             else:
 
-                def batch_simulate(self, inputs, calculate_sensitivities: bool = False):
-                    simulations = []
+                def batch_solve(self, inputs, calculate_sensitivities: bool = False):
+                    solutions = []
                     for x in inputs:
-                        simulations.append(
-                            {
-                                "Voltage [mV]": 1e3
-                                * voltage_charge(self.domain_data + x["shift"]),
-                                "Differential capacity [V-1]": differential_capacity_charge(
-                                    self.domain_data + x["shift"]
-                                ),
-                            }
+                        sol = pybop.Solution()
+                        sol.set_solution_variable(
+                            "Voltage [mV]",
+                            data=1e3 * voltage_charge(self.domain_data + x["shift"]),
                         )
-                    return simulations
+                        sol.set_solution_variable(
+                            "Differential capacity [V-1]",
+                            data=differential_capacity_charge(
+                                self.domain_data + x["shift"]
+                            ),
+                        )
+                        solutions.append(sol)
+                    return solutions
 
         cost = self.cost(
             interpolated_dataset,
@@ -332,17 +339,18 @@ class OCPCapacityToStoichiometry(BaseApplication):
                 super().__init__(parameters=parameters)
                 self.domain_data = domain_data
 
-            def batch_simulate(self, inputs, calculate_sensitivities: bool = False):
-                simulations = []
+            def batch_solve(self, inputs, calculate_sensitivities: bool = False):
+                solutions = []
                 for x in inputs:
-                    simulations.append(
-                        {
-                            "Voltage [V]": ocv_function(
-                                (self.domain_data - x["shift"]) / x["stretch"]
-                            ),
-                        }
+                    sol = pybop.Solution()
+                    sol.set_solution_variable(
+                        "Voltage [V]",
+                        data=ocv_function(
+                            (self.domain_data - x["shift"]) / x["stretch"]
+                        ),
                     )
-                return simulations
+                    solutions.append(sol)
+                return solutions
 
         problem = pybop.Problem(simulator=OCVCurve(self.parameters), cost=self.cost)
 

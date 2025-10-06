@@ -3,10 +3,9 @@ from copy import copy
 import numpy as np
 
 from pybop.parameters.parameter import Inputs, Parameter, Parameters
+from pybop.simulators.solution import Solution
 
 # Type aliases
-SimulationType = dict[str, np.ndarray]
-SimulationWithSensitivities = tuple[SimulationType, dict[str, dict[str, np.ndarray]]]
 CostWithSensitivities = tuple[float, np.ndarray]
 CostsAndSensitivities = tuple[np.ndarray, np.ndarray]
 
@@ -41,35 +40,30 @@ class BaseSimulator:
     def set_output_variables(self, target: list[str]):
         return NotImplementedError
 
-    def simulate(
+    def solve(
         self,
         inputs: "Inputs | list[Inputs] | None" = None,
         calculate_sensitivities: bool = False,
-    ) -> (
-        SimulationType
-        | SimulationWithSensitivities
-        | list[SimulationType]
-        | list[SimulationWithSensitivities]
-    ):
+    ) -> Solution | list[Solution]:
         """
         Returns the output of a simulation for one or more sets of inputs as a dictionary,
         along with the sensitivities of the output with respect to the input parameters if
         calculate_sensitivities=True.
         """
         if not isinstance(inputs, list):
-            return self.batch_simulate(
+            return self.batch_solve(
                 inputs=[inputs], calculate_sensitivities=calculate_sensitivities
             )[0]
 
-        return self.batch_simulate(
+        return self.batch_solve(
             inputs=inputs, calculate_sensitivities=calculate_sensitivities
         )
 
-    def batch_simulate(
+    def batch_solve(
         self,
         inputs: "list[Inputs]",
         calculate_sensitivities: bool = False,
-    ) -> list[SimulationType] | list[SimulationWithSensitivities]:
+    ) -> list[Solution]:
         """
         Run the simulation for each set of inputs and return dict-like simulation results
         and (optionally) the sensitivities with respect to each input parameter.
@@ -83,7 +77,7 @@ class BaseSimulator:
 
         Returns
         -------
-        list[SimulationType] | list[SimulationWithSensitivities]
+        list[Solution]
             A list of len(inputs) containing the simulation result(s) and (optionally)
             the sensitivities with respect to each input parameter.
         """

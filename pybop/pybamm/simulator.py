@@ -13,8 +13,6 @@ from pybop._utils import FailedSolution, RecommendedSolver
 from pybop.parameters.parameter import Parameter, Parameters
 from pybop.simulators.base_simulator import (
     BaseSimulator,
-    SimulationType,
-    SimulationWithSensitivities,
 )
 
 
@@ -345,52 +343,6 @@ class Simulator(BaseSimulator):
 
         # The underlying solve method is one of four methods set during initialisation
         return self._process_solutions(self._catch_errors(inputs))
-
-    def batch_simulate(
-        self,
-        inputs: "list[Inputs]",
-        calculate_sensitivities: bool = False,
-    ) -> list[SimulationType] | list[SimulationWithSensitivities]:
-        """
-        Run the simulation for each set of inputs and return dict-like simulation results
-        and (optionally) the sensitivities with respect to each input parameter.
-
-        Parameters
-        ----------
-        inputs : list[Inputs]
-            A list of input parameters.
-        calculate_sensitivities : bool
-            Whether to also return the sensitivities (default: False).
-
-        Returns
-        -------
-        list[SimulationType] | list[SimulationWithSensitivities]
-            A list of len(inputs) containing the simulation result(s) and (optionally)
-            the sensitivities with respect to each input parameter.
-        """
-        solutions = self.batch_solve(
-            inputs=inputs, calculate_sensitivities=calculate_sensitivities
-        )
-
-        simulations = []
-        for sol in solutions:
-            if calculate_sensitivities:
-                simulations.append(
-                    (
-                        {s: sol[s].data for s in self.output_variables},
-                        {
-                            p: {
-                                s: np.asarray(sol[s].sensitivities[p])
-                                for s in self.output_variables
-                            }
-                            for p in self.parameters.keys()
-                        },
-                    )
-                )
-            else:
-                simulations.append({s: sol[s].data for s in self.output_variables})
-
-        return simulations
 
     def _catch_errors(self, inputs: "list[Inputs]"):
         if not self.debug_mode:

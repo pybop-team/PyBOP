@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 from pybop._utils import SymbolReplacer
 from pybop.parameters.parameter import Parameter, Parameters
 from pybop.pybamm.simulator import Simulator
-from pybop.simulators.base_simulator import BaseSimulator, SimulationType
+from pybop.simulators.base_simulator import BaseSimulator, Solution
 
 
 class EISSimulator(BaseSimulator):
@@ -222,11 +222,11 @@ class EISSimulator(BaseSimulator):
         self.b = np.zeros(y0.shape)
         self.b[-1] = -1
 
-    def simulate(
+    def solve(
         self,
         inputs: "Inputs | list[Inputs] | None" = None,
         calculate_sensitivities: bool = False,
-    ) -> SimulationType | list[SimulationType]:
+    ) -> Solution | list[Solution]:
         """
         Run the EIS simulation for one or more sets of inputs and return the result(s).
 
@@ -240,7 +240,7 @@ class EISSimulator(BaseSimulator):
 
         Returns
         -------
-        SimulationType | list[SimulationType]
+        Solution | list[Solution]
             Complex impedance results.
         """
         if calculate_sensitivities:
@@ -254,9 +254,9 @@ class EISSimulator(BaseSimulator):
 
         return self._catch_errors(inputs)
 
-    def batch_simulate(
+    def batch_solve(
         self, inputs: "list[Inputs]" = None, calculate_sensitivities: bool = False
-    ) -> list[SimulationType]:
+    ) -> list[Solution]:
         """
         Run the EIS simulation for each set of inputs and return dict-like results.
 
@@ -270,7 +270,7 @@ class EISSimulator(BaseSimulator):
 
         Returns
         -------
-        list[SimulationType]
+        list[Solution]
             A list of len(inputs) containing the complex impedance results.
         """
         if calculate_sensitivities:
@@ -312,7 +312,7 @@ class EISSimulator(BaseSimulator):
 
         Returns
         -------
-        SimulationType
+        Solution
             Complex impedance results.
         """
         # Always run initialise_eis_matrices, after rebuilding the model if necessary
@@ -320,7 +320,9 @@ class EISSimulator(BaseSimulator):
 
         zs = [self.calculate_impedance(frequency) for frequency in self._f_eval]
 
-        return {"Impedance": np.asarray(zs) * self.z_scale}
+        solution = Solution()
+        solution.set_solution_variable("Impedance", data=np.asarray(zs) * self.z_scale)
+        return solution
 
     def calculate_impedance(self, frequency):
         """

@@ -106,7 +106,7 @@ class TestProblem:
         problem.verbose = True
         inputs = problem.parameters.to_dict([0.0, 0.0])
         out = problem.simulate(inputs)
-        assert not np.isfinite(out["Voltage [V]"])
+        assert not np.isfinite(out["Voltage [V]"].data)
 
     def test_fitting_problem_eis(self, parameters):
         model = pybamm.lithium_ion.SPM()
@@ -212,14 +212,16 @@ class TestProblem:
         cost = pybop.MeanAbsoluteError(dataset)
         problem = pybop.Problem(simulator, cost)
         problem_out = problem.simulate(inputs)
-        assert_allclose(out["Voltage [V]"].data, problem_out["Voltage [V]"], atol=1e-6)
+        assert_allclose(
+            out["Voltage [V]"].data, problem_out["Voltage [V]"].data, atol=1e-6
+        )
 
         inputs = problem.parameters.to_dict([2e-5, 2e-5])
         problem_output = problem.simulate(inputs)
         with pytest.raises(AssertionError):
             assert_allclose(
                 out["Voltage [V]"].data,
-                problem_output["Voltage [V]"],
+                problem_output["Voltage [V]"].data,
                 atol=1e-6,
             )
 

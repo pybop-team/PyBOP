@@ -89,6 +89,7 @@ from .problems.meta_problem import MetaProblem
 # Simulator classes
 #
 from .simulators.base_simulator import BaseSimulator
+from .simulators.solution import Solution
 
 #
 # Cost classes

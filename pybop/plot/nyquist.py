@@ -43,7 +43,7 @@ def nyquist(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
         problem_inputs = problem.parameters.to_dict(problem_inputs)
 
     model_output = problem.simulate(problem_inputs)
-    domain_data = model_output["Impedance"].real
+    domain_data = model_output["Impedance"].data.real
     target_output = problem.target_data
 
     figure_list = []
@@ -90,7 +90,7 @@ def nyquist(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
 
         plot_dict = StandardPlot(
             x=domain_data,
-            y=-model_output[var].imag,
+            y=-model_output[var].data.imag,
             layout_options=default_layout_options,
             trace_names="Model",
         )

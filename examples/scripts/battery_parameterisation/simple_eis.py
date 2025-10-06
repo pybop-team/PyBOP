@@ -23,7 +23,7 @@ f_eval = np.logspace(-4, 5, n_frequency)
 # Create synthetic data for parameter inference
 solution = pybop.pybamm.EISSimulator(
     model, parameter_values=parameter_values, f_eval=f_eval
-).simulate()
+).solve()
 
 
 def noisy(data, sigma):
@@ -42,7 +42,7 @@ dataset = pybop.Dataset(
     {
         "Frequency [Hz]": f_eval,
         "Current function [A]": np.zeros_like(f_eval),
-        "Impedance": noisy(solution["Impedance"], sigma0),
+        "Impedance": noisy(solution["Impedance"].data, sigma0),
     },
     domain="Frequency [Hz]",
 )

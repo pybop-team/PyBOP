@@ -4,6 +4,7 @@ from pybop._dataset import Dataset
 from pybop._utils import add_spaces
 from pybop.costs.base_cost import BaseCost
 from pybop.parameters.parameter import Inputs
+from pybop.simulators.solution import Solution
 
 
 class ErrorMeasure(BaseCost):
@@ -89,47 +90,48 @@ class ErrorMeasure(BaseCost):
 
     def evaluate(
         self,
-        y: dict[str, np.ndarray],
-        dy: dict | None = None,
+        sol: Solution,
         inputs: Inputs | None = None,
+        calculate_sensitivities: bool = False,
     ) -> float | tuple[float, np.ndarray]:
         """
         Computes the cost function for the given predictions.
 
         Parameters
         ----------
-        y : dict[str, np.ndarray[np.float64]]
-            The dictionary of predictions with keys designating the output variables for fitting.
-        dy : dict[str, dict[str, np.ndarray]], optional
-            The corresponding sensitivities to each parameter for each output variable.
+        sol : pybop.Solution | pybamm.Solution
+            The simulation result.
+        inputs : Inputs, optional
+            Input parameters (default: None).
+        calculate_sensitivities : bool
+            Whether to also return the sensitivities (default: False).
 
         Returns
         -------
         np.float64 or tuple[np.float64, np.ndarray[np.float64]]
-            If dy is not None, returns a tuple containing the cost (float) and the
+            If the solution has sensitivities, returns a tuple containing the cost (float) and the
             gradient with dimension (len(parameters)), otherwise returns only the cost.
         """
         # Early return if the prediction is not verified
-        if not self.verify_prediction(y):
-            return self.failure(dy)
+        if not self.verify_prediction(sol):
+            return self.failure(calculate_sensitivities)
 
         # Compute the residual for all output variables
-        r = np.asarray([y[var] - self._target_data[var] for var in self.target])
+        r = np.asarray([sol[var].data - self._target_data[var] for var in self.target])
 
         # Extract the sensitivities for all output variables and parameters
-        if dy is not None:
-            dy = self.stack_sensitivities(dy)
+        dy = self.stack_sensitivities(sol) if calculate_sensitivities else None
 
         return self.__call__(r=r, dy=dy, inputs=inputs)
 
-    def verify_prediction(self, y: dict):
+    def verify_prediction(self, sol: Solution):
         """
         Verify that the prediction matches the target data.
 
         Parameters
         ----------
-        y : dict
-            A dictionary of predictions with keys designating the output variables for fitting.
+        sol : pybop.Solution | pybamm.Solution
+            The simulation result.
 
         Returns
         -------
@@ -137,7 +139,7 @@ class ErrorMeasure(BaseCost):
             True if the prediction matches the target data, otherwise False.
         """
         if any(
-            len(y.get(key, [])) != len(self._target_data.get(key, []))
+            len(sol[key].data) != len(self._target_data.get(key, []))
             for key in self.target
         ):
             return False

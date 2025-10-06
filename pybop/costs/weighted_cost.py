@@ -3,6 +3,7 @@ import numpy as np
 from pybop.costs.base_cost import BaseCost
 from pybop.costs.design_cost import DesignCost
 from pybop.parameters.parameter import Inputs
+from pybop.simulators.solution import Solution
 
 
 class WeightedCost(BaseCost):
@@ -58,37 +59,43 @@ class WeightedCost(BaseCost):
 
     def evaluate(
         self,
-        y: dict[str, np.ndarray],
-        dy: dict | None = None,
+        sol: Solution,
         inputs: Inputs | None = None,
+        calculate_sensitivities: bool = False,
     ) -> float | tuple[float, np.ndarray]:
         """
         Computes the cost function for the given predictions.
 
         Parameters
         ----------
-        y : dict[str, np.ndarray[np.float64]]
-            The dictionary of predictions with keys designating the output variables for fitting.
-        dy : dict[str, dict[str, np.ndarray]], optional
-            The corresponding sensitivities to each parameter for each output variable.
+        sol : pybop.Solution | pybamm.Solution
+            The simulation result.
+        inputs : Inputs, optional
+            Input parameters (default: None).
+        calculate_sensitivities : bool
+            Whether to also return the sensitivities (default: False).
 
         Returns
         -------
         np.float64 or tuple[np.float64, np.ndarray[np.float64]]
-            If dy is not None, returns a tuple containing the cost (float) and the
+            If the solution has sensitivities, returns a tuple containing the cost (float) and the
             gradient with dimension (len(parameters)), otherwise returns only the cost.
         """
         e = np.empty_like(self.costs)
         de = np.empty((len(self.parameters), len(self.costs)))
 
         for i, cost in enumerate(self.costs):
-            if dy is not None:
-                e[i], de[:, i] = cost.evaluate(y, dy=dy, inputs=inputs)
+            if calculate_sensitivities:
+                e[i], de[:, i] = cost.evaluate(
+                    sol, inputs=inputs, calculate_sensitivities=calculate_sensitivities
+                )
             else:
-                e[i] = cost.evaluate(y, inputs=inputs)
+                e[i] = cost.evaluate(
+                    sol, inputs=inputs, calculate_sensitivities=calculate_sensitivities
+                )
 
         e = np.dot(e, self.weights)
-        if dy is not None:
+        if calculate_sensitivities:
             de = np.dot(de, self.weights)
             return e, de
 

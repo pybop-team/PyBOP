@@ -182,15 +182,14 @@ class TestEISParameterisation:
                 ],
             }
         )
-        simulator = pybop.pybamm.EISSimulator(
+        solution = pybop.pybamm.EISSimulator(
             model, parameter_values=parameter_values, f_eval=f_eval
-        )
-        solution = simulator.simulate()
+        ).solve()
         return pybop.Dataset(
             {
                 "Frequency [Hz]": f_eval,
                 "Current function [A]": np.zeros_like(f_eval),
-                "Impedance": self.noisy(solution["Impedance"], self.sigma0),
+                "Impedance": self.noisy(solution["Impedance"].data, self.sigma0),
             },
             domain="Frequency [Hz]",
         )

@@ -1,6 +1,7 @@
 import numpy as np
 
 from pybop.parameters.parameter import Inputs, Parameters
+from pybop.simulators.solution import Solution
 
 
 class BaseCost:
@@ -31,29 +32,31 @@ class BaseCost:
 
     def evaluate(
         self,
-        y: dict[str, np.ndarray],
-        dy: dict | None = None,
+        sol: Solution,
         inputs: Inputs | None = None,
+        calculate_sensitivities: bool = False,
     ) -> float | tuple[float, np.ndarray]:
         """
         Computes the cost function for the given predictions.
 
         Parameters
         ----------
-        y : dict[str, np.ndarray[np.float64]]
-            The dictionary of predictions with keys designating the output variables for fitting.
-        dy : dict[str, dict[str, np.ndarray]], optional
-            The corresponding sensitivities to each parameter for each output variable.
+        sol : pybop.Solution | pybamm.Solution
+            The simulation result.
+        inputs : Inputs, optional
+            Input parameters (default: None).
+        calculate_sensitivities : bool
+            Whether to also return the sensitivities (default: False).
 
         Returns
         -------
         np.float64 or tuple[np.float64, np.ndarray[np.float64]]
-            If dy is not None, returns a tuple containing the cost (float) and the
+            If the solution has sensitivities, returns a tuple containing the cost (float) and the
             gradient with dimension (len(parameters)), otherwise returns only the cost.
         """
         raise NotImplementedError
 
-    def stack_sensitivities(self, dy) -> np.ndarray:
+    def stack_sensitivities(self, sol: Solution) -> np.ndarray:
         """
         Stack the sensitivities for each output variable and parameter into a single array.
 
@@ -69,7 +72,10 @@ class BaseCost:
             dimensions of (len(parameters), len(target), len(domain_data)).
         """
         return np.stack(
-            [np.row_stack([dy[key][var] for var in self.target]) for key in dy.keys()],
+            [
+                np.row_stack([sol[var].sensitivities[p] for var in self.target])
+                for p in sol.all_inputs[0].keys()
+            ],
             axis=0,
         )
 
@@ -90,8 +96,8 @@ class BaseCost:
         self._de = de
         self.grad_fail = self._de * np.ones(self.n_parameters)
 
-    def failure(self, dy):
-        if dy is not None:
+    def failure(self, calculate_sensitivities: bool = True):
+        if calculate_sensitivities:
             return (
                 (np.inf, self.grad_fail)
                 if self.minimising

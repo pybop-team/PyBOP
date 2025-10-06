@@ -8,8 +8,7 @@ from pybop.simulators.base_simulator import (
     BaseSimulator,
     CostsAndSensitivities,
     CostWithSensitivities,
-    SimulationType,
-    SimulationWithSensitivities,
+    Solution,
 )
 
 
@@ -156,7 +155,7 @@ class Problem:
                 validity.append(False)
 
         # Run simulations for the valid parameters
-        simulations = self.batch_simulate(
+        solutions = self.batch_simulate(
             valid_inputs, calculate_sensitivities=calculate_sensitivities
         )
 
@@ -164,27 +163,36 @@ class Problem:
         # TODO: Parallelise the cost computations
         if calculate_sensitivities:
             costs, grads = [], []
-            for i, sim in enumerate(simulations):
-                y, dy = sim
-                out = self._cost.evaluate(y, dy=dy, inputs=valid_inputs[i])
+            for i, sol in enumerate(solutions):
+                out = self._cost.evaluate(
+                    sol,
+                    inputs=valid_inputs[i],
+                    calculate_sensitivities=calculate_sensitivities,
+                )
                 costs.append(out[0])
                 grads.append(out[1])
         else:
             costs = []
-            for i, y in enumerate(simulations):
-                costs.append(self._cost.evaluate(y, dy=None, inputs=valid_inputs[i]))
+            for i, sol in enumerate(solutions):
+                costs.append(
+                    self._cost.evaluate(
+                        sol,
+                        inputs=valid_inputs[i],
+                        calculate_sensitivities=calculate_sensitivities,
+                    )
+                )
 
         if False in validity:
             # Insert failure outputs for the invalid parameters into the lists of results
             invalid_indices = [i for i, valid in enumerate(validity) if not valid]
             if calculate_sensitivities:
-                y, dy = self._cost.failure(dy=True)
+                y, dy = self._cost.failure(calculate_sensitivities)
                 for i in invalid_indices:
                     costs.insert(i, y)
                     grads.insert(i, dy)
 
             else:
-                y = self._cost.failure(dy=None)
+                y = self._cost.failure(calculate_sensitivities)
                 for i in invalid_indices:
                     costs.insert(i, y)
 
@@ -194,12 +202,7 @@ class Problem:
 
     def simulate(
         self, inputs: Inputs | list[Inputs], calculate_sensitivities: bool = False
-    ) -> (
-        SimulationType
-        | list[SimulationType]
-        | SimulationWithSensitivities
-        | list[SimulationWithSensitivities]
-    ):
+    ) -> Solution | list[Solution]:
         """
         Simulate the model for one or more sets of inputs and return the solution and
         (optionally) the sensitivities.
@@ -207,13 +210,13 @@ class Problem:
         Parameters
         ----------
         inputs : Inputs | list[Inputs]
-            Input parameters for simulation of the model. Support a list of inputs.
+            Input parameters. Support a list of inputs.
         calculate_sensitivities : bool
             Whether to also return the sensitivities (default: False).
 
         Returns
         -------
-        SimulationType | list[SimulationType] | SimulationWithSensitivities | list[SimulationWithSensitivities]
+        Solution | list[Solution]
             The simulated model output y(t) and (optionally) the sensitivities dy/dx(t)
              for output variable(s) y, domain t and parameter(s) x.
         """
@@ -228,7 +231,7 @@ class Problem:
 
     def batch_simulate(
         self, inputs: list[Inputs], calculate_sensitivities: bool = False
-    ) -> list[SimulationType] | list[SimulationWithSensitivities]:
+    ) -> list[Solution]:
         """
         Simulate the model for each set of inputs and return the solution and
         (optionally) the sensitivities.
@@ -240,12 +243,12 @@ class Problem:
 
         Returns
         -------
-        list[SimulationType] | list[SimulationWithSensitivities]
+        list[Solution]
             A list of length(inputs) containing the simulated model output y(t) and (optionally)
             the sensitivities dy/dx(t) for output variable(s) y, domain t and parameter(s) x.
         """
         model_inputs = [self.get_model_inputs(x) for x in inputs]
-        return self._simulator.batch_simulate(
+        return self._simulator.batch_solve(
             inputs=model_inputs, calculate_sensitivities=calculate_sensitivities
         )
 
