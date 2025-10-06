@@ -27,13 +27,13 @@ class TestCosts:
 
     @pytest.fixture
     def parameters(self):
-        return pybop.Parameters(
-            pybop.Parameter(
+        return {
+            "Negative electrode active material volume fraction": pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.5, 0.01),
                 bounds=[0.375, 0.625],
             )
-        )
+        }
 
     @pytest.fixture
     def experiment(self):
@@ -63,11 +63,9 @@ class TestCosts:
         cut_off = request.param
         model, parameter_values = model_and_parameter_values
         parameter_values.update({"Lower voltage cut-off [V]": cut_off})
+        parameter_values.update(parameters)
         return pybop.pybamm.Simulator(
-            model,
-            parameter_values=parameter_values,
-            parameters=parameters,
-            protocol=dataset,
+            model, parameter_values=parameter_values, protocol=dataset
         )
 
     @pytest.mark.parametrize(
@@ -78,7 +76,7 @@ class TestCosts:
             pybop.LogPosterior,
         ],
     )
-    def test_fitting_costs(self, simulator, parameters, dataset, cost_class):
+    def test_fitting_costs(self, simulator, dataset, cost_class):
         if cost_class is pybop.LogPosterior:
             likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=0.002)
             cost = cost_class(likelihood)
@@ -101,7 +99,7 @@ class TestCosts:
 
         # Test type of returned value
         assert np.isscalar(problem.evaluate([0.5]))
-        assert np.isscalar(problem.evaluate(parameters.to_dict()))
+        assert np.isscalar(problem.evaluate(problem.parameters.to_dict()))
 
         if isinstance(cost, pybop.MeanAbsoluteError):
             assert problem.evaluate([0.5]) >= 0
@@ -121,9 +119,7 @@ class TestCosts:
             (pybop.SumOfPower, "Sum Of Power"),
         ],
     )
-    def test_error_measures(
-        self, simulator, parameters, dataset, cost_class, expected_name
-    ):
+    def test_error_measures(self, simulator, dataset, cost_class, expected_name):
         cost = cost_class(dataset)
         assert cost.name == expected_name
 
@@ -199,11 +195,9 @@ class TestCosts:
         cost_class,
     ):
         model, parameter_values = model_and_parameter_values
+        parameter_values.update(parameters)
         simulator = pybop.pybamm.Simulator(
-            model,
-            parameter_values=parameter_values,
-            parameters=parameters,
-            protocol=dataset,
+            model, parameter_values=parameter_values, protocol=dataset
         )
         cost = cost_class(dataset, weighting=1.0)
         problem = pybop.Problem(simulator, cost)
@@ -226,10 +220,7 @@ class TestCosts:
 
         # Test that the domain-based weighting accounts for random spacing in the dataset
         simulator = pybop.pybamm.Simulator(
-            model,
-            parameter_values=parameter_values,
-            parameters=parameters,
-            protocol=randomly_spaced_dataset,
+            model, parameter_values=parameter_values, protocol=randomly_spaced_dataset
         )
         costR = cost_class(randomly_spaced_dataset, weighting="domain")
         problemR = pybop.Problem(simulator, costR)
@@ -266,6 +257,7 @@ class TestCosts:
         )
 
         parameter_values = pybamm.ParameterValues("Chen2020")
+        pybop.pybamm.set_formation_concentrations(parameter_values)
         parameter_values.update(
             {
                 "Electrolyte density [kg.m-3]": pybamm.Parameter(
@@ -288,14 +280,12 @@ class TestCosts:
             },
             check_already_exists=False,
         )
-
+        parameter_values.update(parameters)
         return pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
-            parameters=parameters,
             protocol=experiment,
             initial_state={"Initial SoC": 0.5},
-            use_formation_concentrations=True,
         )
 
     @pytest.mark.parametrize(
@@ -307,7 +297,7 @@ class TestCosts:
             "Volumetric power density [W.m-3]",
         ],
     )
-    def test_design_costs(self, target, design_simulator, parameters):
+    def test_design_costs(self, target, design_simulator):
         cost = pybop.DesignCost(target=target)
         design_problem = pybop.Problem(design_simulator, cost)
 
@@ -340,11 +330,10 @@ class TestCosts:
                 + np.random.normal(0, 0.02, len(solution["Time [s]"].data)),
             }
         )
+
+        parameter_values.update(parameters)
         return noisy_dataset, pybop.pybamm.Simulator(
-            model,
-            parameter_values=parameter_values,
-            parameters=parameters,
-            protocol=noisy_dataset,
+            model, parameter_values=parameter_values, protocol=noisy_dataset
         )
 
     def test_weighted_fitting_cost(self, noisy_problem, parameters, dataset):
@@ -429,7 +418,7 @@ class TestCosts:
             atol=1e-5,
         )
 
-    def test_weighted_design_cost(self, design_simulator, parameters):
+    def test_weighted_design_cost(self, design_simulator):
         cost_1 = pybop.DesignCost(target="Gravimetric energy density [Wh.kg-1]")
         cost_2 = pybop.DesignCost(target="Volumetric energy density [Wh.m-3]")
         problem_1 = pybop.Problem(design_simulator, cost_1)

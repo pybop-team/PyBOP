@@ -47,12 +47,10 @@ class TestDecayModel:
     @pytest.fixture(scope="module")
     def parameters(self):
         """Create parameter objects for reuse."""
-        return pybop.Parameters(
-            *[
-                pybop.Parameter(param_name, initial_value=val)
-                for param_name, val in EXPONENTIAL_DECAY_PARAMS
-            ]
-        )
+        return {
+            param_name: pybop.Parameter(param_name, initial_value=val)
+            for param_name, val in EXPONENTIAL_DECAY_PARAMS
+        }
 
     def assert_parameter_sensitivity(
         self, problem, initial_inputs, example_inputs, tolerance=RELATIVE_TOLERANCE
@@ -70,11 +68,11 @@ class TestDecayModel:
 
     def test_decay_builder(self, dataset, model_config, parameters):
         """Test decay model with voltage-based cost functions."""
-
+        parameter_values = model_config["parameter_values"]
+        parameter_values.update(parameters)
         simulator = pybop.pybamm.Simulator(
             model_config["model"],
-            parameter_values=model_config["parameter_values"],
-            parameters=parameters,
+            parameter_values=parameter_values,
             solver=model_config["solver"],
             protocol=dataset,
         )
@@ -84,9 +82,9 @@ class TestDecayModel:
         problem = pybop.Problem(simulator, cost)
 
         # Test parameter sensitivity
-        initial_params = parameters.get_initial_values()
-        initial_inputs = parameters.to_dict(initial_params)
-        example_inputs = parameters.to_dict(TEST_PARAM_VALUES)
+        initial_params = problem.parameters.get_initial_values()
+        initial_inputs = problem.parameters.to_dict(initial_params)
+        example_inputs = problem.parameters.to_dict(TEST_PARAM_VALUES)
         value1, value2 = self.assert_parameter_sensitivity(
             problem, initial_inputs, example_inputs
         )
@@ -100,10 +98,10 @@ class TestDecayModel:
         )
 
         # Validate gradient shape and value consistency
-        assert grad1.shape == (len(parameters),), (
+        assert grad1.shape == (len(problem.parameters),), (
             f"Gradient shape mismatch: {grad1.shape}"
         )
-        assert grad2.shape == (len(parameters),), (
+        assert grad2.shape == (len(problem.parameters),), (
             f"Gradient shape mismatch: {grad2.shape}"
         )
 

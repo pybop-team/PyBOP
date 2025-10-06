@@ -28,27 +28,26 @@ parameter_values = pybamm.ParameterValues("Chen2020")
 parameter_values.set_initial_state(f"{csv_data[0, 2]} V")
 
 # Fitting parameters
-parameters = pybop.Parameters(
-    pybop.Parameter(
-        "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.68, 0.05),
-        initial_value=0.45,
-        bounds=[0.4, 0.9],
-    ),
-    pybop.Parameter(
-        "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.58, 0.05),
-        initial_value=0.45,
-        bounds=[0.4, 0.9],
-    ),
+parameter_values.update(
+    {
+        "Negative electrode active material volume fraction": pybop.Parameter(
+            "Negative electrode active material volume fraction",
+            prior=pybop.Gaussian(0.68, 0.05),
+            initial_value=0.45,
+            bounds=[0.4, 0.9],
+        ),
+        "Positive electrode active material volume fraction": pybop.Parameter(
+            "Positive electrode active material volume fraction",
+            prior=pybop.Gaussian(0.58, 0.05),
+            initial_value=0.45,
+            bounds=[0.4, 0.9],
+        ),
+    }
 )
 
 # Build the problem
 simulator = pybop.pybamm.Simulator(
-    model,
-    parameter_values=parameter_values,
-    parameters=parameters,
-    protocol=dataset,
+    model, parameter_values=parameter_values, protocol=dataset
 )
 cost = pybop.SumOfPower(
     dataset, target=["Voltage [V]", "Bulk open-circuit voltage [V]"], p=2.5

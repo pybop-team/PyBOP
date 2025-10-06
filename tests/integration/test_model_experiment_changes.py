@@ -15,30 +15,30 @@ class TestModelAndExperimentChanges:
     @pytest.fixture(
         params=[
             [
-                pybop.Parameters(
-                    pybop.Parameter(  # geometric parameter
+                {
+                    "Negative particle radius [m]": pybop.Parameter(  # geometric parameter
                         "Negative particle radius [m]",
                         prior=pybop.Gaussian(6e-06, 0.1e-6),
                         bounds=[1e-6, 9e-6],
                         initial_value=5.86e-6,
                     ),
-                ),
-                [5.86e-6],
+                },
+                {"Negative particle radius [m]": 5.86e-6},
             ],
             [
-                pybop.Parameters(
-                    pybop.Parameter(  # non-geometric parameter
+                {
+                    "Positive particle diffusivity [m2.s-1]": pybop.Parameter(  # non-geometric parameter
                         "Positive particle diffusivity [m2.s-1]",
                         prior=pybop.Gaussian(3.43e-15, 1e-15),
                         bounds=[1e-15, 5e-15],
                         initial_value=4e-15,
                     ),
-                ),
-                [4e-15],
+                },
+                {"Positive particle diffusivity [m2.s-1]": 4e-15},
             ],
         ]
     )
-    def parameters_and_value(self, request):
+    def parameters_and_inputs(self, request):
         return request.param
 
     @pytest.fixture
@@ -46,38 +46,36 @@ class TestModelAndExperimentChanges:
         return pybamm.IDAKLUSolver(atol=1e-6, rtol=1e-6)
 
     @pytest.mark.integration
-    def test_changing_experiment(self, parameters_and_value, solver):
-        parameters, value = parameters_and_value
+    def test_changing_experiment(self, parameters_and_inputs, solver):
+        parameters, inputs = parameters_and_inputs
         # Change the experiment and check that the results are different.
 
         parameter_values = pybamm.ParameterValues("Chen2020")
-        inputs = parameters.to_dict(value)
         parameter_values.update(inputs)
         initial_state = {"Initial SoC": 0.5}
         model = pybamm.lithium_ion.SPM()
 
+        parameter_values.update(parameters)
         t_eval = np.arange(0, 3600, 2)  # Default 1C discharge to cut-off voltage
         simulator_1 = pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
-            parameters=parameters,
             initial_state=initial_state,
             protocol=t_eval,
             solver=solver,
         )
         solution_1 = simulator_1.solve(inputs)
-        cost_1 = self.final_cost(simulator_1, parameters, solution_1)
+        cost_1 = self.final_cost(simulator_1, solution_1)
 
         experiment = pybamm.Experiment(["Charge at 1C until 4.1 V (2 seconds period)"])
         simulator_2 = pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
-            parameters=parameters,
             initial_state=initial_state,
             protocol=experiment,
         )
         solution_2 = simulator_2.solve(inputs)
-        cost_2 = self.final_cost(simulator_2, parameters, solution_2)
+        cost_2 = self.final_cost(simulator_2, solution_2)
 
         with np.testing.assert_raises(AssertionError):
             np.testing.assert_array_equal(
@@ -89,39 +87,37 @@ class TestModelAndExperimentChanges:
         np.testing.assert_allclose(cost_1, 0, atol=1e-5)
         np.testing.assert_allclose(cost_2, 0, atol=1e-5)
 
-    def test_changing_model(self, parameters_and_value, solver):
+    def test_changing_model(self, parameters_and_inputs, solver):
         # Change the model and check that the results are different.
 
         parameter_values = pybamm.ParameterValues("Chen2020")
-        parameters, value = parameters_and_value
-        inputs = parameters.to_dict(value)
+        parameters, inputs = parameters_and_inputs
         parameter_values.update(inputs)
         initial_state = {"Initial SoC": 0.5}
         experiment = pybamm.Experiment(["Charge at 1C until 4.1 V (30 seconds period)"])
 
         model = pybamm.lithium_ion.SPM()
+        parameter_values.update(parameters)
         simulator_1 = pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
-            parameters=parameters,
             protocol=experiment,
             initial_state=initial_state,
             solver=solver,
         )
         solution_1 = simulator_1.solve(inputs)
-        cost_1 = self.final_cost(simulator_1, parameters, solution_1)
+        cost_1 = self.final_cost(simulator_1, solution_1)
 
         model = pybamm.lithium_ion.SPMe()
         simulator_2 = pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
-            parameters=parameters,
             protocol=experiment,
             initial_state=initial_state,
             solver=solver,
         )
         solution_2 = simulator_2.solve(inputs)
-        cost_2 = self.final_cost(simulator_2, parameters, solution_2)
+        cost_2 = self.final_cost(simulator_2, solution_2)
 
         with np.testing.assert_raises(AssertionError):
             np.testing.assert_array_equal(
@@ -133,7 +129,7 @@ class TestModelAndExperimentChanges:
         np.testing.assert_allclose(cost_1, 0, atol=1e-5)
         np.testing.assert_allclose(cost_2, 0, atol=1e-5)
 
-    def final_cost(self, simulator, parameters, solution):
+    def final_cost(self, simulator, solution):
         # Compute the cost corresponding to a particular solution
         dataset = pybop.Dataset(
             {
@@ -153,36 +149,48 @@ class TestModelAndExperimentChanges:
         ground_truth = parameter_values[
             "Negative electrode active material volume fraction"
         ]
-        parameters = pybop.Parameters(
-            pybop.Parameter(
-                "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.68, 0.05),
-            )
-        )
-        parameter_values.update(parameters.to_dict(ground_truth))
 
         model_1 = pybamm.lithium_ion.SPM()
         experiment_1 = pybamm.Experiment(
             ["Discharge at 0.5C for 5 minutes (10 seconds period)"]
         )
         dataset_1 = self.get_data(model_1, parameter_values, experiment_1, solver)
+
+        parameter_values.update(
+            {
+                "Negative electrode active material volume fraction": pybop.Parameter(
+                    "Negative electrode active material volume fraction",
+                    prior=pybop.Gaussian(0.68, 0.05),
+                )
+            }
+        )
         simulator_1 = pybop.pybamm.Simulator(
             model_1,
             parameter_values=parameter_values,
-            parameters=parameters,
             protocol=dataset_1,
             solver=solver,
         )
 
+        parameter_values.update(
+            {"Negative electrode active material volume fraction": ground_truth}
+        )
         model_2 = pybamm.lithium_ion.SPMe()
         experiment_2 = pybamm.Experiment(
             ["Discharge at 1C for 3 minutes (10 seconds period)"]
         )
         dataset_2 = self.get_data(model_2, parameter_values, experiment_2, solver)
+
+        parameter_values.update(
+            {
+                "Negative electrode active material volume fraction": pybop.Parameter(
+                    "Negative electrode active material volume fraction",
+                    prior=pybop.Gaussian(0.68, 0.05),
+                )
+            }
+        )
         simulator_2 = pybop.pybamm.Simulator(
             model_2,
             parameter_values=parameter_values,
-            parameters=parameters,
             protocol=dataset_2,
             solver=solver,
         )

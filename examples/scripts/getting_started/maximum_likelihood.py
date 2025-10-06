@@ -33,23 +33,24 @@ parameter_values.update(
 )
 
 # Fitting parameters
-parameters = pybop.Parameters(
-    pybop.Parameter(
-        "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.6, 0.05),
-        bounds=[0.5, 0.8],
-    ),
-    pybop.Parameter(
-        "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.48, 0.05),
-    ),
+parameter_values.update(
+    {
+        "Negative electrode active material volume fraction": pybop.Parameter(
+            "Negative electrode active material volume fraction",
+            prior=pybop.Gaussian(0.6, 0.05),
+            bounds=[0.5, 0.8],
+        ),
+        "Positive electrode active material volume fraction": pybop.Parameter(
+            "Positive electrode active material volume fraction",
+            prior=pybop.Gaussian(0.48, 0.05),
+        ),
+    }
 )
 
 # Build the problem
 simulator = pybop.pybamm.Simulator(
     model,
     parameter_values=parameter_values,
-    parameters=parameters,
     protocol=dataset,
     initial_state={"Initial open-circuit voltage [V]": csv_data[0, 2]},
 )

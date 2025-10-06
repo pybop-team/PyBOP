@@ -31,8 +31,8 @@ class TestPlots:
 
     @pytest.fixture
     def parameters(self):
-        return pybop.Parameters(
-            pybop.Parameter(
+        return {
+            "Negative electrode active material volume fraction": pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.68, 0.05),
                 bounds=[0.5, 0.8],
@@ -40,7 +40,7 @@ class TestPlots:
                     coefficient=1 / 0.3, intercept=-0.5
                 ),
             ),
-            pybop.Parameter(
+            "Positive electrode active material volume fraction": pybop.Parameter(
                 "Positive electrode active material volume fraction",
                 prior=pybop.Gaussian(0.58, 0.05),
                 bounds=[0.4, 0.7],
@@ -48,7 +48,7 @@ class TestPlots:
                     coefficient=1 / 0.3, intercept=-0.4
                 ),
             ),
-        )
+        }
 
     @pytest.fixture
     def dataset(self, model):
@@ -73,8 +73,10 @@ class TestPlots:
 
     @pytest.fixture
     def fitting_problem(self, model, parameters, dataset):
+        parameter_values = model.default_parameter_values
+        parameter_values.update(parameters)
         simulator = pybop.pybamm.Simulator(
-            model, parameters=parameters, protocol=dataset
+            model, parameter_values=parameter_values, protocol=dataset
         )
         cost = pybop.SumSquaredError(dataset)
         return pybop.Problem(simulator, cost)
@@ -85,11 +87,11 @@ class TestPlots:
 
     @pytest.fixture
     def design_problem(self, model, parameters, experiment):
+        parameter_values = model.default_parameter_values
+        pybop.pybamm.set_formation_concentrations(parameter_values)
+        parameter_values.update(parameters)
         simulator = pybop.pybamm.Simulator(
-            model,
-            parameters=parameters,
-            protocol=experiment,
-            use_formation_concentrations=True,
+            model, parameter_values=parameter_values, protocol=experiment
         )
         return pybop.Problem(simulator)
 
@@ -154,8 +156,10 @@ class TestPlots:
 
     @pytest.fixture
     def posterior_summary(self, model, parameters, dataset):
+        parameter_values = model.default_parameter_values
+        parameter_values.update(parameters)
         simulator = pybop.pybamm.Simulator(
-            model, parameters=parameters, protocol=dataset
+            model, parameter_values=parameter_values, protocol=dataset
         )
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=2e-3)
         posterior = pybop.LogPosterior(likelihood)
@@ -189,16 +193,20 @@ class TestPlots:
         result.plot_contour(steps=5)
 
     def test_contour_incorrect_number_of_parameters(self, model, dataset):
+        parameter_values = model.default_parameter_values
+
         # Test with less than two paramters
-        parameters = pybop.Parameters(
-            pybop.Parameter(
-                "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.68, 0.05),
-                bounds=[0.5, 0.8],
-            ),
+        parameter_values.update(
+            {
+                "Negative electrode active material volume fraction": pybop.Parameter(
+                    "Negative electrode active material volume fraction",
+                    prior=pybop.Gaussian(0.68, 0.05),
+                    bounds=[0.5, 0.8],
+                ),
+            }
         )
         simulator = pybop.pybamm.Simulator(
-            model, parameters=parameters, protocol=dataset
+            model, parameter_values=parameter_values, protocol=dataset
         )
         cost = pybop.SumSquaredError(dataset)
         fitting_problem = pybop.Problem(simulator, cost)
@@ -208,25 +216,22 @@ class TestPlots:
             pybop.plot.contour(fitting_problem)
 
         # Test with more than two paramters
-        parameters = pybop.Parameters(
-            pybop.Parameter(
-                "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.68, 0.05),
-                bounds=[0.5, 0.8],
-            ),
-            pybop.Parameter(
-                "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.58, 0.05),
-                bounds=[0.4, 0.7],
-            ),
-            pybop.Parameter(
-                "Positive particle radius [m]",
-                prior=pybop.Gaussian(4.8e-06, 0.05e-06),
-                bounds=[4e-06, 6e-06],
-            ),
+        parameter_values.update(
+            {
+                "Positive electrode active material volume fraction": pybop.Parameter(
+                    "Positive electrode active material volume fraction",
+                    prior=pybop.Gaussian(0.58, 0.05),
+                    bounds=[0.4, 0.7],
+                ),
+                "Positive particle radius [m]": pybop.Parameter(
+                    "Positive particle radius [m]",
+                    prior=pybop.Gaussian(4.8e-06, 0.05e-06),
+                    bounds=[4e-06, 6e-06],
+                ),
+            }
         )
         simulator = pybop.pybamm.Simulator(
-            model, parameters=parameters, protocol=dataset
+            model, parameter_values=parameter_values, protocol=dataset
         )
         cost = pybop.SumSquaredError(dataset)
         fitting_problem = pybop.Problem(simulator, cost)
@@ -235,14 +240,17 @@ class TestPlots:
     def test_nyquist(self):
         # Define model
         model = pybamm.lithium_ion.SPM(options={"surface form": "differential"})
+        parameter_values = model.default_parameter_values
 
         # Fitting parameters
-        parameters = pybop.Parameters(
-            pybop.Parameter(
-                "Positive electrode thickness [m]",
-                prior=pybop.Gaussian(60e-6, 1e-6),
-                bounds=[10e-6, 80e-6],
-            )
+        parameter_values.update(
+            {
+                "Positive electrode thickness [m]": pybop.Parameter(
+                    "Positive electrode thickness [m]",
+                    prior=pybop.Gaussian(60e-6, 1e-6),
+                    bounds=[10e-6, 80e-6],
+                )
+            }
         )
 
         # Form dataset
@@ -258,14 +266,14 @@ class TestPlots:
         # Generate problem, cost function, and optimisation class
         simulator = pybop.pybamm.EISSimulator(
             model,
-            parameters=parameters,
+            parameter_values=parameter_values,
             f_eval=dataset["Frequency [Hz]"],
         )
         cost = pybop.MeanAbsoluteError(dataset, target="Impedance")
         problem = pybop.Problem(simulator, cost)
 
         # Plot the nyquist
-        inputs = parameters.to_dict([60e-6])
+        inputs = problem.parameters.to_dict([60e-6])
         pybop.plot.nyquist(problem, problem_inputs=inputs, title="Optimised Comparison")
 
         # Without inputs

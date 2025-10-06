@@ -2,7 +2,6 @@ import pybamm
 from pybamm import Parameter
 
 import pybop
-from pybop.pybamm.parameter_utils import set_formation_concentrations
 
 # A design optimisation example loosely based on work by L.D. Couto
 # available at https://doi.org/10.1016/j.energy.2022.125966.
@@ -20,7 +19,7 @@ pybop.pybamm.add_variable_to_model(model, "Volumetric energy density [Wh.m-3]")
 
 # Define parameter set and additional parameters needed for the cost function
 parameter_values = pybamm.ParameterValues("Chen2020")
-set_formation_concentrations(parameter_values)
+pybop.pybamm.set_formation_concentrations(parameter_values)
 parameter_values.update(
     {
         "Electrolyte density [kg.m-3]": Parameter("Separator density [kg.m-3]"),
@@ -43,17 +42,19 @@ parameter_values.update(
 )
 
 # Fitting parameters
-parameters = pybop.Parameters(
-    pybop.Parameter(
-        "Positive electrode thickness [m]",
-        prior=pybop.Gaussian(7.56e-05, 0.1e-05),
-        bounds=[65e-06, 10e-05],
-    ),
-    pybop.Parameter(
-        "Positive particle radius [m]",
-        prior=pybop.Gaussian(5.22e-06, 0.1e-06),
-        bounds=[2e-06, 9e-06],
-    ),
+parameter_values.update(
+    {
+        "Positive electrode thickness [m]": pybop.Parameter(
+            "Positive electrode thickness [m]",
+            prior=pybop.Gaussian(7.56e-05, 0.1e-05),
+            bounds=[65e-06, 10e-05],
+        ),
+        "Positive particle radius [m]": pybop.Parameter(
+            "Positive particle radius [m]",
+            prior=pybop.Gaussian(5.22e-06, 0.1e-06),
+            bounds=[2e-06, 9e-06],
+        ),
+    }
 )
 
 # Define test protocol
@@ -68,10 +69,8 @@ experiment = pybamm.Experiment(
 simulator = pybop.pybamm.Simulator(
     model,
     parameter_values=parameter_values,
-    parameters=parameters,
     protocol=experiment,
     initial_state={"Initial SoC": 1.0},
-    use_formation_concentrations=True,
 )
 cost_1 = pybop.DesignCost(target="Gravimetric energy density [Wh.kg-1]")
 problem_1 = pybop.Problem(simulator, cost_1)

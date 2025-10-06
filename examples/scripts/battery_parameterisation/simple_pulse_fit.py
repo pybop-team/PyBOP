@@ -30,25 +30,25 @@ parameter_values = pybamm.ParameterValues("Chen2020")
 parameter_values.set_initial_state(f"{csv_data[0, 2]} V")
 
 # Fitting parameters
-parameters = pybop.Parameters(
-    pybop.Parameter(
-        "Negative particle diffusivity [m2.s-1]",
-        prior=pybop.Gaussian(4e-14, 1e-14),
-        transformation=pybop.LogTransformation(),
-        bounds=[1e-14, 1e-13],
-    ),
-    pybop.Parameter(
-        "Positive particle diffusivity [m2.s-1]",
-        prior=pybop.Gaussian(7e-15, 1e-15),
-        transformation=pybop.LogTransformation(),
-        bounds=[1e-15, 1e-14],
-    ),
+parameter_values.update(
+    {
+        "Negative particle diffusivity [m2.s-1]": pybop.Parameter(
+            "Negative particle diffusivity [m2.s-1]",
+            prior=pybop.Gaussian(4e-14, 1e-14),
+            transformation=pybop.LogTransformation(),
+            bounds=[1e-14, 1e-13],
+        ),
+        "Positive particle diffusivity [m2.s-1]": pybop.Parameter(
+            "Positive particle diffusivity [m2.s-1]",
+            prior=pybop.Gaussian(7e-15, 1e-15),
+            transformation=pybop.LogTransformation(),
+            bounds=[1e-15, 1e-14],
+        ),
+    }
 )
 
 # Build the problem
-simulator = pybop.pybamm.Simulator(
-    model, parameter_values, parameters=parameters, protocol=dataset
-)
+simulator = pybop.pybamm.Simulator(model, parameter_values, protocol=dataset)
 likelihood = pybop.SumSquaredError(dataset)
 problem = pybop.Problem(simulator, likelihood)
 

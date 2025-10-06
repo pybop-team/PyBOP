@@ -141,11 +141,14 @@ class TestArbitraryModels:
             }
         )
 
-        parameter = pybop.Parameter("a", initial_value=0.1, bounds=[0, np.inf])
+        parameter_values = model.default_parameter_values
+        parameter_values.update(
+            {"a": pybop.Parameter("a", initial_value=0.1, bounds=[0, np.inf])}
+        )
 
         # Build the problem
         simulator = pybop.pybamm.Simulator(
-            model, parameters=parameter, protocol=dataset
+            model, parameter_values=parameter_values, protocol=dataset
         )
         cost = pybop.SumSquaredError(dataset, target=["u at x_0.5"])
         problem = pybop.Problem(simulator, cost)
@@ -169,22 +172,17 @@ class TestArbitraryModels:
             }
         )
 
-        parameters = pybop.Parameters(
-            pybop.Parameter(
-                "a",
-                initial_value=-4,
-                bounds=[-10, 0],
-            ),
-            pybop.Parameter(
-                "d",
-                initial_value=-4,
-                bounds=[-10, 0],
-            ),
+        parameter_values = model.default_parameter_values
+        parameter_values.update(
+            {
+                "a": pybop.Parameter("a", initial_value=-4, bounds=[-10, 0]),
+                "d": pybop.Parameter("d", initial_value=-4, bounds=[-10, 0]),
+            }
         )
 
         # Build the problem
         simulator = pybop.pybamm.Simulator(
-            model, parameters=parameters, protocol=dataset
+            model, parameter_values=parameter_values, protocol=dataset
         )
         cost = pybop.SumSquaredError(dataset, target=["u", "v"])
         problem = pybop.Problem(simulator, cost)
@@ -213,33 +211,17 @@ class TestArbitraryModels:
         parameter_values.update(
             {
                 "a": 0,
-                "b": 2,
-                "c": -2,
+                "b": pybop.Parameter("b", initial_value=-1, bounds=[-4, 4]),
+                "c": pybop.Parameter("c", initial_value=-1, bounds=[-4, 4]),
                 "d": 0,
                 "u0": 0,
                 "v0": 1,
             }
         )
 
-        parameters = pybop.Parameters(
-            pybop.Parameter(
-                "b",
-                initial_value=-1,
-                bounds=[-4, 4],
-            ),
-            pybop.Parameter(
-                "c",
-                initial_value=-1,
-                bounds=[-4, 4],
-            ),
-        )
-
         # Build the problem
         simulator = pybop.pybamm.Simulator(
-            model,
-            parameter_values=parameter_values,
-            parameters=parameters,
-            protocol=dataset,
+            model, parameter_values=parameter_values, protocol=dataset
         )
         cost = pybop.SumSquaredError(dataset, target=["u", "v"])
         problem = pybop.Problem(simulator, cost)

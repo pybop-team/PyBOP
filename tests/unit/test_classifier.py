@@ -29,15 +29,19 @@ class TestClassifier:
                 "Voltage [V]": solution["Voltage [V]"].data,
             }
         )
-        parameters = pybop.Parameters(
-            pybop.Parameter(
-                "R0 [Ohm]",
-                prior=pybop.Uniform(0.001, 0.1),
-                bounds=[1e-4, 0.1],
-            ),
+
+        parameter_values = model.default_parameter_values
+        parameter_values.update(
+            {
+                "R0 [Ohm]": pybop.Parameter(
+                    "R0 [Ohm]",
+                    prior=pybop.Uniform(0.001, 0.1),
+                    bounds=[1e-4, 0.1],
+                )
+            }
         )
         simulator = pybop.pybamm.Simulator(
-            model, parameters=parameters, protocol=dataset
+            model, parameter_values=parameter_values, protocol=dataset
         )
         cost = pybop.SumSquaredError(dataset)
         return pybop.Problem(simulator, cost)

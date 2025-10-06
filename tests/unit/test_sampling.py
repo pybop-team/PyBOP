@@ -47,18 +47,18 @@ class TestPintsSamplers:
 
     @pytest.fixture
     def parameters(self):
-        return pybop.Parameters(
-            pybop.Parameter(
+        return {
+            "Negative electrode active material volume fraction": pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.6, 0.2),
                 bounds=[0.58, 0.62],
             ),
-            pybop.Parameter(
+            "Positive electrode active material volume fraction": pybop.Parameter(
                 "Positive electrode active material volume fraction",
                 prior=pybop.Gaussian(0.55, 0.05),
                 bounds=[0.53, 0.57],
             ),
-        )
+        }
 
     @pytest.fixture
     def model(self):
@@ -66,8 +66,10 @@ class TestPintsSamplers:
 
     @pytest.fixture
     def posterior_problem(self, model, parameters, dataset):
+        parameter_values = model.default_parameter_values
+        parameter_values.update(parameters)
         simulator = pybop.pybamm.Simulator(
-            model, parameters=parameters, protocol=dataset
+            model, parameter_values=parameter_values, protocol=dataset
         )
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=0.01)
         prior1 = pybop.Gaussian(0.7, 0.02)
@@ -161,15 +163,18 @@ class TestPintsSamplers:
         assert all(e > 0 for e in ess)
 
     def test_single_parameter_sampling(self, model, dataset, MCMC, chains):
-        parameters = pybop.Parameters(
-            pybop.Parameter(
-                "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.6, 0.2),
-                bounds=[0.58, 0.62],
-            )
+        parameter_values = model.default_parameter_values
+        parameter_values.update(
+            {
+                "Negative electrode active material volume fraction": pybop.Parameter(
+                    "Negative electrode active material volume fraction",
+                    prior=pybop.Gaussian(0.6, 0.2),
+                    bounds=[0.58, 0.62],
+                )
+            }
         )
         simulator = pybop.pybamm.Simulator(
-            model, parameters=parameters, protocol=dataset
+            model, parameter_values=parameter_values, protocol=dataset
         )
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=0.01)
         posterior = pybop.LogPosterior(likelihood)

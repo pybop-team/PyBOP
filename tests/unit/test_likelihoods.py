@@ -27,13 +27,13 @@ class TestLikelihoods:
 
     @pytest.fixture
     def parameters(self):
-        return pybop.Parameters(
-            pybop.Parameter(
+        return {
+            "Negative electrode active material volume fraction": pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.5, 0.01),
                 bounds=[0.375, 0.625],
             )
-        )
+        }
 
     @pytest.fixture
     def experiment(self):
@@ -56,11 +56,9 @@ class TestLikelihoods:
     @pytest.fixture
     def simulator(self, model_and_parameter_values, parameters, dataset):
         model, parameter_values = model_and_parameter_values
+        parameter_values.update(parameters)
         return pybop.pybamm.Simulator(
-            model,
-            parameter_values=parameter_values,
-            parameters=parameters,
-            protocol=dataset,
+            model, parameter_values=parameter_values, protocol=dataset
         )
 
     def test_base_likelihood(self, dataset):

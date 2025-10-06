@@ -65,18 +65,18 @@ class TestWeightedCost:
 
     @pytest.fixture
     def parameters(self):
-        return pybop.Parameters(
-            pybop.Parameter(
+        return {
+            "Negative electrode active material volume fraction": pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Uniform(0.4, 0.75),
                 bounds=[0.375, 0.75],
             ),
-            pybop.Parameter(
+            "Positive electrode active material volume fraction": pybop.Parameter(
                 "Positive electrode active material volume fraction",
                 prior=pybop.Uniform(0.4, 0.75),
                 # no bounds
             ),
-        )
+        }
 
     @pytest.fixture(
         params=[
@@ -99,11 +99,9 @@ class TestWeightedCost:
         dataset = self.get_data(model, parameter_values)
 
         # Define the problem
+        parameter_values.update(parameters)
         simulator = pybop.pybamm.Simulator(
-            model,
-            parameter_values=parameter_values,
-            parameters=parameters,
-            protocol=dataset,
+            model, parameter_values=parameter_values, protocol=dataset
         )
         costs = []
         for cost in cost_class:
@@ -145,18 +143,21 @@ class TestWeightedCost:
 
     @pytest.fixture
     def weighted_design_cost(self, model, parameter_values, design_targets):
+        pybop.pybamm.set_formation_concentrations(parameter_values)
         initial_state = {"Initial SoC": 1.0}
-        parameters = pybop.Parameters(
-            pybop.Parameter(
-                "Positive electrode thickness [m]",
-                prior=pybop.Gaussian(5e-05, 5e-06),
-                bounds=[2e-06, 10e-05],
-            ),
-            pybop.Parameter(
-                "Negative electrode thickness [m]",
-                prior=pybop.Gaussian(5e-05, 5e-06),
-                bounds=[2e-06, 10e-05],
-            ),
+        parameter_values.update(
+            {
+                "Positive electrode thickness [m]": pybop.Parameter(
+                    "Positive electrode thickness [m]",
+                    prior=pybop.Gaussian(5e-05, 5e-06),
+                    bounds=[2e-06, 10e-05],
+                ),
+                "Negative electrode thickness [m]": pybop.Parameter(
+                    "Negative electrode thickness [m]",
+                    prior=pybop.Gaussian(5e-05, 5e-06),
+                    bounds=[2e-06, 10e-05],
+                ),
+            }
         )
         experiment = pybamm.Experiment(
             ["Discharge at 1C until 3.5 V (5 seconds period)"]
@@ -164,10 +165,8 @@ class TestWeightedCost:
         simulator = pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
-            parameters=parameters,
             protocol=experiment,
             initial_state=initial_state,
-            use_formation_concentrations=True,
         )
         costs = [pybop.DesignCost(target=target) for target in design_targets]
         cost = pybop.WeightedCost(*costs, weights=[1.0, 0.1])
