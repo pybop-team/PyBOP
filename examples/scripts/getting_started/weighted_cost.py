@@ -8,20 +8,6 @@ model = pybamm.lithium_ion.SPM()
 parameter_values = pybamm.ParameterValues("Chen2020")
 parameter_values.set_initial_state(0.5)
 
-# Fitting parameters
-parameters = pybop.Parameters(
-    pybop.Parameter(
-        "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.68, 0.05),
-        bounds=[0.5, 0.8],
-    ),
-    pybop.Parameter(
-        "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.58, 0.05),
-        bounds=[0.4, 0.7],
-    ),
-)
-
 # Generate a synthetic dataset
 sigma = 0.001
 experiment = pybamm.Experiment(
@@ -47,13 +33,33 @@ dataset = pybop.Dataset(
         "Voltage [V]": noisy(sol["Voltage [V]"].data, sigma),
     }
 )
+true_values = [
+    parameter_values[p]
+    for p in [
+        "Negative electrode active material volume fraction",
+        "Positive electrode active material volume fraction",
+    ]
+]
+
+# Fitting parameters
+parameter_values.update(
+    {
+        "Negative electrode active material volume fraction": pybop.Parameter(
+            "Negative electrode active material volume fraction",
+            prior=pybop.Gaussian(0.68, 0.05),
+            bounds=[0.5, 0.8],
+        ),
+        "Positive electrode active material volume fraction": pybop.Parameter(
+            "Positive electrode active material volume fraction",
+            prior=pybop.Gaussian(0.58, 0.05),
+            bounds=[0.4, 0.7],
+        ),
+    }
+)
 
 # Generate problem, cost function, and optimisation class
 simulator = pybop.pybamm.Simulator(
-    model,
-    parameter_values=parameter_values,
-    parameters=parameters,
-    protocol=dataset,
+    model, parameter_values=parameter_values, protocol=dataset
 )
 cost1 = pybop.SumSquaredError(dataset)
 cost2 = pybop.RootMeanSquaredError(dataset)
@@ -66,7 +72,7 @@ for cost in [weighted_cost, cost1, cost2]:
 
     # Run the optimisation
     result = optim.run()
-    print("True parameters:", [parameter_values[p] for p in parameters.keys()])
+    print("True parameters:", true_values)
 
     # Plot the timeseries output
     pybop.plot.problem(problem, problem_inputs=result.x, title="Optimised Comparison")

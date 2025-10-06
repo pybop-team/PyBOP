@@ -7,18 +7,6 @@ import pybop
 model = pybamm.lithium_ion.SPM()
 parameter_values = pybamm.ParameterValues("Chen2020")
 
-# Fitting parameters
-parameters = pybop.Parameters(
-    pybop.Parameter(
-        "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.6, 0.1),
-    ),
-    pybop.Parameter(
-        "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.6, 0.1),
-    ),
-)
-
 # Generate a synthetic dataset
 sigma = 0.001
 t_eval = np.arange(0, 900, 3)
@@ -32,10 +20,22 @@ dataset = pybop.Dataset(
     }
 )
 
-# Generate problem, cost function classes
-simulator = pybop.pybamm.Simulator(
-    model, parameter_values, parameters=parameters, protocol=dataset
+# Fitting parameters
+parameter_values.update(
+    {
+        "Negative electrode active material volume fraction": pybop.Parameter(
+            "Negative electrode active material volume fraction",
+            prior=pybop.Gaussian(0.6, 0.1),
+        ),
+        "Positive electrode active material volume fraction": pybop.Parameter(
+            "Positive electrode active material volume fraction",
+            prior=pybop.Gaussian(0.6, 0.1),
+        ),
+    }
 )
+
+# Generate problem, cost function classes
+simulator = pybop.pybamm.Simulator(model, parameter_values, protocol=dataset)
 cost = pybop.RootMeanSquaredError(dataset)
 problem = pybop.Problem(simulator, cost)
 

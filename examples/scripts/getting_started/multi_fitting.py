@@ -14,18 +14,6 @@ experiments = [
     pybamm.Experiment([("Discharge at 1C for 1 minutes (4 second period)")]),
 ]
 
-# Fitting parameters
-parameters = pybop.Parameters(
-    pybop.Parameter(
-        "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.68, 0.05),
-    ),
-    pybop.Parameter(
-        "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.58, 0.05),
-    ),
-)
-
 # Generate two fitting problems using synthetic data
 sigma = 0.002
 problems = []
@@ -42,11 +30,23 @@ for init_soc, experiment in zip(init_socs, experiments, strict=False):
             + np.random.normal(0, sigma, len(sol.t)),
         }
     )
+
+    # Fitting parameters
+    param_copy = parameter_values.copy()
+    param_copy.update(
+        {
+            "Negative electrode active material volume fraction": pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                prior=pybop.Gaussian(0.68, 0.05),
+            ),
+            "Positive electrode active material volume fraction": pybop.Parameter(
+                "Positive electrode active material volume fraction",
+                prior=pybop.Gaussian(0.58, 0.05),
+            ),
+        }
+    )
     simulator = pybop.pybamm.Simulator(
-        model,
-        parameter_values=parameter_values,
-        parameters=parameters,
-        protocol=dataset,
+        model, parameter_values=param_copy, protocol=dataset
     )
     cost = pybop.SumSquaredError(dataset)
     problems.append(pybop.Problem(simulator, cost))
@@ -65,7 +65,7 @@ optim = pybop.CuckooSearch(problem, options=options)
 
 # Run the optimisation
 result = optim.run()
-print("True parameters:", [parameter_values[p] for p in parameters.keys()])
+print("True parameters:", [parameter_values[p] for p in problem.parameters.keys()])
 
 # Plot the timeseries output
 pybop.plot.problem(problems[0], problem_inputs=result.x, title="Optimised Comparison")

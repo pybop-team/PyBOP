@@ -272,6 +272,10 @@ class Parameter:
             return None
         return self._transformation.to_search(self._initial_value)[0]
 
+    def __call__(self, *unused_args, **unused_kwargs) -> float:
+        "Return the current value. The unused arguments are to pass pybamm.ParameterValues checks."
+        return self._current_value
+
     @property
     def name(self) -> str:
         return self._name

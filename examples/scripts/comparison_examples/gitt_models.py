@@ -64,12 +64,14 @@ for model in [pybop.lithium_ion.WeppnerHuggins(), pybop.lithium_ion.SPDiffusion(
         )
 
         # Fitting parameters
-        parameters = pybop.Parameters(
-            diffusion_parameter,
-            pybop.Parameter(
-                "Reference voltage [V]",
-                initial_value=grouped_parameter_values["Reference voltage [V]"],
-            ),
+        grouped_parameter_values.update(
+            {
+                "Particle diffusion time scale [s]": diffusion_parameter,
+                "Reference voltage [V]": pybop.Parameter(
+                    "Reference voltage [V]",
+                    initial_value=grouped_parameter_values["Reference voltage [V]"],
+                ),
+            }
         )
 
     else:
@@ -79,12 +81,14 @@ for model in [pybop.lithium_ion.WeppnerHuggins(), pybop.lithium_ion.SPDiffusion(
         )
 
         # Fitting parameters
-        parameters = pybop.Parameters(
-            diffusion_parameter,
-            pybop.Parameter(
-                "Series resistance [Ohm]",
-                initial_value=grouped_parameter_values["Series resistance [Ohm]"],
-            ),
+        grouped_parameter_values.update(
+            {
+                "Particle diffusion time scale [s]": diffusion_parameter,
+                "Series resistance [Ohm]": pybop.Parameter(
+                    "Series resistance [Ohm]",
+                    initial_value=grouped_parameter_values["Series resistance [Ohm]"],
+                ),
+            }
         )
 
     # Define the model, problem and cost to optimise
@@ -94,10 +98,7 @@ for model in [pybop.lithium_ion.WeppnerHuggins(), pybop.lithium_ion.SPDiffusion(
         else dataset
     )
     simulator = pybop.pybamm.Simulator(
-        model,
-        parameter_values=grouped_parameter_values,
-        parameters=parameters,
-        protocol=gitt_dataset,
+        model, parameter_values=grouped_parameter_values, protocol=gitt_dataset
     )
     cost = pybop.RootMeanSquaredError(gitt_dataset, weighting="domain")
     problem = pybop.Problem(simulator, cost)

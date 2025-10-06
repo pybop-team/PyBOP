@@ -66,13 +66,13 @@ class TestHalfCellModel:
 
     @pytest.fixture
     def parameters(self):
-        return pybop.Parameters(
-            pybop.Parameter(
+        return {
+            "Positive electrode active material volume fraction": pybop.Parameter(
                 "Positive electrode active material volume fraction",
                 prior=pybop.Uniform(0.4, 0.75),
                 # no bounds
             ),
-        )
+        }
 
     def noisy(self, data, sigma):
         return data + np.random.normal(0, sigma, len(data))
@@ -83,11 +83,9 @@ class TestHalfCellModel:
         dataset = self.get_data(model, parameter_values)
 
         # Define the cost to optimise
+        parameter_values.update(parameters)
         simulator = pybop.pybamm.Simulator(
-            model,
-            parameter_values=parameter_values,
-            parameters=parameters,
-            protocol=dataset,
+            model, parameter_values=parameter_values, protocol=dataset
         )
         cost = pybop.SumSquaredError(dataset)
         return pybop.Problem(simulator, cost)
@@ -113,13 +111,16 @@ class TestHalfCellModel:
 
     @pytest.fixture
     def design_problem(self, model, parameter_values):
+        pybop.pybamm.set_formation_concentrations(parameter_values)
         initial_state = {"Initial SoC": 1.0}
-        parameters = pybop.Parameters(
-            pybop.Parameter(
-                "Positive electrode thickness [m]",
-                prior=pybop.Gaussian(5e-05, 5e-06),
-                bounds=[2e-06, 10e-05],
-            ),
+        parameter_values.update(
+            {
+                "Positive electrode thickness [m]": pybop.Parameter(
+                    "Positive electrode thickness [m]",
+                    prior=pybop.Gaussian(5e-05, 5e-06),
+                    bounds=[2e-06, 10e-05],
+                ),
+            }
         )
         experiment = pybamm.Experiment(
             ["Discharge at 1C until 3.5 V (5 seconds period)"]
@@ -127,10 +128,8 @@ class TestHalfCellModel:
         simulator = pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
-            parameters=parameters,
             protocol=experiment,
             initial_state=initial_state,
-            use_formation_concentrations=True,
         )
         cost = pybop.DesignCost(target="Gravimetric energy density [Wh.kg-1]")
         return pybop.Problem(simulator, cost)

@@ -2,7 +2,6 @@ import pybamm
 from pybamm import Parameter
 
 import pybop
-from pybop.pybamm.parameter_utils import set_formation_concentrations
 
 # Define model
 model = pybamm.lithium_ion.SPMe()
@@ -18,7 +17,7 @@ pybop.pybamm.add_variable_to_model(
 
 # Define parameter set and additional parameters needed for the cost function
 parameter_values = pybamm.ParameterValues("Chen2020")
-set_formation_concentrations(parameter_values)
+pybop.pybamm.set_formation_concentrations(parameter_values)
 parameter_values.update(
     {
         "Electrolyte density [kg.m-3]": Parameter("Separator density [kg.m-3]"),
@@ -44,17 +43,19 @@ parameter_values.update(
 discharge_rate = 2 * parameter_values["Nominal cell capacity [A.h]"]
 
 # Fitting parameters
-parameters = pybop.Parameters(
-    pybop.Parameter(
-        "Positive electrode thickness [m]",
-        prior=pybop.Gaussian(7.56e-05, 0.5e-05),
-        bounds=[65e-06, 10e-05],
-    ),
-    pybop.Parameter(
-        "Nominal cell capacity [A.h]",  # controls the C-rate in the experiment
-        prior=pybop.Gaussian(discharge_rate, 0.2),
-        bounds=[0.8 * discharge_rate, 1.2 * discharge_rate],
-    ),
+parameter_values.update(
+    {
+        "Positive electrode thickness [m]": pybop.Parameter(
+            "Positive electrode thickness [m]",
+            prior=pybop.Gaussian(7.56e-05, 0.5e-05),
+            bounds=[65e-06, 10e-05],
+        ),
+        "Nominal cell capacity [A.h]": pybop.Parameter(
+            "Nominal cell capacity [A.h]",  # controls the C-rate in the experiment
+            prior=pybop.Gaussian(discharge_rate, 0.2),
+            bounds=[0.8 * discharge_rate, 1.2 * discharge_rate],
+        ),
+    }
 )
 
 # Define test protocol
@@ -66,10 +67,8 @@ experiment = pybamm.Experiment(
 simulator = pybop.pybamm.Simulator(
     model,
     parameter_values,
-    parameters=parameters,
     protocol=experiment,
     initial_state={"Initial SoC": 1.0},
-    use_formation_concentrations=True,
 )
 cost_1 = pybop.DesignCost(target="Gravimetric power density [W.kg-1]")
 problem_1 = pybop.Problem(simulator, cost_1)
