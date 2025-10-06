@@ -38,18 +38,18 @@ class TestOptimisation:
 
     @pytest.fixture
     def parameters(self):
-        return pybop.Parameters(
-            pybop.Parameter(
+        return {
+            "Negative electrode active material volume fraction": pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.55, 0.05),
                 bounds=[0.375, 0.75],
             ),
-            pybop.Parameter(
+            "Positive electrode active material volume fraction": pybop.Parameter(
                 "Positive electrode active material volume fraction",
                 prior=pybop.Gaussian(0.55, 0.05),
                 # no bounds
             ),
-        )
+        }
 
     def noisy(self, data, sigma):
         return data + np.random.normal(0, sigma, len(data))
@@ -60,11 +60,9 @@ class TestOptimisation:
         dataset = self.get_data(model, parameter_values)
 
         # Define the cost to optimise
+        parameter_values.update(parameters)
         simulator = pybop.pybamm.Simulator(
-            model,
-            parameter_values=parameter_values,
-            parameters=parameters,
-            protocol=dataset,
+            model, parameter_values=parameter_values, protocol=dataset
         )
         cost = pybop.SumSquaredError(dataset)
         return pybop.Problem(simulator, cost)

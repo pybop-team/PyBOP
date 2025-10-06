@@ -55,25 +55,6 @@ parameter_values.update(
     }
 )
 
-# Fitting parameters
-parameters = pybop.Parameters(
-    pybop.Parameter(
-        "R0 [Ohm]",
-        prior=pybop.Gaussian(0.0002, 0.0001),
-        bounds=[1e-4, 1e-2],
-    ),
-    pybop.Parameter(
-        "R1 [Ohm]",
-        prior=pybop.Gaussian(0.0001, 0.0001),
-        bounds=[1e-5, 1e-2],
-    ),
-    pybop.Parameter(
-        "tau1 [s]",
-        prior=pybop.Gaussian(1.0, 0.025),
-        bounds=[0, 3.0],
-    ),
-)
-
 # Generate a synthetic dataset
 sigma = 0.001
 t_eval = np.arange(0, 600, 3)
@@ -86,11 +67,32 @@ dataset = pybop.Dataset(
         "Voltage [V]": corrupt_values,
     }
 )
+true_values = [parameter_values[p] for p in ["R0 [Ohm]", "R1 [Ohm]", "tau1 [s]"]]
+true_values.append(parameter_values.evaluate(pybamm.Parameter("C1 [F]")))
+
+# Fitting parameters
+parameter_values.update(
+    {
+        "R0 [Ohm]": pybop.Parameter(
+            "R0 [Ohm]",
+            prior=pybop.Gaussian(0.0002, 0.0001),
+            bounds=[1e-4, 1e-2],
+        ),
+        "R1 [Ohm]": pybop.Parameter(
+            "R1 [Ohm]",
+            prior=pybop.Gaussian(0.0001, 0.0001),
+            bounds=[1e-5, 1e-2],
+        ),
+        "tau1 [s]": pybop.Parameter(
+            "tau1 [s]",
+            prior=pybop.Gaussian(1.0, 0.025),
+            bounds=[0, 3.0],
+        ),
+    }
+)
 
 # Build the problem
-simulator = pybop.pybamm.Simulator(
-    model, parameter_values, parameters=parameters, protocol=dataset
-)
+simulator = pybop.pybamm.Simulator(model, parameter_values, protocol=dataset)
 cost = pybop.RootMeanSquaredError(dataset)
 problem = pybop.Problem(simulator, cost)
 
@@ -105,15 +107,7 @@ optim = pybop.XNES(problem, options=options)
 # Run the optimisation
 result = optim.run()
 print(result)
-print(
-    "True parameters:",
-    [
-        parameter_values["R0 [Ohm]"],
-        parameter_values["R1 [Ohm]"],
-        parameter_values["tau1 [s]"],
-        parameter_values.evaluate(pybamm.Parameter("C1 [F]")),
-    ],
-)
+print("True parameters:", true_values)
 print("Estimated parameters:", result.x.tolist() + [result.x[2] / result.x[1]])
 
 # Plot the timeseries output

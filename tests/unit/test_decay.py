@@ -34,19 +34,18 @@ class TestDecay:
         # Define inputs (necessary in order to calculate sensitivities)
         parameter_values = model_config["parameter_values"]
         param = [parameter_values["k"], parameter_values["y0"]]
-        parameters = [
-            pybop.Parameter("k", initial_value=param[0]),
-            pybop.Parameter("y0", initial_value=param[1]),
-        ]
+        parameters = {
+            "k": pybop.Parameter("k", initial_value=param[0]),
+            "y0": pybop.Parameter("y0", initial_value=param[1]),
+        }
         inputs = {"k": param[0], "y0": param[1]}
-        parameter_values.update({"k": "[input]", "y0": "[input]"})
+        parameter_values.update(parameters)
 
         # Simulate
         t_eval = np.linspace(0, 20, 21)
         sim = pybop.pybamm.Simulator(
             model_config["model"],
             parameter_values=parameter_values,
-            parameters=parameters,
             protocol=t_eval,
             solver=model_config["solver"],
         )

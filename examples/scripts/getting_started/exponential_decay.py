@@ -7,18 +7,6 @@ import pybop
 model = pybop.ExponentialDecayModel(n_states=2)
 parameter_values = pybamm.ParameterValues({"k": 1, "y0": 0.5})
 
-# Fitting parameters
-parameters = pybop.Parameters(
-    pybop.Parameter(
-        "k",
-        prior=pybop.Gaussian(0.5, 0.05),
-    ),
-    pybop.Parameter(
-        "y0",
-        prior=pybop.Gaussian(0.2, 0.05),
-    ),
-)
-
 # Generate a synthetic dataset
 sigma = 0.003
 t_eval = np.linspace(0, 10, 100)
@@ -37,12 +25,23 @@ dataset = pybop.Dataset(
     }
 )
 
+# Fitting parameters
+parameter_values.update(
+    {
+        "k": pybop.Parameter(
+            "k",
+            prior=pybop.Gaussian(0.5, 0.05),
+        ),
+        "y0": pybop.Parameter(
+            "y0",
+            prior=pybop.Gaussian(0.2, 0.05),
+        ),
+    }
+)
+
 # Build the problem
 simulator = pybop.pybamm.Simulator(
-    model,
-    parameter_values=parameter_values,
-    parameters=parameters,
-    protocol=dataset,
+    model, parameter_values=parameter_values, protocol=dataset
 )
 cost = pybop.Minkowski(dataset, target=["y_0", "y_1"], p=2)
 problem = pybop.Problem(simulator, cost)

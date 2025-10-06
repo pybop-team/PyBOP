@@ -27,8 +27,8 @@ class TestEvaluation:
 
     @pytest.fixture
     def parameters(self):
-        return pybop.Parameters(
-            pybop.Parameter(
+        return {
+            "Negative electrode active material volume fraction": pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.5, 0.01),
                 bounds=[0.375, 0.625],
@@ -36,12 +36,12 @@ class TestEvaluation:
                     coefficient=1 / 0.25, intercept=-0.375
                 ),
             ),
-            pybop.Parameter(
+            "Positive electrode Bruggeman coefficient (electrode)": pybop.Parameter(
                 "Positive electrode Bruggeman coefficient (electrode)",
                 prior=pybop.Gaussian(1.5, 0.1),
                 transformation=pybop.LogTransformation(),
             ),
-        )
+        }
 
     @pytest.fixture
     def experiment(self):
@@ -62,9 +62,11 @@ class TestEvaluation:
 
     @pytest.fixture
     def simulator(self, model, parameters, dataset, solver, request):
+        parameter_values = model.default_parameter_values
+        parameter_values.update(parameters)
         return pybop.pybamm.Simulator(
             model,
-            parameters=parameters,
+            parameter_values=parameter_values,
             protocol=dataset,
             solver=solver,
         )
@@ -80,7 +82,7 @@ class TestEvaluation:
             pybop.GaussianLogLikelihoodKnownSigma,
         ]
     )
-    def problem(self, simulator, parameters, dataset, request):
+    def problem(self, simulator, dataset, request):
         cost_class = request.param
         if cost_class is pybop.GaussianLogLikelihoodKnownSigma:
             cost = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=0.002)
