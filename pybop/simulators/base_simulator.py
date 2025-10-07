@@ -1,13 +1,7 @@
 from copy import copy
 
-import numpy as np
-
 from pybop.parameters.parameter import Inputs, Parameter, Parameters
 from pybop.simulators.solution import Solution
-
-# Type aliases
-CostWithSensitivities = tuple[float, np.ndarray]
-CostsAndSensitivities = tuple[np.ndarray, np.ndarray]
 
 
 class BaseSimulator:

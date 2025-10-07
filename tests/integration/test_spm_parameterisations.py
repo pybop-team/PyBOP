@@ -160,7 +160,7 @@ class Test_SPM_Parameterisation:
                 (self.ground_truth, np.asarray([self.sigma0]))
             )
 
-        initial_cost = optim.problem.evaluate(x0)
+        initial_cost = optim.problem(x0)
         results = optim.run()
 
         # Assertions
@@ -244,9 +244,7 @@ class Test_SPM_Parameterisation:
         if isinstance(two_signal_problem.cost, pybop.GaussianLogLikelihood):
             self.ground_truth = np.concatenate((self.ground_truth, combined_sigma0))
 
-        initial_cost = optim.problem.evaluate(
-            optim.problem.parameters.get_initial_values()
-        )
+        initial_cost = optim.problem(optim.problem.parameters.get_initial_values())
         results = optim.run()
 
         # Assertions
@@ -289,7 +287,7 @@ class Test_SPM_Parameterisation:
 
         # Build the optimisation problem
         optim = pybop.XNES(problem)
-        initial_cost = problem.evaluate(problem.parameters.get_initial_values())
+        initial_cost = problem(problem.parameters.get_initial_values())
 
         # Run the optimisation problem
         results = optim.run()

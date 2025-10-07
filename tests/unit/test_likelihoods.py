@@ -89,11 +89,11 @@ class TestLikelihoods:
             dataset, target=target, sigma0=np.array([0.01])
         )
         problem = pybop.Problem(simulator, likelihood)
-        result = problem.evaluate([0.5])
+        result = problem.evaluate([0.5]).values
         grad_result, grad_likelihood = problem.evaluate(
             [0.5], calculate_sensitivities=True
-        )
-        assert isinstance(result, float)
+        ).get_values()
+        assert isinstance(result[0], float)
         np.testing.assert_allclose(result, grad_result, atol=1e-5)
         # Since 0.5 < ground_truth, the likelihood should be increasing
         assert grad_likelihood >= 0
@@ -101,16 +101,16 @@ class TestLikelihoods:
     def test_gaussian_log_likelihood(self, simulator, dataset):
         likelihood = pybop.GaussianLogLikelihood(dataset, sigma0=0.01)
         problem = pybop.Problem(simulator, likelihood)
-        result = problem.evaluate(np.array([0.8, 0.02]))
+        result = problem.evaluate(np.array([0.8, 0.02])).values
         grad_result, grad_likelihood = problem.evaluate(
             np.array([0.8, 0.025]), calculate_sensitivities=True
-        )
-        assert isinstance(result, float)
+        ).get_values()
+        assert isinstance(result[0], float)
         np.testing.assert_allclose(result, grad_result, atol=1e-5)
         # Since 0.8 > ground_truth, the likelihood should be decreasing
-        assert grad_likelihood[0] <= 0
+        assert grad_likelihood[0][0] <= 0
         # Since sigma < 0.02, the likelihood should be decreasing
-        assert grad_likelihood[1] <= 0
+        assert grad_likelihood[0][1] <= 0
 
         # Test construction with sigma as a Parameter
         sigma = pybop.Parameter("sigma", prior=pybop.Uniform(0.4, 0.6))
@@ -138,10 +138,10 @@ class TestLikelihoods:
         likelihood = pybop.GaussianLogLikelihood(dataset)
         problem = pybop.Problem(simulator, likelihood)
         assert (
-            problem.evaluate(np.array([0.01, 0.1])) == -np.inf
+            problem.evaluate(np.array([0.01, 0.1])).values == -np.inf
         )  # parameter value too small
         assert (
-            problem.evaluate(np.array([0.01, 0.1]), calculate_sensitivities=True)[0]
+            problem.evaluate(np.array([0.01, 0.1]), calculate_sensitivities=True).values
             == -np.inf
         )  # parameter value too small
 
@@ -153,9 +153,9 @@ class TestLikelihoods:
         )
         problem = pybop.Problem(simulator, likelihood)
         assert (
-            problem.evaluate(np.array([0.01])) == -np.inf
+            problem.evaluate(np.array([0.01])).values == -np.inf
         )  # parameter value too small
         assert (
-            problem.evaluate(np.array([0.01]), calculate_sensitivities=True)[0]
+            problem.evaluate(np.array([0.01]), calculate_sensitivities=True).values
             == -np.inf
         )  # parameter value too small

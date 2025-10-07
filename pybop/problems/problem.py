@@ -2,14 +2,10 @@ import numpy as np
 
 from pybop.analysis.sensitivity_analysis import sensitivity_analysis
 from pybop.costs.base_cost import BaseCost
+from pybop.costs.evaluation import Evaluation
 from pybop.costs.likelihoods import LogPosterior
 from pybop.parameters.parameter import Inputs, Parameters
-from pybop.simulators.base_simulator import (
-    BaseSimulator,
-    CostsAndSensitivities,
-    CostWithSensitivities,
-    Solution,
-)
+from pybop.simulators.base_simulator import BaseSimulator, Solution
 
 
 class Problem:
@@ -78,17 +74,31 @@ class Problem:
     def n_outputs(self):
         return len(self._target)
 
-    def __call__(
-        self, inputs: Inputs | list[Inputs], calculate_sensitivities: bool = False
-    ) -> float | list[float] | CostWithSensitivities | CostsAndSensitivities:
-        """See problem.evaluate."""
-        return self.evaluate(
-            inputs=inputs, calculate_sensitivities=calculate_sensitivities
+    def __call__(self, inputs: Inputs | list[Inputs]) -> float | list[float]:
+        """
+        Evaluate the cost for one or more sets of inputs and return the cost value(s).
+
+        Parameters
+        ----------
+        inputs : Inputs | list[Inputs]
+            Input parameters for cost evaluation. Supports a list of inputs.
+
+        Returns
+        -------
+        float | list[float]
+            The cost value(s).
+        """
+        evaluation = self.evaluate(inputs=inputs, calculate_sensitivities=False)
+
+        return (
+            evaluation.values[0]
+            if len(evaluation.values) == 1
+            else evaluation.values.tolist()
         )
 
     def evaluate(
         self, inputs: Inputs | list[Inputs], calculate_sensitivities: bool = False
-    ) -> float | list[float] | CostWithSensitivities | CostsAndSensitivities:
+    ) -> Evaluation:
         """
         Evaluate the cost for one or more sets of inputs and return the cost value(s)
         and (optionally) the sensitivities.
@@ -102,7 +112,7 @@ class Problem:
 
         Returns
         -------
-        float | list[float] | CostWithSensitivities | CostsAndSensitivities
+        Evaluation
             The cost value(s) and (optionally) the gradient of the cost with respect to
             each input parameter.
         """
@@ -113,17 +123,13 @@ class Problem:
                 inputs = [self.parameters.to_dict(v) for v in values]
         inputs_list = inputs if isinstance(inputs, list) else [inputs]
 
-        results = self.batch_evaluate(
+        return self.batch_evaluate(
             inputs=inputs_list, calculate_sensitivities=calculate_sensitivities
         )
 
-        if calculate_sensitivities:
-            return results[0][0], results[1][0, :] if len(inputs_list) == 1 else results
-        return results[0] if len(inputs_list) == 1 else results
-
     def batch_evaluate(
         self, inputs: list[Inputs], calculate_sensitivities: bool = False
-    ) -> np.ndarray | CostsAndSensitivities:
+    ) -> Evaluation:
         """
         Evaluate the cost for each set of inputs and return the cost value(s) and
         (optionally) the sensitivities.
@@ -137,7 +143,7 @@ class Problem:
 
         Returns
         -------
-        np.ndarray | CostsAndSensitivities
+        Evaluation
             Cost values of len(inputs) and (optionally) the gradient of the cost with respect to
             each input parameter with shape (len(inputs), len(parameters)).
         """
@@ -159,28 +165,33 @@ class Problem:
             valid_inputs, calculate_sensitivities=calculate_sensitivities
         )
 
+        # Preallocate the evaluation results
+        evaluation = Evaluation()
+        evaluation.preallocate(
+            n_inputs=len(inputs),
+            n_parameters=len(self.parameters),
+            calculate_sensitivities=calculate_sensitivities,
+        )
+
         # Evaluate the cost for the valid parameters
+        valid_indices = [i for i, valid in enumerate(validity) if valid]
         # TODO: Parallelise the cost computations
         if calculate_sensitivities:
-            costs, grads = [], []
             for i, sol in enumerate(solutions):
-                out = self._cost.evaluate(
+                e, de = self._cost.evaluate(
                     sol,
                     inputs=valid_inputs[i],
                     calculate_sensitivities=calculate_sensitivities,
                 )
-                costs.append(out[0])
-                grads.append(out[1])
+                evaluation.insert_result(i=valid_indices[i], value=e, sensitivities=de)
         else:
-            costs = []
             for i, sol in enumerate(solutions):
-                costs.append(
-                    self._cost.evaluate(
-                        sol,
-                        inputs=valid_inputs[i],
-                        calculate_sensitivities=calculate_sensitivities,
-                    )
+                e = self._cost.evaluate(
+                    sol,
+                    inputs=valid_inputs[i],
+                    calculate_sensitivities=calculate_sensitivities,
                 )
+                evaluation.insert_result(i=valid_indices[i], value=e)
 
         if False in validity:
             # Insert failure outputs for the invalid parameters into the lists of results
@@ -188,17 +199,13 @@ class Problem:
             if calculate_sensitivities:
                 y, dy = self._cost.failure(calculate_sensitivities)
                 for i in invalid_indices:
-                    costs.insert(i, y)
-                    grads.insert(i, dy)
-
+                    evaluation.insert_result(i=i, value=y, sensitivities=dy)
             else:
                 y = self._cost.failure(calculate_sensitivities)
                 for i in invalid_indices:
-                    costs.insert(i, y)
+                    evaluation.insert_result(i=i, value=y)
 
-        if calculate_sensitivities:
-            return np.asarray(costs), np.asarray(grads)
-        return np.asarray(costs)
+        return evaluation
 
     def simulate(
         self, inputs: Inputs | list[Inputs], calculate_sensitivities: bool = False
@@ -257,14 +264,14 @@ class Problem:
         Compute the absolute initial cost, resampling the initial parameters if needed.
         """
         x0 = self.parameters.get_initial_values()
-        cost0 = np.abs(self.evaluate(x0))
+        cost0 = np.abs(self.evaluate(x0).values[0])
         nsamples = 0
         while np.isinf(cost0) and nsamples < 10:
             x0 = self.parameters.sample_from_priors()
             if x0 is None:
                 break
 
-            cost0 = np.abs(self.evaluate(x0))
+            cost0 = np.abs(self.evaluate(x0).values[0])
             nsamples += 1
         if nsamples > 0:
             self.parameters.update(initial_values=x0)

@@ -121,9 +121,7 @@ class TestWeightedCost:
         )
         optim = pybop.CuckooSearch(problem=weighted_fitting_problem, options=options)
 
-        initial_cost = optim.problem.evaluate(
-            optim.problem.parameters.get_initial_values()
-        )
+        initial_cost = optim.problem(optim.problem.parameters.get_initial_values())
         results = optim.run()
 
         # Assertions
@@ -177,7 +175,7 @@ class TestWeightedCost:
         options = pybop.PintsOptions(max_iterations=15)
         optim = pybop.CuckooSearch(problem, options=options)
         initial_values = optim.problem.parameters.get_initial_values()
-        initial_cost = optim.problem.evaluate(initial_values)
+        initial_cost = optim.problem(initial_values)
         results = optim.run()
 
         # Assertions

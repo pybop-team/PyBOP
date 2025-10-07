@@ -53,7 +53,7 @@ class TestClassifier:
         logger.extend_log(
             x_search=[np.asarray([1e-3])],
             x_model=[np.asarray([1e-3])],
-            cost=[problem.evaluate(np.asarray([1e-3]))],
+            cost=[problem(np.asarray([1e-3]))],
         )
         result = pybop.OptimisationResult(optim=optim, logger=logger, time=1.0)
 

@@ -30,7 +30,7 @@ def classify_using_hessian(
     minimising = result.minimising
 
     def cost(x):
-        return problem.evaluate(x)
+        return problem.evaluate(x).values
 
     n = len(x)
     if n != 2 or len(dx) != n:

@@ -143,7 +143,7 @@ class TestTransformation:
             )
         optim = optimiser(problem, options=options)
 
-        initial_cost = optim.problem.evaluate(x0)
+        initial_cost = optim.problem(x0)
         results = optim.run()
 
         # Add sigma0 to ground truth for GaussianLogLikelihood

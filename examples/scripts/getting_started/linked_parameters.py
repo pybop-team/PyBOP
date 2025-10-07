@@ -81,8 +81,8 @@ optim = pybop.XNES(problem, options=options)
 
 # Run the optimisation
 result = optim.run()
-print(f"Initial gravimetric energy density: {problem.evaluate(result.x0):.2f} Wh.kg-1")
-print(f"Optimised gravimetric energy density: {problem.evaluate(result.x):.2f} Wh.kg-1")
+print(f"Initial gravimetric energy density: {problem(result.x0):.2f} Wh.kg-1")
+print(f"Optimised gravimetric energy density: {problem(result.x):.2f} Wh.kg-1")
 
 # Plot the optimisation result
 result.plot_surface()

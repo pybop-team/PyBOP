@@ -1,6 +1,7 @@
 import numpy as np
 
 from pybop import Problem
+from pybop.costs.evaluation import Evaluation
 from pybop.parameters.parameter import Inputs, Parameters
 
 
@@ -71,7 +72,7 @@ class MetaProblem(Problem):
 
         Returns
         -------
-        np.ndarray | CostsAndSensitivities
+        Evaluation
             Cost values of len(inputs) and (optionally) the gradient of the cost with respect to
             each input parameter with shape (len(inputs), len(parameters)).
         """
@@ -84,15 +85,15 @@ class MetaProblem(Problem):
             if calculate_sensitivities:
                 e[:, i], de[:, :, i] = problem.batch_evaluate(
                     inputs, calculate_sensitivities=calculate_sensitivities
-                )
+                ).get_values()
             else:
                 e[:, i] = problem.batch_evaluate(
                     inputs, calculate_sensitivities=calculate_sensitivities
-                )
+                ).values
 
         e = np.dot(e, self.weights)
         if calculate_sensitivities:
             de = np.dot(de, self.weights)
-            return e, de
+            return Evaluation(values=e, sensitivities=de)
 
-        return e
+        return Evaluation(values=e)
