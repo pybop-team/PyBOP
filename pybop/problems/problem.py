@@ -123,11 +123,11 @@ class Problem:
                 inputs = [self.parameters.to_dict(v) for v in values]
         inputs_list = inputs if isinstance(inputs, list) else [inputs]
 
-        return self.batch_evaluate(
+        return self.evaluate_batch(
             inputs=inputs_list, calculate_sensitivities=calculate_sensitivities
         )
 
-    def batch_evaluate(
+    def evaluate_batch(
         self, inputs: list[Inputs], calculate_sensitivities: bool = False
     ) -> Evaluation:
         """
@@ -161,7 +161,7 @@ class Problem:
                 validity.append(False)
 
         # Run simulations for the valid parameters
-        solutions = self.batch_simulate(
+        solutions = self.simulate_batch(
             valid_inputs, calculate_sensitivities=calculate_sensitivities
         )
 
@@ -228,15 +228,15 @@ class Problem:
              for output variable(s) y, domain t and parameter(s) x.
         """
         if not isinstance(inputs, list):
-            return self.batch_simulate(
+            return self.simulate_batch(
                 inputs=[inputs], calculate_sensitivities=calculate_sensitivities
             )[0]
 
-        return self.batch_simulate(
+        return self.simulate_batch(
             inputs=inputs, calculate_sensitivities=calculate_sensitivities
         )
 
-    def batch_simulate(
+    def simulate_batch(
         self, inputs: list[Inputs], calculate_sensitivities: bool = False
     ) -> list[Solution]:
         """

@@ -46,7 +46,7 @@ class BaseEvaluator(PintsEvaluator):
                     return np.empty(0), np.empty(0)
 
                 inputs_list = self.problem.parameters.to_inputs(x_model)
-                cost, grad = self.problem.batch_evaluate(
+                cost, grad = self.problem.evaluate_batch(
                     inputs_list, calculate_sensitivities=True
                 ).get_values()
 
@@ -71,7 +71,7 @@ class BaseEvaluator(PintsEvaluator):
                     return np.empty(0)
 
                 inputs_list = self.problem.parameters.to_inputs(x_model)
-                cost = self.problem.batch_evaluate(
+                cost = self.problem.evaluate_batch(
                     inputs_list, calculate_sensitivities=False
                 ).get_values()
 
@@ -88,7 +88,7 @@ class BaseEvaluator(PintsEvaluator):
                     return np.empty(0), np.empty(0)
 
                 inputs_list = self.problem.parameters.to_inputs(x_model)
-                cost, grad = self.problem.batch_evaluate(
+                cost, grad = self.problem.evaluate_batch(
                     inputs_list, calculate_sensitivities=True
                 ).get_values()
 
@@ -113,7 +113,7 @@ class BaseEvaluator(PintsEvaluator):
                     return np.empty(0), np.empty(0)
 
                 inputs_list = self.problem.parameters.to_inputs(x_model)
-                cost = self.problem.batch_evaluate(
+                cost = self.problem.evaluate_batch(
                     inputs_list, calculate_sensitivities=False
                 ).get_values()
 
