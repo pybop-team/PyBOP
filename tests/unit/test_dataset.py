@@ -98,6 +98,14 @@ class TestDataset:
         sys.version_info < (3, 11), reason="requires python3.11 or higher"
     )
     def test_pyrobe_import(self):
+        """
+        Function to test import of PyProBE result into a pybop.dataset.
+        PyProBE requires Python 3.11 or higher.
+        """
+        import pyprobe
+
+        # The example used for testing is taken from https://github.com/pybamm-team/PyBaMM/blob/develop/examples/scripts/cycling_ageing.py
+        # Chosen because the experiment it includes multiple cycles and steps
         model = pybamm.lithium_ion.SPM(
             {
                 "SEI": "ec reaction limited",
@@ -153,15 +161,16 @@ class TestDataset:
             ]
         )
 
+        # Create data
         sim = pybamm.Simulation(model, experiment=experiment, parameter_values=param)
         solution = sim.solve()
 
-        import pyprobe
-
+        # Import pybamm solution data into PyProBE
         cell = pyprobe.Cell(info={"Model": "US06"})
         cell.import_pybamm_solution("US06 DFN", ["US06"], solution)
 
-        dataset = pybop.import_pybrobe_result(
+        # Import data from PyProBE into pybop.dataset
+        dataset_pyprobe = pybop.import_pybrobe_result(
             cell.procedure["US06 DFN"],
             [
                 "Time [s]",
@@ -181,7 +190,18 @@ class TestDataset:
             ],
         )
 
-        dataset2 = pybop.Dataset(
+        # Different choice of parameters where column names are identical between pyprobe and pybamm
+        dataset_pyprobe2 = pybop.import_pybrobe_result(
+            cell.procedure["US06 DFN"],
+            [
+                "Time [s]",
+                "Current [A]",
+                "Voltage [V]",
+            ],
+        )
+
+        # For comparison, import pybamm solution directly into pybop.dataset
+        dataset_pybamm = pybop.Dataset(
             solution,
             variables=[
                 "Time [s]",
@@ -191,11 +211,16 @@ class TestDataset:
             ],
         )
 
-        assert (dataset2["Time [s]"] == dataset["Time [s]"]).all()
-        assert (dataset2["Current [A]"] == dataset["Current [A]"]).all()
-        assert (dataset2["Voltage [V]"] == dataset["Voltage [V]"]).all()
-        assert (dataset2["Step"] == dataset["Step"]).all()
-        assert (dataset2["Cycle"] == dataset["Cycle"]).all()
+        # Ensure data is identical
+        assert (dataset_pybamm["Time [s]"] == dataset_pyprobe["Time [s]"]).all()
+        assert (dataset_pybamm["Current [A]"] == dataset_pyprobe["Current [A]"]).all()
+        assert (dataset_pybamm["Voltage [V]"] == dataset_pyprobe["Voltage [V]"]).all()
+        assert (dataset_pybamm["Step"] == dataset_pyprobe["Step"]).all()
+        assert (dataset_pybamm["Cycle"] == dataset_pyprobe["Cycle"]).all()
         assert (
-            dataset2["Discharge capacity [A.h]"] == dataset["Discharge capacity [A.h]"]
+            dataset_pybamm["Discharge capacity [A.h]"]
+            == dataset_pyprobe["Discharge capacity [A.h]"]
         ).all()
+        assert (dataset_pybamm["Time [s]"] == dataset_pyprobe2["Time [s]"]).all()
+        assert (dataset_pybamm["Current [A]"] == dataset_pyprobe2["Current [A]"]).all()
+        assert (dataset_pybamm["Voltage [V]"] == dataset_pyprobe2["Voltage [V]"]).all()
