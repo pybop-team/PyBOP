@@ -30,6 +30,10 @@
 - Replace `FittingProblem` and `DesignProblem` by a single `Problem` class
 - Rename and reimplement `MultiFittingProblem` as `MetaProblem`
 - Add `BaseSimulator` as a generic base class for the `pybop.pybamm.Simulator` and `pybop.pybamm.EISSimulator`
+- Enable `pybop.Parameter` objects to be passed directly to an instance of `pybamm.ParameterValues`
+- Update the method for setting formation concentrations to be part of the model definition
+- Rename some example scripts and notebooks
+- Update the docs and test workflows
 
 # [v25.6](https://github.com/pybop-team/PyBOP/tree/v25.6) - 2025-07-16
 

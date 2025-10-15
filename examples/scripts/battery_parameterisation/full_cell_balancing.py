@@ -86,7 +86,7 @@ cost = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=sigma)
 problem = pybop.Problem(simulator, cost)
 
 # Set up the optimiser
-options = pybop.SciPyMinimizeOptions(maxiter=125)
+options = pybop.SciPyMinimizeOptions(maxiter=125, method="Nelder-Mead")
 optim = pybop.SciPyMinimize(problem, options=options)
 
 # Run the optimisation for Maximum Likelihood Estimate (MLE)
