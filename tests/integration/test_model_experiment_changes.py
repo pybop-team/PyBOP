@@ -14,27 +14,31 @@ class TestModelAndExperimentChanges:
 
     @pytest.fixture(
         params=[
-            pybop.Parameters(
-                pybop.Parameter(  # geometric parameter
-                    "Negative particle radius [m]",
-                    prior=pybop.Gaussian(6e-06, 0.1e-6),
-                    bounds=[1e-6, 9e-6],
-                    true_value=5.86e-6,
-                    initial_value=5.86e-6,
-                ),
-            ),
-            pybop.Parameters(
-                pybop.Parameter(  # non-geometric parameter
-                    "Positive particle diffusivity [m2.s-1]",
-                    prior=pybop.Gaussian(3.43e-15, 1e-15),
-                    bounds=[1e-15, 5e-15],
-                    true_value=4e-15,
-                    initial_value=4e-15,
-                ),
-            ),
+            [
+                {
+                    "Negative particle radius [m]": pybop.Parameter(  # geometric parameter
+                        "Negative particle radius [m]",
+                        prior=pybop.Gaussian(6e-06, 0.1e-6),
+                        bounds=[1e-6, 9e-6],
+                        initial_value=5.86e-6,
+                    ),
+                },
+                {"Negative particle radius [m]": 5.86e-6},
+            ],
+            [
+                {
+                    "Positive particle diffusivity [m2.s-1]": pybop.Parameter(  # non-geometric parameter
+                        "Positive particle diffusivity [m2.s-1]",
+                        prior=pybop.Gaussian(3.43e-15, 1e-15),
+                        bounds=[1e-15, 5e-15],
+                        initial_value=4e-15,
+                    ),
+                },
+                {"Positive particle diffusivity [m2.s-1]": 4e-15},
+            ],
         ]
     )
-    def parameters(self, request):
+    def parameters_and_inputs(self, request):
         return request.param
 
     @pytest.fixture
@@ -42,25 +46,36 @@ class TestModelAndExperimentChanges:
         return pybamm.IDAKLUSolver(atol=1e-6, rtol=1e-6)
 
     @pytest.mark.integration
-    def test_changing_experiment(self, parameters, solver):
+    def test_changing_experiment(self, parameters_and_inputs, solver):
+        parameters, inputs = parameters_and_inputs
         # Change the experiment and check that the results are different.
 
-        parameter_set = pybop.ParameterSet("Chen2020")
-        parameter_set.update(parameters.as_dict("true"))
+        parameter_values = pybamm.ParameterValues("Chen2020")
+        parameter_values.update(inputs)
         initial_state = {"Initial SoC": 0.5}
-        model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
+        model = pybamm.lithium_ion.SPM()
 
+        parameter_values.update(parameters)
         t_eval = np.arange(0, 3600, 2)  # Default 1C discharge to cut-off voltage
-        solution_1 = model.predict(initial_state=initial_state, t_eval=t_eval)
-        cost_1 = self.final_cost(solution_1, model, parameters)
-
-        experiment = pybop.Experiment(["Charge at 1C until 4.1 V (2 seconds period)"])
-        solution_2 = model.predict(
+        simulator_1 = pybop.pybamm.Simulator(
+            model,
+            parameter_values=parameter_values,
             initial_state=initial_state,
-            experiment=experiment,
-            inputs=parameters.as_dict("true"),
+            protocol=t_eval,
+            solver=solver,
         )
-        cost_2 = self.final_cost(solution_2, model, parameters)
+        solution_1 = simulator_1.solve(inputs)
+        cost_1 = self.final_cost(simulator_1, solution_1)
+
+        experiment = pybamm.Experiment(["Charge at 1C until 4.1 V (2 seconds period)"])
+        simulator_2 = pybop.pybamm.Simulator(
+            model,
+            parameter_values=parameter_values,
+            initial_state=initial_state,
+            protocol=experiment,
+        )
+        solution_2 = simulator_2.solve(inputs)
+        cost_2 = self.final_cost(simulator_2, solution_2)
 
         with np.testing.assert_raises(AssertionError):
             np.testing.assert_array_equal(
@@ -72,21 +87,37 @@ class TestModelAndExperimentChanges:
         np.testing.assert_allclose(cost_1, 0, atol=1e-5)
         np.testing.assert_allclose(cost_2, 0, atol=1e-5)
 
-    def test_changing_model(self, parameters, solver):
+    def test_changing_model(self, parameters_and_inputs, solver):
         # Change the model and check that the results are different.
 
-        parameter_set = pybop.ParameterSet("Chen2020")
-        parameter_set.update(parameters.as_dict("true"))
+        parameter_values = pybamm.ParameterValues("Chen2020")
+        parameters, inputs = parameters_and_inputs
+        parameter_values.update(inputs)
         initial_state = {"Initial SoC": 0.5}
-        experiment = pybop.Experiment(["Charge at 1C until 4.1 V (30 seconds period)"])
+        experiment = pybamm.Experiment(["Charge at 1C until 4.1 V (30 seconds period)"])
 
-        model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
-        solution_1 = model.predict(initial_state=initial_state, experiment=experiment)
-        cost_1 = self.final_cost(solution_1, model, parameters)
+        model = pybamm.lithium_ion.SPM()
+        parameter_values.update(parameters)
+        simulator_1 = pybop.pybamm.Simulator(
+            model,
+            parameter_values=parameter_values,
+            protocol=experiment,
+            initial_state=initial_state,
+            solver=solver,
+        )
+        solution_1 = simulator_1.solve(inputs)
+        cost_1 = self.final_cost(simulator_1, solution_1)
 
-        model = pybop.lithium_ion.SPMe(parameter_set=parameter_set, solver=solver)
-        solution_2 = model.predict(initial_state=initial_state, experiment=experiment)
-        cost_2 = self.final_cost(solution_2, model, parameters)
+        model = pybamm.lithium_ion.SPMe()
+        simulator_2 = pybop.pybamm.Simulator(
+            model,
+            parameter_values=parameter_values,
+            protocol=experiment,
+            initial_state=initial_state,
+            solver=solver,
+        )
+        solution_2 = simulator_2.solve(inputs)
+        cost_2 = self.final_cost(simulator_2, solution_2)
 
         with np.testing.assert_raises(AssertionError):
             np.testing.assert_array_equal(
@@ -98,7 +129,7 @@ class TestModelAndExperimentChanges:
         np.testing.assert_allclose(cost_1, 0, atol=1e-5)
         np.testing.assert_allclose(cost_2, 0, atol=1e-5)
 
-    def final_cost(self, solution, model, parameters):
+    def final_cost(self, simulator, solution):
         # Compute the cost corresponding to a particular solution
         dataset = pybop.Dataset(
             {
@@ -107,64 +138,91 @@ class TestModelAndExperimentChanges:
                 "Voltage [V]": solution["Voltage [V]"].data,
             }
         )
-        signal = ["Voltage [V]"]
-        problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
-        cost = pybop.RootMeanSquaredError(problem)
-        optim = pybop.NelderMead(cost)
+        cost = pybop.RootMeanSquaredError(dataset)
+        problem = pybop.Problem(simulator, cost)
+        optim = pybop.NelderMead(problem)
         results = optim.run()
-        return results.final_cost
+        return results.best_cost
 
     def test_multi_fitting_problem(self, solver):
-        parameter_set = pybop.ParameterSet("Chen2020")
-        parameters = pybop.Parameters(
-            pybop.Parameter(
-                "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.68, 0.05),
-                true_value=parameter_set[
-                    "Negative electrode active material volume fraction"
-                ],
-            )
-        )
+        parameter_values = pybamm.ParameterValues("Chen2020")
+        ground_truth = parameter_values[
+            "Negative electrode active material volume fraction"
+        ]
 
-        model_1 = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
-        experiment_1 = pybop.Experiment(
+        model_1 = pybamm.lithium_ion.SPM()
+        experiment_1 = pybamm.Experiment(
             ["Discharge at 0.5C for 5 minutes (10 seconds period)"]
         )
-        solution_1 = model_1.predict(experiment=experiment_1)
-        dataset_1 = pybop.Dataset(
+        dataset_1 = self.get_data(model_1, parameter_values, experiment_1, solver)
+
+        parameter_values.update(
             {
-                "Time [s]": solution_1["Time [s]"].data,
-                "Current function [A]": solution_1["Current [A]"].data,
-                "Voltage [V]": solution_1["Voltage [V]"].data,
+                "Negative electrode active material volume fraction": pybop.Parameter(
+                    "Negative electrode active material volume fraction",
+                    prior=pybop.Gaussian(0.68, 0.05),
+                )
             }
+        )
+        simulator_1 = pybop.pybamm.Simulator(
+            model_1,
+            parameter_values=parameter_values,
+            protocol=dataset_1,
+            solver=solver,
         )
 
-        model_2 = pybop.lithium_ion.SPMe(
-            parameter_set=parameter_set.copy(), solver=solver
+        parameter_values.update(
+            {"Negative electrode active material volume fraction": ground_truth}
         )
-        experiment_2 = pybop.Experiment(
+        model_2 = pybamm.lithium_ion.SPMe()
+        experiment_2 = pybamm.Experiment(
             ["Discharge at 1C for 3 minutes (10 seconds period)"]
         )
-        solution_2 = model_2.predict(experiment=experiment_2)
-        dataset_2 = pybop.Dataset(
+        dataset_2 = self.get_data(model_2, parameter_values, experiment_2, solver)
+
+        parameter_values.update(
             {
-                "Time [s]": solution_2["Time [s]"].data,
-                "Current function [A]": solution_2["Current [A]"].data,
-                "Voltage [V]": solution_2["Voltage [V]"].data,
+                "Negative electrode active material volume fraction": pybop.Parameter(
+                    "Negative electrode active material volume fraction",
+                    prior=pybop.Gaussian(0.68, 0.05),
+                )
             }
+        )
+        simulator_2 = pybop.pybamm.Simulator(
+            model_2,
+            parameter_values=parameter_values,
+            protocol=dataset_2,
+            solver=solver,
         )
 
         # Define a problem for each dataset and combine them into one
-        problem_1 = pybop.FittingProblem(model_1, parameters, dataset_1)
-        problem_2 = pybop.FittingProblem(model_2, parameters, dataset_2)
-        problem = pybop.MultiFittingProblem(problem_1, problem_2)
-        cost = pybop.RootMeanSquaredError(problem)
+        cost_1 = pybop.RootMeanSquaredError(dataset_1)
+        cost_2 = pybop.RootMeanSquaredError(dataset_2)
+        problem_1 = pybop.Problem(simulator_1, cost_1)
+        problem_2 = pybop.Problem(simulator_2, cost_2)
+        problem = pybop.MetaProblem(problem_1, problem_2)
 
         # Test with a gradient and non-gradient-based optimiser
         for optimiser in [pybop.SNES, pybop.IRPropMin]:
-            optim = optimiser(
-                cost, sigma0=0.05, max_iterations=100, max_unchanged_iterations=30
+            options = pybop.PintsOptions(
+                sigma=0.05, max_iterations=100, max_unchanged_iterations=30
             )
+            optim = optimiser(problem, options=options)
             results = optim.run()
-            np.testing.assert_allclose(results.x, parameters.true_value(), atol=2e-5)
-            np.testing.assert_allclose(results.final_cost, 0, atol=3e-5)
+            np.testing.assert_allclose(results.x, ground_truth, atol=2e-5)
+            np.testing.assert_allclose(results.best_cost, 0, atol=3e-5)
+
+    def get_data(self, model, parameter_values, experiment, solver):
+        solution = pybamm.Simulation(
+            model,
+            parameter_values=parameter_values,
+            experiment=experiment,
+            solver=solver,
+        ).solve()
+        return pybop.Dataset(
+            {
+                "Time [s]": solution["Time [s]"].data,
+                "Current function [A]": solution["Current [A]"].data,
+                "Voltage [V]": solution["Voltage [V]"].data,
+            }
+        )

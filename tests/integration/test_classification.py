@@ -1,4 +1,7 @@
+import json
+
 import numpy as np
+import pybamm
 import pytest
 from pybamm import Parameter
 
@@ -20,44 +23,53 @@ class TestClassification:
         ]
     )
     def parameters(self, request):
-        ground_truth = request.param
-        return pybop.Parameters(
-            pybop.Parameter(
+        self.ground_truth = request.param
+        return {
+            "R0 [Ohm]": pybop.Parameter(
                 "R0 [Ohm]",
                 prior=pybop.Gaussian(0.05, 0.01),
                 bounds=[0.02, 0.08],
-                true_value=ground_truth[0],
             ),
-            pybop.Parameter(
+            "R1 [Ohm]": pybop.Parameter(
                 "R1 [Ohm]",
                 prior=pybop.Gaussian(0.05, 0.01),
                 bounds=[0.02, 0.08],
-                true_value=ground_truth[1],
             ),
+        }
+
+    @pytest.fixture
+    def model(self):
+        return pybamm.equivalent_circuit.Thevenin()
+
+    @pytest.fixture
+    def parameter_values(self, model, parameters):
+        with open("examples/parameters/initial_ecm_parameters.json") as file:
+            parameter_values = pybamm.ParameterValues(json.load(file))
+        parameter_values.update(
+            {
+                "Open-circuit voltage [V]": model.default_parameter_values[
+                    "Open-circuit voltage [V]"
+                ]
+            },
+            check_already_exists=False,
         )
-
-    @pytest.fixture
-    def parameter_set(self):
-        parameter_set = pybop.ParameterSet(
-            json_path="examples/parameters/initial_ecm_parameters.json"
+        parameter_values.update({"C1 [F]": 1000})
+        parameter_values.update(
+            {"R0 [Ohm]": self.ground_truth[0], "R1 [Ohm]": self.ground_truth[1]}
         )
-        parameter_set.update({"C1 [F]": 1000})
-        return parameter_set
+        return parameter_values
 
     @pytest.fixture
-    def model(self, parameter_set, parameters):
-        parameter_set.update(parameters.as_dict(parameters.true_value()))
-        return pybop.empirical.Thevenin(parameter_set=parameter_set)
-
-    @pytest.fixture
-    def dataset(self, model):
-        experiment = pybop.Experiment(
+    def dataset(self, model, parameter_values):
+        experiment = pybamm.Experiment(
             [
                 "Discharge at 0.5C for 2 minutes (4 seconds period)",
                 "Charge at 0.5C for 2 minutes (4 seconds period)",
             ]
         )
-        solution = model.predict(experiment=experiment)
+        solution = pybamm.Simulation(
+            model, parameter_values=parameter_values, experiment=experiment
+        ).solve()
         return pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -67,16 +79,23 @@ class TestClassification:
         )
 
     @pytest.fixture
-    def problem(self, model, parameters, dataset):
-        return pybop.FittingProblem(model, parameters, dataset)
+    def simulator(self, model, parameter_values, parameters, dataset):
+        parameter_values.update(parameters)
+        return pybop.pybamm.Simulator(
+            model, parameter_values=parameter_values, protocol=dataset
+        )
 
-    def test_classify_using_hessian(self, problem):
-        cost = pybop.RootMeanSquaredError(problem)
-        x = cost.parameters.true_value()
-        bounds = cost.parameters.get_bounds()
+    def test_classify_using_hessian(self, simulator, dataset):
+        cost = pybop.RootMeanSquaredError(dataset)
+        problem = pybop.Problem(simulator, cost)
+        x = self.ground_truth
+        bounds = problem.parameters.get_bounds()
         x0 = np.clip(x, bounds["lower"], bounds["upper"])
-        optim = pybop.Optimisation(cost=cost)
-        results = pybop.OptimisationResult(x=x0, optim=optim)
+        optim = pybop.XNES(problem)
+        logger = pybop.Logger(minimising=problem.minimising)
+        logger.iteration = 1
+        logger.extend_log(x_search=[x0], x_model=[x0], cost=[problem(x0)])
+        results = pybop.OptimisationResult(optim=optim, logger=logger, time=1.0)
 
         if np.all(x == np.asarray([0.05, 0.05])):
             message = pybop.classify_using_hessian(results)
@@ -97,9 +116,13 @@ class TestClassification:
             raise Exception(f"Please add a check for these values: {x}")
 
         if np.all(x == np.asarray([0.05, 0.05])):
-            cost = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.002)
-            optim = pybop.Optimisation(cost=cost)
-            results = pybop.OptimisationResult(x=x, optim=optim)
+            cost = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=0.002)
+            problem = pybop.Problem(simulator, cost)
+            optim = pybop.XNES(problem)
+            logger = pybop.Logger(minimising=problem.minimising)
+            logger.iteration = 1
+            logger.extend_log(x_search=[x], x_model=[x], cost=[problem(x)])
+            results = pybop.OptimisationResult(optim=optim, logger=logger, time=1.0)
 
             message = pybop.classify_using_hessian(results)
             assert message == "The optimiser has located a maximum."
@@ -107,30 +130,23 @@ class TestClassification:
         # message = pybop.classify_using_hessian(results)
         # assert message == "The optimiser has located a saddle point."
 
-    def test_insensitive_classify_using_hessian(self, parameter_set):
-        param_R0_a = pybop.Parameter(
-            "R0_a [Ohm]",
-            bounds=[0, 0.002],
-            true_value=0.001,
-        )
-        param_R0_b = pybop.Parameter(
-            "R0_b [Ohm]",
-            bounds=[-1e-4, 1e-4],
-            true_value=0,
-        )
-        parameter_set.update(
+    def test_insensitive_classify_using_hessian(self, model, parameter_values):
+        param_R0_a = pybop.Parameter("R0_a [Ohm]", bounds=[0, 0.002])
+        param_R0_b = pybop.Parameter("R0_b [Ohm]", bounds=[-0.001, 0.001])
+        parameter_values.update(
             {"R0_a [Ohm]": 0.001, "R0_b [Ohm]": 0},
             check_already_exists=False,
         )
-        parameter_set.update(
+        parameter_values.update(
             {"R0 [Ohm]": Parameter("R0_a [Ohm]") + Parameter("R0_b [Ohm]")},
         )
-        model = pybop.empirical.Thevenin(parameter_set=parameter_set)
 
-        experiment = pybop.Experiment(
+        experiment = pybamm.Experiment(
             ["Discharge at 0.5C for 2 minutes (4 seconds period)"]
         )
-        solution = model.predict(experiment=experiment)
+        solution = pybamm.Simulation(
+            model, parameter_values=parameter_values, experiment=experiment
+        ).solve()
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -139,21 +155,24 @@ class TestClassification:
             }
         )
 
-        for parameters in [
-            pybop.Parameters(param_R0_b, param_R0_a),
-            pybop.Parameters(param_R0_a, param_R0_b),
-        ]:
-            problem = pybop.FittingProblem(model, parameters, dataset)
-            cost = pybop.SumOfPower(problem, p=1)
-            x = cost.parameters.true_value()
-            optim = pybop.Optimisation(cost=cost)
-            results = pybop.OptimisationResult(x=x, optim=optim)
+        parameter_values.update({"R0_a [Ohm]": param_R0_a, "R0_b [Ohm]": param_R0_b})
+        simulator = pybop.pybamm.Simulator(
+            model, parameter_values=parameter_values, protocol=dataset
+        )
+        cost = pybop.SumOfPower(dataset, p=1)
+        problem = pybop.Problem(simulator, cost)
+        x = [0.001, 0]
+        optim = pybop.XNES(problem)
+        logger = pybop.Logger(minimising=problem.minimising)
+        logger.iteration = 1
+        logger.extend_log(x_search=[x], x_model=[x], cost=[problem(x)])
+        results = pybop.OptimisationResult(optim=optim, logger=logger, time=1.0)
 
-            message = pybop.classify_using_hessian(results)
-            assert message == (
-                "The cost variation is too small to classify with certainty."
-                " The cost is insensitive to a change of 1e-42 in R0_b [Ohm]."
-            )
+        message = pybop.classify_using_hessian(results)
+        assert message == (
+            "The cost variation is too small to classify with certainty."
+            " The cost is insensitive to a change of 1e-42 in R0_b [Ohm]."
+        )
 
         message = pybop.classify_using_hessian(results, dx=[0.0001, 0.0001])
         assert message == (

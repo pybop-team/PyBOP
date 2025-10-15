@@ -1,15 +1,28 @@
+import json
+
 import numpy as np
+import pybamm
 
 import pybop
 
+# Define the model
+model = pybamm.equivalent_circuit.Thevenin(options={"number of rc elements": 2})
+
 # Import the ECM parameter set from JSON
-parameter_set = pybop.ParameterSet(
-    json_path="examples/parameters/initial_ecm_parameters.json"
+with open("examples/parameters/initial_ecm_parameters.json") as file:
+    parameter_values = pybamm.ParameterValues(json.load(file))
+parameter_values.update(
+    {
+        "Open-circuit voltage [V]": model.default_parameter_values[
+            "Open-circuit voltage [V]"
+        ]
+    },
+    check_already_exists=False,
 )
 
 # Alternatively, define the initial parameter set with a dictionary
 # Add definitions for R's, C's, and initial overpotentials for any additional RC elements
-# parameter_set = pybop.ParameterSet(
+# parameter_values = pybamm.ParameterValues(
 #     params_dict={
 #         "chemistry": "ecm",
 #         "Initial SoC": 0.5,
@@ -24,7 +37,7 @@ parameter_set = pybop.ParameterSet(
 #         "Cell-jig heat transfer coefficient [W/K]": 10,
 #         "Jig thermal mass [J/K]": 500,
 #         "Jig-air heat transfer coefficient [W/K]": 10,
-#         "Open-circuit voltage [V]": pybop.empirical.Thevenin().default_parameter_values[
+#         "Open-circuit voltage [V]": model.default_parameter_values[
 #             "Open-circuit voltage [V]"
 #         ],
 #         "R0 [Ohm]": 0.001,
@@ -38,62 +51,56 @@ parameter_set = pybop.ParameterSet(
 #     }
 # )
 
-# Define the model
-model = pybop.empirical.Thevenin(
-    parameter_set=parameter_set, options={"number of rc elements": 2}
-)
-
-# Fitting parameters
-parameters = pybop.Parameters(
-    pybop.Parameter(
-        "R0 [Ohm]",
-        prior=pybop.Gaussian(0.0002, 0.0001),
-        bounds=[1e-4, 1e-2],
-    ),
-    pybop.Parameter(
-        "R1 [Ohm]",
-        prior=pybop.Gaussian(0.0001, 0.0001),
-        bounds=[1e-5, 1e-2],
-    ),
-)
-
+# Generate a synthetic dataset
 sigma = 0.001
 t_eval = np.arange(0, 900, 3)
-values = model.predict(t_eval=t_eval)
-corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
-
-# Form dataset
+sol = pybamm.Simulation(model, parameter_values=parameter_values).solve(t_eval=t_eval)
+corrupt_values = sol["Voltage [V]"](t_eval) + np.random.normal(0, sigma, len(t_eval))
 dataset = pybop.Dataset(
     {
         "Time [s]": t_eval,
-        "Current function [A]": values["Current [A]"].data,
+        "Current function [A]": sol["Current [A]"](t_eval),
         "Voltage [V]": corrupt_values,
     }
 )
+true_values = [parameter_values[p] for p in ["R0 [Ohm]", "R1 [Ohm]"]]
 
-# Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(model, parameters, dataset)
-cost = pybop.SumSquaredError(problem)
-optim = pybop.CMAES(cost, max_iterations=100)
-
-results = optim.run()
-
-# Export the parameters to JSON
-parameter_set.export_parameters(
-    "examples/parameters/fit_ecm_parameters.json", fit_params=parameters
+# Fitting parameters
+parameter_values.update(
+    {
+        "R0 [Ohm]": pybop.Parameter(
+            "R0 [Ohm]",
+            prior=pybop.Gaussian(0.0002, 0.0001),
+            bounds=[1e-4, 1e-2],
+        ),
+        "R1 [Ohm]": pybop.Parameter(
+            "R1 [Ohm]",
+            prior=pybop.Gaussian(0.0001, 0.0001),
+            bounds=[1e-5, 1e-3],
+        ),
+    }
 )
 
-# Plot the time series
-pybop.plot.dataset(dataset)
+# Build the problem
+simulator = pybop.pybamm.Simulator(
+    model, parameter_values=parameter_values, protocol=dataset
+)
+cost = pybop.SumSquaredError(dataset)
+problem = pybop.Problem(simulator, cost)
+
+# Set up the optimiser
+options = pybop.PintsOptions(max_iterations=100)
+optim = pybop.CMAES(problem, options=options)
+
+# Run the optimisation
+result = optim.run()
+print(result)
+print("True values:", true_values)
 
 # Plot the timeseries output
-pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.problem(problem, problem_inputs=result.x, title="Optimised Comparison")
 
-# Plot convergence
-pybop.plot.convergence(optim)
-
-# Plot the parameter traces
-pybop.plot.parameters(optim)
-
-# Plot the cost landscape
-pybop.plot.surface(optim)
+# Plot the result
+result.plot_convergence()
+result.plot_parameters()
+result.plot_surface()

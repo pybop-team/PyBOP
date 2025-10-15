@@ -26,6 +26,7 @@ extensions = [
     "sphinx_design",
     "sphinx_copybutton",
     "autoapi.extension",
+    "sphinx_automodapi.automodapi",
     # custom extensions
     "_extension.gallery_directive",
     # For extension examples and demos

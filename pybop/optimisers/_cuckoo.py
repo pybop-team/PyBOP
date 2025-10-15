@@ -1,4 +1,5 @@
 import numpy as np
+import pints
 from pints import PopulationBasedOptimiser
 from scipy.special import gamma
 
@@ -47,14 +48,19 @@ class CuckooSearchImpl(PopulationBasedOptimiser):
       https://doi.org/10.1016/j.chaos.2011.06.004.
     """
 
-    def __init__(self, x0, sigma0=0.05, boundaries=None, pa=0.25):
+    def __init__(
+        self,
+        x0: np.ndarray,
+        sigma0: list[float] | None,
+        boundaries: pints.Boundaries | None,
+    ):
         super().__init__(x0, sigma0, boundaries=boundaries)
 
         # Problem dimensionality
         self._dim = len(x0)
 
         # Population size and abandon rate
-        self._pa = pa
+        self._pa = 0.25
         self.step_size = self._sigma0
         self.beta = 1.5
 
@@ -62,8 +68,14 @@ class CuckooSearchImpl(PopulationBasedOptimiser):
         self._running = False
         self._ready_for_tell = False
 
+        self._finite_boundaries = (
+            self._boundaries
+            and not any(np.isinf(self._boundaries.lower()))
+            and not any(np.isinf(self._boundaries.upper()))
+        )
+
         # Initialise nests
-        if self._boundaries:
+        if self._finite_boundaries:
             self._nests = np.random.uniform(
                 low=self._boundaries.lower(),
                 high=self._boundaries.upper(),
@@ -150,7 +162,7 @@ class CuckooSearchImpl(PopulationBasedOptimiser):
         """
         Updates the nests to abandon the worst performers and reinitialise.
         """
-        if self._boundaries:
+        if self._finite_boundaries:
             self._nests[idx] = np.random.uniform(
                 low=self._boundaries.lower(),
                 high=self._boundaries.upper(),
@@ -162,7 +174,7 @@ class CuckooSearchImpl(PopulationBasedOptimiser):
         """
         Clip the input array to the boundaries if available.
         """
-        if self._boundaries:
+        if self._finite_boundaries:
             x = np.clip(x, self._boundaries.lower(), self._boundaries.upper())
         return x
 
@@ -205,6 +217,6 @@ class CuckooSearchImpl(PopulationBasedOptimiser):
     @pa.setter
     def pa(self, pa):
         """Setter for abandonment rate"""
-        if not isinstance(pa, (int, float)) or not 0 < pa <= 1:
+        if not isinstance(pa, int | float) or not 0 < pa <= 1:
             raise ValueError("pa must be a numeric value between 0 and 1.")
         self._pa = float(pa)

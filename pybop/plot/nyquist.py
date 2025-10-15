@@ -8,8 +8,8 @@ def nyquist(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
 
     Parameters
     ----------
-    problem : pybop.BaseProblem
-        An instance of a problem class (e.g., `pybop.EISProblem`) that contains the parameters and methods
+    problem : pybop.Problem
+        An instance of a problem class that contains the parameters and methods
         for evaluation and target retrieval.
     problem_inputs : Inputs, optional
         Input parameters for the problem. If not provided, the default parameters from the problem
@@ -39,17 +39,15 @@ def nyquist(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
     >>> nyquist_figures = nyquist(problem, show=True, title="Nyquist Plot", xaxis_title="Real(Z)", yaxis_title="Imag(Z)")
     >>> # The plots will be displayed and nyquist_figures will contain the list of figure objects.
     """
-    if problem_inputs is None:
-        problem_inputs = problem.parameters.as_dict()
-    else:
-        problem_inputs = problem.parameters.verify(problem_inputs)
+    if not isinstance(problem_inputs, dict):
+        problem_inputs = problem.parameters.to_dict(problem_inputs)
 
-    model_output = problem.evaluate(problem_inputs)
+    model_output = problem.simulate(problem_inputs)
     domain_data = model_output["Impedance"].real
-    target_output = problem.get_target()
+    target_output = problem.target_data
 
     figure_list = []
-    for i in problem.signal:
+    for var in problem.target:
         default_layout_options = dict(
             title="Nyquist Plot",
             font=dict(family="Arial", size=14),
@@ -92,7 +90,7 @@ def nyquist(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
 
         plot_dict = StandardPlot(
             x=domain_data,
-            y=-model_output[i].imag,
+            y=-model_output[var].imag,
             layout_options=default_layout_options,
             trace_names="Model",
         )
@@ -104,8 +102,8 @@ def nyquist(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
         )
 
         target_trace = plot_dict.create_trace(
-            x=target_output[i].real,
-            y=-target_output[i].imag,
+            x=target_output[var].real,
+            y=-target_output[var].imag,
             name="Reference",
             mode="markers",
             marker=dict(size=8, color="red", symbol="circle-open"),
