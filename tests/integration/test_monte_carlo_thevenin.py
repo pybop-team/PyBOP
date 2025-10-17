@@ -71,14 +71,12 @@ class TestSamplingThevenin:
     def parameters(self):
         return {
             "R0 [Ohm]": pybop.Parameter(
-                "R0 [Ohm]",
                 prior=pybop.Gaussian(5e-2, 5e-3),
                 transformation=pybop.LogTransformation(),
                 initial_value=pybop.Uniform(2e-3, 8e-2).rvs()[0],
                 bounds=[1e-4, 1e-1],
             ),
             "R1 [Ohm]": pybop.Parameter(
-                "R1 [Ohm]",
                 prior=pybop.Gaussian(5e-2, 5e-3),
                 transformation=pybop.LogTransformation(),
                 initial_value=pybop.Uniform(2e-3, 8e-2).rvs()[0],

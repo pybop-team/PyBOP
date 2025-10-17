@@ -29,7 +29,6 @@ class TestEvaluation:
     def parameters(self):
         return {
             "Negative electrode active material volume fraction": pybop.Parameter(
-                "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.5, 0.01),
                 bounds=[0.375, 0.625],
                 transformation=pybop.ScaledTransformation(
@@ -37,7 +36,6 @@ class TestEvaluation:
                 ),
             ),
             "Positive electrode Bruggeman coefficient (electrode)": pybop.Parameter(
-                "Positive electrode Bruggeman coefficient (electrode)",
                 prior=pybop.Gaussian(1.5, 0.1),
                 transformation=pybop.LogTransformation(),
             ),

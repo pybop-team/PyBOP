@@ -29,7 +29,6 @@ class TestLikelihoods:
     def parameters(self):
         return {
             "Negative electrode active material volume fraction": pybop.Parameter(
-                "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.5, 0.01),
                 bounds=[0.375, 0.625],
             )
@@ -111,7 +110,7 @@ class TestLikelihoods:
         assert grad_likelihood[1] <= 0
 
         # Test construction with sigma as a Parameter
-        sigma = pybop.Parameter("sigma", prior=pybop.Uniform(0.4, 0.6))
+        sigma = pybop.Parameter(prior=pybop.Uniform(0.4, 0.6))
         likelihood = pybop.GaussianLogLikelihood(dataset, sigma0=sigma)
 
         # Test invalid sigma

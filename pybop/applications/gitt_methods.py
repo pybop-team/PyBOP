@@ -41,12 +41,8 @@ class GITTPulseFit(BaseApplication):
     ):
         self.parameter_values = parameter_values
         self.parameters = {
-            "Particle diffusion time scale [s]": pybop.Parameter(
-                "Particle diffusion time scale [s]", bounds=[0, np.inf]
-            ),
-            "Series resistance [Ohm]": pybop.Parameter(
-                "Series resistance [Ohm]", bounds=[0, np.inf]
-            ),
+            "Particle diffusion time scale [s]": pybop.Parameter(bounds=[0, np.inf]),
+            "Series resistance [Ohm]": pybop.Parameter(bounds=[0, np.inf]),
         }
         self.model = pybop.lithium_ion.SPDiffusion(build=True)
         self.cost = cost or pybop.RootMeanSquaredError

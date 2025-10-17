@@ -83,11 +83,11 @@ def contour(
         )
         for (
             i,
-            param,
-        ) in enumerate(parameters):
+            (name, param),
+        ) in enumerate(parameters.items()):
             if i > 1:
                 additional_values.append(param.current_value)
-                print(f"Fixed {param.name}:", param.current_value)
+                print(f"Fixed {name}:", param.current_value)
 
     # Set up parameter bounds
     if bounds is None:

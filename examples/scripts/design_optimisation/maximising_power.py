@@ -46,12 +46,10 @@ discharge_rate = 2 * parameter_values["Nominal cell capacity [A.h]"]
 parameter_values.update(
     {
         "Positive electrode thickness [m]": pybop.Parameter(
-            "Positive electrode thickness [m]",
             prior=pybop.Gaussian(7.56e-05, 0.5e-05),
             bounds=[65e-06, 10e-05],
         ),
-        "Nominal cell capacity [A.h]": pybop.Parameter(
-            "Nominal cell capacity [A.h]",  # controls the C-rate in the experiment
+        "Nominal cell capacity [A.h]": pybop.Parameter(  # controls the C-rate in the experiment
             prior=pybop.Gaussian(discharge_rate, 0.2),
             bounds=[0.8 * discharge_rate, 1.2 * discharge_rate],
         ),

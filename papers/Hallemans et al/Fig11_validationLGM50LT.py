@@ -81,60 +81,26 @@ thetahat = params.get("thetahat")
 thetahat = thetahat.flatten()
 
 parameters = pybop.Parameters(
-    pybop.Parameter(
-        "Series resistance [Ohm]",
-    ),
-    pybop.Parameter(
-        "Positive particle diffusion time scale [s]",
-    ),
-    pybop.Parameter(
-        "Negative particle diffusion time scale [s]",
-    ),
-    pybop.Parameter(
-        "Cation transference number",
-    ),
-    pybop.Parameter(
-        "Positive electrode electrolyte diffusion time scale [s]",
-    ),
-    pybop.Parameter(
-        "Negative electrode electrolyte diffusion time scale [s]",
-    ),
-    pybop.Parameter(
-        "Separator electrolyte diffusion time scale [s]",
-    ),
-    pybop.Parameter(
-        "Positive electrode charge transfer time scale [s]",
-    ),
-    pybop.Parameter(
-        "Negative electrode charge transfer time scale [s]",
-    ),
-    pybop.Parameter(
-        "Positive electrode capacitance [F]",
-    ),
-    pybop.Parameter(
-        "Negative electrode capacitance [F]",
-    ),
-    pybop.Parameter(
-        "Positive electrode relative porosity",
-    ),
-    pybop.Parameter(
-        "Negative electrode relative porosity",
-    ),
-    pybop.Parameter(
-        "Reference electrolyte capacity [A.s]",
-    ),
-    pybop.Parameter(
-        "Minimum positive stoichiometry",
-    ),
-    pybop.Parameter(
-        "Maximum positive stoichiometry",
-    ),
-    pybop.Parameter(
-        "Minimum negative stoichiometry",
-    ),
-    pybop.Parameter(
-        "Maximum negative stoichiometry",
-    ),
+    {
+        "Series resistance [Ohm]": pybop.Parameter(),
+        "Positive particle diffusion time scale [s]": pybop.Parameter(),
+        "Negative particle diffusion time scale [s]": pybop.Parameter(),
+        "Cation transference number": pybop.Parameter(),
+        "Positive electrode electrolyte diffusion time scale [s]": pybop.Parameter(),
+        "Negative electrode electrolyte diffusion time scale [s]": pybop.Parameter(),
+        "Separator electrolyte diffusion time scale [s]": pybop.Parameter(),
+        "Positive electrode charge transfer time scale [s]": pybop.Parameter(),
+        "Negative electrode charge transfer time scale [s]": pybop.Parameter(),
+        "Positive electrode capacitance [F]": pybop.Parameter(),
+        "Negative electrode capacitance [F]": pybop.Parameter(),
+        "Positive electrode relative porosity": pybop.Parameter(),
+        "Negative electrode relative porosity": pybop.Parameter(),
+        "Reference electrolyte capacity [A.s]": pybop.Parameter(),
+        "Minimum positive stoichiometry": pybop.Parameter(),
+        "Maximum positive stoichiometry": pybop.Parameter(),
+        "Minimum negative stoichiometry": pybop.Parameter(),
+        "Maximum negative stoichiometry": pybop.Parameter(),
+    }
 )
 
 grouped_parameters.update(parameters.as_dict(thetahat))
