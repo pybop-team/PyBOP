@@ -49,7 +49,9 @@ pip install pybop==v24.3
 
 To check that PyBOP is installed correctly, run one of the examples in the following section. For a development installation, see the [Contribution Guide](https://github.com/pybop-team/PyBOP/blob/develop/CONTRIBUTING.md#Installation). More installation information is available in our [documentation](https://pybop-docs.readthedocs.io/en/latest/installation.html) and the [extended installation instructions](https://docs.pybamm.org/en/latest/source/user_guide/installation/gnu-linux-mac.html) for PyBaMM.
 
-## Using PyBOP
+
+## Use Cases
+
 PyBOP has two intended uses:
 
 1. Parameter inference from battery test data.
@@ -57,6 +59,12 @@ PyBOP has two intended uses:
 2. Design optimisation under battery manufacturing/use constraints.
 
 These include a wide variety of optimisation problems that require careful consideration due to the choice of battery model, data availability and/or the choice of design parameters.
+
+### Publications
+
+Please take inspiration from the following journal articles which show how PyBOP is being used for research:
+
+- "Physics-based battery model parametrisation from impedance data" by [Hallemans et al. (2025)](https://doi.org/10.1149/1945-7111/add41b) with [open-source code and data](https://github.com/Battery-Intelligence-Lab/Hallemans-2025-JES)
 
 ### Jupyter Notebooks
 
