@@ -19,9 +19,7 @@
 
 </div>
 
-PyBOP provides a complete set of tools for parameterisation and optimisation of battery models, using both Bayesian and frequentist approaches, with [example workflows](https://github.com/pybop-team/PyBOP/tree/main/examples/) to assist the user. PyBOP can be used to parameterise various battery models, including electrochemical and equivalent circuit models available in [PyBaMM](https://pybamm.org/). PyBOP prioritises clear and informative diagnostics for the user, while also allowing for advanced probabilistic methods.
-
-The diagram below shows the conceptual framework of PyBOP. This package is currently under development, so users can expect the API to evolve with future releases.
+PyBOP provides tools for the parameterisation and optimisation of battery models, using both Bayesian and frequentist approaches, with [example workflows](https://github.com/pybop-team/PyBOP/tree/main/examples/) to assist the user. PyBOP can be used to parameterise various battery models, including the electrochemical and equivalent circuit models available in [PyBaMM](https://pybamm.org/).
 
 <p align="center">
     <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/PyBOP-high-level.svg" alt="pybop_arch.svg" width="700" />
@@ -70,44 +68,26 @@ Please take inspiration from the following journal articles which show how PyBOP
 
 Explore our [example notebooks](https://github.com/pybop-team/PyBOP/blob/develop/examples) for hands-on demonstrations:
 
-- [Gravimetric design optimisation (SPMe)](https://nbviewer.org/github/pybop-team/PyBOP/blob/develop/examples/notebooks/design_optimisation/energy_based_electrode_design.ipynb)
-- [Non-linear constrained ECM parameter identification](https://nbviewer.org/github/pybop-team/PyBOP/blob/develop/examples/notebooks/battery_parameterisation/ecm_trust-constr.ipynb)
-- [Optimiser comparison for parameter identification](https://nbviewer.org/github/pybop-team/PyBOP/blob/develop/examples/notebooks/comparison_examples/multi_optimiser_identification.ipynb)
-- [Parameter identification for spatial pouch cell model](https://nbviewer.org/github/pybop-team/PyBOP/blob/develop/examples/notebooks/battery_parameterisation/pouch_cell_identification.ipynb)
-- [Estimating ECM parameters from HPPC pulse](https://nbviewer.org/github/pybop-team/PyBOP/blob/develop/examples/notebooks/battery_parameterisation/equivalent_circuit_identification_hppc.ipynb)
+- [Getting started with gradient-based optimisation](https://nbviewer.org/github/pybop-team/PyBOP/blob/develop/examples/notebooks/getting_started/optimising_with_adamw.ipynb)
+- [Estimating ECM parameters from a HPPC pulse](https://nbviewer.org/github/pybop-team/PyBOP/blob/develop/examples/notebooks/battery_parameterisation/equivalent_circuit_identification_hppc.ipynb)
+- [Identifying ECM parameters with nonlinear constraints](https://nbviewer.org/github/pybop-team/PyBOP/blob/develop/examples/notebooks/battery_parameterisation/ecm_scipy_constraints.ipynb)
+- [Parameter identification for a spatial pouch cell model](https://nbviewer.org/github/pybop-team/PyBOP/blob/develop/examples/notebooks/battery_parameterisation/pouch_cell_identification.ipynb)
+- [Energy-based electrode design optimisation](https://nbviewer.org/github/pybop-team/PyBOP/blob/develop/examples/notebooks/design_optimisation/energy_based_electrode_design.ipynb)
 
 ### Python Scripts
 
 Find additional script-based examples in the [examples directory](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/):
 
-- [UKF parameter identification (SPM)](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/comparison_examples/unscented_kalman_filter.py)
-- [BPX format parameter import/export](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/getting_started/simple_BPX.py)
-- [Electrochemical Impendence Spectroscopy (EIS) parameter identification](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/battery_parameterisation/simple_eis.py)
-- [Maximum a Posteriori parameter identification (SPM)](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/comparison_examples/maximum_a_posteriori.py)
-- [Gradient-based parameter identification (SPM)](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/comparison_examples/adamw.py)
+- [Getting started with SciPy minimize](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/getting_started/optimising_with_scipy_minimize.py)
+- [Estimating diffusivity from GITT data](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/battery_parameterisation/gitt_fitting.py)
+- [Maximum a Posteriori parameter identification](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/comparison_examples/maximum_a_posteriori.py)
+- [Using electrochemical impedance spectroscopy (EIS) data](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/battery_parameterisation/simple_eis.py)
+- [Getting started with MCMC samplers](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/getting_started/monte_carlo_sampling.py)
 
 
-### Supported Methods
-The table below lists the currently supported [models](https://github.com/pybop-team/PyBOP/tree/develop/pybop/models), [optimisers](https://github.com/pybop-team/PyBOP/tree/develop/pybop/optimisers), and [cost functions](https://github.com/pybop-team/PyBOP/tree/develop/pybop/costs) in PyBOP.
-
-<p align="center">
-
-| Battery Models                                | Cost Functions                     | Optimization Algorithms                                            |
-|-----------------------------------------------|------------------------------------|--------------------------------------------------------------------|
-| Single Particle Model (SPM)                   | Sum of Squared Error (SSE)         | Covariance Matrix Adaptation Evolution Strategy (CMA-ES) <tr></tr> |
-| Single Particle Model with Electrolyte (SPMe) | Root Mean Squared Error (RMSE)     | Particle Swarm Optimization (PSO) <tr></tr>                        |
-| Doyle-Fuller-Newman (DFN)                     | Mean Squared Error (MSE)           | Exponential Natural Evolution Strategy (xNES) <tr></tr>            |
-| Many Particle Model (MPM)                     | Mean Absolute Error (MAE)          | Separable Natural Evolution Strategy (sNES)  <tr></tr>             |
-| Multi-Species Multi-Reaction (MSMR)           | Minkowski                          | Weight Decayed Adaptive Moment Estimation (AdamW) <tr></tr>        |
-| Weppner-Huggins                               | Sum of Power                       | Improved Resilient Backpropagation (iRProp-) <tr></tr>             |
-| Equivalent Circuit Models (ECM)               | Gaussian Log Likelihood            | SciPy Minimize & Differential Evolution  <tr></tr>                 |
-| Grouped-parameter SPM (GroupedSPM)            | Log Posterior                      | Cuckoo Search  <tr></tr>                                           |
-| Grouped-parameter SPMe (GroupedSPMe)          | Gravimetric Energy / Power Density | Simulated Annealing  <tr></tr>                                     |
-|                                               | Volumetric Energy / Power Density  | Random Search <tr></tr>                                            |
-|                                               |                                    | Gradient Descent <tr></tr>                                         |
-|                                               |                                    | Nelder Mead <tr></tr>                                              |
-
-</p>
+### Grouped Models
+In addition to the models available in PyBaMM, PyBOP currently hosts some grouped-parameter versions of common battery models which are
+purpose-built for parameter esimation and can be found under [models](https://github.com/pybop-team/PyBOP/tree/develop/pybop/models).
 
 
 ## Code of Conduct
