@@ -109,80 +109,96 @@ t_plus_bounds = [0.2, 0.7]
 R0_bounds = [0.0125, 0.016]
 
 parameters = pybop.Parameters(
-    {
-        "Series resistance [Ohm]": pybop.Parameter(
-            bounds=R0_bounds,
-            initial_value=np.mean(R0_bounds),
-        ),
-        "Positive particle diffusion time scale [s]": pybop.Parameter(
-            bounds=tau_d_bounds,
-            initial_value=np.mean(tau_d_bounds),
-        ),
-        "Negative particle diffusion time scale [s]": pybop.Parameter(
-            bounds=tau_d_bounds,
-            initial_value=np.mean(tau_d_bounds),
-        ),
-        "Cation transference number": pybop.Parameter(
-            bounds=np.sort(t_plus_bounds),
-            initial_value=np.mean(t_plus_bounds),
-        ),
-        "Positive electrode electrolyte diffusion time scale [s]": pybop.Parameter(
-            bounds=np.sort(tau_e_bounds),
-            initial_value=np.mean(tau_e_bounds),
-        ),
-        "Negative electrode electrolyte diffusion time scale [s]": pybop.Parameter(
-            bounds=np.sort(tau_e_bounds),
-            initial_value=np.mean(tau_e_bounds),
-        ),
-        "Separator electrolyte diffusion time scale [s]": pybop.Parameter(
-            bounds=np.sort(tau_e_bounds),
-            initial_value=np.mean(tau_e_bounds),
-        ),
-        "Positive electrode charge transfer time scale [s]": pybop.Parameter(
-            bounds=np.sort(tau_ct_bounds),
-            initial_value=np.mean(tau_ct_bounds),
-        ),
-        "Negative electrode charge transfer time scale [s]": pybop.Parameter(
-            bounds=np.sort(tau_ct_bounds),
-            initial_value=np.mean(tau_ct_bounds),
-        ),
-        "Positive electrode capacitance [F]": pybop.Parameter(
-            bounds=np.sort(C_bounds),
-            initial_value=np.mean(C_bounds),
-        ),
-        "Negative electrode capacitance [F]": pybop.Parameter(
-            bounds=np.sort(C_bounds),
-            initial_value=np.mean(C_bounds),
-        ),
-        "Positive electrode relative porosity": pybop.Parameter(
-            bounds=np.sort(zeta_bounds),
-            initial_value=np.mean(zeta_bounds),
-        ),
-        "Negative electrode relative porosity": pybop.Parameter(
-            bounds=np.sort(zeta_bounds),
-            initial_value=np.mean(zeta_bounds),
-        ),
-        "Reference electrolyte capacity [A.s]": pybop.Parameter(
-            bounds=np.sort(Qe_bounds),
-            initial_value=np.mean(Qe_bounds),
-        ),
-        "Minimum positive stoichiometry": pybop.Parameter(
-            bounds=np.sort(c100p_bounds),
-            initial_value=np.mean(c100p_bounds),
-        ),
-        "Maximum positive stoichiometry": pybop.Parameter(
-            bounds=np.sort(c0p_bounds),
-            initial_value=np.mean(c0p_bounds),
-        ),
-        "Minimum negative stoichiometry": pybop.Parameter(
-            bounds=np.sort(c0n_bounds),
-            initial_value=np.mean(c0n_bounds),
-        ),
-        "Maximum negative stoichiometry": pybop.Parameter(
-            bounds=np.sort(c100n_bounds),
-            initial_value=np.mean(c100n_bounds),
-        ),
-    }
+    pybop.Parameter(
+        "Series resistance [Ohm]",
+        bounds=R0_bounds,
+        initial_value=np.mean(R0_bounds),
+    ),
+    pybop.Parameter(
+        "Positive particle diffusion time scale [s]",
+        bounds=tau_d_bounds,
+        initial_value=np.mean(tau_d_bounds),
+    ),
+    pybop.Parameter(
+        "Negative particle diffusion time scale [s]",
+        bounds=tau_d_bounds,
+        initial_value=np.mean(tau_d_bounds),
+    ),
+    pybop.Parameter(
+        "Cation transference number",
+        bounds=np.sort(t_plus_bounds),
+        initial_value=np.mean(t_plus_bounds),
+    ),
+    pybop.Parameter(
+        "Positive electrode electrolyte diffusion time scale [s]",
+        bounds=np.sort(tau_e_bounds),
+        initial_value=np.mean(tau_e_bounds),
+    ),
+    pybop.Parameter(
+        "Negative electrode electrolyte diffusion time scale [s]",
+        bounds=np.sort(tau_e_bounds),
+        initial_value=np.mean(tau_e_bounds),
+    ),
+    pybop.Parameter(
+        "Separator electrolyte diffusion time scale [s]",
+        bounds=np.sort(tau_e_bounds),
+        initial_value=np.mean(tau_e_bounds),
+    ),
+    pybop.Parameter(
+        "Positive electrode charge transfer time scale [s]",
+        bounds=np.sort(tau_ct_bounds),
+        initial_value=np.mean(tau_ct_bounds),
+    ),
+    pybop.Parameter(
+        "Negative electrode charge transfer time scale [s]",
+        bounds=np.sort(tau_ct_bounds),
+        initial_value=np.mean(tau_ct_bounds),
+    ),
+    pybop.Parameter(
+        "Positive electrode capacitance [F]",
+        bounds=np.sort(C_bounds),
+        initial_value=np.mean(C_bounds),
+    ),
+    pybop.Parameter(
+        "Negative electrode capacitance [F]",
+        bounds=np.sort(C_bounds),
+        initial_value=np.mean(C_bounds),
+    ),
+    pybop.Parameter(
+        "Positive electrode relative porosity",
+        bounds=np.sort(zeta_bounds),
+        initial_value=np.mean(zeta_bounds),
+    ),
+    pybop.Parameter(
+        "Negative electrode relative porosity",
+        bounds=np.sort(zeta_bounds),
+        initial_value=np.mean(zeta_bounds),
+    ),
+    pybop.Parameter(
+        "Reference electrolyte capacity [A.s]",
+        bounds=np.sort(Qe_bounds),
+        initial_value=np.mean(Qe_bounds),
+    ),
+    pybop.Parameter(
+        "Minimum positive stoichiometry",
+        bounds=np.sort(c100p_bounds),
+        initial_value=np.mean(c100p_bounds),
+    ),
+    pybop.Parameter(
+        "Maximum positive stoichiometry",
+        bounds=np.sort(c0p_bounds),
+        initial_value=np.mean(c0p_bounds),
+    ),
+    pybop.Parameter(
+        "Minimum negative stoichiometry",
+        bounds=np.sort(c0n_bounds),
+        initial_value=np.mean(c0n_bounds),
+    ),
+    pybop.Parameter(
+        "Maximum negative stoichiometry",
+        bounds=np.sort(c100n_bounds),
+        initial_value=np.mean(c100n_bounds),
+    ),
 )
 
 
