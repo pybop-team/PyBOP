@@ -32,7 +32,6 @@ class TestOptimisation:
     def one_parameter(self):
         return {
             "Positive electrode active material volume fraction": pybop.Parameter(
-                "Positive electrode active material volume fraction",
                 prior=pybop.Gaussian(0.5, 0.02),
                 bounds=[0.48, 0.52],
             )
@@ -42,12 +41,10 @@ class TestOptimisation:
     def two_parameters(self):
         return {
             "Negative electrode active material volume fraction": pybop.Parameter(
-                "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.6, 0.02),
                 bounds=[0.58, 0.62],
             ),
             "Positive electrode active material volume fraction": pybop.Parameter(
-                "Positive electrode active material volume fraction",
                 prior=pybop.Gaussian(0.5, 0.05),
                 bounds=[0.48, 0.52],
             ),

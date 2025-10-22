@@ -82,9 +82,9 @@ class EISSimulator(BaseSimulator):
 
         # Unpack the uncertain parameters from the parameter values
         parameters = Parameters()
-        for param in parameter_values.values():
+        for name, param in parameter_values.items():
             if isinstance(param, Parameter):
-                parameters.add(param)
+                parameters.add(name, param)
         super().__init__(parameters=parameters)
 
         # Set up a simulation

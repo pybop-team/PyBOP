@@ -36,14 +36,12 @@ parameter_values.update(
 parameter_values.update(
     {
         "Negative electrode active material volume fraction": pybop.Parameter(
-            "Negative electrode active material volume fraction",
             prior=pybop.Uniform(0.3, 0.8),
             bounds=[0.3, 0.8],
             initial_value=0.653,
             transformation=pybop.LogTransformation(),
         ),
         "Positive electrode active material volume fraction": pybop.Parameter(
-            "Positive electrode active material volume fraction",
             prior=pybop.Uniform(0.3, 0.8),
             bounds=[0.4, 0.7],
             initial_value=0.657,

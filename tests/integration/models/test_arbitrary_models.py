@@ -143,7 +143,7 @@ class TestArbitraryModels:
 
         parameter_values = model.default_parameter_values
         parameter_values.update(
-            {"a": pybop.Parameter("a", initial_value=0.1, bounds=[0, np.inf])}
+            {"a": pybop.Parameter(initial_value=0.1, bounds=[0, np.inf])}
         )
 
         # Build the problem
@@ -175,8 +175,8 @@ class TestArbitraryModels:
         parameter_values = model.default_parameter_values
         parameter_values.update(
             {
-                "a": pybop.Parameter("a", initial_value=-4, bounds=[-10, 0]),
-                "d": pybop.Parameter("d", initial_value=-4, bounds=[-10, 0]),
+                "a": pybop.Parameter(initial_value=-4, bounds=[-10, 0]),
+                "d": pybop.Parameter(initial_value=-4, bounds=[-10, 0]),
             }
         )
 
@@ -211,8 +211,8 @@ class TestArbitraryModels:
         parameter_values.update(
             {
                 "a": 0,
-                "b": pybop.Parameter("b", initial_value=-1, bounds=[-4, 4]),
-                "c": pybop.Parameter("c", initial_value=-1, bounds=[-4, 4]),
+                "b": pybop.Parameter(initial_value=-1, bounds=[-4, 4]),
+                "c": pybop.Parameter(initial_value=-1, bounds=[-4, 4]),
                 "d": 0,
                 "u0": 0,
                 "v0": 1,

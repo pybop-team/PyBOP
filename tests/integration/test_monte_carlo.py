@@ -51,13 +51,11 @@ class Test_Sampling_SPM:
     def parameters(self):
         return {
             "Negative electrode active material volume fraction": pybop.Parameter(
-                "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.575, 0.05),
                 initial_value=pybop.Uniform(0.4, 0.7).rvs()[0],
                 bounds=[0.375, 0.725],
             ),
             "Positive electrode active material volume fraction": pybop.Parameter(
-                "Positive electrode active material volume fraction",
                 prior=pybop.Gaussian(0.525, 0.05),
                 initial_value=pybop.Uniform(0.4, 0.7).rvs()[0],
                 # no bounds

@@ -93,7 +93,7 @@ class InverseOCV:
         ocv_function = self.ocv_function
 
         self.parameters = pybop.Parameters(
-            pybop.Parameter("Root", initial_value=0.5, bounds=[0, 1])
+            {"Root": pybop.Parameter(initial_value=0.5, bounds=[0, 1])}
         )
 
         # Set up a root-finding cost function

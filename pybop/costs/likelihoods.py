@@ -133,7 +133,6 @@ class GaussianLogLikelihood(LogLikelihood):
             sigma = value
         elif isinstance(value, int | float):
             sigma = Parameter(
-                f"Sigma for output {index + 1}",
                 initial_value=value,
                 prior=Uniform(1e-8 * value, 3 * value),
                 bounds=[1e-8, 3 * value],
@@ -143,8 +142,8 @@ class GaussianLogLikelihood(LogLikelihood):
                 f"Expected sigma0 to contain Parameter objects or numeric values. "
                 f"Received {type(value)}"
             )
-        self.sigma.add(sigma)
-        self.parameters.add(sigma)
+        self.sigma.add(f"Sigma for output {index + 1}", sigma)
+        self.parameters.add(f"Sigma for output {index + 1}", sigma)
 
     @property
     def dsigma_scale(self):

@@ -68,7 +68,6 @@ class TestHalfCellModel:
     def parameters(self):
         return {
             "Positive electrode active material volume fraction": pybop.Parameter(
-                "Positive electrode active material volume fraction",
                 prior=pybop.Uniform(0.4, 0.75),
                 # no bounds
             ),
@@ -115,7 +114,6 @@ class TestHalfCellModel:
         parameter_values.update(
             {
                 "Positive electrode thickness [m]": pybop.Parameter(
-                    "Positive electrode thickness [m]",
                     prior=pybop.Gaussian(5e-05, 5e-06),
                     bounds=[2e-06, 10e-05],
                 ),

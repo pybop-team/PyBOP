@@ -19,14 +19,16 @@ class TestParameter:
     @pytest.fixture
     def parameter(self):
         return pybop.Parameter(
-            "Negative electrode active material volume fraction",
             prior=pybop.Gaussian(0.6, 0.02),
             bounds=[0.375, 0.7],
             initial_value=0.6,
         )
 
+    @pytest.fixture
+    def name(self):
+        return "Negative electrode active material volume fraction"
+
     def test_parameter_construction(self, parameter):
-        assert parameter.name == "Negative electrode active material volume fraction"
         assert parameter.prior.mean == 0.6
         assert parameter.prior.sigma == 0.02
         assert parameter.bounds == [0.375, 0.7]
@@ -35,7 +37,7 @@ class TestParameter:
     def test_parameter_repr(self, parameter):
         assert (
             repr(parameter)
-            == "Parameter: Negative electrode active material volume fraction \n Prior: Gaussian, loc: 0.6, scale: 0.02 \n Bounds: [0.375, 0.7]"
+            == "Parameter: Prior: Gaussian, loc: 0.6, scale: 0.02 \n Bounds: [0.375, 0.7]"
         )
 
     def test_parameter_sampling(self, parameter):
@@ -52,14 +54,12 @@ class TestParameter:
         parameter._set_margin(margin=1e-3)
         assert parameter._margin == 1e-3
 
-    def test_no_bounds(self):
-        parameter = pybop.Parameter(
-            "Negative electrode active material volume fraction",
-        )
+    def test_no_bounds(self, name):
+        parameter = pybop.Parameter()
         assert parameter.bounds is None
 
         # Test get_bounds with bounds == None
-        parameters = pybop.Parameters(parameter)
+        parameters = pybop.Parameters({name: parameter})
         bounds = parameters.get_bounds()
         assert not np.isfinite(list(bounds.values())).all()
 
@@ -74,11 +74,10 @@ class TestParameter:
         with pytest.raises(
             ParameterValidationError, match="must be less than upper bound"
         ):
-            pybop.Parameter("Name", bounds=[0.7, 0.3])
+            pybop.Parameter(bounds=[0.7, 0.3])
 
     def test_sample_initial_values(self):
         parameter = pybop.Parameter(
-            "Negative electrode active material volume fraction",
             prior=pybop.Gaussian(0.6, 0.02),
             bounds=[0.375, 0.7],
         )
@@ -96,78 +95,80 @@ class TestParameters:
     @pytest.fixture
     def parameter(self):
         return pybop.Parameter(
-            "Negative electrode active material volume fraction",
             prior=pybop.Gaussian(0.6, 0.02),
             bounds=[0.375, 0.7],
             initial_value=0.6,
         )
 
-    def test_parameters_construction(self, parameter):
-        params = pybop.Parameters(parameter)
-        assert parameter.name in params._parameters.keys()
+    @pytest.fixture
+    def name(self):
+        return "Negative electrode active material volume fraction"
+
+    def test_parameters_construction(self, name, parameter):
+        params = pybop.Parameters({name: parameter})
+        assert name in params._parameters.keys()
         assert parameter in params._parameters.values()
 
         # Test parameter addition via Parameter class
         params = pybop.Parameters()  # empty
-        params.add(parameter)
-        assert parameter.name in params._parameters.keys()
+        params.add(name, parameter)
+        assert name in params._parameters.keys()
         assert parameter in params._parameters.values()
 
         params.join(
             pybop.Parameters(
-                parameter,
-                pybop.Parameter(
-                    "Positive electrode active material volume fraction",
-                    prior=pybop.Gaussian(0.6, 0.02),
-                    bounds=[0.375, 0.7],
-                    initial_value=0.6,
-                ),
+                {
+                    name: parameter,
+                    "Positive electrode active material volume fraction": pybop.Parameter(
+                        prior=pybop.Gaussian(0.6, 0.02),
+                        bounds=[0.375, 0.7],
+                        initial_value=0.6,
+                    ),
+                }
             )
         )
 
         with pytest.raises(ParameterError, match="already exists"):
-            params.add(parameter)
+            params.add(name, parameter)
 
-        params.remove(name=parameter.name)
+        params.remove(name=name)
         with pytest.raises(ParameterNotFoundError, match="not found"):
-            params.remove(name=parameter.name)
+            params.remove(name="Negative electrode active material volume fraction")
 
         with pytest.raises(TypeError, match="Expected Parameter instance"):
-            params.add(parameter="Invalid string")
+            params.add(name, parameter="Invalid string")
         with pytest.raises(TypeError, match="The input name is not a string."):
             params.remove(name=parameter)
 
-    def test_parameters_naming(self, parameter):
-        params = pybop.Parameters(parameter)
+    def test_parameters_naming(self, name, parameter):
+        params = pybop.Parameters({name: parameter})
         param = params["Negative electrode active material volume fraction"]
         assert param == parameter
 
         with pytest.raises(ParameterNotFoundError, match="not found"):
             params["Positive electrode active material volume fraction"]
 
-    def test_parameters_transformation(self):
+    def test_parameters_transformation(self, name):
         # Construct params
         params = pybop.Parameters(
-            pybop.Parameter(
-                "LogParam",
-                bounds=[0, 1],
-                transformation=pybop.LogTransformation(),
-            ),
-            pybop.Parameter(
-                "ScaledParam",
-                bounds=[0, 1],
-                transformation=pybop.ScaledTransformation(1, 0.5),
-            ),
-            pybop.Parameter(
-                "IdentityParam",
-                bounds=[0, 1],
-                transformation=pybop.IdentityTransformation(),
-            ),
-            pybop.Parameter(
-                "UnitHyperParam",
-                bounds=[0, 1],
-                transformation=pybop.UnitHyperCube(1, 2),
-            ),
+            {
+                "LogParam": pybop.Parameter(
+                    bounds=[0, 1],
+                    transformation=pybop.LogTransformation(),
+                ),
+                "ScaledParam": pybop.Parameter(
+                    bounds=[0, 1],
+                    transformation=pybop.ScaledTransformation(1, 0.5),
+                ),
+                "IdentityParam": pybop.Parameter(
+                    bounds=[0, 1],
+                    transformation=pybop.IdentityTransformation(),
+                ),
+                "UnitHyperParam": pybop.Parameter(
+                    bounds=[0, 1],
+                    transformation=pybop.UnitHyperCube(1, 2),
+                ),
+            }
         )
 
         # Test transformed bounds
@@ -177,12 +178,13 @@ class TestParameters:
 
         # Test unbounded transformation causes ValueError due to NaN
         params = pybop.Parameters(
-            pybop.Parameter(
-                "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.01, 0.2),
-                transformation=pybop.LogTransformation(),
-                bounds=[-1, 1],
-            )
+            {
+                name: pybop.Parameter(
+                    prior=pybop.Gaussian(0.01, 0.2),
+                    transformation=pybop.LogTransformation(),
+                    bounds=[-1, 1],
+                )
+            }
         )
 
         with pytest.raises(
@@ -190,29 +192,29 @@ class TestParameters:
         ):
             params.get_bounds(transformed=True)
 
-    def test_parameters_update(self, parameter):
-        params = pybop.Parameters(parameter)
+    def test_parameters_update(self, name, parameter):
+        params = pybop.Parameters({name: parameter})
         params.update(bounds=[[0.38, 0.68]])
         assert parameter.bounds == [0.38, 0.68]
         params.update(bounds=dict(lower=[0.37], upper=[0.7]))
         assert parameter.bounds == [0.37, 0.7]
 
-    def test_parameters_sampling(self, parameter):
+    def test_parameters_sampling(self, name, parameter):
         parameter._transformation = pybop.ScaledTransformation(
             coefficient=0.2, intercept=-1
         )
-        params = pybop.Parameters(parameter)
+        params = pybop.Parameters({name: parameter})
         params.construct_transformation()
         samples = params.sample_from_priors(n_samples=500, transformed=True)
         assert (samples >= -0.125).all() and (samples <= -0.06).all()
         parameter._transformation = None
 
-    def test_get_sigma(self, parameter):
-        params = pybop.Parameters(parameter)
+    def test_get_sigma(self, name, parameter):
+        params = pybop.Parameters({name: parameter})
         assert params.get_sigma0() == [0.02]
 
         parameter._prior = None
-        params = pybop.Parameters(parameter)
+        params = pybop.Parameters({name: parameter})
         assert params.get_sigma0() == [
             0.05 * (parameter.bounds[1] - parameter.bounds[0])
         ]
@@ -220,15 +222,30 @@ class TestParameters:
     def test_initial_values_without_attributes(self):
         # Test without initial values
         parameter = pybop.Parameters(
-            pybop.Parameter(
-                "Negative electrode conductivity [S.m-1]",
-            )
+            {"Negative electrode conductivity [S.m-1]": pybop.Parameter()}
         )
         with pytest.raises(ParameterError, match="has no initial value"):
             parameter.get_initial_values()
 
-    def test_parameters_repr(self, parameter):
-        params = pybop.Parameters(parameter)
+    def test_parameters_init(self, name, parameter):
+        # Error if parameters not dictionary or pybop.Parameters
+        with pytest.raises(
+            TypeError,
+            match="parameters must be either a dictionary or a pybop.Parameters instance",
+        ):
+            pybop.Parameters(parameter)
+
+        # Creates empty parameters
+        params = pybop.Parameters()
+        assert len(params) == 0
+
+        # initialise from pybop.Parameters
+        params = pybop.Parameters({name: parameter})
+        new_params = pybop.Parameters(params)
+        assert name in new_params.keys()
+
+    def test_parameters_repr(self, name, parameter):
+        params = pybop.Parameters({name: parameter})
         assert (
             repr(params)
             == "Parameters(1):\n Negative electrode active material volume fraction: prior= Gaussian, loc: 0.6, scale: 0.02, bounds=[0.375, 0.7]"

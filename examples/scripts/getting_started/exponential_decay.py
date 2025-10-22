@@ -29,11 +29,9 @@ dataset = pybop.Dataset(
 parameter_values.update(
     {
         "k": pybop.Parameter(
-            "k",
             prior=pybop.Gaussian(0.5, 0.05),
         ),
         "y0": pybop.Parameter(
-            "y0",
             prior=pybop.Gaussian(0.2, 0.05),
         ),
     }
