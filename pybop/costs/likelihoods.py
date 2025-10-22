@@ -219,6 +219,8 @@ class LogPosterior(LogLikelihood):
     def set_joint_prior(self):
         if self.prior is None:
             self.joint_prior = JointPrior(*self.parameters.priors())
+        elif isinstance(self.prior, (stats.rv_continuous | stats.distributions.rv_frozen)):
+            self.joint_prior = Distribution(self.prior, gradient_step =self.gradient_step)
         else:
             self.joint_prior = self.prior
 
@@ -229,28 +231,7 @@ class LogPosterior(LogLikelihood):
     ) -> float | tuple[float, np.ndarray]:
         # Compute log prior (and gradient)
         if dy is not None:
-            if isinstance(self.joint_prior, Distribution):
-                log_prior, dp = self.joint_prior.logpdfS1(self.parameters.get_values())
-            else:
-                # Compute log prior first
-                log_prior = self.joint_prior.logpdf(self.parameters.get_values())
-
-                # Compute a finite difference approximation of the gradient of the log prior
-                delta = self.parameters.get_values() * self.gradient_step
-                dp = []
-
-                for parameter, step_size in zip(self.parameters, delta, strict=False):
-                    param_value = parameter.current_value
-                    upper_value = param_value + step_size
-                    lower_value = param_value - step_size
-
-                    log_prior_upper = self.joint_prior.logpdf(upper_value)
-                    log_prior_lower = self.joint_prior.logpdf(lower_value)
-
-                    gradient = (log_prior_upper - log_prior_lower) / (
-                        2 * step_size + np.finfo(float).eps
-                    )
-                    dp.append(gradient)
+            log_prior, dp = self.joint_prior.logpdfS1(self.parameters.get_values())
         else:
             log_prior = self.joint_prior.logpdf(self.parameters.get_values())
 

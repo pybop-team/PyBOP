@@ -21,8 +21,15 @@ class Distribution:
         The scale parameter of the distribution.
     """
 
-    def __init__(self):
-        pass
+    def __init__(self, prior: stats.rv_continuous | stats.distributions.rv_frozen | None = None, loc=0.0, scale=1.0, gradient_step: float = 1e-3):
+        self.loc = loc
+        self.scale = scale
+        if isinstance(prior, stats.rv_continuous):
+            self.prior = prior(loc=loc, scale=scale)
+        else:
+            self.prior = prior
+        self.gradient_step = gradient_step
+
 
     def pdf(self, x):
         """
@@ -38,7 +45,11 @@ class Distribution:
         float
             The probability density function value at x.
         """
-        return self.prior.pdf(x, loc=self.loc, scale=self.scale)
+        if self.prior is None:
+            raise NotImplementedError
+        else:
+            return self.prior.pdf(x)
+            
 
     def logpdf(self, x):
         """
@@ -54,7 +65,10 @@ class Distribution:
         float
             The logarithm of the probability density function value at x.
         """
-        return self.prior.logpdf(x, loc=self.loc, scale=self.scale)
+        if self.prior is None:
+            raise NotImplementedError
+        else:
+            return self.prior.logpdf(x)
 
     def icdf(self, q):
         """
@@ -70,7 +84,10 @@ class Distribution:
         float
             The inverse cumulative distribution function value at q.
         """
-        return self.prior.ppf(q, scale=self.scale, loc=self.loc)
+        if self.prior is None:
+            raise NotImplementedError
+        else:
+            return self.prior.ppf(q)
 
     def cdf(self, x):
         """
@@ -86,7 +103,10 @@ class Distribution:
         float
             The cumulative distribution function value at x.
         """
-        return self.prior.cdf(x, scale=self.scale, loc=self.loc)
+        if self.prior is None:
+            raise NotImplementedError
+        else:
+            return self.prior.cdf(x)
 
     def rvs(self, size=1, random_state=None):
         """
@@ -118,9 +138,10 @@ class Distribution:
         if isinstance(size, tuple) and any(s < 1 for s in size):
             raise ValueError("size must be a tuple of positive integers")
 
-        return self.prior.rvs(
-            loc=self.loc, scale=self.scale, size=size, random_state=random_state
-        )
+        if self.prior is None:
+            raise NotImplementedError
+        else:
+            return self.prior.rvs(size=size, random_state=random_state)
 
     def __call__(self, x):
         """
@@ -170,7 +191,29 @@ class Distribution:
         float
             The value(s) of the first derivative at x.
         """
-        raise NotImplementedError
+
+        if self.prior is None:
+            raise NotImplementedError
+        else:
+            # Compute log prior first
+            log_prior = self.__call__(x)
+
+            # Compute a finite difference approximation of the gradient of the log prior
+            delta = x * self.gradient_step
+            dp = []
+
+            upper_value = x + delta
+            lower_value = x - delta
+
+            log_prior_upper = self.__call__(upper_value)
+            log_prior_lower = self.__call__(lower_value)
+
+            gradient = (log_prior_upper - log_prior_lower) / (
+                2 * delta + np.finfo(float).eps
+            )
+            dp.append(gradient)
+
+            return log_prior, dp
 
     def verify(self, x):
         """
@@ -232,11 +275,8 @@ class Gaussian(Distribution):
     """
 
     def __init__(self, mean, sigma, random_state=None):
-        super().__init__()
+        super().__init__(stats.norm, loc = mean, scale = sigma)
         self.name = "Gaussian"
-        self.loc = mean
-        self.scale = sigma
-        self.prior = stats.norm
         self._n_parameters = 1
 
     def _logpdfS1(self, x):
@@ -275,13 +315,10 @@ class Uniform(Distribution):
     """
 
     def __init__(self, lower, upper, random_state=None):
-        super().__init__()
+        super().__init__(stats.uniform, loc = lower, scale = upper-lower)
         self.name = "Uniform"
         self.lower = lower
         self.upper = upper
-        self.loc = lower
-        self.scale = upper - lower
-        self.prior = stats.uniform
         self._n_parameters = 1
 
     def _logpdfS1(self, x):
@@ -334,11 +371,8 @@ class Exponential(Distribution):
     """
 
     def __init__(self, scale, loc=0, random_state=None):
-        super().__init__()
+        super().__init__(stats.expon, scale = scale, loc = loc)
         self.name = "Exponential"
-        self.loc = loc
-        self.scale = scale
-        self.prior = stats.expon
         self._n_parameters = 1
 
     def _logpdfS1(self, x):
