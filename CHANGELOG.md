@@ -34,6 +34,7 @@
 - Update the method for setting formation concentrations to be part of the model definition
 - Rename some example scripts and notebooks
 - Update the docs and test workflows
+- [#820](https://github.com/pybop-team/PyBOP/pull/820) - remove name property from pybop.Parameter
 
 # [v25.6](https://github.com/pybop-team/PyBOP/tree/v25.6) - 2025-07-16
 
