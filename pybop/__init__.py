@@ -66,7 +66,7 @@ from .transformation.transformations import (
 # Parameter classes
 #
 from .parameters.parameter import Parameter, Parameters
-from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential, JointPrior
+from .parameters.priors import Distribution, Gaussian, Uniform, Exponential, JointPrior
 
 #
 # Model classes

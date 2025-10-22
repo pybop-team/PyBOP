@@ -32,8 +32,8 @@ class TestPriors:
         return pybop.JointPrior(Gaussian, Exponential)
 
     def test_base_prior(self):
-        base = pybop.BasePrior()
-        assert isinstance(base, pybop.BasePrior)
+        base = pybop.Distribution()
+        assert isinstance(base, pybop.Distribution)
         with pytest.raises(NotImplementedError):
             base._logpdfS1(0.0)
 
@@ -161,10 +161,10 @@ class TestPriors:
 
     def test_incorrect_composed_priors(self, Gaussian, Uniform):
         with pytest.raises(
-            ValueError, match="All priors must be instances of BasePrior"
+            ValueError, match="All priors must be instances of Distribution"
         ):
             pybop.JointPrior(Gaussian, Uniform, "string")
         with pytest.raises(
-            ValueError, match="All priors must be instances of BasePrior"
+            ValueError, match="All priors must be instances of Distribution"
         ):
             pybop.JointPrior(Gaussian, Uniform, 0.5)

@@ -4,7 +4,7 @@ import scipy.stats as stats
 from pybop._dataset import Dataset
 from pybop.costs.error_measures import ErrorMeasure
 from pybop.parameters.parameter import Parameter, Parameters
-from pybop.parameters.priors import BasePrior, JointPrior, Uniform
+from pybop.parameters.priors import Distribution, JointPrior, Uniform
 
 
 class LogLikelihood(ErrorMeasure):
@@ -193,8 +193,8 @@ class LogPosterior(LogLikelihood):
     ---------------------
     log_likelihood : LogLikelihood
         The likelihood class of type ``LogLikelihood``.
-    prior : Optional, Union[pybop.BasePrior, stats.rv_continuous]
-        The prior class of type ``BasePrior`` or ``stats.rv_continuous``.
+    prior : Optional, Union[pybop.Distribution, stats.rv_continuous]
+        The prior class of type ``Distribution`` or ``stats.rv_continuous``.
         If not provided, the prior class will be taken from the parameter priors
         constructed in the `pybop.Parameters` class.
     gradient_step : float, default: 1e-3
@@ -204,7 +204,7 @@ class LogPosterior(LogLikelihood):
     def __init__(
         self,
         log_likelihood: LogLikelihood,
-        prior: BasePrior | stats.rv_continuous | None = None,
+        prior: Distribution | stats.rv_continuous | None = None,
         gradient_step: float = 1e-3,
     ):
         dataset = Dataset(log_likelihood.dataset)
@@ -229,7 +229,7 @@ class LogPosterior(LogLikelihood):
     ) -> float | tuple[float, np.ndarray]:
         # Compute log prior (and gradient)
         if dy is not None:
-            if isinstance(self.joint_prior, BasePrior):
+            if isinstance(self.joint_prior, Distribution):
                 log_prior, dp = self.joint_prior.logpdfS1(self.parameters.get_values())
             else:
                 # Compute log prior first

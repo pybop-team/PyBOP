@@ -2,7 +2,7 @@ import numpy as np
 import scipy.stats as stats
 
 
-class BasePrior:
+class Distribution:
     """
     A base class for defining prior distributions.
 
@@ -216,7 +216,7 @@ class BasePrior:
         raise NotImplementedError
 
 
-class Gaussian(BasePrior):
+class Gaussian(Distribution):
     """
     Represents a Gaussian (normal) distribution with a given mean and standard deviation.
 
@@ -259,7 +259,7 @@ class Gaussian(BasePrior):
         return None
 
 
-class Uniform(BasePrior):
+class Uniform(Distribution):
     """
     Represents a uniform distribution over a specified interval.
 
@@ -320,7 +320,7 @@ class Uniform(BasePrior):
         return self.lower, self.upper
 
 
-class Exponential(BasePrior):
+class Exponential(Distribution):
     """
     Represents an exponential distribution with a specified scale parameter.
 
@@ -363,27 +363,27 @@ class Exponential(BasePrior):
         return None
 
 
-class JointPrior(BasePrior):
+class JointPrior(Distribution):
     """
     Represents a joint prior distribution composed of multiple prior distributions.
 
     Parameters
     ----------
-    priors : BasePrior
+    priors : Distribution
         One or more prior distributions to combine into a joint distribution.
     """
 
-    def __init__(self, *priors: BasePrior):
+    def __init__(self, *priors: Distribution):
         super().__init__()
 
         if all(prior is None for prior in priors):
             return
 
-        if not all(isinstance(prior, BasePrior) for prior in priors):
-            raise ValueError("All priors must be instances of BasePrior")
+        if not all(isinstance(prior, Distribution) for prior in priors):
+            raise ValueError("All priors must be instances of Distribution")
 
         self._n_parameters = len(priors)
-        self._priors: list[BasePrior] = list(priors)
+        self._priors: list[Distribution] = list(priors)
 
     def logpdf(self, x: float | np.ndarray) -> float:
         """

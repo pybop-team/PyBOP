@@ -9,7 +9,7 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
-from pybop.parameters.priors import BasePrior, Uniform
+from pybop.parameters.priors import Distribution, Uniform
 from pybop.transformation.base_transformation import Transformation
 from pybop.transformation.transformations import (
     ComposedTransformation,
@@ -104,7 +104,7 @@ class Parameter:
         Current parameter value (defaults to initial_value)
     bounds : tuple[float, float], optional
         Parameter bounds as (lower, upper)
-    prior : pybop.BasePrior, optional
+    prior : pybop.Distribution, optional
         Prior distribution object
     transformation : Transformation, optional
         Parameter transformation
@@ -119,7 +119,7 @@ class Parameter:
         initial_value: float = None,
         current_value: float = None,
         bounds: BoundsPair | None = None,
-        prior: BasePrior | None = None,
+        prior: Distribution | None = None,
         transformation: Transformation | None = None,
         margin: float = 1e-4,
     ) -> None:
