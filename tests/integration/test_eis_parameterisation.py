@@ -41,13 +41,11 @@ class TestEISParameterisation:
     def parameters(self):
         return {
             "Negative electrode active material volume fraction": pybop.Parameter(
-                "Negative electrode active material volume fraction",
                 prior=pybop.Uniform(0.3, 0.9),
                 initial_value=pybop.Uniform(0.4, 0.75).rvs()[0],
                 bounds=[0.375, 0.775],
             ),
             "Positive electrode active material volume fraction": pybop.Parameter(
-                "Positive electrode active material volume fraction",
                 prior=pybop.Uniform(0.3, 0.9),
                 initial_value=pybop.Uniform(0.4, 0.75).rvs()[0],
                 bounds=[0.375, 0.775],

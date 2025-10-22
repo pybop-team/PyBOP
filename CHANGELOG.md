@@ -8,6 +8,7 @@
 
 ## Breaking Changes
 
+- [#820](https://github.com/pybop-team/PyBOP/pull/820) - remove name property from pybop.Parameter
 - [#821](https://github.com/pybop-team/PyBOP/pull/821) - Remove the `papers` folder and update Readme.
 - [#809](https://github.com/pybop-team/PyBOP/pull/809) - Major restructure, including:
 - Deprecate Python 3.9 support

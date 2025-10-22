@@ -67,12 +67,10 @@ class TestWeightedCost:
     def parameters(self):
         return {
             "Negative electrode active material volume fraction": pybop.Parameter(
-                "Negative electrode active material volume fraction",
                 prior=pybop.Uniform(0.4, 0.75),
                 bounds=[0.375, 0.75],
             ),
             "Positive electrode active material volume fraction": pybop.Parameter(
-                "Positive electrode active material volume fraction",
                 prior=pybop.Uniform(0.4, 0.75),
                 # no bounds
             ),
@@ -147,12 +145,10 @@ class TestWeightedCost:
         parameter_values.update(
             {
                 "Positive electrode thickness [m]": pybop.Parameter(
-                    "Positive electrode thickness [m]",
                     prior=pybop.Gaussian(5e-05, 5e-06),
                     bounds=[2e-06, 10e-05],
                 ),
                 "Negative electrode thickness [m]": pybop.Parameter(
-                    "Negative electrode thickness [m]",
                     prior=pybop.Gaussian(5e-05, 5e-06),
                     bounds=[2e-06, 10e-05],
                 ),

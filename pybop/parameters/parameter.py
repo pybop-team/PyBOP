@@ -96,8 +96,6 @@ class Parameter:
 
     Parameters
     ----------
-    name : str
-        Parameter name
     initial_value : NumericValue, optional
         Initial parameter value
     current_value : NumericValue, optional
@@ -114,7 +112,6 @@ class Parameter:
 
     def __init__(
         self,
-        name: str,
         *,
         initial_value: float = None,
         current_value: float = None,
@@ -123,7 +120,6 @@ class Parameter:
         transformation: Transformation | None = None,
         margin: float = 1e-4,
     ) -> None:
-        self._name = str(name)
         self._prior = prior
         self._transformation = transformation or IdentityTransformation()
 
@@ -215,7 +211,7 @@ class Parameter:
 
     def __repr__(self) -> str:
         """String representation of the parameter."""
-        return f"Parameter: {self.name} \n Prior: {self.prior} \n Bounds: {self.bounds} \n Value: {self.current_value}"
+        return f"Parameter: Prior: {self.prior} \n Bounds: {self.bounds} \n Value: {self.current_value}"
 
     def _set_margin(self, margin: float) -> None:
         """
@@ -251,8 +247,7 @@ class Parameter:
 
         if not self._bounds.contains(self._initial_value):
             raise ParameterValidationError(
-                f"Parameter '{self._name}': Initial value {self._initial_value} "
-                f"is outside bounds {self.bounds}"
+                f"Initial value {self._initial_value} is outside bounds {self.bounds}"
             )
 
     def reset_to_initial(self) -> None:
@@ -277,10 +272,6 @@ class Parameter:
         return self._current_value
 
     @property
-    def name(self) -> str:
-        return self._name
-
-    @property
     def initial_value(self) -> float:
         return self._initial_value
 
@@ -303,12 +294,6 @@ class Parameter:
     def transformation(self) -> Transformation:
         return self._transformation
 
-    def __eq__(self, other: object) -> bool:
-        """Check equality based on name."""
-        if not isinstance(other, Parameter):
-            return False
-        return self._name == other._name
-
     def __hash__(self) -> int:
         """Hash based on name."""
         return hash(self._name)
@@ -322,10 +307,17 @@ class Parameters:
     validation, transformation, serialisation, and bulk operations.
     """
 
-    def __init__(self, *args) -> None:
+    def __init__(self, parameters: dict | Parameters = None) -> None:
+        if parameters is None:
+            parameters = {}
+        elif not isinstance(parameters, (dict, Parameters)):
+            raise TypeError(
+                "parameters must be either a dictionary or a pybop.Parameters instance"
+            )
+
         self._parameters = OrderedDict()
-        for param in args:
-            self._add(param, update_transform=False)
+        for name, param in parameters.items():
+            self._add(name, param, update_transform=False)
 
         self._transform = self.construct_transformation()
 
@@ -346,11 +338,13 @@ class Parameters:
     def __iter__(self) -> Iterator[Parameter]:
         return iter(self._parameters.values())
 
-    def add(self, parameter: Parameter) -> None:
+    def add(self, name: str, parameter: Parameter) -> None:
         """Add a parameter to the collection."""
-        self._add(parameter)
+        self._add(name, parameter)
 
-    def _add(self, parameter: Parameter, update_transform: bool = True) -> None:
+    def _add(
+        self, name: str, parameter: Parameter, update_transform: bool = True
+    ) -> None:
         """
         Internal method to add a parameter to the collection.
 
@@ -364,10 +358,10 @@ class Parameters:
         if not isinstance(parameter, Parameter):
             raise TypeError("Expected Parameter instance")
 
-        if parameter.name in self._parameters:
-            raise ParameterError(f"Parameter '{parameter.name}' already exists")
+        if name in self._parameters:
+            raise ParameterError(f"Parameter '{name}' already exists")
 
-        self._parameters[parameter.name] = parameter
+        self._parameters[name] = parameter
 
         if update_transform:
             self._transform = self.construct_transformation()
@@ -388,11 +382,11 @@ class Parameters:
         ----------
         parameters : pybop.Parameters
         """
-        for param in parameters:
-            if param not in self._parameters.values():
-                self.add(param)
+        for name, param in parameters.items():
+            if name not in self._parameters.keys():
+                self.add(name, param)
             else:
-                print(f"Discarding duplicate {param.name}.")
+                print(f"Discarding duplicate {name}.")
 
     def get(self, name: str) -> Parameter:
         """Get a parameter by name."""
@@ -630,7 +624,7 @@ class Parameters:
             Array of initial values
         """
         values = []
-        for param in self._parameters.values():
+        for name, param in self._parameters.items():
             value = param.initial_value
             if value is None:
                 # Try to sample from prior if available
@@ -641,9 +635,7 @@ class Parameters:
                         value = samples[0] if transformed else param.initial_value
 
                 if value is None:
-                    raise ParameterError(
-                        f"Parameter '{param.name}' has no initial value"
-                    )
+                    raise ParameterError(f"Parameter '{name}' has no initial value")
 
             if transformed:
                 value = param.transformation.to_search(value)[0]
