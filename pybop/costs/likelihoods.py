@@ -169,8 +169,8 @@ class GaussianLogLikelihood(LogLikelihood):
         """
         inputs = inputs or self.parameters.to_dict("initial")
         sigma_values = []
-        for sigma in self.sigma:
-            sigma_values.append(inputs[sigma.name])
+        for name in self.sigma.keys():
+            sigma_values.append(inputs[name])
         sigma = np.asarray(sigma_values)
 
         sum_r2 = np.sum(np.real(r * np.conj(r)), axis=1)
