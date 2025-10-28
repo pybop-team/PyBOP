@@ -51,13 +51,11 @@ class BenchmarkOptimisationConstruction:
         parameter_values.update(
             {
                 "Negative electrode active material volume fraction": pybop.Parameter(
-                    "Negative electrode active material volume fraction",
                     prior=pybop.Gaussian(0.6, 0.02),
                     bounds=[0.375, 0.7],
                     initial_value=0.63,
                 ),
                 "Positive electrode active material volume fraction": pybop.Parameter(
-                    "Positive electrode active material volume fraction",
                     prior=pybop.Gaussian(0.5, 0.02),
                     bounds=[0.375, 0.625],
                     initial_value=0.51,

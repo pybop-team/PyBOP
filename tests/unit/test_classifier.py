@@ -34,7 +34,6 @@ class TestClassifier:
         parameter_values.update(
             {
                 "R0 [Ohm]": pybop.Parameter(
-                    "R0 [Ohm]",
                     prior=pybop.Uniform(0.001, 0.1),
                     bounds=[1e-4, 0.1],
                 )

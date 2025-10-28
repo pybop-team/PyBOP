@@ -65,7 +65,7 @@ class TestGITTModels:
     def parameters(self):
         """Create parameter objects for reuse."""
         return {
-            param_name: pybop.Parameter(param_name, initial_value=val)
+            param_name: pybop.Parameter(initial_value=val)
             for param_name, val in DIFFUSION_PARAMS
         }
 
