@@ -1,5 +1,6 @@
 import numpy as np
 import pybamm
+import time
 import pytest
 from numpy.testing import assert_allclose, assert_array_equal
 
@@ -78,6 +79,29 @@ class TestProblem:
             protocol=dataset,
             initial_state={"Initial open-circuit voltage [V]": 4.0},
         )
+
+    def test_multiprocessing(self, simulator, dataset):
+        cost = pybop.MeanAbsoluteError(dataset)
+        problem = pybop.Problem(simulator, cost)
+
+        list_inputs = [
+            problem.parameters.to_dict([1e-5 * i, 1e-5 * i]) for i in range(1, 5)
+        ]
+        # Evaluate serially
+        t0 = time.perf_counter()
+        sols = [problem(inputs) for inputs in list_inputs]
+        t_serial = time.perf_counter() - t0
+        # Evaluate in parallel
+        t0 = time.perf_counter()
+        sols_mp = problem(list_inputs)
+        t_parallel = time.perf_counter() - t0
+
+        print(f"Serial time: {t_serial:.2f} s, Parallel time: {t_parallel:.2f} s")
+        assert t_parallel < t_serial
+
+        # check they are the same
+        for sol, sol_mp in zip(sols, sols_mp):
+            assert_allclose(sol, sol_mp, atol=1e-12)
 
     def test_fitting_problem(self, simulator, dataset):
         cost = pybop.MeanAbsoluteError(dataset)
