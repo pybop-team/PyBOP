@@ -1,4 +1,5 @@
 import numpy as np
+import pybamm
 
 from pybop._dataset import Dataset
 from pybop._utils import add_spaces
@@ -90,7 +91,7 @@ class ErrorMeasure(BaseCost):
 
     def evaluate(
         self,
-        sol: Solution,
+        sol: Solution | pybamm.Solution,
         inputs: Inputs | None = None,
         calculate_sensitivities: bool = False,
     ) -> float | tuple[float, np.ndarray]:
@@ -112,7 +113,7 @@ class ErrorMeasure(BaseCost):
             If the solution has sensitivities, returns a tuple containing the cost (float) and the
             gradient with dimension (len(parameters)), otherwise returns only the cost.
         """
-        if not isinstance(sol, Solution):
+        if not isinstance(sol, (Solution, pybamm.Solution)):
             raise ValueError(f"sol must be a pybop.Solution object, got {type(sol)}.")
 
         # Early return if the prediction is not verified
