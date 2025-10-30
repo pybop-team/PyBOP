@@ -21,6 +21,11 @@
 
 PyBOP provides tools for the parameterisation and optimisation of battery models, using both Bayesian and frequentist approaches, with [example workflows](https://github.com/pybop-team/PyBOP/tree/main/examples/) to assist the user. PyBOP can be used to parameterise various battery models, including the electrochemical and equivalent circuit models available in [PyBaMM](https://pybamm.org/).
 
+📌 PyBOP v25.10 presents a [major restructure](https://github.com/pybop-team/PyBOP/tree/main/CHANGELOG.md) of PyBOP's base classes. We move from setting up
+a model, problem, cost, then optimiser to defining a simulator, cost, problem, and then optimiser. A `pybop.pybamm.Simulator` is designed to simulate a
+`pybamm.BaseModel`. Optimisation parameters can be passed through a `pybamm.ParameterValues` class.
+To understand how to update your use of PyBOP, please take a look at the example notebooks and scripts.
+
 <p align="center">
     <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/PyBOP-high-level.svg" alt="pybop_arch.svg" width="700" />
 </p>
