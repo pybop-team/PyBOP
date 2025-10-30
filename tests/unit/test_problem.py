@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import pybamm
 import pytest
@@ -94,7 +96,7 @@ class TestProblem:
         sols_mp = problem(list_inputs)
 
         # check they are the same
-        for sol, sol_mp in zip(sols, sols_mp):
+        for sol, sol_mp in zip(sols, sols_mp, strict=False):
             assert_allclose(sol, sol_mp, atol=1e-12)
 
     def test_fitting_problem(self, simulator, dataset):
