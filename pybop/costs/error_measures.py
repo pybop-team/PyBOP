@@ -112,6 +112,9 @@ class ErrorMeasure(BaseCost):
             If the solution has sensitivities, returns a tuple containing the cost (float) and the
             gradient with dimension (len(parameters)), otherwise returns only the cost.
         """
+        if not isinstance(sol, Solution):
+            raise ValueError(f"sol must be a pybop.Solution object, got {type(sol)}.")
+
         # Early return if the prediction is not verified
         if not self.verify_prediction(sol):
             return self.failure(calculate_sensitivities)
