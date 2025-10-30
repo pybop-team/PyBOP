@@ -1,6 +1,7 @@
+import time
+
 import numpy as np
 import pybamm
-import time
 import pytest
 from numpy.testing import assert_allclose, assert_array_equal
 
@@ -100,7 +101,7 @@ class TestProblem:
         assert t_parallel < t_serial
 
         # check they are the same
-        for sol, sol_mp in zip(sols, sols_mp):
+        for sol, sol_mp in zip(sols, sols_mp, strict=False):
             assert_allclose(sol, sol_mp, atol=1e-12)
 
     def test_fitting_problem(self, simulator, dataset):
