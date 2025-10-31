@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pybop"
-version = "25.6"
+version = "25.10"
 authors = [
   {name = "The PyBOP Team"},
 ]
@@ -17,16 +17,15 @@ license = { file = "LICENSE" }
 classifiers = [
   "Development Status :: 3 - Alpha",
   "License :: OSI Approved :: BSD License",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Intended Audience :: Science/Research",
   "Topic :: Scientific/Engineering",
 ]
-requires-python = ">=3.9, <3.13"
+requires-python = ">=3.10, <3.13"
 dependencies = [
-    "pybamm[jax]>=24.5.1",
+    "pybamm>=25.10",
     "numpy>=1.16, <2.0",
     "scipy>=1.3",
     "pints>=0.5",
@@ -40,6 +39,7 @@ docs = [
     "sphinx>=6",
     "sphinx-autobuild",
     "sphinx-autoapi",
+    "sphinx-automodapi",
     "sphinx_copybutton",
     "sphinx_favicon",
     "sphinx_design",
@@ -103,3 +103,20 @@ ignore = ["E501","E741"]
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"
+
+[tool.coverage.run]
+source = ["pybop"]
+omit = [
+    "*/tests/*",
+    "tests/*",
+    "*/test_*",
+    "test_*"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError"
+]

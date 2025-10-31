@@ -1,18 +1,13 @@
-import warnings
-
 import numpy as np
-from pybamm import DummySolver, Parameter, ParameterValues, citations
-from pybamm import lithium_ion as pybamm_lithium_ion
+from pybamm import DummySolver, Parameter, ParameterValues, citations, lithium_ion
 from pybamm import t as pybamm_t
 
-from pybop import ParameterSet
 
-
-class BaseWeppnerHuggins(pybamm_lithium_ion.BaseModel):
+class WeppnerHuggins(lithium_ion.BaseModel):
     """
-    WeppnerHuggins Model for GITT. Credit: pybamm-param team.
+    Represents the Weppner & Huggins model to fit diffusion coefficients to GITT data.
 
-    This model can be used with PyBOP through the `pybop.WeppnerHuggins` class.
+    Note: the working electrode is the positive electrode.
 
     Parameters
     ----------
@@ -20,29 +15,14 @@ class BaseWeppnerHuggins(pybamm_lithium_ion.BaseModel):
         The name of the model.
     **model_kwargs : optional
         Valid PyBaMM model option keys and their values, for example:
-        parameter_set : pybamm.ParameterValues or dict, optional
-            The parameters for the model. If None, default parameters provided by PyBaMM are used.
         options : dict, optional
             A dictionary of options to customise the behaviour of the PyBaMM model.
+        build : bool, optional
+            If True, the model is built upon creation (default: False).
     """
 
     def __init__(self, name="Weppner & Huggins model", **model_kwargs):
-        unused_keys = []
-        for key in model_kwargs.keys():
-            if key not in ["build", "parameter_set", "options"]:
-                unused_keys.append(key)
-        options = {"working electrode": "positive"}
-        if model_kwargs.get("options", None) is not None:
-            for key, value in model_kwargs["options"].items():
-                if key in ["working electrode"]:
-                    options[key] = value
-                else:
-                    unused_keys.append("options[" + key + "]")
-        if any(unused_keys):
-            unused_kwargs_warning = f"The input model_kwargs {unused_keys} are not currently used by the Weppner & Huggins model."
-            warnings.warn(unused_kwargs_warning, UserWarning, stacklevel=2)
-
-        super().__init__(options=options, name=name, build=True)
+        super().__init__(name=name, **model_kwargs)
         self._summary_variables = []
 
         citations.register("""
@@ -103,15 +83,16 @@ class BaseWeppnerHuggins(pybamm_lithium_ion.BaseModel):
         return {}
 
     @property
-    def default_parameter_values(self):
-        parameter_dictionary = {
-            "Current function [A]": 0.0024,
-            "Reference voltage [V]": 0.0024,
-            "Derivative of the OCP wrt stoichiometry [V]": -1,
-            "Theoretical electrode capacity [A.s]": 15,
-            "Particle diffusion time scale [s]": 3000,
-        }
-        return ParameterValues(values=parameter_dictionary)
+    def default_parameter_values(self) -> ParameterValues:
+        param = ParameterValues("Xu2019")
+        return self.create_grouped_parameters(param)
+
+    @property
+    def default_quick_plot_variables(self):
+        return [
+            "Current [A]",
+            "Voltage [V]",
+        ]
 
     @property
     def default_submesh_types(self):
@@ -130,60 +111,97 @@ class BaseWeppnerHuggins(pybamm_lithium_ion.BaseModel):
         return DummySolver()
 
     @staticmethod
-    def apply_parameter_grouping(parameter_set, electrode) -> dict:
+    def create_grouped_parameters(parameter_values: ParameterValues) -> ParameterValues:
         """
-        A function to create an electrode parameter set from a standard
-        PyBaMM parameter set.
+        Create a parameter set for the Weppner & Huggins model from a
+        PyBaMM lithium-ion ParameterValues object.
+
+        Note: the working electrode is the positive electrode.
 
         Parameters
         ----------
-        parameter_set : Union[dict, pybop.ParameterSet, pybamm.ParameterValues]
-            A dict-like object containing the parameter values.
-        electrode : str
-            Either "positive" or "negative" for the type of electrode.
+        parameter_values : pybamm.ParameterValues
+            Parameters and their corresponding values.
 
         Returns
         -------
-        dict
-            A dictionary of the grouped parameters.
+        parameter_values : pybamm.ParameterValues
+            A new set of parameters and their values.
         """
-        parameter_set = ParameterSet.to_pybamm(parameter_set)
+        param = parameter_values
 
         # Unpack physical parameters
-        F = parameter_set["Faraday constant [C.mol-1]"]
-        if electrode == "positive":
-            alpha = parameter_set["Positive electrode active material volume fraction"]
-            c_max = parameter_set[
-                "Maximum concentration in positive electrode [mol.m-3]"
-            ]
-            L = parameter_set["Positive electrode thickness [m]"]
-            R = parameter_set["Positive particle radius [m]"]
-            D = parameter_set["Positive particle diffusivity [m2.s-1]"]
-        elif electrode == "negative":
-            alpha = parameter_set["Negative electrode active material volume fraction"]
-            c_max = parameter_set[
-                "Maximum concentration in negative electrode [mol.m-3]"
-            ]
-            L = parameter_set["Negative electrode thickness [m]"]
-            R = parameter_set["Negative particle radius [m]"]
-            D = parameter_set["Negative particle diffusivity [m2.s-1]"]
-        else:
-            raise ValueError(
-                f"Unrecognised electrode type: {electrode}, "
-                'expecting either "positive" or "negative".'
-            )
+        F = param["Faraday constant [C.mol-1]"]
+        alpha = param["Positive electrode active material volume fraction"]
+        c_max = param["Maximum concentration in positive electrode [mol.m-3]"]
+        L = param["Positive electrode thickness [m]"]
+        R = param["Positive particle radius [m]"]
+        D = param["Positive particle diffusivity [m2.s-1]"]
 
         # Compute the cell area
-        A = parameter_set["Electrode height [m]"] * parameter_set["Electrode width [m]"]
+        A = param["Electrode height [m]"] * param["Electrode width [m]"]
 
         # Grouped parameters
         Q_th = F * alpha * c_max * L * A
         tau_d = R**2 / D
 
-        return {
-            "Current function [A]": parameter_set["Current function [A]"],
+        parameter_dictionary = {
+            "Current function [A]": param["Current function [A]"],
             "Reference voltage [V]": 4,
             "Derivative of the OCP wrt stoichiometry [V]": -1,
             "Theoretical electrode capacity [A.s]": Q_th,
             "Particle diffusion time scale [s]": tau_d,
         }
+        parameter_values = ParameterValues(values=parameter_dictionary)
+        parameter_values._set_initial_state = set_initial_state  # noqa: SLF001
+        return parameter_values
+
+
+def set_initial_state(
+    initial_value,
+    parameter_values,
+    direction=None,
+    param=None,
+    inplace=True,
+    options=None,
+    inputs=None,
+    tol=1e-6,
+):
+    """
+    Set the value of the initial state of charge.
+
+    Parameters
+    ----------
+    initial_value : float
+        Target initial value.
+        If float, interpreted as SOC, must be between 0 and 1.
+        If string e.g. "4 V", interpreted as voltage, must be between V_min and V_max.
+    parameter_values : :class:`pybamm.ParameterValues`
+        Parameters and their corresponding values.
+    param : :class:`pybamm.LithiumIonParameters`, optional
+        The symbolic parameter set to use for the simulation.
+        If not provided, the default parameter set will be used.
+    inplace: bool, optional
+        If True, replace the parameters values in place. Otherwise, return a new set of
+        parameter values. Default is True.
+    options : dict-like, optional
+        A dictionary of options to be passed to the model, see
+        :class:`pybamm.BatteryModelOptions`.
+    inputs : dict, optional
+        A dictionary of input parameters to pass to the model when solving.
+    tol : float, optional
+        The tolerance for the solver used to compute the initial stoichiometries.
+        A lower value results in higher precision but may increase computation time.
+        Default is 1e-6.
+    """
+    parameter_values = parameter_values if inplace else parameter_values.copy()
+
+    if isinstance(initial_value, int | float):
+        if not 0 <= initial_value <= 1:
+            raise ValueError("Initial SOC should be between 0 and 1")
+        parameter_values["Initial SoC"] = initial_value
+
+    else:
+        raise ValueError("Initial value must be a float between 0 and 1.")
+
+    return parameter_values
