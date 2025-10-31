@@ -267,7 +267,7 @@ class Problem:
         cost0 = np.abs(self.evaluate(x0).values[0])
         nsamples = 0
         while np.isinf(cost0) and nsamples < 10:
-            x0 = self.parameters.sample_from_priors()
+            x0 = self.parameters.sample_from_priors()[0]
             if x0 is None:
                 break
 

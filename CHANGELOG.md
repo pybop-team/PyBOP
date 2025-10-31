@@ -8,7 +8,16 @@
 
 ## Breaking Changes
 
-- [#820](https://github.com/pybop-team/PyBOP/pull/820) - remove name property from pybop.Parameter
+# [v25.10](https://github.com/pybop-team/PyBOP/tree/v25.10) - 2025-10-31
+
+This release presents a major restructure of PyBOP's base classes. We move from setting up a model, problem, cost,
+then optimiser to defining a simulator, cost, problem, and then optimiser. A `pybop.pybamm.Simulator` is designed
+to simulate a `pybamm.BaseModel`. Optimisation parameters can be passed through a `pybamm.ParameterValues` class.
+To understand how to update your use of PyBOP, please take a look at the example notebooks and scripts.
+
+## Breaking Changes
+
+- [#820](https://github.com/pybop-team/PyBOP/pull/820) - Remove the `name` property from `pybop.Parameter`
 - [#821](https://github.com/pybop-team/PyBOP/pull/821) - Remove the `papers` folder and update Readme.
 - [#809](https://github.com/pybop-team/PyBOP/pull/809) - Major restructure, including:
 - Deprecate Python 3.9 support
