@@ -10,7 +10,7 @@ from scipy.sparse.linalg import spsolve
 
 if TYPE_CHECKING:
     from pybop.parameters.parameter import Inputs
-from pybop._utils import SymbolReplacer
+from pybop._utils import FailedSolution, SymbolReplacer
 from pybop.parameters.parameter import Parameter, Parameters
 from pybop.pybamm.simulator import Simulator
 from pybop.simulators.base_simulator import BaseSimulator, Solution
@@ -281,7 +281,7 @@ class EISSimulator(BaseSimulator):
 
         return self._catch_errors(inputs)
 
-    def _catch_errors(self, inputs: "list[Inputs]"):
+    def _catch_errors(self, inputs: "list[Inputs]") -> list[Solution | FailedSolution]:
         if not self.debug_mode:
             simulations = []
             for x in inputs:
@@ -290,7 +290,9 @@ class EISSimulator(BaseSimulator):
                 except (ZeroDivisionError, RuntimeError, ValueError) as e:
                     if isinstance(e, ValueError) and str(e) not in self.exception:
                         raise  # Raise the error if it doesn't match the expected list
-                    simulations.append({"Impedance": np.asarray(np.inf)})
+                    simulations.append(
+                        FailedSolution(["Impedance"], [k for k in x.keys()])
+                    )
             return simulations
 
         simulations = []
@@ -298,7 +300,7 @@ class EISSimulator(BaseSimulator):
             simulations.append(self._solve(x))
         return simulations
 
-    def _solve(self, inputs: "Inputs"):
+    def _solve(self, inputs: "Inputs") -> Solution:
         """
         Run the EIS simulation to calculate impedance at all specified frequencies.
 
