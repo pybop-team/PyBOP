@@ -118,7 +118,9 @@ class ErrorMeasure(BaseCost):
             return self.failure(calculate_sensitivities)
 
         if not isinstance(sol, (Solution, pybamm.Solution)):
-            raise ValueError(f"sol must be a pybop.Solution object, got {type(sol)}.")
+            raise ValueError(
+                f"sol must be a pybop.Solution object, got type {type(sol)} with value {sol}."
+            )
 
         # Early return if the prediction is not verified
         if not self.verify_prediction(sol):
