@@ -256,7 +256,7 @@ class EISSimulator(BaseSimulator):
 
     def batch_solve(
         self, inputs: "list[Inputs]" = None, calculate_sensitivities: bool = False
-    ) -> list[Solution]:
+    ) -> list[Solution | FailedSolution]:
         """
         Run the EIS simulation for each set of inputs and return dict-like results.
 

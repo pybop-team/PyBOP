@@ -1,5 +1,6 @@
 import numpy as np
 
+from pybop._utils import FailedSolution
 from pybop.analysis.sensitivity_analysis import sensitivity_analysis
 from pybop.costs.base_cost import BaseCost
 from pybop.costs.evaluation import Evaluation
@@ -238,7 +239,7 @@ class Problem:
 
     def simulate_batch(
         self, inputs: list[Inputs], calculate_sensitivities: bool = False
-    ) -> list[Solution]:
+    ) -> list[Solution | FailedSolution]:
         """
         Simulate the model for each set of inputs and return the solution and
         (optionally) the sensitivities.

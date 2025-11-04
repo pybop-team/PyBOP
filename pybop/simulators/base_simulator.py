@@ -1,5 +1,6 @@
 from copy import copy
 
+from pybop._utils import FailedSolution
 from pybop.parameters.parameter import Inputs, Parameter, Parameters
 from pybop.simulators.solution import Solution
 
@@ -57,7 +58,7 @@ class BaseSimulator:
         self,
         inputs: "list[Inputs]",
         calculate_sensitivities: bool = False,
-    ) -> list[Solution]:
+    ) -> list[Solution | FailedSolution]:
         """
         Run the simulation for each set of inputs and return dict-like simulation results
         and (optionally) the sensitivities with respect to each input parameter.
