@@ -152,7 +152,7 @@ class TestProblem:
         problem.verbose = True
         inputs = problem.parameters.to_dict([0.0, 0.0])
         out = problem.simulate(inputs)
-        assert not np.isfinite(out["Impedance"])
+        assert not np.isfinite(out["Impedance"].data)
 
     def test_multi_fitting_problem(self, model, parameters, dataset):
         parameter_values = model.default_parameter_values
