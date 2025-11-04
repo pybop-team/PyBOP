@@ -165,6 +165,8 @@ class Problem:
         solutions = self.simulate_batch(
             valid_inputs, calculate_sensitivities=calculate_sensitivities
         )
+        for sol in solutions:
+            assert isinstance(sol, (Solution, FailedSolution)), f"Got {type(sol)}"
 
         # Preallocate the evaluation results
         evaluation = Evaluation()
