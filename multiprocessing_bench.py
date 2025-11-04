@@ -1,9 +1,11 @@
-import numpy as np
 import cProfile
-import pybamm
-import time
-import pybop
 import os
+import time
+
+import numpy as np
+import pybamm
+
+import pybop
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 dataset_path = os.path.join(
