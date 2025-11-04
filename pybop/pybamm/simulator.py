@@ -449,9 +449,10 @@ class Simulator(BaseSimulator):
         assert isinstance(
             solutions, list
         ), f"Expected a list of solutions, got {type(solutions)}"
-        assert isinstance(
-            solutions[0], pybamm.Solution
-        ), f"Expected a pybamm.Solution, got {type(solutions[0])}"
+        for solution in solutions:
+            assert isinstance(
+                solution, pybamm.Solution
+            ), f"Expected a pybamm.Solution, got {type(solution)}"
         return solutions
 
     def _solve_in_time_with_rebuild(
@@ -465,9 +466,10 @@ class Simulator(BaseSimulator):
         assert isinstance(
             solutions, list
         ), f"Expected a list of solutions, got {type(solutions)}"
-        assert isinstance(
-            solutions[0], pybamm.Solution
-        ), f"Expected a pybamm.Solution, got {type(solutions[0])}"
+        for solution in solutions:
+            assert isinstance(
+                solution, pybamm.Solution
+            ), f"Expected a pybamm.Solution, got {type(solution)}"
         return solutions
 
     def _pybamm_solve(
@@ -535,7 +537,6 @@ class Simulator(BaseSimulator):
                 processed_solutions.append(failed_solution)
             else:
                 processed_solutions.append(solution)
-
         return processed_solutions
 
     @property
