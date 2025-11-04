@@ -2,7 +2,7 @@ import numpy as np
 import pybamm
 
 from pybop._dataset import Dataset
-from pybop._utils import add_spaces
+from pybop._utils import FailedSolution, add_spaces
 from pybop.costs.base_cost import BaseCost
 from pybop.parameters.parameter import Inputs
 from pybop.simulators.solution import Solution
@@ -91,7 +91,7 @@ class ErrorMeasure(BaseCost):
 
     def evaluate(
         self,
-        sol: Solution | pybamm.Solution,
+        sol: Solution | pybamm.Solution | FailedSolution,
         inputs: Inputs | None = None,
         calculate_sensitivities: bool = False,
     ) -> float | tuple[float, np.ndarray]:
@@ -113,6 +113,10 @@ class ErrorMeasure(BaseCost):
             If the solution has sensitivities, returns a tuple containing the cost (float) and the
             gradient with dimension (len(parameters)), otherwise returns only the cost.
         """
+        # Return failure cost if the solution failed
+        if isinstance(sol, FailedSolution):
+            return self.failure(calculate_sensitivities)
+
         if not isinstance(sol, (Solution, pybamm.Solution)):
             raise ValueError(f"sol must be a pybop.Solution object, got {type(sol)}.")
 
