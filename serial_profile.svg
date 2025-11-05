@@ -1,0 +1,1128 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" width="1200" height="1056"
+     xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<style type="text/css">
+    .func_g:hover { stroke:black; stroke-width:0.5; cursor:pointer; }
+</style>
+<svg class="func_g" x="0.0" y="552" width="1198.9997623760385" height="23"><g>
+    <title>~:0:&lt;built-in method builtins.exec&gt; 100.00% (1 1 0.000143991 7.691142002)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 215, 125)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;built-in method builtins.exec&gt;</text>
+</g></svg>
+<svg class="func_g" x="0.0" y="528" width="1198.9772963799953" height="23"><g>
+    <title>&lt;string&gt;:1:&lt;module&gt; 100.00% (1 1 1.1902e-05 7.6909980110000005)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 240, 141)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;module&gt;</text>
+</g></svg>
+<svg class="func_g" x="0.0" y="504" width="1198.9754393869548" height="23"><g>
+    <title>&lt;string&gt;:1:&lt;listcomp&gt; 100.00% (1 1 0.000132 7.690986109000001)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 90, 49)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;listcomp&gt;</text>
+</g></svg>
+<svg class="func_g" x="0.0" y="480" width="1198.9548442700539" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:77:__call__ 100.00% (100 100 0.000163004 7.690854109000001)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 140, 79)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">__call__</text>
+</g></svg>
+<svg class="func_g" x="0.0" y="456" width="1198.9271572558525" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:99:evaluate 99.99% (100 100 0.00015350500000000002 7.690676655000001)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 165, 95)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">evaluate</text>
+</g></svg>
+<svg class="func_g" x="0.0" y="432" width="1198.8994941132642" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:130:evaluate_batch 99.99% (100 100 0.0008511860000000001 7.690499354000001)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 115, 64)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">evaluate_batch</text>
+</g></svg>
+<svg class="func_g" x="1.003219504995521" y="408" width="1197.7325676125654" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:239:simulate_batch 99.89% (100 100 0.00015334700000000002 7.683020188)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 215, 125)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">simulate_batch</text>
+</g></svg>
+<svg class="func_g" x="1.1948439617761533" y="384" width="1197.5170174028194" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:307:batch_solve 99.88% (100 100 0.00030619800000000004 7.681638665)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 140, 79)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">batch_solve</text>
+</g></svg>
+<svg class="func_g" x="1.1948439617761533" y="360" width="1197.4332771894292" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:347:_catch_errors 99.87% (100 100 0.00048504200000000004 7.68110195)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 240, 141)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_catch_errors</text>
+</g></svg>
+<svg class="func_g" x="1.1948439617761533" y="336" width="1196.9522421927509" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:441:_solve_in_time_without_rebuild 99.83% (100 100 0.00011142500000000001 7.678018859000001)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 140, 79)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_solve_in_time_without_rebuild</text>
+</g></svg>
+<svg class="func_g" x="1.1948439617761533" y="312" width="1196.9331416260377" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:459:_pybamm_solve 99.83% (100 100 0.00027119700000000004 7.677896438)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 140, 79)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_pybamm_solve</text>
+</g></svg>
+<svg class="func_g" x="1.1948439617761533" y="288" width="1196.8908284902936" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/base_solver.py:671:solve 99.82% (100 100 0.004413882 7.677625241)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 115, 64)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">solve</text>
+</g></svg>
+<svg class="func_g" x="1.3752766887808157" y="264" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/base_solver.py:311:_set_initial_conditions 0.15% (99 99 0.00042349900000000003 0.011222652000000001)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 190, 110)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_set_initial_conditions</text>
+</g></svg>
+<svg class="func_g" x="1.6712901390996693" y="240" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/casadi/casadi.py:23541:__call__ 0.11% (99 99 0.0002083655968352493 0.008659157593919987)</title>
+    <rect height="100%" width="100%" fill="rgb(44, 255, 210)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">__call__</text>
+</g></svg>
+<svg class="func_g" x="1.6712901390996693" y="216" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/casadi/casadi.py:20034:call 0.11% (99 99 9.58891473694862e-05 0.008401804170847276)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 140, 79)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">call</text>
+</g></svg>
+<svg class="func_g" x="1.6712901390996693" y="192" width="1" height="23"><g>
+    <title>~:0:&lt;built-in method casadi._casadi.Function_call&gt; 0.11% (99 99 0.007750809801831808 0.00830591502347779)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 90, 49)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;built-in method casadi._casadi.Function_call&gt;</text>
+</g></svg>
+<svg class="func_g" x="3.9455210660628026" y="264" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/base_solver.py:1423:check_extrapolation 0.12% (100 100 0.001228203 0.009010991000000001)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 115, 64)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">check_extrapolation</text>
+</g></svg>
+<svg class="func_g" x="5.370914255562541" y="264" width="16.965599309239277" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/idaklu_solver.py:242:set_up 1.50% (1 1 0.00017318500000000002 0.11514666900000001)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 90, 49)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">set_up</text>
+</g></svg>
+<svg class="func_g" x="5.669336407293223" y="240" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/casadi/casadi.py:21518:serialize 0.16% (8 8 9.729000000000001e-06 0.012044171000000001)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 90, 49)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">serialize</text>
+</g></svg>
+<svg class="func_g" x="5.669336407293223" y="216" width="1" height="23"><g>
+    <title>~:0:&lt;built-in method casadi._casadi.Function_serialize&gt; 0.16% (8 8 0.012034442000000001 0.012034442000000001)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 140, 79)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;built-in method casadi._casadi.Function_serialize&gt;</text>
+</g></svg>
+<svg class="func_g" x="7.688162131911332" y="240" width="10.84882946258633" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/base_solver.py:144:set_up 0.99% (1 1 0.000112732 0.07594254)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 240, 141)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">set_up</text>
+</g></svg>
+<svg class="func_g" x="8.929583822842524" y="216" width="8.797702637463143" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/base_solver.py:1537:process 0.82% (6 6 9.6352e-05 0.06279628100000001)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 115, 64)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">process</text>
+</g></svg>
+<svg class="func_g" x="9.408299356933625" y="192" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/casadi/casadi.py:37205:jacobian 0.16% (5 5 8.537848334729228e-06 0.012082674348906263)</title>
+    <rect height="100%" width="100%" fill="rgb(99, 206, 42)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">jacobian</text>
+</g></svg>
+<svg class="func_g" x="9.408299356933625" y="168" width="1" height="23"><g>
+    <title>~:0:&lt;built-in method casadi._casadi.jacobian&gt; 0.16% (5 5 0.011984058466887224 0.012074136500571533)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 140, 79)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;built-in method casadi._casadi.jacobian&gt;</text>
+</g></svg>
+<svg class="func_g" x="11.603493130340526" y="192" width="6.104910939193301" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/expression_tree/symbol.py:958:to_casadi 0.59% (8 8 9.917345578783729e-05 0.04553740813806516)</title>
+    <rect height="100%" width="100%" fill="rgb(44, 255, 210)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">to_casadi</text>
+</g></svg>
+<svg class="func_g" x="11.610134241603852" y="168" width="6.082796427055507" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/expression_tree/operations/convert_to_casadi.py:19:convert 0.59% (8 8 2.08213975948522e-05 0.04539566989903421)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 215, 125)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">convert</text>
+</g></svg>
+<svg class="func_g" x="11.610134241603852" y="144" width="6.035631086314524" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/expression_tree/operations/convert_to_casadi.py:59:_convert 0.59% (853 8 0.0024675198761157733 0.045093373728163855)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 140, 79)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_convert</text>
+</g></svg>
+<svg class="func_g" x="13.528488230724555" y="120" width="1.121444413289661" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/expression_tree/operations/convert_to_casadi.py:19:convert 0.18% (300 12 0.0003964928808492165 0.013596944552433491)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 215, 125)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">convert</text>
+</g></svg>
+<svg class="func_g" x="13.528488230724555" y="96" width="1.0468059112317425" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/expression_tree/operations/convert_to_casadi.py:59:_convert 0.17% (248 2 0.0007178509229029522 0.013118565025918107)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 140, 79)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_convert</text>
+</g></svg>
+<svg class="func_g" x="16.29256635462806" y="120" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/expression_tree/operations/convert_to_casadi.py:269:&lt;listcomp&gt; 0.16% (3 1 5.190238241736518e-06 0.012349165850741374)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 240, 141)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;listcomp&gt;</text>
+</g></svg>
+<svg class="func_g" x="16.29256635462806" y="96" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/expression_tree/operations/convert_to_casadi.py:19:convert 0.16% (9 3 1.5917131531287937e-05 0.012343975612499638)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 215, 125)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">convert</text>
+</g></svg>
+<svg class="func_g" x="16.29256635462806" y="72" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/expression_tree/operations/convert_to_casadi.py:59:_convert 0.16% (232 2 0.0006704094964579786 0.012251583570738122)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 140, 79)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_convert</text>
+</g></svg>
+<svg class="func_g" x="19.55726748708673" y="240" width="1" height="23"><g>
+    <title>~:0:&lt;built-in method pybammsolvers.idaklu.create_casadi_solver_group&gt; 0.16% (1 1 0.011954022 0.011954022)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 165, 95)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;built-in method pybammsolvers.idaklu.create_casadi_solver_group&gt;</text>
+</g></svg>
+<svg class="func_g" x="21.422377188052817" y="240" width="1" height="23"><g>
+    <title>~:0:&lt;built-in method pybammsolvers.idaklu.generate_function&gt; 0.16% (8 8 0.012091137 0.012091137)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 190, 110)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;built-in method pybammsolvers.idaklu.generate_function&gt;</text>
+</g></svg>
+<svg class="func_g" x="23.339170802952886" y="264" width="1149.4865684586227" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/idaklu_solver.py:535:_integrate 95.87% (100 100 7.238185628 7.373797768)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 215, 125)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_integrate</text>
+</g></svg>
+<svg class="func_g" x="23.99883645390692" y="240" width="19.414150261225313" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/idaklu_solver.py:587:&lt;listcomp&gt; 1.70% (100 100 0.001812044 0.130840133)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 215, 125)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;listcomp&gt;</text>
+</g></svg>
+<svg class="func_g" x="23.99883645390692" y="216" width="19.1314286096358" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/idaklu_solver.py:592:_post_process_solution 1.68% (100 100 0.003475882 0.129028089)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 115, 64)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_post_process_solution</text>
+</g></svg>
+<svg class="func_g" x="24.082299881408098" y="192" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/idaklu_solver.py:718:_get_variable_info 0.11% (200 200 0.000811511 0.008204876)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 140, 79)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_get_variable_info</text>
+</g></svg>
+<svg class="func_g" x="25.36245427821478" y="192" width="16.42732627005555" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/processed_variable_computed.py:50:__init__ 1.45% (200 200 0.0017030510000000001 0.11169672300000001)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 165, 95)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">__init__</text>
+</g></svg>
+<svg class="func_g" x="25.399164449996423" y="168" width="14.985049141310895" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/processed_variable_computed.py:247:initialise_0D 1.33% (200 200 0.000598429 0.102452756)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 115, 64)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">initialise_0D</text>
+</g></svg>
+<svg class="func_g" x="25.625423808483692" y="144" width="14.665420728187502" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/xarray/core/dataarray.py:414:__init__ 1.31% (200 200 0.0026021630000000002 0.100404166)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 90, 49)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">__init__</text>
+</g></svg>
+<svg class="func_g" x="25.97848012464443" y="120" width="2.9208532647945904" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/xarray/core/coordinates.py:1068:create_coords_with_default_indexes 0.33% (200 200 0.0014779670000000002 0.025129871)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 115, 64)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">create_coords_with_default_indexes</text>
+</g></svg>
+<svg class="func_g" x="26.38806613610818" y="96" width="1.2878119934707648" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/xarray/core/indexes.py:1589:create_default_index_implicit 0.19% (200 200 0.000555079 0.014663242000000002)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 90, 49)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">create_default_index_implicit</text>
+</g></svg>
+<svg class="func_g" x="26.38806613610818" y="72" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/xarray/core/indexes.py:685:from_variables 0.11% (200 200 0.001039682 0.008785312)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 90, 49)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">from_variables</text>
+</g></svg>
+<svg class="func_g" x="29.899333389439022" y="120" width="5.02070470398614" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/xarray/core/dataarray.py:128:_infer_coords_and_dims 0.50% (200 200 0.002542494 0.038588420000000005)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 165, 95)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_infer_coords_and_dims</text>
+</g></svg>
+<svg class="func_g" x="31.153191878577022" y="96" width="3.187755370226305" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/xarray/core/variable.py:544:to_index_variable 0.35% (400 400 0.000484465 0.026840523)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 140, 79)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">to_index_variable</text>
+</g></svg>
+<svg class="func_g" x="31.153191878577022" y="72" width="3.1121673906091916" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/xarray/core/variable.py:2658:__init__ 0.34% (400 400 0.0007585220000000001 0.026356058)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 115, 64)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">__init__</text>
+</g></svg>
+<svg class="func_g" x="31.153191878577022" y="48" width="1.8364516469623062" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/xarray/core/indexing.py:1758:__init__ 0.24% (309 309 0.0008519169102812824 0.018179630598758094)</title>
+    <rect height="100%" width="100%" fill="rgb(57, 242, 168)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">__init__</text>
+</g></svg>
+<svg class="func_g" x="31.229908730537492" y="24" width="1.4992305220298698" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/xarray/core/indexes.py:498:safe_cast_to_index 0.21% (441 441 0.002139285001843117 0.016018283872493655)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 140, 79)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">safe_cast_to_index</text>
+</g></svg>
+<svg class="func_g" x="31.229908730537492" y="0" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pandas/core/indexes/base.py:475:__new__ 0.12% (287 287 0.0017977241666860598 0.009141840201578752)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 190, 110)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">__new__</text>
+</g></svg>
+<svg class="func_g" x="36.173020708256814" y="120" width="3.1254679355369364" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/xarray/core/dataarray.py:467:&lt;dictcomp&gt; 0.34% (200 200 0.000292272 0.026441305000000002)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 140, 79)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;dictcomp&gt;</text>
+</g></svg>
+<svg class="func_g" x="36.173020708256814" y="96" width="3.02410142255147" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/xarray/core/variable.py:2776:copy 0.34% (200 200 0.000561435 0.025791618000000002)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 115, 64)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">copy</text>
+</g></svg>
+<svg class="func_g" x="37.18289455299394" y="72" width="1.926630460713338" height="23"><g>
+    <title>/usr/lib/python3.10/copy.py:128:deepcopy 0.24% (502 502 0.0009925548479471395 0.018757612431652616)</title>
+    <rect height="100%" width="100%" fill="rgb(71, 230, 126)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">deepcopy</text>
+</g></svg>
+<svg class="func_g" x="1173.825739261576" y="264" width="23.207524433110898" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/idaklu_solver.py:732:_set_consistent_initialization 2.02% (100 100 0.0005907660000000001 0.155152954)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 215, 125)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_set_consistent_initialization</text>
+</g></svg>
+<svg class="func_g" x="1174.8849224082069" y="240" width="18.51868550002129" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/base_solver.py:581:_set_consistent_initialization 1.63% (100 100 0.000187557 0.12510084300000002)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 240, 141)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_set_consistent_initialization</text>
+</g></svg>
+<svg class="func_g" x="1174.8849224082069" y="216" width="18.489422179259115" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/base_solver.py:608:calculate_consistent_state 1.62% (100 100 0.000817663 0.12491328600000001)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 140, 79)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">calculate_consistent_state</text>
+</g></svg>
+<svg class="func_g" x="1174.8933082093286" y="192" width="4.813523600835421" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/base_solver.py:1423:check_extrapolation 0.48% (100 100 0.001295132 0.037260537)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 115, 64)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">check_extrapolation</text>
+</g></svg>
+<svg class="func_g" x="1177.0103056221335" y="168" width="2.434518122363476" height="23"><g>
+    <title>/usr/lib/python3.10/functools.py:961:__get__ 0.29% (164 164 0.0005614139766940774 0.022012809848592486)</title>
+    <rect height="100%" width="100%" fill="rgb(44, 255, 210)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">__get__</text>
+</g></svg>
+<svg class="func_g" x="1177.5689001046478" y="144" width="1.7671804084196094" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/solution.py:341:last_state 0.23% (136 136 0.0011594101876523882 0.017735651400602764)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 165, 95)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">last_state</text>
+</g></svg>
+<svg class="func_g" x="1177.9480495775401" y="120" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/solution.py:71:__init__ 0.16% (136 136 0.0007744879393808577 0.012360637519395475)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 90, 49)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">__init__</text>
+</g></svg>
+<svg class="func_g" x="1177.9742923519516" y="96" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/solution.py:223:check_ys_are_not_too_large 0.14% (128 128 0.0010566660680677846 0.010989847873110562)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 115, 64)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">check_ys_are_not_too_large</text>
+</g></svg>
+<svg class="func_g" x="1180.706831810164" y="192" width="12.485262375207082" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/casadi_algebraic_solver.py:154:_integrate 1.12% (100 100 0.003210109 0.086430907)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 140, 79)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_integrate</text>
+</g></svg>
+<svg class="func_g" x="1180.706831810164" y="168" width="1.4324695982058162" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/casadi/casadi.py:512:vertcat 0.20% (400 400 0.000279183 0.015590394)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 190, 110)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">vertcat</text>
+</g></svg>
+<svg class="func_g" x="1180.7073855065644" y="144" width="1.3792997477315407" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/casadi/casadi.py:34143:_vertcat 0.20% (514 514 0.0002737685023270311 0.015249613207332964)</title>
+    <rect height="100%" width="100%" fill="rgb(44, 255, 210)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_vertcat</text>
+</g></svg>
+<svg class="func_g" x="1180.7073855065644" y="120" width="1.336585396903919" height="23"><g>
+    <title>~:0:&lt;built-in method casadi._casadi._vertcat&gt; 0.19% (514 514 0.013551627178025561 0.014975844705005932)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 165, 95)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;built-in method casadi._casadi._vertcat&gt;</text>
+</g></svg>
+<svg class="func_g" x="1183.8736636760407" y="168" width="2.8435516778371426" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/casadi/casadi.py:23541:__call__ 0.32% (200 200 0.000353844 0.024634423000000003)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 240, 141)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">__call__</text>
+</g></svg>
+<svg class="func_g" x="1183.8736636760407" y="144" width="2.7663832646766027" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/casadi/casadi.py:20034:call 0.31% (286 286 0.0002755060139630256 0.02413982854898816)</title>
+    <rect height="100%" width="100%" fill="rgb(85, 218, 84)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">call</text>
+</g></svg>
+<svg class="func_g" x="1183.8736636760407" y="120" width="2.7233978210061007" height="23"><g>
+    <title>~:0:&lt;built-in method casadi._casadi.Function_call&gt; 0.31% (286 286 0.02226940975144966 0.023864322535025132)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 90, 49)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;built-in method casadi._casadi.Function_call&gt;</text>
+</g></svg>
+<svg class="func_g" x="1187.728098624971" y="168" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/casadi_algebraic_solver.py:272:max_abs 0.13% (200 200 0.000600216 0.009948440000000001)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 215, 125)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">max_abs</text>
+</g></svg>
+<svg class="func_g" x="1187.733710638303" y="144" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/numpy/linalg/linalg.py:2383:norm 0.12% (200 200 0.001422499 0.009312255)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 140, 79)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">norm</text>
+</g></svg>
+<svg class="func_g" x="1189.2802901763566" y="168" width="1.7059559001013462" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/solution.py:71:__init__ 0.23% (100 100 0.000978079 0.017343246)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 90, 49)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">__init__</text>
+</g></svg>
+<svg class="func_g" x="1189.317357485286" y="144" width="1.421939673486135" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/solution.py:223:check_ys_are_not_too_large 0.20% (180 180 0.0014925162624338263 0.01552290469806124)</title>
+    <rect height="100%" width="100%" fill="rgb(99, 206, 42)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">check_ys_are_not_too_large</text>
+</g></svg>
+<svg class="func_g" x="1190.0257211496153" y="120" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/numpy/core/fromnumeric.py:2322:any 0.12% (180 180 0.00024998286810083063 0.009440371781918838)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 90, 49)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">any</text>
+</g></svg>
+<svg class="func_g" x="1190.0257211496153" y="96" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/numpy/core/fromnumeric.py:71:_wrapreduction 0.12% (180 180 0.0004223837107052216 0.009190388913818008)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 140, 79)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_wrapreduction</text>
+</g></svg>
+<svg class="func_g" x="1192.1036184277953" y="168" width="1" height="23"><g>
+    <title>~:0:&lt;built-in method numpy.asarray&gt; 0.13% (200 200 0.0008011260000000001 0.009998127)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 90, 49)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;built-in method numpy.asarray&gt;</text>
+</g></svg>
+<svg class="func_g" x="1192.2273609259776" y="144" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/casadi/casadi.py:11013:__array__ 0.11% (249 249 0.0003935954356665727 0.008403899905281892)</title>
+    <rect height="100%" width="100%" fill="rgb(71, 230, 126)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">__array__</text>
+</g></svg>
+<svg class="func_g" x="1192.2273609259776" y="120" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/casadi/casadi.py:11038:__array_custom__ 0.10% (249 249 0.00016309859437157263 0.00791665692395904)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 190, 110)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">__array_custom__</text>
+</g></svg>
+<svg class="func_g" x="1192.2273609259776" y="96" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/casadi/casadi.py:10918:full 0.10% (249 249 0.00013533588435413405 0.007753558329587468)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 90, 49)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">full</text>
+</g></svg>
+<svg class="func_g" x="1194.4036079082282" y="240" width="2.4964748106166725" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/idaklu_solver.py:778:_rhs_dot_consistent_initialization 0.29% (100 100 0.0009588600000000001 0.022409908000000003)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 190, 110)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_rhs_dot_consistent_initialization</text>
+</g></svg>
+<svg class="func_g" x="1195.3850780336345" y="216" width="1.0325806103065815" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/casadi/casadi.py:23541:__call__ 0.17% (100 100 0.000195725 0.013027391000000001)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 240, 141)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">__call__</text>
+</g></svg>
+<svg class="func_g" x="1195.3850780336345" y="192" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/casadi/casadi.py:20034:call 0.17% (151 151 0.00014559789336839456 0.012757282980685125)</title>
+    <rect height="100%" width="100%" fill="rgb(85, 218, 84)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">call</text>
+</g></svg>
+<svg class="func_g" x="1195.3850780336345" y="168" width="1" height="23"><g>
+    <title>~:0:&lt;built-in method casadi._casadi.Function_call&gt; 0.16% (151 151 0.011768814407092393 0.012611685087316731)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 90, 49)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;built-in method casadi._casadi.Function_call&gt;</text>
+</g></svg>
+<svg class="func_g" x="16.09406767636678" y="600" width="1128.3278724245374" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/idaklu_solver.py:535:_integrate 94.11% (100 100 7.238185628 7.373797768)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 215, 125)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_integrate</text>
+</g></svg>
+<svg class="func_g" x="16.09406767636678" y="624" width="1128.3278724245374" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/base_solver.py:671:solve 94.11% (100 100 7.238185628 7.373797768)</title>
+    <rect height="100%" width="100%" fill="rgb(225, 225, 225)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">solve</text>
+</g></svg>
+<svg class="func_g" x="16.09406767636678" y="648" width="1128.3278724245374" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:459:_pybamm_solve 0.06% (100 100 0.004413882 7.677625241)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_pybamm_solve</text>
+</g></svg>
+<svg class="func_g" x="16.09406767636678" y="672" width="1128.3278724245374" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:441:_solve_in_time_without_rebuild 0.00% (100 100 0.00027119700000000004 7.677896438)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_solve_in_time_without_rebuild</text>
+</g></svg>
+<svg class="func_g" x="16.09406767636678" y="696" width="1128.3278724245374" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:347:_catch_errors 0.00% (100 100 0.00011142500000000001 7.678018859000001)</title>
+    <rect height="100%" width="100%" fill="rgb(190, 190, 190)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_catch_errors</text>
+</g></svg>
+<svg class="func_g" x="16.09406767636678" y="720" width="1128.3278724245374" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:307:batch_solve 0.01% (100 100 0.00048504200000000004 7.68110195)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">batch_solve</text>
+</g></svg>
+<svg class="func_g" x="16.09406767636678" y="744" width="1128.3278724245374" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:239:simulate_batch 0.00% (100 100 0.00030619800000000004 7.681638665)</title>
+    <rect height="100%" width="100%" fill="rgb(197, 197, 197)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">simulate_batch</text>
+</g></svg>
+<svg class="func_g" x="16.09406767636678" y="768" width="1128.3278724245374" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:130:evaluate_batch 0.00% (100 100 0.00015334700000000002 7.683020188)</title>
+    <rect height="100%" width="100%" fill="rgb(225, 225, 225)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">evaluate_batch</text>
+</g></svg>
+<svg class="func_g" x="16.09406767636678" y="792" width="1128.3278724245374" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:99:evaluate 0.01% (100 100 0.0008511860000000001 7.690499354000001)</title>
+    <rect height="100%" width="100%" fill="rgb(211, 211, 211)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">evaluate</text>
+</g></svg>
+<svg class="func_g" x="16.09406767636678" y="816" width="1128.3278724245374" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:77:__call__ 0.00% (100 100 0.00015350500000000002 7.690676655000001)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">__call__</text>
+</g></svg>
+<svg class="func_g" x="16.09406767636678" y="840" width="1128.3278724245374" height="23"><g>
+    <title>&lt;string&gt;:1:&lt;listcomp&gt; 0.00% (100 100 0.000163004 7.690854109000001)</title>
+    <rect height="100%" width="100%" fill="rgb(232, 232, 232)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;listcomp&gt;</text>
+</g></svg>
+<svg class="func_g" x="16.09406767636678" y="864" width="1128.3278724245374" height="23"><g>
+    <title>&lt;string&gt;:1:&lt;module&gt; 0.00% (1 1 0.000132 7.690986109000001)</title>
+    <rect height="100%" width="100%" fill="rgb(190, 190, 190)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;module&gt;</text>
+</g></svg>
+<svg class="func_g" x="16.09406767636678" y="888" width="1128.3278724245374" height="23"><g>
+    <title>~:0:&lt;built-in method builtins.exec&gt; 0.00% (1 1 1.1902e-05 7.6909980110000005)</title>
+    <rect height="100%" width="100%" fill="rgb(197, 197, 197)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;built-in method builtins.exec&gt;</text>
+</g></svg>
+<svg class="func_g" x="1166.7465132631244" y="600" width="1.1488425415907209" height="23"><g>
+    <title>~:0:&lt;built-in method casadi._casadi.DM_get&gt; 0.18% (600 600 0.013772547000000001 0.014659785000000002)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 240, 141)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;built-in method casadi._casadi.DM_get&gt;</text>
+</g></svg>
+<svg class="func_g" x="1166.7465132631244" y="624" width="1.1488425415907209" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/casadi/casadi.py:9295:get 0.18% (600 600 0.013772547000000001 0.014659785000000002)</title>
+    <rect height="100%" width="100%" fill="rgb(225, 225, 225)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">get</text>
+</g></svg>
+<svg class="func_g" x="1166.7465132631244" y="648" width="1.1488425415907209" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/casadi/casadi.py:10895:__getitem__ 0.01% (600 600 0.00042788600000000004 0.015087671)</title>
+    <rect height="100%" width="100%" fill="rgb(197, 197, 197)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">__getitem__</text>
+</g></svg>
+<svg class="func_g" x="1168.9474987401181" y="600" width="6.342776248607329" height="23"><g>
+    <title>~:0:&lt;built-in method casadi._casadi.Function_call&gt; 0.61% (604 604 0.047061955 0.050432485000000006)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 90, 49)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;built-in method casadi._casadi.Function_call&gt;</text>
+</g></svg>
+<svg class="func_g" x="1168.9474987401181" y="624" width="6.342776248607329" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/casadi/casadi.py:20034:call 0.61% (604 604 0.047061955 0.050432485000000006)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">call</text>
+</g></svg>
+<svg class="func_g" x="1168.9474987401181" y="648" width="6.342776248607329" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/casadi/casadi.py:23541:__call__ 0.01% (604 604 0.000582227 0.051014712000000004)</title>
+    <rect height="100%" width="100%" fill="rgb(190, 190, 190)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">__call__</text>
+</g></svg>
+<svg class="func_g" x="1168.9541771814556" y="672" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/base_solver.py:311:_set_initial_conditions 0.00% (100 100 0.00021062 0.008752845)</title>
+    <rect height="100%" width="100%" fill="rgb(204, 204, 204)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_set_initial_conditions</text>
+</g></svg>
+<svg class="func_g" x="1170.1830460375645" y="672" width="2.4439930685397746" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/casadi_algebraic_solver.py:154:_integrate 0.00% (200 200 0.000353844 0.024634423000000003)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_integrate</text>
+</g></svg>
+<svg class="func_g" x="1170.1830460375645" y="696" width="2.4439930685397746" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/base_solver.py:608:calculate_consistent_state 0.04% (100 100 0.003210109 0.086430907)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">calculate_consistent_state</text>
+</g></svg>
+<svg class="func_g" x="1170.1830460375645" y="720" width="2.4439930685397746" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/base_solver.py:581:_set_consistent_initialization 0.01% (100 100 0.000817663 0.12491328600000001)</title>
+    <rect height="100%" width="100%" fill="rgb(190, 190, 190)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_set_consistent_initialization</text>
+</g></svg>
+<svg class="func_g" x="1170.1830460375645" y="744" width="2.4439930685397746" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/idaklu_solver.py:732:_set_consistent_initialization 0.00% (100 100 0.000187557 0.12510084300000002)</title>
+    <rect height="100%" width="100%" fill="rgb(197, 197, 197)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_set_consistent_initialization</text>
+</g></svg>
+<svg class="func_g" x="1170.1830460375645" y="768" width="2.4439930685397746" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/base_solver.py:671:solve 0.01% (100 100 0.0005907660000000001 0.155152954)</title>
+    <rect height="100%" width="100%" fill="rgb(225, 225, 225)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">solve</text>
+</g></svg>
+<svg class="func_g" x="1170.1830460375645" y="792" width="2.4439930685397746" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:459:_pybamm_solve 0.06% (100 100 0.004413882 7.677625241)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_pybamm_solve</text>
+</g></svg>
+<svg class="func_g" x="1170.1830460375645" y="816" width="2.4439930685397746" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:441:_solve_in_time_without_rebuild 0.00% (100 100 0.00027119700000000004 7.677896438)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_solve_in_time_without_rebuild</text>
+</g></svg>
+<svg class="func_g" x="1170.1830460375645" y="840" width="2.4439930685397746" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:347:_catch_errors 0.00% (100 100 0.00011142500000000001 7.678018859000001)</title>
+    <rect height="100%" width="100%" fill="rgb(190, 190, 190)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_catch_errors</text>
+</g></svg>
+<svg class="func_g" x="1170.1830460375645" y="864" width="2.4439930685397746" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:307:batch_solve 0.01% (100 100 0.00048504200000000004 7.68110195)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">batch_solve</text>
+</g></svg>
+<svg class="func_g" x="1170.1830460375645" y="888" width="2.4439930685397746" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:239:simulate_batch 0.00% (100 100 0.00030619800000000004 7.681638665)</title>
+    <rect height="100%" width="100%" fill="rgb(197, 197, 197)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">simulate_batch</text>
+</g></svg>
+<svg class="func_g" x="1170.1830460375645" y="912" width="2.4439930685397746" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:130:evaluate_batch 0.00% (100 100 0.00015334700000000002 7.683020188)</title>
+    <rect height="100%" width="100%" fill="rgb(225, 225, 225)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">evaluate_batch</text>
+</g></svg>
+<svg class="func_g" x="1170.1830460375645" y="936" width="2.4439930685397746" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:99:evaluate 0.01% (100 100 0.0008511860000000001 7.690499354000001)</title>
+    <rect height="100%" width="100%" fill="rgb(211, 211, 211)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">evaluate</text>
+</g></svg>
+<svg class="func_g" x="1170.1830460375645" y="960" width="2.4439930685397746" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:77:__call__ 0.00% (100 100 0.00015350500000000002 7.690676655000001)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">__call__</text>
+</g></svg>
+<svg class="func_g" x="1170.1830460375645" y="984" width="2.4439930685397746" height="23"><g>
+    <title>&lt;string&gt;:1:&lt;listcomp&gt; 0.00% (100 100 0.000163004 7.690854109000001)</title>
+    <rect height="100%" width="100%" fill="rgb(232, 232, 232)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;listcomp&gt;</text>
+</g></svg>
+<svg class="func_g" x="1170.1830460375645" y="1008" width="2.4439930685397746" height="23"><g>
+    <title>&lt;string&gt;:1:&lt;module&gt; 0.00% (1 1 0.000132 7.690986109000001)</title>
+    <rect height="100%" width="100%" fill="rgb(190, 190, 190)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;module&gt;</text>
+</g></svg>
+<svg class="func_g" x="1170.1830460375645" y="1032" width="2.4439930685397746" height="23"><g>
+    <title>~:0:&lt;built-in method builtins.exec&gt; 0.00% (1 1 1.1902e-05 7.6909980110000005)</title>
+    <rect height="100%" width="100%" fill="rgb(197, 197, 197)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;built-in method builtins.exec&gt;</text>
+</g></svg>
+<svg class="func_g" x="1174.4689924563456" y="672" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/idaklu_solver.py:778:_rhs_dot_consistent_initialization 0.00% (100 100 0.000195725 0.013027391000000001)</title>
+    <rect height="100%" width="100%" fill="rgb(204, 204, 204)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_rhs_dot_consistent_initialization</text>
+</g></svg>
+<svg class="func_g" x="1174.4689924563456" y="696" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/idaklu_solver.py:732:_set_consistent_initialization 0.01% (100 100 0.0009588600000000001 0.022409908000000003)</title>
+    <rect height="100%" width="100%" fill="rgb(197, 197, 197)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_set_consistent_initialization</text>
+</g></svg>
+<svg class="func_g" x="1174.4689924563456" y="720" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/base_solver.py:671:solve 0.01% (100 100 0.0005907660000000001 0.155152954)</title>
+    <rect height="100%" width="100%" fill="rgb(225, 225, 225)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">solve</text>
+</g></svg>
+<svg class="func_g" x="1174.4689924563456" y="744" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:459:_pybamm_solve 0.06% (100 100 0.004413882 7.677625241)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_pybamm_solve</text>
+</g></svg>
+<svg class="func_g" x="1174.4689924563456" y="768" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:441:_solve_in_time_without_rebuild 0.00% (100 100 0.00027119700000000004 7.677896438)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_solve_in_time_without_rebuild</text>
+</g></svg>
+<svg class="func_g" x="1174.4689924563456" y="792" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:347:_catch_errors 0.00% (100 100 0.00011142500000000001 7.678018859000001)</title>
+    <rect height="100%" width="100%" fill="rgb(190, 190, 190)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_catch_errors</text>
+</g></svg>
+<svg class="func_g" x="1174.4689924563456" y="816" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:307:batch_solve 0.01% (100 100 0.00048504200000000004 7.68110195)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">batch_solve</text>
+</g></svg>
+<svg class="func_g" x="1174.4689924563456" y="840" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:239:simulate_batch 0.00% (100 100 0.00030619800000000004 7.681638665)</title>
+    <rect height="100%" width="100%" fill="rgb(197, 197, 197)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">simulate_batch</text>
+</g></svg>
+<svg class="func_g" x="1174.4689924563456" y="864" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:130:evaluate_batch 0.00% (100 100 0.00015334700000000002 7.683020188)</title>
+    <rect height="100%" width="100%" fill="rgb(225, 225, 225)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">evaluate_batch</text>
+</g></svg>
+<svg class="func_g" x="1174.4689924563456" y="888" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:99:evaluate 0.01% (100 100 0.0008511860000000001 7.690499354000001)</title>
+    <rect height="100%" width="100%" fill="rgb(211, 211, 211)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">evaluate</text>
+</g></svg>
+<svg class="func_g" x="1174.4689924563456" y="912" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:77:__call__ 0.00% (100 100 0.00015350500000000002 7.690676655000001)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">__call__</text>
+</g></svg>
+<svg class="func_g" x="1174.4689924563456" y="936" width="1" height="23"><g>
+    <title>&lt;string&gt;:1:&lt;listcomp&gt; 0.00% (100 100 0.000163004 7.690854109000001)</title>
+    <rect height="100%" width="100%" fill="rgb(232, 232, 232)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;listcomp&gt;</text>
+</g></svg>
+<svg class="func_g" x="1174.4689924563456" y="960" width="1" height="23"><g>
+    <title>&lt;string&gt;:1:&lt;module&gt; 0.00% (1 1 0.000132 7.690986109000001)</title>
+    <rect height="100%" width="100%" fill="rgb(190, 190, 190)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;module&gt;</text>
+</g></svg>
+<svg class="func_g" x="1174.4689924563456" y="984" width="1" height="23"><g>
+    <title>~:0:&lt;built-in method builtins.exec&gt; 0.00% (1 1 1.1902e-05 7.6909980110000005)</title>
+    <rect height="100%" width="100%" fill="rgb(197, 197, 197)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;built-in method builtins.exec&gt;</text>
+</g></svg>
+<svg class="func_g" x="1176.2902749887255" y="600" width="1" height="23"><g>
+    <title>~:0:&lt;built-in method casadi._casadi.Function_serialize&gt; 0.16% (8 8 0.012034442000000001 0.012034442000000001)</title>
+    <rect height="100%" width="100%" fill="rgb(182, 182, 255)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;built-in method casadi._casadi.Function_serialize&gt;</text>
+</g></svg>
+<svg class="func_g" x="1176.2902749887255" y="624" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/casadi/casadi.py:21518:serialize 0.16% (8 8 0.012034442000000001 0.012034442000000001)</title>
+    <rect height="100%" width="100%" fill="rgb(232, 232, 232)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">serialize</text>
+</g></svg>
+<svg class="func_g" x="1176.2902749887255" y="648" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/idaklu_solver.py:242:set_up 0.00% (8 8 9.729000000000001e-06 0.012044171000000001)</title>
+    <rect height="100%" width="100%" fill="rgb(232, 232, 232)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">set_up</text>
+</g></svg>
+<svg class="func_g" x="1176.2902749887255" y="672" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/base_solver.py:671:solve 0.00% (1 1 0.00017318500000000002 0.11514666900000001)</title>
+    <rect height="100%" width="100%" fill="rgb(225, 225, 225)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">solve</text>
+</g></svg>
+<svg class="func_g" x="1176.2902749887255" y="696" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:459:_pybamm_solve 0.06% (100 100 0.004413882 7.677625241)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_pybamm_solve</text>
+</g></svg>
+<svg class="func_g" x="1176.2902749887255" y="720" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:441:_solve_in_time_without_rebuild 0.00% (100 100 0.00027119700000000004 7.677896438)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_solve_in_time_without_rebuild</text>
+</g></svg>
+<svg class="func_g" x="1176.2902749887255" y="744" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:347:_catch_errors 0.00% (100 100 0.00011142500000000001 7.678018859000001)</title>
+    <rect height="100%" width="100%" fill="rgb(190, 190, 190)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_catch_errors</text>
+</g></svg>
+<svg class="func_g" x="1176.2902749887255" y="768" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:307:batch_solve 0.01% (100 100 0.00048504200000000004 7.68110195)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">batch_solve</text>
+</g></svg>
+<svg class="func_g" x="1176.2902749887255" y="792" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:239:simulate_batch 0.00% (100 100 0.00030619800000000004 7.681638665)</title>
+    <rect height="100%" width="100%" fill="rgb(197, 197, 197)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">simulate_batch</text>
+</g></svg>
+<svg class="func_g" x="1176.2902749887255" y="816" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:130:evaluate_batch 0.00% (100 100 0.00015334700000000002 7.683020188)</title>
+    <rect height="100%" width="100%" fill="rgb(225, 225, 225)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">evaluate_batch</text>
+</g></svg>
+<svg class="func_g" x="1176.2902749887255" y="840" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:99:evaluate 0.01% (100 100 0.0008511860000000001 7.690499354000001)</title>
+    <rect height="100%" width="100%" fill="rgb(211, 211, 211)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">evaluate</text>
+</g></svg>
+<svg class="func_g" x="1176.2902749887255" y="864" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:77:__call__ 0.00% (100 100 0.00015350500000000002 7.690676655000001)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">__call__</text>
+</g></svg>
+<svg class="func_g" x="1176.2902749887255" y="888" width="1" height="23"><g>
+    <title>&lt;string&gt;:1:&lt;listcomp&gt; 0.00% (100 100 0.000163004 7.690854109000001)</title>
+    <rect height="100%" width="100%" fill="rgb(232, 232, 232)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;listcomp&gt;</text>
+</g></svg>
+<svg class="func_g" x="1176.2902749887255" y="912" width="1" height="23"><g>
+    <title>&lt;string&gt;:1:&lt;module&gt; 0.00% (1 1 0.000132 7.690986109000001)</title>
+    <rect height="100%" width="100%" fill="rgb(190, 190, 190)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;module&gt;</text>
+</g></svg>
+<svg class="func_g" x="1176.2902749887255" y="936" width="1" height="23"><g>
+    <title>~:0:&lt;built-in method builtins.exec&gt; 0.00% (1 1 1.1902e-05 7.6909980110000005)</title>
+    <rect height="100%" width="100%" fill="rgb(197, 197, 197)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;built-in method builtins.exec&gt;</text>
+</g></svg>
+<svg class="func_g" x="1178.8325616508382" y="600" width="2.0743273380794207" height="23"><g>
+    <title>~:0:&lt;built-in method casadi._casadi._vertcat&gt; 0.26% (748 748 0.019704244000000003 0.021775075)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 165, 95)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;built-in method casadi._casadi._vertcat&gt;</text>
+</g></svg>
+<svg class="func_g" x="1178.8325616508382" y="624" width="2.0743273380794207" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/casadi/casadi.py:34143:_vertcat 0.26% (748 748 0.019704244000000003 0.021775075)</title>
+    <rect height="100%" width="100%" fill="rgb(190, 190, 190)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_vertcat</text>
+</g></svg>
+<svg class="func_g" x="1178.8325616508382" y="648" width="2.0743273380794207" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/casadi/casadi.py:512:vertcat 0.01% (748 748 0.00039806300000000004 0.022173138000000002)</title>
+    <rect height="100%" width="100%" fill="rgb(204, 204, 204)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">vertcat</text>
+</g></svg>
+<svg class="func_g" x="1179.3366027708723" y="672" width="1.0960894849909932" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/casadi_algebraic_solver.py:154:_integrate 0.00% (400 400 0.000279183 0.015590394)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_integrate</text>
+</g></svg>
+<svg class="func_g" x="1179.3366027708723" y="696" width="1.0960894849909932" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/base_solver.py:608:calculate_consistent_state 0.04% (100 100 0.003210109 0.086430907)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">calculate_consistent_state</text>
+</g></svg>
+<svg class="func_g" x="1179.3366027708723" y="720" width="1.0960894849909932" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/base_solver.py:581:_set_consistent_initialization 0.01% (100 100 0.000817663 0.12491328600000001)</title>
+    <rect height="100%" width="100%" fill="rgb(190, 190, 190)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_set_consistent_initialization</text>
+</g></svg>
+<svg class="func_g" x="1179.3366027708723" y="744" width="1.0960894849909932" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/idaklu_solver.py:732:_set_consistent_initialization 0.00% (100 100 0.000187557 0.12510084300000002)</title>
+    <rect height="100%" width="100%" fill="rgb(197, 197, 197)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_set_consistent_initialization</text>
+</g></svg>
+<svg class="func_g" x="1179.3366027708723" y="768" width="1.0960894849909932" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/base_solver.py:671:solve 0.01% (100 100 0.0005907660000000001 0.155152954)</title>
+    <rect height="100%" width="100%" fill="rgb(225, 225, 225)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">solve</text>
+</g></svg>
+<svg class="func_g" x="1179.3366027708723" y="792" width="1.0960894849909932" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:459:_pybamm_solve 0.06% (100 100 0.004413882 7.677625241)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_pybamm_solve</text>
+</g></svg>
+<svg class="func_g" x="1179.3366027708723" y="816" width="1.0960894849909932" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:441:_solve_in_time_without_rebuild 0.00% (100 100 0.00027119700000000004 7.677896438)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_solve_in_time_without_rebuild</text>
+</g></svg>
+<svg class="func_g" x="1179.3366027708723" y="840" width="1.0960894849909932" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:347:_catch_errors 0.00% (100 100 0.00011142500000000001 7.678018859000001)</title>
+    <rect height="100%" width="100%" fill="rgb(190, 190, 190)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_catch_errors</text>
+</g></svg>
+<svg class="func_g" x="1179.3366027708723" y="864" width="1.0960894849909932" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:307:batch_solve 0.01% (100 100 0.00048504200000000004 7.68110195)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">batch_solve</text>
+</g></svg>
+<svg class="func_g" x="1179.3366027708723" y="888" width="1.0960894849909932" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:239:simulate_batch 0.00% (100 100 0.00030619800000000004 7.681638665)</title>
+    <rect height="100%" width="100%" fill="rgb(197, 197, 197)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">simulate_batch</text>
+</g></svg>
+<svg class="func_g" x="1179.3366027708723" y="912" width="1.0960894849909932" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:130:evaluate_batch 0.00% (100 100 0.00015334700000000002 7.683020188)</title>
+    <rect height="100%" width="100%" fill="rgb(225, 225, 225)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">evaluate_batch</text>
+</g></svg>
+<svg class="func_g" x="1179.3366027708723" y="936" width="1.0960894849909932" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:99:evaluate 0.01% (100 100 0.0008511860000000001 7.690499354000001)</title>
+    <rect height="100%" width="100%" fill="rgb(211, 211, 211)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">evaluate</text>
+</g></svg>
+<svg class="func_g" x="1179.3366027708723" y="960" width="1.0960894849909932" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:77:__call__ 0.00% (100 100 0.00015350500000000002 7.690676655000001)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">__call__</text>
+</g></svg>
+<svg class="func_g" x="1179.3366027708723" y="984" width="1.0960894849909932" height="23"><g>
+    <title>&lt;string&gt;:1:&lt;listcomp&gt; 0.00% (100 100 0.000163004 7.690854109000001)</title>
+    <rect height="100%" width="100%" fill="rgb(232, 232, 232)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;listcomp&gt;</text>
+</g></svg>
+<svg class="func_g" x="1179.3366027708723" y="1008" width="1.0960894849909932" height="23"><g>
+    <title>&lt;string&gt;:1:&lt;module&gt; 0.00% (1 1 0.000132 7.690986109000001)</title>
+    <rect height="100%" width="100%" fill="rgb(190, 190, 190)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;module&gt;</text>
+</g></svg>
+<svg class="func_g" x="1179.3366027708723" y="1032" width="1.0960894849909932" height="23"><g>
+    <title>~:0:&lt;built-in method builtins.exec&gt; 0.00% (1 1 1.1902e-05 7.6909980110000005)</title>
+    <rect height="100%" width="100%" fill="rgb(197, 197, 197)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;built-in method builtins.exec&gt;</text>
+</g></svg>
+<svg class="func_g" x="1182.0222222676575" y="600" width="1" height="23"><g>
+    <title>~:0:&lt;built-in method casadi._casadi.jacobian&gt; 0.16% (5 5 0.012036206 0.012126676000000001)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 140, 79)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;built-in method casadi._casadi.jacobian&gt;</text>
+</g></svg>
+<svg class="func_g" x="1182.0222222676575" y="624" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/casadi/casadi.py:37205:jacobian 0.16% (5 5 0.012036206 0.012126676000000001)</title>
+    <rect height="100%" width="100%" fill="rgb(232, 232, 232)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">jacobian</text>
+</g></svg>
+<svg class="func_g" x="1182.0222222676575" y="648" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/base_solver.py:1537:process 0.00% (5 5 8.575e-06 0.012135251000000001)</title>
+    <rect height="100%" width="100%" fill="rgb(225, 225, 225)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">process</text>
+</g></svg>
+<svg class="func_g" x="1182.0222222676575" y="672" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/base_solver.py:144:set_up 0.00% (6 6 9.6352e-05 0.06279628100000001)</title>
+    <rect height="100%" width="100%" fill="rgb(190, 190, 190)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">set_up</text>
+</g></svg>
+<svg class="func_g" x="1182.0222222676575" y="696" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/idaklu_solver.py:242:set_up 0.00% (1 1 0.000112732 0.07594254)</title>
+    <rect height="100%" width="100%" fill="rgb(232, 232, 232)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">set_up</text>
+</g></svg>
+<svg class="func_g" x="1182.0222222676575" y="720" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/base_solver.py:671:solve 0.00% (1 1 0.00017318500000000002 0.11514666900000001)</title>
+    <rect height="100%" width="100%" fill="rgb(225, 225, 225)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">solve</text>
+</g></svg>
+<svg class="func_g" x="1182.0222222676575" y="744" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:459:_pybamm_solve 0.06% (100 100 0.004413882 7.677625241)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_pybamm_solve</text>
+</g></svg>
+<svg class="func_g" x="1182.0222222676575" y="768" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:441:_solve_in_time_without_rebuild 0.00% (100 100 0.00027119700000000004 7.677896438)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_solve_in_time_without_rebuild</text>
+</g></svg>
+<svg class="func_g" x="1182.0222222676575" y="792" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:347:_catch_errors 0.00% (100 100 0.00011142500000000001 7.678018859000001)</title>
+    <rect height="100%" width="100%" fill="rgb(190, 190, 190)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_catch_errors</text>
+</g></svg>
+<svg class="func_g" x="1182.0222222676575" y="816" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:307:batch_solve 0.01% (100 100 0.00048504200000000004 7.68110195)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">batch_solve</text>
+</g></svg>
+<svg class="func_g" x="1182.0222222676575" y="840" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:239:simulate_batch 0.00% (100 100 0.00030619800000000004 7.681638665)</title>
+    <rect height="100%" width="100%" fill="rgb(197, 197, 197)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">simulate_batch</text>
+</g></svg>
+<svg class="func_g" x="1182.0222222676575" y="864" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:130:evaluate_batch 0.00% (100 100 0.00015334700000000002 7.683020188)</title>
+    <rect height="100%" width="100%" fill="rgb(225, 225, 225)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">evaluate_batch</text>
+</g></svg>
+<svg class="func_g" x="1182.0222222676575" y="888" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:99:evaluate 0.01% (100 100 0.0008511860000000001 7.690499354000001)</title>
+    <rect height="100%" width="100%" fill="rgb(211, 211, 211)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">evaluate</text>
+</g></svg>
+<svg class="func_g" x="1182.0222222676575" y="912" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:77:__call__ 0.00% (100 100 0.00015350500000000002 7.690676655000001)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">__call__</text>
+</g></svg>
+<svg class="func_g" x="1182.0222222676575" y="936" width="1" height="23"><g>
+    <title>&lt;string&gt;:1:&lt;listcomp&gt; 0.00% (100 100 0.000163004 7.690854109000001)</title>
+    <rect height="100%" width="100%" fill="rgb(232, 232, 232)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;listcomp&gt;</text>
+</g></svg>
+<svg class="func_g" x="1182.0222222676575" y="960" width="1" height="23"><g>
+    <title>&lt;string&gt;:1:&lt;module&gt; 0.00% (1 1 0.000132 7.690986109000001)</title>
+    <rect height="100%" width="100%" fill="rgb(190, 190, 190)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;module&gt;</text>
+</g></svg>
+<svg class="func_g" x="1182.0222222676575" y="984" width="1" height="23"><g>
+    <title>~:0:&lt;built-in method builtins.exec&gt; 0.00% (1 1 1.1902e-05 7.6909980110000005)</title>
+    <rect height="100%" width="100%" fill="rgb(197, 197, 197)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;built-in method builtins.exec&gt;</text>
+</g></svg>
+<svg class="func_g" x="1185.5067795266511" y="600" width="1" height="23"><g>
+    <title>~:0:&lt;built-in method casadi._casadi.new_MX&gt; 0.16% (292 292 0.012154865 0.020613522000000002)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 165, 95)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;built-in method casadi._casadi.new_MX&gt;</text>
+</g></svg>
+<svg class="func_g" x="1185.5067795266511" y="624" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/casadi/casadi.py:16581:__init__ 0.16% (292 292 0.012154865 0.020613522000000002)</title>
+    <rect height="100%" width="100%" fill="rgb(204, 204, 204)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">__init__</text>
+</g></svg>
+<svg class="func_g" x="1185.5067795266511" y="648" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/expression_tree/operations/convert_to_casadi.py:59:_convert 0.01% (291 291 0.000586343 0.020767651)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_convert</text>
+</g></svg>
+<svg class="func_g" x="1185.5067795266511" y="672" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/expression_tree/operations/convert_to_casadi.py:19:convert 0.03% (862 8 0.002493523 0.045568575)</title>
+    <rect height="100%" width="100%" fill="rgb(197, 197, 197)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">convert</text>
+</g></svg>
+<svg class="func_g" x="1188.823883350949" y="600" width="1" height="23"><g>
+    <title>~:0:&lt;built-in method casadi._casadi.transpose&gt; 0.14% (901 901 0.011119491 0.012154413000000001)</title>
+    <rect height="100%" width="100%" fill="rgb(255, 165, 95)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;built-in method casadi._casadi.transpose&gt;</text>
+</g></svg>
+<svg class="func_g" x="1188.823883350949" y="624" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/casadi/casadi.py:10891:T 0.14% (901 901 0.011119491 0.012154413000000001)</title>
+    <rect height="100%" width="100%" fill="rgb(211, 211, 211)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">T</text>
+</g></svg>
+<svg class="func_g" x="1188.823883350949" y="648" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/casadi/casadi.py:11052:toarray 0.00% (901 901 0.000382813 0.012537226)</title>
+    <rect height="100%" width="100%" fill="rgb(204, 204, 204)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">toarray</text>
+</g></svg>
+<svg class="func_g" x="1188.823883350949" y="672" width="1" height="23"><g>
+    <title>~:0:&lt;built-in method casadi._casadi.DM_full&gt; 0.07% (901 901 0.005023638 0.042494976000000004)</title>
+    <rect height="100%" width="100%" fill="rgb(204, 204, 204)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;built-in method casadi._casadi.DM_full&gt;</text>
+</g></svg>
+<svg class="func_g" x="1188.823883350949" y="696" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/casadi/casadi.py:10918:full 0.02% (901 901 0.001830529 0.045569154)</title>
+    <rect height="100%" width="100%" fill="rgb(232, 232, 232)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">full</text>
+</g></svg>
+<svg class="func_g" x="1190.5730178920314" y="600" width="1.587476717254476" height="23"><g>
+    <title>~:0:&lt;built-in method numpy.array&gt; 0.22% (2259 2259 0.016583879000000003 0.016583879000000003)</title>
+    <rect height="100%" width="100%" fill="rgb(182, 182, 255)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;built-in method numpy.array&gt;</text>
+</g></svg>
+<svg class="func_g" x="1190.5730178920314" y="624" width="1.4321655081843012" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/casadi/casadi.py:11052:toarray 0.20% (901 901 0.015588445000000001 0.015588445000000001)</title>
+    <rect height="100%" width="100%" fill="rgb(204, 204, 204)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">toarray</text>
+</g></svg>
+<svg class="func_g" x="1190.5730178920314" y="648" width="1.4321655081843012" height="23"><g>
+    <title>~:0:&lt;built-in method casadi._casadi.DM_full&gt; 0.07% (901 901 0.005023638 0.042494976000000004)</title>
+    <rect height="100%" width="100%" fill="rgb(204, 204, 204)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;built-in method casadi._casadi.DM_full&gt;</text>
+</g></svg>
+<svg class="func_g" x="1190.5730178920314" y="672" width="1.4321655081843008" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/casadi/casadi.py:10918:full 0.02% (901 901 0.001830529 0.045569154)</title>
+    <rect height="100%" width="100%" fill="rgb(232, 232, 232)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">full</text>
+</g></svg>
+<svg class="func_g" x="1193.7558306324815" y="600" width="1" height="23"><g>
+    <title>~:0:&lt;built-in method pybammsolvers.idaklu.create_casadi_solver_group&gt; 0.16% (1 1 0.011954022 0.011954022)</title>
+    <rect height="100%" width="100%" fill="rgb(198, 198, 255)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;built-in method pybammsolvers.idaklu.create_casadi_solver_group&gt;</text>
+</g></svg>
+<svg class="func_g" x="1193.7558306324815" y="624" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/idaklu_solver.py:242:set_up 0.16% (1 1 0.011954022 0.011954022)</title>
+    <rect height="100%" width="100%" fill="rgb(232, 232, 232)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">set_up</text>
+</g></svg>
+<svg class="func_g" x="1193.7558306324815" y="648" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/base_solver.py:671:solve 0.00% (1 1 0.00017318500000000002 0.11514666900000001)</title>
+    <rect height="100%" width="100%" fill="rgb(225, 225, 225)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">solve</text>
+</g></svg>
+<svg class="func_g" x="1193.7558306324815" y="672" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:459:_pybamm_solve 0.06% (100 100 0.004413882 7.677625241)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_pybamm_solve</text>
+</g></svg>
+<svg class="func_g" x="1193.7558306324815" y="696" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:441:_solve_in_time_without_rebuild 0.00% (100 100 0.00027119700000000004 7.677896438)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_solve_in_time_without_rebuild</text>
+</g></svg>
+<svg class="func_g" x="1193.7558306324815" y="720" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:347:_catch_errors 0.00% (100 100 0.00011142500000000001 7.678018859000001)</title>
+    <rect height="100%" width="100%" fill="rgb(190, 190, 190)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_catch_errors</text>
+</g></svg>
+<svg class="func_g" x="1193.7558306324815" y="744" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:307:batch_solve 0.01% (100 100 0.00048504200000000004 7.68110195)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">batch_solve</text>
+</g></svg>
+<svg class="func_g" x="1193.7558306324815" y="768" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:239:simulate_batch 0.00% (100 100 0.00030619800000000004 7.681638665)</title>
+    <rect height="100%" width="100%" fill="rgb(197, 197, 197)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">simulate_batch</text>
+</g></svg>
+<svg class="func_g" x="1193.7558306324815" y="792" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:130:evaluate_batch 0.00% (100 100 0.00015334700000000002 7.683020188)</title>
+    <rect height="100%" width="100%" fill="rgb(225, 225, 225)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">evaluate_batch</text>
+</g></svg>
+<svg class="func_g" x="1193.7558306324815" y="816" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:99:evaluate 0.01% (100 100 0.0008511860000000001 7.690499354000001)</title>
+    <rect height="100%" width="100%" fill="rgb(211, 211, 211)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">evaluate</text>
+</g></svg>
+<svg class="func_g" x="1193.7558306324815" y="840" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:77:__call__ 0.00% (100 100 0.00015350500000000002 7.690676655000001)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">__call__</text>
+</g></svg>
+<svg class="func_g" x="1193.7558306324815" y="864" width="1" height="23"><g>
+    <title>&lt;string&gt;:1:&lt;listcomp&gt; 0.00% (100 100 0.000163004 7.690854109000001)</title>
+    <rect height="100%" width="100%" fill="rgb(232, 232, 232)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;listcomp&gt;</text>
+</g></svg>
+<svg class="func_g" x="1193.7558306324815" y="888" width="1" height="23"><g>
+    <title>&lt;string&gt;:1:&lt;module&gt; 0.00% (1 1 0.000132 7.690986109000001)</title>
+    <rect height="100%" width="100%" fill="rgb(190, 190, 190)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;module&gt;</text>
+</g></svg>
+<svg class="func_g" x="1193.7558306324815" y="912" width="1" height="23"><g>
+    <title>~:0:&lt;built-in method builtins.exec&gt; 0.00% (1 1 1.1902e-05 7.6909980110000005)</title>
+    <rect height="100%" width="100%" fill="rgb(197, 197, 197)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;built-in method builtins.exec&gt;</text>
+</g></svg>
+<svg class="func_g" x="1195.6209403334478" y="600" width="1" height="23"><g>
+    <title>~:0:&lt;built-in method pybammsolvers.idaklu.generate_function&gt; 0.16% (8 8 0.012091137 0.012091137)</title>
+    <rect height="100%" width="100%" fill="rgb(214, 214, 255)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;built-in method pybammsolvers.idaklu.generate_function&gt;</text>
+</g></svg>
+<svg class="func_g" x="1195.6209403334478" y="624" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/idaklu_solver.py:242:set_up 0.16% (8 8 0.012091137 0.012091137)</title>
+    <rect height="100%" width="100%" fill="rgb(232, 232, 232)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">set_up</text>
+</g></svg>
+<svg class="func_g" x="1195.6209403334478" y="648" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/env/lib/python3.10/site-packages/pybamm/solvers/base_solver.py:671:solve 0.00% (1 1 0.00017318500000000002 0.11514666900000001)</title>
+    <rect height="100%" width="100%" fill="rgb(225, 225, 225)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">solve</text>
+</g></svg>
+<svg class="func_g" x="1195.6209403334478" y="672" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:459:_pybamm_solve 0.06% (100 100 0.004413882 7.677625241)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_pybamm_solve</text>
+</g></svg>
+<svg class="func_g" x="1195.6209403334478" y="696" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:441:_solve_in_time_without_rebuild 0.00% (100 100 0.00027119700000000004 7.677896438)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_solve_in_time_without_rebuild</text>
+</g></svg>
+<svg class="func_g" x="1195.6209403334478" y="720" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:347:_catch_errors 0.00% (100 100 0.00011142500000000001 7.678018859000001)</title>
+    <rect height="100%" width="100%" fill="rgb(190, 190, 190)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">_catch_errors</text>
+</g></svg>
+<svg class="func_g" x="1195.6209403334478" y="744" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/pybamm/simulator.py:307:batch_solve 0.01% (100 100 0.00048504200000000004 7.68110195)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">batch_solve</text>
+</g></svg>
+<svg class="func_g" x="1195.6209403334478" y="768" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:239:simulate_batch 0.00% (100 100 0.00030619800000000004 7.681638665)</title>
+    <rect height="100%" width="100%" fill="rgb(197, 197, 197)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">simulate_batch</text>
+</g></svg>
+<svg class="func_g" x="1195.6209403334478" y="792" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:130:evaluate_batch 0.00% (100 100 0.00015334700000000002 7.683020188)</title>
+    <rect height="100%" width="100%" fill="rgb(225, 225, 225)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">evaluate_batch</text>
+</g></svg>
+<svg class="func_g" x="1195.6209403334478" y="816" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:99:evaluate 0.01% (100 100 0.0008511860000000001 7.690499354000001)</title>
+    <rect height="100%" width="100%" fill="rgb(211, 211, 211)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">evaluate</text>
+</g></svg>
+<svg class="func_g" x="1195.6209403334478" y="840" width="1" height="23"><g>
+    <title>/home/mrobins/git/PyBOP/pybop/problems/problem.py:77:__call__ 0.00% (100 100 0.00015350500000000002 7.690676655000001)</title>
+    <rect height="100%" width="100%" fill="rgb(218, 218, 218)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">__call__</text>
+</g></svg>
+<svg class="func_g" x="1195.6209403334478" y="864" width="1" height="23"><g>
+    <title>&lt;string&gt;:1:&lt;listcomp&gt; 0.00% (100 100 0.000163004 7.690854109000001)</title>
+    <rect height="100%" width="100%" fill="rgb(232, 232, 232)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;listcomp&gt;</text>
+</g></svg>
+<svg class="func_g" x="1195.6209403334478" y="888" width="1" height="23"><g>
+    <title>&lt;string&gt;:1:&lt;module&gt; 0.00% (1 1 0.000132 7.690986109000001)</title>
+    <rect height="100%" width="100%" fill="rgb(190, 190, 190)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;module&gt;</text>
+</g></svg>
+<svg class="func_g" x="1195.6209403334478" y="912" width="1" height="23"><g>
+    <title>~:0:&lt;built-in method builtins.exec&gt; 0.00% (1 1 1.1902e-05 7.6909980110000005)</title>
+    <rect height="100%" width="100%" fill="rgb(197, 197, 197)" rx="2" ry="2" />
+    <text alignment-baseline="central" x="4.0" y="12.0" font-size="12px" fill="rgb(0,0,0)">&lt;built-in method builtins.exec&gt;</text>
+</g></svg>
+</svg>
