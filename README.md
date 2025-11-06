@@ -114,5 +114,5 @@ PyBOP is released under the [BSD 3-Clause License](https://github.com/pybop-team
 We would like to thank all contributors to PyBOP. Contributions are welcome! See [CONTRIBUTING.md](https://github.com/pybop-team/PyBOP/blob/develop/CONTRIBUTING.md) for ways to get started.
 
 The original PyBOP developers were supported by research funding from the [Faraday Institution](https://faraday.ac.uk),
-[UK Research and Innovation](https://www.ukri.org),
+[UK Research and Innovation](https://www.ukri.org/),
 and [Horizon Europe IntelLiGent Consortium](https://heuintelligent.eu).
