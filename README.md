@@ -30,7 +30,7 @@ To understand how to update your use of PyBOP, please take a look at the example
     <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/PyBOP-high-level.svg" alt="pybop_arch.svg" width="700" />
 </p>
 
-## Installation
+## 💻 Installation
 
 Within your virtual environment, install PyBOP:
 
@@ -53,7 +53,7 @@ pip install pybop==v24.3
 To check that PyBOP is installed correctly, run one of the examples in the following section. For a development installation, see the [Contribution Guide](https://github.com/pybop-team/PyBOP/blob/develop/CONTRIBUTING.md#Installation). More installation information is available in our [documentation](https://pybop-docs.readthedocs.io/en/latest/installation.html) and the [extended installation instructions](https://docs.pybamm.org/en/latest/source/user_guide/installation/gnu-linux-mac.html) for PyBaMM.
 
 
-## Use Cases
+## 💡 Use Cases
 
 PyBOP has two intended uses:
 
@@ -95,7 +95,7 @@ In addition to the models available in PyBaMM, PyBOP currently hosts some groupe
 purpose-built for parameter esimation and can be found under [models](https://github.com/pybop-team/PyBOP/tree/develop/pybop/models).
 
 
-## Code of Conduct
+## 👉 Code of Conduct
 
 PyBOP aims to foster a broad consortium of developers and users, building on and learning from the success of the [PyBaMM](https://pybamm.org/) community. Our values are:
 
@@ -105,47 +105,14 @@ PyBOP aims to foster a broad consortium of developers and users, building on and
 
 -   User-friendliness (putting user requirements first via user-assistance & workflows)
 
-## License
+## 📃 License
 
 PyBOP is released under the [BSD 3-Clause License](https://github.com/pybop-team/PyBOP/blob/develop/LICENSE).
 
-## Contributors ✨
+## 🌟 Contributing
 
-Thanks goes to these wonderful people:
+We would like to thank all contributors to PyBOP. Contributions are welcome! See [CONTRIBUTING.md](https://github.com/pybop-team/PyBOP/blob/develop/CONTRIBUTING.md) for ways to get started.
 
-<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-<!-- prettier-ignore-start -->
-<!-- markdownlint-disable -->
-<table>
-  <tbody>
-    <tr>
-      <td align="center" valign="top" width="14.28%"><a href="http://bradyplanden.github.io"><img src="https://avatars.githubusercontent.com/u/55357039?v=4?s=100" width="100px;" alt="Brady Planden"/><br /><sub><b>Brady Planden</b></sub></a><br /><a href="#infra-BradyPlanden" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="https://github.com/pybop-team/PyBOP/commits?author=BradyPlanden" title="Tests">⚠️</a> <a href="https://github.com/pybop-team/PyBOP/commits?author=BradyPlanden" title="Code">💻</a> <a href="#example-BradyPlanden" title="Examples">💡</a> <a href="https://github.com/pybop-team/PyBOP/pulls?q=is%3Apr+reviewed-by%3ABradyPlanden" title="Reviewed Pull Requests">👀</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/NicolaCourtier"><img src="https://avatars.githubusercontent.com/u/45851982?v=4?s=100" width="100px;" alt="NicolaCourtier"/><br /><sub><b>NicolaCourtier</b></sub></a><br /><a href="https://github.com/pybop-team/PyBOP/commits?author=NicolaCourtier" title="Code">💻</a> <a href="https://github.com/pybop-team/PyBOP/pulls?q=is%3Apr+reviewed-by%3ANicolaCourtier" title="Reviewed Pull Requests">👀</a> <a href="#example-NicolaCourtier" title="Examples">💡</a> <a href="https://github.com/pybop-team/PyBOP/commits?author=NicolaCourtier" title="Tests">⚠️</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="http://howey.eng.ox.ac.uk"><img src="https://avatars.githubusercontent.com/u/2247552?v=4?s=100" width="100px;" alt="David Howey"/><br /><sub><b>David Howey</b></sub></a><br /><a href="#ideas-davidhowey" title="Ideas, Planning, & Feedback">🤔</a> <a href="#mentoring-davidhowey" title="Mentoring">🧑‍🏫</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="http://www.rse.ox.ac.uk"><img src="https://avatars.githubusercontent.com/u/1148404?v=4?s=100" width="100px;" alt="Martin Robinson"/><br /><sub><b>Martin Robinson</b></sub></a><br /><a href="#ideas-martinjrobins" title="Ideas, Planning, & Feedback">🤔</a> <a href="#mentoring-martinjrobins" title="Mentoring">🧑‍🏫</a> <a href="https://github.com/pybop-team/PyBOP/pulls?q=is%3Apr+reviewed-by%3Amartinjrobins" title="Reviewed Pull Requests">👀</a> <a href="https://github.com/pybop-team/PyBOP/commits?author=martinjrobins" title="Code">💻</a> <a href="https://github.com/pybop-team/PyBOP/commits?author=martinjrobins" title="Tests">⚠️</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://www.brosaplanella.xyz"><img src="https://avatars.githubusercontent.com/u/28443643?v=4?s=100" width="100px;" alt="Ferran Brosa Planella"/><br /><sub><b>Ferran Brosa Planella</b></sub></a><br /><a href="https://github.com/pybop-team/PyBOP/pulls?q=is%3Apr+reviewed-by%3Abrosaplanella" title="Reviewed Pull Requests">👀</a> <a href="https://github.com/pybop-team/PyBOP/commits?author=brosaplanella" title="Code">💻</a> <a href="#example-brosaplanella" title="Examples">💡</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/agriyakhetarpal"><img src="https://avatars.githubusercontent.com/u/74401230?v=4?s=100" width="100px;" alt="Agriya Khetarpal"/><br /><sub><b>Agriya Khetarpal</b></sub></a><br /><a href="https://github.com/pybop-team/PyBOP/commits?author=agriyakhetarpal" title="Code">💻</a> <a href="#infra-agriyakhetarpal" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="https://github.com/pybop-team/PyBOP/pulls?q=is%3Apr+reviewed-by%3Aagriyakhetarpal" title="Reviewed Pull Requests">👀</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://faraday.ac.uk"><img src="assets/faraday-logo.jpg?s=100" width="100px;" alt="Faraday Institution"/><br /><sub><b>Faraday Institution</b></sub></a><br /><a href="#financial-FaradayInstitution" title="Financial">💵</a></td>
-    </tr>
-    <tr>
-      <td align="center" valign="top" width="14.28%"><a href="https://www.ukri.org/"><img src="assets/UKRI.png?s=100" width="100px;" alt="UK Research and Innovation"/><br /><sub><b>UK Research and Innovation</b></sub></a><br /><a href="#financial-UKRI" title="Financial">💵</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://heuintelligent.eu/"><img src="assets/logo-farger.svg?s=100" width="100px;" alt="Horizon Europe IntelLiGent Consortium"/><br /><sub><b>Horizon Europe IntelLiGent Consortium</b></sub></a><br /><a href="#financial-IntelLiGent" title="Financial">💵</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://www.linkedin.com/in/muhammedsogut/"><img src="https://avatars.githubusercontent.com/u/34511375?v=4?s=100" width="100px;" alt="Muhammed Nedim Sogut"/><br /><sub><b>Muhammed Nedim Sogut</b></sub></a><br /><a href="https://github.com/pybop-team/PyBOP/commits?author=muhammedsogut" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/MarkBlyth"><img src="https://avatars.githubusercontent.com/u/20501619?v=4?s=100" width="100px;" alt="MarkBlyth"/><br /><sub><b>MarkBlyth</b></sub></a><br /><a href="https://github.com/pybop-team/PyBOP/commits?author=MarkBlyth" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/f-g-r-i-m-m"><img src="https://avatars.githubusercontent.com/u/137511310?v=4?s=100" width="100px;" alt="f-g-r-i-m-m"/><br /><sub><b>f-g-r-i-m-m</b></sub></a><br /><a href="#example-f-g-r-i-m-m" title="Examples">💡</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Dibyendu-IITKGP"><img src="https://avatars.githubusercontent.com/u/32595915?v=4?s=100" width="100px;" alt="Dibyendu-IITKGP"/><br /><sub><b>Dibyendu-IITKGP</b></sub></a><br /><a href="#example-Dibyendu-IITKGP" title="Examples">💡</a> <a href="https://github.com/pybop-team/PyBOP/commits?author=Dibyendu-IITKGP" title="Tests">⚠️</a> <a href="https://github.com/pybop-team/PyBOP/commits?author=Dibyendu-IITKGP" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://eng.ox.ac.uk/people/noel-hallemans/"><img src="https://avatars.githubusercontent.com/u/90609505?v=4?s=100" width="100px;" alt="Noël Hallemans"/><br /><sub><b>Noël Hallemans</b></sub></a><br /><a href="#example-noelhallemans" title="Examples">💡</a></td>
-    </tr>
-    <tr>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/pipliggins"><img src="https://avatars.githubusercontent.com/u/55396775?v=4?s=100" width="100px;" alt="Pip Liggins"/><br /><sub><b>Pip Liggins</b></sub></a><br /><a href="https://github.com/pybop-team/PyBOP/commits?author=pipliggins" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/vpratz"><img src="https://avatars.githubusercontent.com/u/112951103?v=4?s=100" width="100px;" alt="Valentin Pratz"/><br /><sub><b>Valentin Pratz</b></sub></a><br /><a href="https://github.com/pybop-team/PyBOP/commits?author=vpratz" title="Examples">💡</a></td>
-    </tr>
-  </tbody>
-</table>
-
-<!-- markdownlint-restore -->
-<!-- prettier-ignore-end -->
-
-<!-- ALL-CONTRIBUTORS-LIST:END -->
-
-This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specifications. Contributions of any kind are welcome! See `CONTRIBUTING.md` for ways to get started.
+The original PyBOP developers were supported by research funding from the [Faraday Institution](https://faraday.ac.uk),
+[UK Research and Innovation](https://www.ukri.org),
+and [Horizon Europe IntelLiGent Consortium](https://heuintelligent.eu).
