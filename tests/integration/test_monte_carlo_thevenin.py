@@ -13,7 +13,6 @@ from pybop import (
     RaoBlackwellACMC,
     RelativisticMCMC,
     SliceDoublingMCMC,
-    SliceRankShrinkingMCMC,
     SliceStepoutMCMC,
 )
 
@@ -108,7 +107,6 @@ class TestSamplingThevenin:
     def map_estimate(self, posterior):
         options = pybop.PintsOptions(
             max_iterations=80,
-            sigma=[3e-4, 3e-4],
             verbose=True,
         )
         optim = pybop.CMAES(posterior, options=options)
@@ -138,14 +136,11 @@ class TestSamplingThevenin:
             n_chains=2,
             warm_up_iterations=50,
             cov=[6e-3, 6e-3],
-            max_iterations=500 if sampler is SliceRankShrinkingMCMC else 350,
+            max_iterations=350,
         )
 
         # construct and run
         sampler = sampler(log_pdf=posterior, options=options)
-        if isinstance(sampler, SliceRankShrinkingMCMC):
-            for i, _j in enumerate(sampler._samplers):
-                sampler._samplers[i].set_hyper_parameters([1e-3])
         chains = sampler.run()
 
         # Test PosteriorSummary

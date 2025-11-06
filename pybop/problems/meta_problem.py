@@ -1,6 +1,7 @@
 import numpy as np
 
 from pybop import Problem
+from pybop.costs.evaluation import Evaluation
 from pybop.parameters.parameter import Inputs, Parameters
 
 
@@ -53,26 +54,46 @@ class MetaProblem(Problem):
             self.weights = -self.weights
             self._minimising = False
 
-    def single_call(
+    def evaluate_batch(
         self,
-        inputs: Inputs,
-        calculate_grad: bool,
-    ) -> float | tuple[float, np.ndarray]:
-        """Evaluate the problem and (optionally) the gradient for a single set of inputs."""
-        e = np.empty_like(self.problems)
-        de = np.empty((len(self.parameters), len(self.problems)))
+        inputs: list[Inputs],
+        calculate_sensitivities: bool,
+    ) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
+        """
+        Evaluate each problem for each set of inputs and return the cost values and (optionally)
+        the sensitivities with respect to each input parameter.
+
+        Parameters
+        ----------
+        inputs : list[Inputs]
+            A list of input parameters.
+        calculate_sensitivities : bool
+            Whether to also return the sensitivities (default: False).
+
+        Returns
+        -------
+        Evaluation
+            Cost values of len(inputs) and (optionally) the gradient of the cost with respect to
+            each input parameter with shape (len(inputs), len(parameters)).
+        """
+        n_inputs = len(inputs)
+        n_problems = len(self.problems)
+        e = np.empty((n_inputs, n_problems))
+        de = np.empty((n_inputs, len(self.parameters), n_problems))
 
         for i, problem in enumerate(self.problems):
-            if calculate_grad:
-                e[i], de[:, i] = problem.single_call(
-                    inputs, calculate_grad=calculate_grad
-                )
+            if calculate_sensitivities:
+                e[:, i], de[:, :, i] = problem.evaluate_batch(
+                    inputs, calculate_sensitivities=calculate_sensitivities
+                ).get_values()
             else:
-                e[i] = problem.single_call(inputs, calculate_grad=calculate_grad)
+                e[:, i] = problem.evaluate_batch(
+                    inputs, calculate_sensitivities=calculate_sensitivities
+                ).values
 
         e = np.dot(e, self.weights)
-        if calculate_grad:
+        if calculate_sensitivities:
             de = np.dot(de, self.weights)
-            return e, de
+            return Evaluation(values=e, sensitivities=de)
 
-        return e
+        return Evaluation(values=e)

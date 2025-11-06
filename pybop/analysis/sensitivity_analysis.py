@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING
 
-import numpy as np
 from SALib.analyze import sobol
 from SALib.sample.sobol import sample
 
@@ -45,6 +44,6 @@ def sensitivity_analysis(
 
     # Create samples, compute cost
     param_values = sample(salib_dict, n_samples)
-    costs = np.asarray(problem(param_values))
+    costs = problem.evaluate(param_values).values
 
     return sobol.analyze(salib_dict, costs, calc_second_order=calc_second_order)

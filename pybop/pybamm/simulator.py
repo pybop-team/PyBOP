@@ -11,7 +11,9 @@ if TYPE_CHECKING:
 from pybop._dataset import Dataset
 from pybop._utils import FailedSolution, RecommendedSolver
 from pybop.parameters.parameter import Parameter, Parameters
-from pybop.simulators.base_simulator import BaseSimulator
+from pybop.simulators.base_simulator import (
+    BaseSimulator,
+)
 
 
 class Simulator(BaseSimulator):
@@ -274,62 +276,63 @@ class Simulator(BaseSimulator):
             else:
                 self._solve = self._solve_in_time_with_rebuild
 
-    def simulate(
-        self,
-        inputs: "Inputs | None" = None,
-        calculate_sensitivities: bool = False,
-    ) -> (
-        dict[str, np.ndarray]
-        | tuple[dict[str, np.ndarray], dict[str, dict[str, np.ndarray]]]
-    ):
-        sol = self.solve(inputs=inputs, calculate_sensitivities=calculate_sensitivities)
-
-        if calculate_sensitivities:
-            return (
-                {s: sol[s].data for s in self.output_variables},
-                {
-                    p: {
-                        s: np.asarray(sol[s].sensitivities[p])
-                        for s in self.output_variables
-                    }
-                    for p in self.parameters.keys()
-                },
-            )
-
-        return {s: sol[s].data for s in self.output_variables}
-
     def solve(
         self,
-        inputs: "Inputs | None" = None,
+        inputs: "Inputs | list[Inputs] | None" = None,
         calculate_sensitivities: bool = False,
-    ) -> list[pybamm.Solution | FailedSolution]:
+    ) -> pybamm.Solution | FailedSolution | list[pybamm.Solution | FailedSolution]:
         """
-        Run the simulation using the built model and solver.
+        Run the simulation using the built model and solver for one or more sets of
+        inputs and return the solution object(s).
 
         Parameters
-        ---------
+        ----------
+        inputs : Inputs | list[Inputs], optional
+            Input parameters (default: None).
         calculate_sensitivities : bool
-            Whether to calculate sensitivities or not.
+            Whether to also return the sensitivities (default: False).
 
         Returns
         -------
-        list[pybamm.Solution | pybop.FailedSolution] | pybamm.Solution | pybop.FailedSolution
-            A list of solution objects or one solution object.
+        pybamm.Solution | pybop.FailedSolution | list[pybamm.Solution | pybop.FailedSolution]
+            The solution object(s).
         """
         # Convert and standardise inputs as a list of candidate dictionaries
         inputs = inputs or {}
-        if isinstance(inputs, list):
-            inputs_list = inputs
-            return_as_list = True
-        else:
-            inputs_list = [inputs]
-            return_as_list = False
+        if not isinstance(inputs, list):
+            return self.batch_solve([inputs], calculate_sensitivities)[0]
+
+        return self.batch_solve(inputs, calculate_sensitivities)
+
+    def batch_solve(
+        self,
+        inputs: "list[Inputs]",
+        calculate_sensitivities: bool = False,
+    ) -> list[pybamm.Solution | FailedSolution]:
+        """
+        Run the simulation using the built model and solver for each set of inputs
+        and return dict-like simulation results.
+
+        Parameters
+        ----------
+        inputs : list[Inputs]
+            A list of input parameters.
+        calculate_sensitivities : bool
+            Whether to also return the sensitivities (default: False).
+
+        Returns
+        -------
+        list[pybamm.Solution | pybop.FailedSolution]
+            A list of len(inputs) containing the solution objects.
+        """
+        if inputs == []:
+            return []
 
         # Check for expected input parameters
-        if set(inputs_list[0].keys()) != set(self._input_parameter_names):
+        if set(inputs[0].keys()) != set(self._input_parameter_names):
             raise ValueError(
                 "The inputs do not contain the expected parameters. "
-                f"The inputs keys are {list(inputs_list[0].keys())}, "
+                f"The inputs keys are {list(inputs[0].keys())}, "
                 f"but the expected inputs are {self._input_parameter_names}."
             )
 
@@ -339,40 +342,63 @@ class Simulator(BaseSimulator):
         self._calculate_sensitivities = calculate_sensitivities
 
         # The underlying solve method is one of four methods set during initialisation
-        solutions = self._process_solutions(self._catch_errors(inputs_list))
+        return self._process_solutions(self._catch_errors(inputs))
 
-        if return_as_list:
-            return solutions
-        return solutions[0]
-
-    def _catch_errors(self, inputs_list: "list[Inputs]"):
+    def _catch_errors(self, inputs: "list[Inputs]"):
         if not self.debug_mode:
-            with warnings.catch_warnings():
-                for pattern in self.warning_patterns:
-                    warnings.filterwarnings(
-                        "error", category=UserWarning, message=pattern
-                    )
-
-                try:
-                    return self._solve(inputs_list)
-                except (SolverError, ZeroDivisionError, RuntimeError, ValueError) as e:
-                    if isinstance(e, ValueError) and str(e) not in self.exception:
-                        raise  # Raise the error if it doesn't match the expected list
-                    return [
-                        FailedSolution(
-                            self.output_variables, self._input_parameter_names
+            try:
+                with warnings.catch_warnings():
+                    for pattern in self.warning_patterns:
+                        warnings.filterwarnings(
+                            "error", category=UserWarning, message=pattern
                         )
-                    ]
-                except (UserWarning, Exception) as e:
-                    if self.verbose:
-                        print(f"Ignoring this sample due to: {e}")
-                    return [
-                        FailedSolution(
-                            self.output_variables, self._input_parameter_names
-                        )
-                    ]
+                    return self._solve(inputs)
 
-        return self._solve(inputs_list)
+            except (
+                SolverError,
+                ZeroDivisionError,
+                RuntimeError,
+                ValueError,
+                UserWarning,
+                Exception,
+            ):
+                # Try separately
+                with warnings.catch_warnings():
+                    for pattern in self.warning_patterns:
+                        warnings.filterwarnings(
+                            "error", category=UserWarning, message=pattern
+                        )
+                    solutions = []
+                    for x in inputs:
+                        try:
+                            solutions += self._solve([x])
+                        except (
+                            SolverError,
+                            ZeroDivisionError,
+                            RuntimeError,
+                            ValueError,
+                        ) as e:
+                            if (
+                                isinstance(e, ValueError)
+                                and str(e) not in self.exception
+                            ):
+                                raise  # Raise the error if it doesn't match the expected list
+                            solutions.append(
+                                FailedSolution(
+                                    self.output_variables, self._input_parameter_names
+                                )
+                            )
+                        except (UserWarning, Exception) as e:
+                            if self.verbose:
+                                print(f"Ignoring this sample due to: {e}")
+                            solutions.append(
+                                FailedSolution(
+                                    self.output_variables, self._input_parameter_names
+                                )
+                            )
+                    return solutions
+
+        return self._solve(inputs)
 
     """ ______ ______ ATTRIBUTES FOR SOLVING IN TIME, WITHOUT AN EXPERIMENT ______ ______  """
 
@@ -417,8 +443,10 @@ class Simulator(BaseSimulator):
     ) -> list[pybamm.Solution]:
         """Solve in time without rebuilding the PyBaMM model."""
         if len(inputs) == 1:
-            return [self._pybamm_solve(inputs=inputs[0])]
-        return self._pybamm_solve(inputs=inputs)
+            solutions = [self._pybamm_solve(inputs=inputs[0])]
+        else:
+            solutions = self._pybamm_solve(inputs=inputs)
+        return solutions
 
     def _solve_in_time_with_rebuild(
         self, inputs: "list[Inputs]"
@@ -495,7 +523,6 @@ class Simulator(BaseSimulator):
                 processed_solutions.append(failed_solution)
             else:
                 processed_solutions.append(solution)
-
         return processed_solutions
 
     @property

@@ -37,7 +37,7 @@ class TestParameter:
     def test_parameter_repr(self, parameter):
         assert (
             repr(parameter)
-            == "Parameter: Prior: Gaussian, loc: 0.6, scale: 0.02 \n Bounds: [0.375, 0.7] \n Value: 0.6"
+            == "Parameter: Prior: Gaussian, loc: 0.6, scale: 0.02 \n Bounds: [0.375, 0.7]"
         )
 
     def test_parameter_sampling(self, parameter):
@@ -45,13 +45,9 @@ class TestParameter:
         assert (samples >= 0.375).all() and (samples <= 0.7).all()
 
     def test_parameter_update(self, parameter):
-        # Test value update
-        parameter.update_value(value=0.534)
-        assert parameter.current_value == 0.534
-
         # Test initial value update
         parameter.update_initial_value(value=0.654)
-        assert parameter.current_value == 0.654
+        assert parameter.initial_value == 0.654
 
     def test_parameter_margin(self, parameter):
         assert parameter._margin == 1e-4
@@ -252,5 +248,5 @@ class TestParameters:
         params = pybop.Parameters({name: parameter})
         assert (
             repr(params)
-            == "Parameters(1):\n Negative electrode active material volume fraction: prior= Gaussian, loc: 0.6, scale: 0.02, value=0.6, bounds=[0.375, 0.7]"
+            == "Parameters(1):\n Negative electrode active material volume fraction: prior= Gaussian, loc: 0.6, scale: 0.02, bounds=[0.375, 0.7]"
         )

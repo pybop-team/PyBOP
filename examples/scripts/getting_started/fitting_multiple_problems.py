@@ -55,7 +55,6 @@ problem = pybop.MetaProblem(*problems)
 # Generate the cost function and optimisation class
 options = pybop.PintsOptions(
     verbose=True,
-    sigma=0.05,
     max_unchanged_iterations=20,
     max_iterations=100,
 )

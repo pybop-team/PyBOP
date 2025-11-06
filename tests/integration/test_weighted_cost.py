@@ -114,7 +114,6 @@ class TestWeightedCost:
     def test_fitting_costs(self, weighted_fitting_problem):
         x0 = weighted_fitting_problem.parameters.get_initial_values()
         options = pybop.PintsOptions(
-            sigma=0.03,
             max_iterations=250,
             max_unchanged_iterations=35,
         )

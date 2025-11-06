@@ -201,7 +201,7 @@ class TestModelAndExperimentChanges:
         # Test with a gradient and non-gradient-based optimiser
         for optimiser in [pybop.SNES, pybop.IRPropMin]:
             options = pybop.PintsOptions(
-                sigma=0.05, max_iterations=100, max_unchanged_iterations=30
+                max_iterations=100, max_unchanged_iterations=30
             )
             optim = optimiser(problem, options=options)
             results = optim.run()
