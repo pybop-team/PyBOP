@@ -74,7 +74,7 @@ Please take inspiration from the following journal articles which show how PyBOP
 Explore our [example notebooks](https://github.com/pybop-team/PyBOP/blob/develop/examples) for hands-on demonstrations:
 
 - [Getting started with gradient-based optimisation](https://nbviewer.org/github/pybop-team/PyBOP/blob/develop/examples/notebooks/getting_started/optimising_with_adamw.ipynb)
-- [Estimating ECM parameters from a HPPC pulse](https://nbviewer.org/github/pybop-team/PyBOP/blob/develop/examples/notebooks/battery_parameterisation/equivalent_circuit_identification_hppc.ipynb)
+- [Estimating ECM parameters from a HPPC pulse](https://nbviewer.org/github/pybop-team/PyBOP/blob/develop/examples/notebooks/battery_parameterisation/ecm_hppc_identification.ipynb)
 - [Identifying ECM parameters with nonlinear constraints](https://nbviewer.org/github/pybop-team/PyBOP/blob/develop/examples/notebooks/battery_parameterisation/ecm_scipy_constraints.ipynb)
 - [Parameter identification for a spatial pouch cell model](https://nbviewer.org/github/pybop-team/PyBOP/blob/develop/examples/notebooks/battery_parameterisation/pouch_cell_identification.ipynb)
 - [Energy-based electrode design optimisation](https://nbviewer.org/github/pybop-team/PyBOP/blob/develop/examples/notebooks/design_optimisation/energy_based_electrode_design.ipynb)
@@ -85,7 +85,7 @@ Find additional script-based examples in the [examples directory](https://github
 
 - [Getting started with SciPy minimize](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/getting_started/optimising_with_scipy_minimize.py)
 - [Estimating diffusivity from GITT data](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/battery_parameterisation/gitt_fitting.py)
-- [Maximum a Posteriori parameter identification](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/comparison_examples/maximum_a_posteriori.py)
+- [Maximum a Posteriori parameter identification](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/getting_started/maximum_a_posteriori.py)
 - [Using electrochemical impedance spectroscopy (EIS) data](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/battery_parameterisation/simple_eis.py)
 - [Getting started with MCMC samplers](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/getting_started/monte_carlo_sampling.py)
 
