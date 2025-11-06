@@ -44,12 +44,14 @@ parameter_values.update(
 # Fitting parameters
 parameter_values.update(
     {
-        "Positive electrode thickness [m]": pybop.Parameter(
-            prior=pybop.Gaussian(7.56e-05, 0.1e-05),
+        "Positive electrode thickness [m]": pybop.Gaussian(
+            7.56e-05,
+            0.1e-05,
             bounds=[65e-06, 10e-05],
         ),
-        "Positive electrode active material volume fraction": pybop.Parameter(
-            prior=pybop.Gaussian(0.6, 0.15),
+        "Positive electrode active material volume fraction": pybop.Gaussian(
+            0.6,
+            0.15,
             bounds=[0.1, 0.9],
         ),
     }

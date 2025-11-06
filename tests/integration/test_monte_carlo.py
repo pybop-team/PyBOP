@@ -1,6 +1,7 @@
 import numpy as np
 import pybamm
 import pytest
+from scipy import stats
 
 import pybop
 from pybop import (
@@ -49,15 +50,16 @@ class Test_Sampling_SPM:
 
     @pytest.fixture
     def parameters(self):
+        param1 = pybop.ParameterDistribution(
+            stats.norm(loc=0.575, scale=0.05),
+            initial_value=stats.uniform(0.4, 0.7 - 0.4).rvs(),
+        )
+        param1.set_bounds((0.375, 0.725))
         return {
-            "Negative electrode active material volume fraction": pybop.Parameter(
-                prior=pybop.Gaussian(0.575, 0.05),
-                initial_value=pybop.Uniform(0.4, 0.7).rvs()[0],
-                bounds=[0.375, 0.725],
-            ),
-            "Positive electrode active material volume fraction": pybop.Parameter(
-                prior=pybop.Gaussian(0.525, 0.05),
-                initial_value=pybop.Uniform(0.4, 0.7).rvs()[0],
+            "Negative electrode active material volume fraction": param1,
+            "Positive electrode active material volume fraction": pybop.ParameterDistribution(
+                stats.norm(loc=0.525, scale=0.05),
+                initial_value=stats.uniform(0.4, 0.7 - 0.4).rvs(),
                 # no bounds
             ),
         }

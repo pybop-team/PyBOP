@@ -50,13 +50,15 @@ class TestTheveninParameterisation:
     @pytest.fixture
     def parameters(self):
         return {
-            "R0 [Ohm]": pybop.Parameter(
-                prior=pybop.Gaussian(0.05, 0.01),
+            "R0 [Ohm]": pybop.TruncatedGaussian(
+                loc=0.05,
+                scale=0.01,
                 bounds=[1e-6, 0.1],
                 transformation=pybop.LogTransformation(),
             ),
-            "R1 [Ohm]": pybop.Parameter(
-                prior=pybop.Gaussian(0.05, 0.01),
+            "R1 [Ohm]": pybop.TruncatedGaussian(
+                loc=0.05,
+                scale=0.01,
                 bounds=[1e-6, 0.1],
                 transformation=pybop.LogTransformation(),
             ),

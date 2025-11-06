@@ -32,8 +32,8 @@ class TestPriors:
         return pybop.JointPrior(Gaussian, Exponential)
 
     def test_base_prior(self):
-        base = pybop.Distribution()
-        assert isinstance(base, pybop.Distribution)
+        base = pybop.ParameterDistribution()
+        assert isinstance(base, pybop.ParameterDistribution)
         with pytest.raises(NotImplementedError):
             base._logpdfS1(0.0)
 
@@ -116,7 +116,6 @@ class TestPriors:
         np.testing.assert_allclose(
             Uniform.sigma, (Uniform.upper - Uniform.lower) / (2 * np.sqrt(3)), atol=1e-8
         )
-        assert Exponential.mean == Exponential.loc
         assert Exponential.sigma == Exponential.scale
 
     def test_gaussian_rvs(self, Gaussian):
@@ -143,12 +142,12 @@ class TestPriors:
         assert abs(mean - 1) < 0.2
 
     def test_repr(self, Gaussian, Uniform, Exponential, JointPrior1):
-        assert repr(Gaussian) == "Gaussian, loc: 0.5, scale: 1"
-        assert repr(Uniform) == "Uniform, loc: 0, scale: 1"
+        assert repr(Gaussian) == "Gaussian, mean: 0.5, standard deviation: 1.0"
+        assert repr(Uniform) == "Uniform, lower: 0, upper: 1"
         assert repr(Exponential) == "Exponential, loc: 0, scale: 1"
         assert (
             repr(JointPrior1)
-            == "JointPrior(priors: [Gaussian, loc: 0.5, scale: 1, Uniform, loc: 0, scale: 1])"
+            == "JointPrior(priors: [Gaussian, mean: 0.5, standard deviation: 1.0, Uniform, lower: 0, upper: 1])"
         )
 
     def test_invalid_size(self, Gaussian, Uniform, Exponential):
@@ -161,10 +160,10 @@ class TestPriors:
 
     def test_incorrect_composed_priors(self, Gaussian, Uniform):
         with pytest.raises(
-            ValueError, match="All priors must be instances of Distribution"
+            ValueError, match="All priors must be instances of ParameterDistribution"
         ):
             pybop.JointPrior(Gaussian, Uniform, "string")
         with pytest.raises(
-            ValueError, match="All priors must be instances of Distribution"
+            ValueError, match="All priors must be instances of ParameterDistribution"
         ):
             pybop.JointPrior(Gaussian, Uniform, 0.5)

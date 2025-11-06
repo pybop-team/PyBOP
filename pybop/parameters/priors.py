@@ -1,35 +1,48 @@
 import numpy as np
 import scipy.stats as stats
 
+from pybop import Bounds, Parameter, Parameters
+from pybop.transformation.base_transformation import Transformation
 
-class Distribution:
+
+class ParameterDistribution(Parameter):
     """
-    A base class for defining prior distributions.
+    A base class for defining parameter distributions.
 
-    This class provides a foundation for implementing various prior distributions.
+    This class provides a foundation for implementing various distributions.
     It includes methods for calculating the probability density function (PDF),
     log probability density function (log PDF), and generating random variates
     from the distribution.
 
     Attributes
     ----------
-    prior : scipy.stats.rv_continuous
+    distribution : scipy.stats.distributions.rv_frozen
         The underlying continuous random variable distribution.
-    loc : float
-        The location parameter of the distribution.
-    scale : float
-        The scale parameter of the distribution.
     """
 
-    def __init__(self, prior: stats.rv_continuous | stats.distributions.rv_frozen | None = None, loc=0.0, scale=1.0, gradient_step: float = 1e-3):
-        self.loc = loc
-        self.scale = scale
-        if isinstance(prior, stats.rv_continuous):
-            self.prior = prior(loc=loc, scale=scale)
-        else:
-            self.prior = prior
-        self.gradient_step = gradient_step
+    def __init__(
+        self,
+        distribution: stats.rv_continuous = None,
+        initial_value: float = None,
+        transformation: Transformation | None = None,
+        margin: float = 1e-4,
+        gradient_step: float = 1e-3,
+    ):
+        super().__init__(
+            initial_value=initial_value, transformation=transformation, margin=margin
+        )
+        self._distribution = distribution
+        if initial_value is None and distribution is not None:
+            initial_value = self.sample_from_distribution()[0]
+        self._initial_value = (
+            float(initial_value) if initial_value is not None else None
+        )
+        self._current_value = self._initial_value
 
+        if distribution is not None:
+            lower, upper = self._distribution.support()
+            self._bounds = Bounds(lower, upper)
+        self.gradient_step = gradient_step
 
     def pdf(self, x):
         """
@@ -45,11 +58,10 @@ class Distribution:
         float
             The probability density function value at x.
         """
-        if self.prior is None:
+        if self._distribution is None:
             raise NotImplementedError
         else:
-            return self.prior.pdf(x)
-            
+            return self._distribution.pdf(x)
 
     def logpdf(self, x):
         """
@@ -65,10 +77,10 @@ class Distribution:
         float
             The logarithm of the probability density function value at x.
         """
-        if self.prior is None:
+        if self._distribution is None:
             raise NotImplementedError
         else:
-            return self.prior.logpdf(x)
+            return self._distribution.logpdf(x)
 
     def icdf(self, q):
         """
@@ -84,10 +96,10 @@ class Distribution:
         float
             The inverse cumulative distribution function value at q.
         """
-        if self.prior is None:
+        if self._distribution is None:
             raise NotImplementedError
         else:
-            return self.prior.ppf(q)
+            return self._distribution.ppf(q)
 
     def cdf(self, x):
         """
@@ -103,10 +115,10 @@ class Distribution:
         float
             The cumulative distribution function value at x.
         """
-        if self.prior is None:
+        if self._distribution is None:
             raise NotImplementedError
         else:
-            return self.prior.cdf(x)
+            return self._distribution.cdf(x)
 
     def rvs(self, size=1, random_state=None):
         """
@@ -138,10 +150,10 @@ class Distribution:
         if isinstance(size, tuple) and any(s < 1 for s in size):
             raise ValueError("size must be a tuple of positive integers")
 
-        if self.prior is None:
+        if self._distribution is None:
             raise NotImplementedError
         else:
-            return self.prior.rvs(size=size, random_state=random_state)
+            return self._distribution.rvs(size=size, random_state=random_state)
 
     def __call__(self, x):
         """
@@ -191,16 +203,14 @@ class Distribution:
         float
             The value(s) of the first derivative at x.
         """
-
-        if self.prior is None:
+        if self._distribution is None:
             raise NotImplementedError
         else:
             # Compute log prior first
-            log_prior = self.__call__(x)
+            log_prior = self.logpdf(x)
 
             # Compute a finite difference approximation of the gradient of the log prior
             delta = x * self.gradient_step
-            dp = []
 
             upper_value = x + delta
             lower_value = x - delta
@@ -211,9 +221,8 @@ class Distribution:
             gradient = (log_prior_upper - log_prior_lower) / (
                 2 * delta + np.finfo(float).eps
             )
-            dp.append(gradient)
 
-            return log_prior, dp
+        return log_prior, gradient
 
     def verify(self, x):
         """
@@ -229,7 +238,7 @@ class Distribution:
         """
         Returns a string representation of the object.
         """
-        return f"{self.__class__.__name__}, loc: {self.loc}, scale: {self.scale}"
+        return f"{self.__class__.__name__}, mean: {self.mean}, standard deviation: {self.sigma}"
 
     @property
     def mean(self):
@@ -241,7 +250,7 @@ class Distribution:
         float
             The mean of the distribution.
         """
-        return self.loc
+        return self._distribution.mean()
 
     @property
     def sigma(self):
@@ -253,13 +262,10 @@ class Distribution:
         float
             The standard deviation of the distribution.
         """
-        return self.scale
-
-    def bounds(self) -> tuple[float, float] | None:
-        raise NotImplementedError
+        return self._distribution.std()
 
 
-class Gaussian(Distribution):
+class Gaussian(ParameterDistribution):
     """
     Represents a Gaussian (normal) distribution with a given mean and standard deviation.
 
@@ -274,10 +280,39 @@ class Gaussian(Distribution):
         The standard deviation (sigma) of the Gaussian distribution.
     """
 
-    def __init__(self, mean, sigma, random_state=None):
-        super().__init__(stats.norm, loc = mean, scale = sigma)
+    def __init__(
+        self,
+        mean,
+        sigma,
+        bounds: list[float] = None,
+        initial_value: float = None,
+        transformation: Transformation | None = None,
+        margin: float = 1e-4,
+    ):
+        if bounds is not None:
+            distribution = stats.truncnorm(
+                (bounds[0] - mean) / sigma,
+                (bounds[1] - mean) / sigma,
+                loc=mean,
+                scale=sigma,
+            )
+        else:
+            distribution = stats.norm(loc=mean, scale=sigma)
+        ParameterDistribution.__init__(
+            self,
+            distribution,
+            initial_value=initial_value,
+            transformation=transformation,
+            margin=margin,
+        )
         self.name = "Gaussian"
         self._n_parameters = 1
+        self.loc = mean
+        self.scale = sigma
+        if bounds is not None:
+            self._bounds = Bounds(bounds[0], bounds[1])
+        else:
+            self._bounds = None
 
     def _logpdfS1(self, x):
         """
@@ -295,11 +330,8 @@ class Gaussian(Distribution):
         """
         return self.__call__(x), (self.loc - x) / self.scale**2
 
-    def bounds(self) -> None:
-        return None
 
-
-class Uniform(Distribution):
+class Uniform(ParameterDistribution):
     """
     Represents a uniform distribution over a specified interval.
 
@@ -314,8 +346,21 @@ class Uniform(Distribution):
         The upper bound of the distribution.
     """
 
-    def __init__(self, lower, upper, random_state=None):
-        super().__init__(stats.uniform, loc = lower, scale = upper-lower)
+    def __init__(
+        self,
+        lower,
+        upper,
+        initial_value: float = None,
+        transformation: Transformation | None = None,
+        margin: float = 1e-4,
+    ):
+        ParameterDistribution.__init__(
+            self,
+            stats.uniform(loc=lower, scale=upper - lower),
+            initial_value=initial_value,
+            transformation=transformation,
+            margin=margin,
+        )
         self.name = "Uniform"
         self.lower = lower
         self.upper = upper
@@ -353,11 +398,14 @@ class Uniform(Distribution):
         """
         return (self.upper - self.lower) / (2 * np.sqrt(3))
 
-    def bounds(self) -> tuple[float, float]:
-        return self.lower, self.upper
+    def __repr__(self):
+        """
+        Returns a string representation of the object.
+        """
+        return f"{self.__class__.__name__}, lower: {self.lower}, upper: {self.upper}"
 
 
-class Exponential(Distribution):
+class Exponential(ParameterDistribution):
     """
     Represents an exponential distribution with a specified scale parameter.
 
@@ -370,10 +418,25 @@ class Exponential(Distribution):
         The scale parameter (lambda) of the exponential distribution.
     """
 
-    def __init__(self, scale, loc=0, random_state=None):
-        super().__init__(stats.expon, scale = scale, loc = loc)
+    def __init__(
+        self,
+        scale: float,
+        loc: float = 0,
+        initial_value: float = None,
+        transformation: Transformation | None = None,
+        margin: float = 1e-4,
+    ):
+        ParameterDistribution.__init__(
+            self,
+            stats.expon(loc=loc, scale=scale),
+            initial_value=initial_value,
+            transformation=transformation,
+            margin=margin,
+        )
         self.name = "Exponential"
         self._n_parameters = 1
+        self.loc = loc
+        self.scale = scale
 
     def _logpdfS1(self, x):
         """
@@ -396,28 +459,42 @@ class Exponential(Distribution):
     def bounds(self) -> None:
         return None
 
+    def __repr__(self):
+        """
+        Returns a string representation of the object.
+        """
+        return f"{self.__class__.__name__}, loc: {self.loc}, scale: {self.scale}"
 
-class JointPrior(Distribution):
+
+class JointPrior(ParameterDistribution):
     """
     Represents a joint prior distribution composed of multiple prior distributions.
 
     Parameters
     ----------
-    priors : Distribution
+    priors : ParameterDistribution
         One or more prior distributions to combine into a joint distribution.
     """
 
-    def __init__(self, *priors: Distribution):
+    def __init__(self, *priors: ParameterDistribution | stats.distributions.rv_frozen):
         super().__init__()
 
         if all(prior is None for prior in priors):
             return
 
-        if not all(isinstance(prior, Distribution) for prior in priors):
-            raise ValueError("All priors must be instances of Distribution")
+        if not all(
+            isinstance(prior, (ParameterDistribution, stats.distributions.rv_frozen))
+            for prior in priors
+        ):
+            raise ValueError("All priors must be instances of ParameterDistribution")
 
         self._n_parameters = len(priors)
-        self._priors: list[Distribution] = list(priors)
+        self._priors: list[ParameterDistribution] = [
+            prior
+            if isinstance(prior, ParameterDistribution)
+            else ParameterDistribution(prior)
+            for prior in priors
+        ]
 
     def logpdf(self, x: float | np.ndarray) -> float:
         """
@@ -480,3 +557,37 @@ class JointPrior(Distribution):
     def __repr__(self) -> str:
         priors_repr = ", ".join([repr(prior) for prior in self._priors])
         return f"{self.__class__.__name__}(priors: [{priors_repr}])"
+
+
+class TruncatedGaussian(ParameterDistribution):
+    def __init__(
+        self,
+        bounds: list[float],
+        loc: float = 0.0,
+        scale: float = 1.0,
+        initial_value: float = None,
+        transformation: Transformation | None = None,
+        margin: float = 1e-4,
+    ):
+        distribution = stats.truncnorm(
+            (bounds[0] - loc) / scale, (bounds[1] - loc) / scale, loc=loc, scale=scale
+        )
+        ParameterDistribution.__init__(
+            self,
+            distribution=distribution,
+            initial_value=initial_value,
+            transformation=transformation,
+            margin=margin,
+        )
+
+
+def joint_prior_from_parameters(
+    parameters: Parameters, gradient_step: float = 1e-3
+) -> ParameterDistribution:
+    priors = [
+        ParameterDistribution(param.distribution, gradient_step=gradient_step)
+        if not isinstance(param, ParameterDistribution)
+        else param
+        for param in parameters
+    ]
+    return JointPrior(*priors)

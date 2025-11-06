@@ -6,6 +6,7 @@ import numpy as np
 import pybamm
 import pytest
 from pints import PopulationBasedOptimiser
+from scipy import stats
 
 import pybop
 from pybop.optimisers.pints_optimisers import AdamWImpl, IRPropPlusImpl
@@ -30,23 +31,20 @@ class TestOptimisation:
 
     @pytest.fixture
     def one_parameter(self):
+        param = pybop.ParameterDistribution(stats.norm(loc=0.5, scale=0.02))
+        param.set_bounds((0.48, 0.52))
         return {
-            "Positive electrode active material volume fraction": pybop.Parameter(
-                prior=pybop.Gaussian(0.5, 0.02),
-                bounds=[0.48, 0.52],
-            )
+            "Positive electrode active material volume fraction": param,
         }
 
     @pytest.fixture
     def two_parameters(self):
         return {
-            "Negative electrode active material volume fraction": pybop.Parameter(
-                prior=pybop.Gaussian(0.6, 0.02),
-                bounds=[0.58, 0.62],
+            "Negative electrode active material volume fraction": pybop.TruncatedGaussian(
+                bounds=[0.58, 0.62], loc=0.6, scale=0.02
             ),
-            "Positive electrode active material volume fraction": pybop.Parameter(
-                prior=pybop.Gaussian(0.5, 0.05),
-                bounds=[0.48, 0.52],
+            "Positive electrode active material volume fraction": pybop.TruncatedGaussian(
+                bounds=[0.48, 0.52], loc=0.5, scale=0.05
             ),
         }
 

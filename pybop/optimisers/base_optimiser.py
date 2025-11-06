@@ -147,7 +147,7 @@ class BaseOptimiser:
             if i >= 1:
                 if not self.problem.parameters.priors():
                     raise RuntimeError("Priors must be provided for multi-start")
-                initial_values = self.problem.parameters.sample_from_priors(1)[0]
+                initial_values = self.problem.parameters.sample_from_distributions(1)[0]
                 self.problem.parameters.update(initial_values=initial_values)
                 self._set_up_optimiser()
             results.append(self._run())

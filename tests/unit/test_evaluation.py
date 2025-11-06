@@ -1,6 +1,7 @@
 import numpy as np
 import pybamm
 import pytest
+from scipy import stats
 
 import pybop
 
@@ -28,15 +29,16 @@ class TestEvaluation:
     @pytest.fixture
     def parameters(self):
         return {
-            "Negative electrode active material volume fraction": pybop.Parameter(
-                prior=pybop.Gaussian(0.5, 0.01),
+            "Negative electrode active material volume fraction": pybop.TruncatedGaussian(
                 bounds=[0.375, 0.625],
+                loc=0.5,
+                scale=0.01,
                 transformation=pybop.ScaledTransformation(
                     coefficient=1 / 0.25, intercept=-0.375
                 ),
             ),
-            "Positive electrode Bruggeman coefficient (electrode)": pybop.Parameter(
-                prior=pybop.Gaussian(1.5, 0.1),
+            "Positive electrode Bruggeman coefficient (electrode)": pybop.ParameterDistribution(
+                distribution=stats.norm(loc=1.5, scale=0.1),
                 transformation=pybop.LogTransformation(),
             ),
         }

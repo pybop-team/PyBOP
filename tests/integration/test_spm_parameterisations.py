@@ -1,6 +1,7 @@
 import numpy as np
 import pybamm
 import pytest
+from scipy import stats
 
 import pybop
 
@@ -42,14 +43,29 @@ class Test_SPM_Parameterisation:
     @pytest.fixture
     def parameters(self):
         return {
-            "Negative electrode active material volume fraction": pybop.Parameter(
-                prior=pybop.Uniform(0.3, 0.9),
-                initial_value=pybop.Uniform(0.4, 0.75).rvs()[0],
-                bounds=[0.3, 0.8],
+            "Negative electrode active material volume fraction": pybop.ParameterDistribution(
+                stats.uniform(0.3, 0.9 - 0.3),
+                initial_value=stats.uniform(0.4, 0.75 - 0.4).rvs(),
             ),
-            "Positive electrode active material volume fraction": pybop.Parameter(
-                prior=pybop.Uniform(0.3, 0.9),
-                initial_value=pybop.Uniform(0.4, 0.75).rvs()[0],
+            "Positive electrode active material volume fraction": pybop.ParameterDistribution(
+                stats.uniform(0.3, 0.9 - 0.3),
+                initial_value=stats.uniform(0.4, 0.75 - 0.4).rvs(),
+                # no bounds
+            ),
+        }
+
+    @pytest.fixture
+    def priors(self):
+        return {
+            "Negative electrode active material volume fraction": pybop.Uniform(
+                0.3,
+                0.9,
+                initial_value=stats.uniform(0.4, 0.75 - 0.4).rvs(),
+            ),
+            "Positive electrode active material volume fraction": pybop.Uniform(
+                0.3,
+                0.9,
+                initial_value=stats.uniform(0.4, 0.75 - 0.4).rvs(),
                 # no bounds
             ),
         }
@@ -85,13 +101,18 @@ class Test_SPM_Parameterisation:
         return request.param
 
     @pytest.fixture
-    def optim(self, optimiser, model_and_parameter_values, parameters, cost_class):
+    def optim(
+        self, optimiser, model_and_parameter_values, parameters, priors, cost_class
+    ):
         model, parameter_values = model_and_parameter_values
         parameter_values.set_initial_state(0.6)
         dataset = self.get_data(model, parameter_values)
 
         # Define the problem
-        parameter_values.update(parameters)
+        if cost_class is pybop.LogPosterior:
+            parameter_values.update(priors)
+        else:
+            parameter_values.update(parameters)
         simulator = pybop.pybamm.Simulator(
             model, parameter_values=parameter_values, protocol=dataset
         )

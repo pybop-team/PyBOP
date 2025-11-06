@@ -3,6 +3,7 @@ import json
 import numpy as np
 import pybamm
 import pytest
+from scipy import stats
 
 import pybop
 from pybop import (
@@ -70,17 +71,19 @@ class TestSamplingThevenin:
     @pytest.fixture
     def parameters(self):
         return {
-            "R0 [Ohm]": pybop.Parameter(
-                prior=pybop.Gaussian(5e-2, 5e-3),
-                transformation=pybop.LogTransformation(),
-                initial_value=pybop.Uniform(2e-3, 8e-2).rvs()[0],
+            "R0 [Ohm]": pybop.Gaussian(
                 bounds=[1e-4, 1e-1],
+                mean=5e-2,
+                sigma=5e-3,
+                transformation=pybop.LogTransformation(),
+                initial_value=stats.uniform(2e-3, 8e-2 - 2e-3).rvs(),
             ),
-            "R1 [Ohm]": pybop.Parameter(
-                prior=pybop.Gaussian(5e-2, 5e-3),
-                transformation=pybop.LogTransformation(),
-                initial_value=pybop.Uniform(2e-3, 8e-2).rvs()[0],
+            "R1 [Ohm]": pybop.Gaussian(
                 bounds=[1e-4, 1e-1],
+                mean=5e-2,
+                sigma=5e-3,
+                transformation=pybop.LogTransformation(),
+                initial_value=stats.uniform(2e-3, 8e-2 - 2e-3).rvs(),
             ),
         }
 

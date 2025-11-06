@@ -48,12 +48,14 @@ class TestPintsSamplers:
     @pytest.fixture
     def parameters(self):
         return {
-            "Negative electrode active material volume fraction": pybop.Parameter(
-                prior=pybop.Gaussian(0.6, 0.2),
+            "Negative electrode active material volume fraction": pybop.TruncatedGaussian(
+                loc=0.6,
+                scale=0.2,
                 bounds=[0.58, 0.62],
             ),
-            "Positive electrode active material volume fraction": pybop.Parameter(
-                prior=pybop.Gaussian(0.55, 0.05),
+            "Positive electrode active material volume fraction": pybop.TruncatedGaussian(
+                loc=0.55,
+                scale=0.05,
                 bounds=[0.53, 0.57],
             ),
         }
@@ -164,9 +166,8 @@ class TestPintsSamplers:
         parameter_values = model.default_parameter_values
         parameter_values.update(
             {
-                "Negative electrode active material volume fraction": pybop.Parameter(
-                    prior=pybop.Gaussian(0.6, 0.2),
-                    bounds=[0.58, 0.62],
+                "Negative electrode active material volume fraction": pybop.Gaussian(
+                    0.6, 0.2, bounds=[0.58, 0.62]
                 )
             }
         )

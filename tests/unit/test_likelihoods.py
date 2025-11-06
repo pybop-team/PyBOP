@@ -1,6 +1,7 @@
 import numpy as np
 import pybamm
 import pytest
+from scipy import stats
 
 import pybop
 
@@ -28,9 +29,10 @@ class TestLikelihoods:
     @pytest.fixture
     def parameters(self):
         return {
-            "Negative electrode active material volume fraction": pybop.Parameter(
-                prior=pybop.Gaussian(0.5, 0.01),
+            "Negative electrode active material volume fraction": pybop.TruncatedGaussian(
                 bounds=[0.375, 0.625],
+                loc=0.5,
+                scale=0.01,
             )
         }
 
@@ -110,7 +112,7 @@ class TestLikelihoods:
         assert grad_likelihood[1] <= 0
 
         # Test construction with sigma as a Parameter
-        sigma = pybop.Parameter(prior=pybop.Uniform(0.4, 0.6))
+        sigma = pybop.ParameterDistribution(stats.uniform(loc=0.4, scale=0.6 - 0.4))
         likelihood = pybop.GaussianLogLikelihood(dataset, sigma0=sigma)
 
         # Test invalid sigma

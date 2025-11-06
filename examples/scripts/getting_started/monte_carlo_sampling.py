@@ -43,12 +43,14 @@ dataset = pybop.Dataset(
 # Fitting parameters
 parameter_values.update(
     {
-        "Negative electrode active material volume fraction": pybop.Parameter(
-            prior=pybop.Gaussian(0.68, 0.02),
+        "Negative electrode active material volume fraction": pybop.Gaussian(
+            0.68,
+            0.02,
             transformation=pybop.LogTransformation(),
         ),
-        "Positive electrode active material volume fraction": pybop.Parameter(
-            prior=pybop.Gaussian(0.65, 0.02),
+        "Positive electrode active material volume fraction": pybop.Gaussian(
+            0.65,
+            0.02,
             transformation=pybop.LogTransformation(),
         ),
     }
