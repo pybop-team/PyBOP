@@ -4,7 +4,7 @@ import numpy as np
 from pybamm import ParameterValues
 
 if TYPE_CHECKING:
-    from pybop import BaseOptimiser
+    from pybop import BaseOptimiser, BaseSampler
 from pybop import Logger, plot
 
 
@@ -322,3 +322,43 @@ class OptimisationResult:
             Valid Plotly layout keys and their values.
         """
         return plot.contour(call_object=self, **kwargs)
+
+
+class SamplingResult(OptimisationResult):
+    """
+    Stores the result of the sampling.
+
+    Attributes
+    ----------
+    sampler : pybop.BaseSampler
+        The sampler used to generate the results.
+    logger : pybop.Logger
+        The log of the optimisation process.
+    time : float
+        The time taken.
+    chains : np.ndarray, optional
+        An array containing the samples from the posterior distribution, or None.
+    sampler_name : str
+        The name of the sampler.
+    message : str
+        The reason for stopping given by the sampler.
+    """
+
+    def __init__(
+        self,
+        sampler: "BaseSampler",
+        logger: Logger,
+        time: float,
+        chains: np.ndarray,
+        sampler_name: str | None = None,
+        message: str | None = None,
+    ):
+        sampler.problem = sampler.log_pdf
+        super().__init__(
+            optim=sampler,
+            logger=logger,
+            time=time,
+            optim_name=sampler_name,
+            message=message,
+        )
+        self.chains = chains

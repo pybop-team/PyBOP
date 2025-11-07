@@ -164,8 +164,8 @@ class TestPlots:
         problem = pybop.Problem(simulator, posterior)
         options = pybop.PintsSamplerOptions(n_chains=1, max_iterations=1)
         sampler = pybop.SliceStepoutMCMC(problem, options=options)
-        results = sampler.run()
-        return pybop.PosteriorSummary(results)
+        result = sampler.run()
+        return pybop.PosteriorSummary(result.chains)
 
     def test_posterior_plots(self, posterior_summary):
         # Plot trace

@@ -12,6 +12,7 @@ from pybop import (
     SingleChainProcessor,
 )
 from pybop._logging import Logger
+from pybop._result import SamplingResult
 from pybop.problems.problem import Problem
 from pybop.samplers.base_sampler import SamplerOptions
 
@@ -161,14 +162,16 @@ class BasePintsSampler(BaseSampler):
         multi-chain scenarios, and manages parallel evaluation based on
         the configuration.
 
-        Returns:
-            np.ndarray: A numpy array containing the samples from the
-            posterior distribution if chains are stored in memory,
-            otherwise returns None.
+        Returns
+        -------
+        SamplingResult
+            The results including a numpy array containing the samples from the posterior
+            distribution if chains are stored in memory, otherwise None.
 
-        Raises:
-            ValueError: If no stopping criterion is set (i.e.,
-            _max_iterations is None).
+        Raises
+        ------
+        ValueError
+            If no stopping criterion is set (i.e., _max_iterations is None).
 
         Details:
             - Checks and ensures at least one stopping criterion is set.
@@ -236,6 +239,9 @@ class BasePintsSampler(BaseSampler):
             if self._max_iterations and self.iteration >= self._max_iterations:
                 running = False
 
+        halt_message = (
+            "Maximum number of iterations (" + str(self._max_iterations) + ") reached."
+        )
         self._finalise_logging()
 
         if not self._chains_in_memory:
@@ -244,7 +250,14 @@ class BasePintsSampler(BaseSampler):
         if self._warm_up > 0:
             self._samples = self._samples[:, self._warm_up :, :]
 
-        return self._samples
+        return SamplingResult(
+            sampler=self,
+            logger=self._logger,
+            time=self._total_time,
+            chains=self._samples,
+            sampler_name=self._samplers[0].name(),
+            message=halt_message,
+        )
 
     def _process_chains(self):
         """
@@ -318,11 +331,12 @@ class BasePintsSampler(BaseSampler):
                 )
 
     def _finalise_logging(self):
+        self._total_time = time.time() - self._start_time
         if self._log_to_screen:
             logging.info(
                 f"Halting: Maximum number of iterations ({self.iteration}) reached."
             )
-            logging.info(f"Total time: {time.time() - self._start_time} seconds.")
+            logging.info(f"Total time: {self._total_time} seconds.")
             logging.info(f"Total number of evaluations: ({self._logger.evaluations}).")
 
     @property

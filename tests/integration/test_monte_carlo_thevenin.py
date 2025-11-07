@@ -141,19 +141,21 @@ class TestSamplingThevenin:
 
         # construct and run
         sampler = sampler(log_pdf=posterior, options=options)
-        chains = sampler.run()
+        result = sampler.run()
 
         # Test PosteriorSummary
-        summary = pybop.PosteriorSummary(chains)
+        summary = pybop.PosteriorSummary(result.chains)
         ess = summary.effective_sample_size()
         np.testing.assert_array_less(0, ess)
         np.testing.assert_array_less(0, summary.rhat())
 
         # Assert both final sample and posterior mean
-        x = np.mean(chains, axis=1)
+        x = np.mean(result.chains, axis=1)
         for i in range(len(x)):
             np.testing.assert_allclose(x[i], self.ground_truth, atol=5e-3)
-            np.testing.assert_allclose(chains[i][-1], self.ground_truth, atol=1e-2)
+            np.testing.assert_allclose(
+                result.chains[i][-1], self.ground_truth, atol=1e-2
+            )
 
     def get_data(self, model, parameter_values):
         experiment = pybamm.Experiment(

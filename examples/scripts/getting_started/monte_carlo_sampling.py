@@ -73,10 +73,10 @@ options = pybop.PintsSamplerOptions(
     verbose=True,
 )
 sampler = pybop.DifferentialEvolutionMCMC(problem, options=options)
-chains = sampler.run()
+result = sampler.run()
 
 # Summary statistics
-posterior_summary = pybop.PosteriorSummary(chains)
+posterior_summary = pybop.PosteriorSummary(result.chains)
 print(posterior_summary.get_summary_statistics())
 posterior_summary.plot_trace()
 posterior_summary.summary_table()
