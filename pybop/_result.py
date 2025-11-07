@@ -42,7 +42,6 @@ class OptimisationResult:
         self.optim_name = optim_name
         self.n_runs = 0
         self._best_run = None
-        self._parameter_values = None
         self._x = [logger.x_model_best]
         self._x_model = [logger.x_model]
         self._x0 = [logger.x0]
@@ -234,11 +233,6 @@ class OptimisationResult:
     def minimising(self) -> bool:
         """Whether the cost was minimised (or maximised)."""
         return self._minimising
-
-    @property
-    def parameter_values(self) -> ParameterValues | dict:
-        """The best parameter values from the optimisation."""
-        return self._parameter_values
 
     @property
     def message(self) -> str | None:
