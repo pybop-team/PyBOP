@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING
 
 import numpy as np
-from pybamm import ParameterValues
 
 if TYPE_CHECKING:
     from pybop import BaseOptimiser, BaseSampler
@@ -181,7 +180,7 @@ class OptimisationResult:
 
     @property
     def x(self) -> np.ndarray:
-        """The solution of the optimisation (in model space)."""
+        """The best parameter values (in model space)."""
         return self._get_single_or_all("_x")
 
     @property
@@ -193,6 +192,11 @@ class OptimisationResult:
     def x0(self) -> np.ndarray:
         """The initial parameter values."""
         return self._get_single_or_all("_x0")
+
+    @property
+    def best_inputs(self) -> dict[str, np.ndarray]:
+        """The best parameters as a dictionary."""
+        return self._optim.problem.parameters.to_dict(self.x)
 
     @property
     def best_cost(self) -> float:
