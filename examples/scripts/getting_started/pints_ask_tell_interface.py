@@ -76,5 +76,7 @@ for i in range(50):
 
 # Plot the timeseries output
 pybop.plot.problem(
-    problem, problem_inputs=optim.optimiser.x_best()[0], title="Optimised Comparison"
+    problem,
+    inputs=problem.parameters.to_dict(optim.optimiser.x_best()[0]),
+    title="Optimised Comparison",
 )

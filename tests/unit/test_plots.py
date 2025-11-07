@@ -99,7 +99,7 @@ class TestPlots:
         pybop.plot.problem(design_problem)
 
         # Test conversion of values into inputs
-        pybop.plot.problem(fitting_problem, problem_inputs=[0.6, 0.6])
+        pybop.plot.problem(fitting_problem, inputs=fitting_problem.parameters.to_dict([0.6, 0.6]))
 
     def test_cost_plots(self, fitting_problem):
         # Test plot of Cost objects
@@ -268,7 +268,7 @@ class TestPlots:
 
         # Plot the nyquist
         inputs = problem.parameters.to_dict([60e-6])
-        pybop.plot.nyquist(problem, problem_inputs=inputs, title="Optimised Comparison")
+        pybop.plot.nyquist(problem, inputs=inputs, title="Optimised Comparison")
 
         # Without inputs
         pybop.plot.nyquist(problem, title="Optimised Comparison")

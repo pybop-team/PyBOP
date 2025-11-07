@@ -72,7 +72,7 @@ class GITTPulseFit(BaseApplication):
         self.results = self.optim.run()
         self.parameter_values.update(self.problem.parameters.to_dict(self.results.x))
 
-        # pybop.plot.problem(problem=problem, problem_inputs=self.results.x)
+        # pybop.plot.problem(problem=problem, inputs=self.results.x)
 
         return self.results
 

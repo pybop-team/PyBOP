@@ -2,7 +2,7 @@ from pybop.parameters.parameter import Inputs
 from pybop.plot.standard_plots import StandardPlot
 
 
-def nyquist(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
+def nyquist(problem, inputs: Inputs = None, show=True, **layout_kwargs):
     """
     Generates Nyquist plots for the given problem by evaluating the model's output and target values.
 
@@ -11,7 +11,7 @@ def nyquist(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
     problem : pybop.Problem
         An instance of a problem class that contains the parameters and methods
         for evaluation and target retrieval.
-    problem_inputs : Inputs, optional
+    inputs : Inputs, optional
         Input parameters for the problem. If not provided, the default parameters from the problem
         instance will be used. These parameters are verified before use (default is None).
     show : bool, optional
@@ -39,10 +39,10 @@ def nyquist(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
     >>> nyquist_figures = nyquist(problem, show=True, title="Nyquist Plot", xaxis_title="Real(Z)", yaxis_title="Imag(Z)")
     >>> # The plots will be displayed and nyquist_figures will contain the list of figure objects.
     """
-    if not isinstance(problem_inputs, dict):
-        problem_inputs = problem.parameters.to_dict(problem_inputs)
+    if not isinstance(inputs, dict):
+        inputs = problem.parameters.to_dict(inputs)
 
-    model_output = problem.simulate(problem_inputs)
+    model_output = problem.simulate(inputs)
     domain_data = model_output["Impedance"].data.real
     target_output = problem.target_data
 

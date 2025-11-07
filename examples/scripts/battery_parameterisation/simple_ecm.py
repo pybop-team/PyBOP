@@ -96,7 +96,7 @@ print(result)
 print("True values:", true_values)
 
 # Plot the timeseries output
-pybop.plot.problem(problem, problem_inputs=result.x, title="Optimised Comparison")
+pybop.plot.problem(problem, inputs=result.best_inputs, title="Optimised Comparison")
 
 # Plot the result
 result.plot_convergence()
