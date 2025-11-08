@@ -99,7 +99,9 @@ class TestPlots:
         pybop.plot.problem(design_problem)
 
         # Test conversion of values into inputs
-        pybop.plot.problem(fitting_problem, inputs=fitting_problem.parameters.to_dict([0.6, 0.6]))
+        pybop.plot.problem(
+            fitting_problem, inputs=fitting_problem.parameters.to_dict([0.6, 0.6])
+        )
 
     def test_cost_plots(self, fitting_problem):
         # Test plot of Cost objects

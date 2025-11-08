@@ -91,9 +91,9 @@ class Test_Sampling_SPM:
             max_unchanged_iterations=35,
         )
         optim = pybop.CMAES(log_posterior, options=options)
-        results = optim.run()
+        result = optim.run()
 
-        return results.x
+        return result.x
 
     @pytest.mark.parametrize(
         "quick_sampler",

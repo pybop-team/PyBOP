@@ -197,9 +197,13 @@ class TestApplications:
         diffusion_time = parameter_values["Particle diffusion time scale [s]"]
 
         gitt_fit = pybop.GITTPulseFit(parameter_values=parameter_values)
-        gitt_results = gitt_fit(gitt_pulse=pulse_data)
+        gitt_result = gitt_fit(gitt_pulse=pulse_data)
 
-        np.testing.assert_allclose(gitt_results.x[0], diffusion_time, rtol=5e-2)
+        np.testing.assert_allclose(
+            gitt_result.best_inputs["Particle diffusion time scale [s]"],
+            diffusion_time,
+            rtol=5e-2,
+        )
 
     def test_gitt_fit(self, half_cell_model, half_cell_parameter_values, pulse_data):
         parameter_values = pybop.lithium_ion.SPDiffusion.create_grouped_parameters(

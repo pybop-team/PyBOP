@@ -110,9 +110,9 @@ class TestSamplingThevenin:
             verbose=True,
         )
         optim = pybop.CMAES(posterior, options=options)
-        results = optim.run()
+        result = optim.run()
 
-        return results.x
+        return result.x
 
     # Parameterize the samplers
     @pytest.mark.parametrize(

@@ -139,8 +139,8 @@ class TestModelAndExperimentChanges:
         cost = pybop.RootMeanSquaredError(dataset)
         problem = pybop.Problem(simulator, cost)
         optim = pybop.NelderMead(problem)
-        results = optim.run()
-        return results.best_cost
+        result = optim.run()
+        return result.best_cost
 
     def test_multi_fitting_problem(self, solver):
         parameter_values = pybamm.ParameterValues("Chen2020")
@@ -204,9 +204,9 @@ class TestModelAndExperimentChanges:
                 max_iterations=100, max_unchanged_iterations=30
             )
             optim = optimiser(problem, options=options)
-            results = optim.run()
-            np.testing.assert_allclose(results.x, ground_truth, atol=2e-5)
-            np.testing.assert_allclose(results.best_cost, 0, atol=3e-5)
+            result = optim.run()
+            np.testing.assert_allclose(result.x, ground_truth, atol=2e-5)
+            np.testing.assert_allclose(result.best_cost, 0, atol=3e-5)
 
     def get_data(self, model, parameter_values, experiment, solver):
         solution = pybamm.Simulation(
