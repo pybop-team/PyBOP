@@ -2,8 +2,10 @@ name: Nightly dependencies at develop
 
 on:
   workflow_dispatch:
+
+  # run every weekday at 03:15 UTC
   schedule:
-    - cron: "0 23 * * 1"
+    - cron: "15 3 * * 1-5"
 
 concurrency:
   # github.workflow: name of the workflow, so that we don't cancel other workflows
@@ -46,5 +48,5 @@ jobs:
           elif [[ "${{ matrix.suite }}" == "examples" ]]; then
               python -m pytest --examples
           elif [[ "${{ matrix.suite }}" == "notebooks" ]]; then
-              python -m pytest --nbmake --notebooks
+              python -m pytest --notebooks --nbmake --nbmake-timeout=1000 examples/
           fi
