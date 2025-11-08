@@ -62,10 +62,9 @@ def integration(session):
 
 @nox.session
 def examples(session):
-    """Run the examples and notebooks"""
+    """Run the example scripts."""
     session.install("-e", ".[all,dev]", "--upgrade", silent=False)
     session.run("pytest", "--examples")
-    notebooks(session)
 
 
 @nox.session
@@ -114,6 +113,7 @@ def run_tests(session):
         "--integration",
         "--nbmake",
         "--examples",
+        "--notebooks",
         "-n",
         "auto",
         *specific_tests,

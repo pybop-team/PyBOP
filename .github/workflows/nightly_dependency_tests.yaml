@@ -20,7 +20,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-14]
         python-version: ["3.12"]
-        suite: ["unit", "integration", "examples"]
+        suite: ["unit", "integration", "examples", "notebooks"]
 
     name: Test-${{ matrix.os }}-py-${{ matrix.python-version }}-${{ matrix.suite }})
 
@@ -44,5 +44,7 @@ jobs:
           elif [[ "${{ matrix.suite }}" == "integration" ]]; then
               python -m pytest --integration
           elif [[ "${{ matrix.suite }}" == "examples" ]]; then
-              python -m pytest --nbmake --examples
+              python -m pytest --examples
+          elif [[ "${{ matrix.suite }}" == "notebooks" ]]; then
+              python -m pytest --nbmake --notebooks
           fi
