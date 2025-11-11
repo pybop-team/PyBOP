@@ -62,7 +62,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-13, macos-14]
+        os: [ubuntu-latest, windows-latest, macos-15-intel, macos-14]
         python-version: ["3.10", "3.11", "3.12"]
         exclude: # We run the coverage tests on macos-14 with Python 3.12
           - os: macos-14
