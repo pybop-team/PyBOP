@@ -1,5 +1,5 @@
 import warnings
-from typing import Callable, Optional
+from collections.abc import Callable
 
 import numpy as np
 from pybamm import Interpolant as PybammInterpolant
@@ -15,8 +15,8 @@ class BaseApplication:
 
     def check_monotonicity(self, voltage):
         if not (
-            all(x < y for x, y in zip(voltage, voltage[1:]))
-            or all(x > y for x, y in zip(voltage, voltage[1:]))
+            all(x < y for x, y in zip(voltage, voltage[1:], strict=False))
+            or all(x > y for x, y in zip(voltage, voltage[1:], strict=False))
         ):
             warnings.warn("OCV is not strictly monotonic.", stacklevel=1)
 
@@ -69,7 +69,7 @@ class InverseOCV:
     def __init__(
         self,
         ocv_function: Callable,
-        optimiser: Optional[pybop.BaseOptimiser] = pybop.SciPyMinimize,
+        optimiser: pybop.BaseOptimiser | None = pybop.SciPyMinimize,
         verbose: bool = False,
     ):
         self.ocv_function = ocv_function
@@ -90,14 +90,28 @@ class InverseOCV:
         float
             The stoichiometry corresponding to the open-circuit voltage value.
         """
+        ocv_function = self.ocv_function
+
+        self.parameters = pybop.Parameters(
+            {"Root": pybop.Parameter(initial_value=0.5, bounds=[0, 1])}
+        )
 
         # Set up a root-finding cost function
-        def ocv_root(x, **kwargs):
-            return np.abs(self.ocv_function(x[0]) - ocv_value)
+        class OCVRoot(pybop.BaseSimulator):
+            def batch_solve(self, inputs, calculate_sensitivities: bool = False):
+                solutions = []
+                for x in inputs:
+                    diff = np.abs(ocv_function(x["Root"]) - ocv_value)
+                    sol = pybop.Solution()
+                    sol.set_solution_variable("Difference", data=np.asarray([diff]))
+                    solutions.append(sol)
+                return solutions
 
         # Minimise to find the stoichiometry
-        optim = self.optimiser(
-            cost=ocv_root, x0=np.asarray([0.5]), verbose=self.verbose
-        )
+        cost = pybop.DesignCost(target="Difference")
+        cost.minimising = True
+        problem = pybop.Problem(OCVRoot(self.parameters), cost)
+        options = pybop.SciPyMinimizeOptions(verbose=self.verbose)
+        optim = self.optimiser(problem=problem, options=options)
         results = optim.run()
         return results.x[0]

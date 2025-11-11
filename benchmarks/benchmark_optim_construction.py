@@ -1,4 +1,5 @@
 import numpy as np
+import pybamm
 
 import pybop
 from benchmarks.benchmark_utils import set_random_seed
@@ -7,7 +8,7 @@ from benchmarks.benchmark_utils import set_random_seed
 class BenchmarkOptimisationConstruction:
     param_names = ["model", "parameter_set", "optimiser"]
     params = [
-        [pybop.lithium_ion.SPM, pybop.lithium_ion.SPMe],
+        [pybamm.lithium_ion.SPM(), pybamm.lithium_ion.SPMe()],
         ["Chen2020"],
         [pybop.CMAES],
     ]
@@ -24,30 +25,16 @@ class BenchmarkOptimisationConstruction:
         # Set random seed
         set_random_seed()
 
-        # Create model instance
-        model_instance = model(parameter_set=pybop.ParameterSet(parameter_set))
-
-        # Define fitting parameters
-        parameters = pybop.Parameters(
-            pybop.Parameter(
-                "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.6, 0.02),
-                bounds=[0.375, 0.7],
-                initial_value=0.63,
-            ),
-            pybop.Parameter(
-                "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.5, 0.02),
-                bounds=[0.375, 0.625],
-                initial_value=0.51,
-            ),
-        )
+        # Create parameter values
+        parameter_values = pybamm.ParameterValues(parameter_set)
 
         # Generate synthetic data
         sigma = 0.001
         t_eval = np.arange(0, 900, 2)
-        values = model_instance.predict(t_eval=t_eval)
-        corrupt_values = values["Voltage [V]"].data + np.random.normal(
+        solution = pybamm.Simulation(model, parameter_values=parameter_values).solve(
+            t_eval=t_eval
+        )
+        corrupt_values = solution["Voltage [V]"](t_eval) + np.random.normal(
             0, sigma, len(t_eval)
         )
 
@@ -55,18 +42,33 @@ class BenchmarkOptimisationConstruction:
         dataset = pybop.Dataset(
             {
                 "Time [s]": t_eval,
-                "Current function [A]": values["Current [A]"].data,
+                "Current function [A]": solution["Current [A]"](t_eval),
                 "Voltage [V]": corrupt_values,
             }
         )
 
-        # Create fitting problem
-        problem = pybop.FittingProblem(
-            model=model_instance, dataset=dataset, parameters=parameters
+        # Define fitting parameters
+        parameter_values.update(
+            {
+                "Negative electrode active material volume fraction": pybop.Parameter(
+                    prior=pybop.Gaussian(0.6, 0.02),
+                    bounds=[0.375, 0.7],
+                    initial_value=0.63,
+                ),
+                "Positive electrode active material volume fraction": pybop.Parameter(
+                    prior=pybop.Gaussian(0.5, 0.02),
+                    bounds=[0.375, 0.625],
+                    initial_value=0.51,
+                ),
+            }
         )
 
-        # Create cost function
-        self.cost = pybop.SumSquaredError(problem=problem)
+        # Create fitting problem
+        simulator = pybop.pybamm.Simulator(
+            model, parameter_values=parameter_values, protocol=dataset
+        )
+        cost = pybop.SumSquaredError(dataset)
+        self.problem = pybop.Problem(simulator, cost)
 
     def time_optimisation_construction(self, model, parameter_set, optimiser):
         """
@@ -77,7 +79,7 @@ class BenchmarkOptimisationConstruction:
             parameter_set (str): The name of the parameter set being used.
             optimiser (pybop.Optimiser): The optimiser class being used.
         """
-        self.optim = pybop.Optimisation(self.cost, optimiser=optimiser)
+        self.optim = optimiser(self.problem)
 
     def time_cost_evaluate(self, model, parameter_set, optimiser):
         """
@@ -88,4 +90,4 @@ class BenchmarkOptimisationConstruction:
             parameter_set (str): The name of the parameter set being used.
             optimiser (pybop.Optimiser): The optimiser class being used.
         """
-        self.cost([0.63, 0.51])
+        self.problem([0.63, 0.51])

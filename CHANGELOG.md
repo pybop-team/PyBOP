@@ -8,6 +8,44 @@
 
 ## Breaking Changes
 
+# [v25.10](https://github.com/pybop-team/PyBOP/tree/v25.10) - 2025-10-31
+
+This release presents a major restructure of PyBOP's base classes. We move from setting up a model, problem, cost,
+then optimiser to defining a simulator, cost, problem, and then optimiser. A `pybop.pybamm.Simulator` is designed
+to simulate a `pybamm.BaseModel`. Optimisation parameters can be passed through a `pybamm.ParameterValues` class.
+To understand how to update your use of PyBOP, please take a look at the example notebooks and scripts.
+
+## Breaking Changes
+
+- [#820](https://github.com/pybop-team/PyBOP/pull/820) - Remove the `name` property from `pybop.Parameter`
+- [#821](https://github.com/pybop-team/PyBOP/pull/821) - Remove the `papers` folder and update Readme.
+- [#809](https://github.com/pybop-team/PyBOP/pull/809) - Major restructure, including:
+- Deprecate Python 3.9 support
+- Update initial state setting (requires PyBaMM > 25.8)
+- Remove jax methods
+- Add PyBaMM and PyBaMM-EIS simulators for rebuilding and running simulations for a given set of input parameters
+- Remove PyBaMM wrappers and enable use of PyBaMM model, parameter values and experiment classes
+- Remove observers
+- Remove standalone class examples
+- Improve logging
+- Remove Optimisation and MCMCSampler wrapper classes
+- Remove Fisher information computation
+- Rename `apply_transform` argument to `transformed`
+- Remove the `update_capacity` option from the `DesignProblem`
+- Update sensitivities retrieval (for PyBaMM 25.8)
+- Remove uninformative examples
+- Move optimiser and sampler options into defined classes
+- Add PyBaMM utilities, design variable definitions and the `add_variable_to_model` function
+- Allow plotting via functions on the `OptimisationResult`
+- Separate the cost classes from the `Problem`
+- Replace `FittingProblem` and `DesignProblem` by a single `Problem` class
+- Rename and reimplement `MultiFittingProblem` as `MetaProblem`
+- Add `BaseSimulator` as a generic base class for the `pybop.pybamm.Simulator` and `pybop.pybamm.EISSimulator`
+- Enable `pybop.Parameter` objects to be passed directly to an instance of `pybamm.ParameterValues`
+- Update the method for setting formation concentrations to be part of the model definition
+- Rename some example scripts and notebooks
+- Update the docs and test workflows
+
 # [v25.6](https://github.com/pybop-team/PyBOP/tree/v25.6) - 2025-07-16
 
 ## Features

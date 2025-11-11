@@ -1,10 +1,24 @@
+import pybamm
 from pybamm import Parameter
 
 import pybop
 
+# Define model
+model = pybamm.lithium_ion.SPMe()
+
+# Supplement the model with design variables
+target_time = 1800  # must match the length of dis/charge in the experiment [s]
+pybop.pybamm.add_variable_to_model(
+    model, "Gravimetric power density [W.kg-1]", target_time=target_time
+)
+pybop.pybamm.add_variable_to_model(
+    model, "Volumetric power density [W.m-3]", target_time=target_time
+)
+
 # Define parameter set and additional parameters needed for the cost function
-parameter_set = pybop.ParameterSet("Chen2020", formation_concentrations=True)
-parameter_set.update(
+parameter_values = pybamm.ParameterValues("Chen2020")
+pybop.pybamm.set_formation_concentrations(parameter_values)
+parameter_values.update(
     {
         "Electrolyte density [kg.m-3]": Parameter("Separator density [kg.m-3]"),
         "Negative electrode active material density [kg.m-3]": Parameter(
@@ -19,67 +33,60 @@ parameter_set.update(
         "Positive electrode carbon-binder density [kg.m-3]": Parameter(
             "Positive electrode density [kg.m-3]"
         ),
+        "Cell mass [kg]": pybop.pybamm.cell_mass(),
+        "Cell volume [m3]": pybop.pybamm.cell_volume(),
     },
     check_already_exists=False,
 )
 
-# Define model
-model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
-
-# Define useful quantities
-nominal_capacity = parameter_set["Nominal cell capacity [A.h]"]
-target_c_rate = 2
-discharge_rate = target_c_rate * nominal_capacity
+# Define an initial guess for the discharge rate
+discharge_rate = 2 * parameter_values["Nominal cell capacity [A.h]"]
 
 # Fitting parameters
-parameters = pybop.Parameters(
-    pybop.Parameter(
-        "Positive electrode thickness [m]",
-        prior=pybop.Gaussian(7.56e-05, 0.5e-05),
-        bounds=[65e-06, 10e-05],
-    ),
-    pybop.Parameter(
-        "Nominal cell capacity [A.h]",  # controls the C-rate in the experiment
-        prior=pybop.Gaussian(discharge_rate, 0.2),
-        bounds=[0.8 * discharge_rate, 1.2 * discharge_rate],
-    ),
+parameter_values.update(
+    {
+        "Positive electrode thickness [m]": pybop.Parameter(
+            prior=pybop.Gaussian(7.56e-05, 0.5e-05),
+            bounds=[65e-06, 10e-05],
+        ),
+        "Nominal cell capacity [A.h]": pybop.Parameter(  # controls the C-rate in the experiment
+            prior=pybop.Gaussian(discharge_rate, 0.2),
+            bounds=[0.8 * discharge_rate, 1.2 * discharge_rate],
+        ),
+    }
 )
 
 # Define test protocol
-experiment = pybop.Experiment(
-    ["Discharge at 1C for 30 minutes or until 2.5 V (5 seconds period)"],
+experiment = pybamm.Experiment(
+    ["Discharge at 1C for 30 minutes or until 2.5 V (5 seconds period)"]
 )
-signal = ["Voltage [V]", "Current [A]"]
 
 # Generate problem
-problem = pybop.DesignProblem(
+simulator = pybop.pybamm.Simulator(
     model,
-    parameters,
-    experiment,
-    signal=signal,
+    parameter_values,
+    protocol=experiment,
     initial_state={"Initial SoC": 1.0},
 )
+cost_1 = pybop.DesignCost(target="Gravimetric power density [W.kg-1]")
+problem_1 = pybop.Problem(simulator, cost_1)
+cost_2 = pybop.DesignCost(target="Volumetric power density [W.m-3]")
+problem_2 = pybop.Problem(simulator, cost_2)
+problem = pybop.MetaProblem(problem_1, problem_2, weights=[1, 1e-3])
 
-# Generate multiple cost functions and combine them
-cost1 = pybop.GravimetricPowerDensity(problem, target_time=3600 / target_c_rate)
-cost2 = pybop.VolumetricPowerDensity(problem, target_time=3600 / target_c_rate)
-cost = pybop.WeightedCost(cost1, cost2, weights=[1, 1e-3])
+# Run the optimisation
+options = pybop.PintsOptions(max_iterations=10)
+optim = pybop.XNES(problem, options=options)
+result = optim.run()
+print(result)
+print(f"Initial gravimetric power density: {problem_1(result.x0):.2f} W.kg-1")
+print(f"Optimised gravimetric power density: {problem_1(result.x):.2f} W.kg-1")
+print(f"Initial volumetric power density: {problem_2(result.x0):.2f} W.m-3")
+print(f"Optimised volumetric power density: {problem_2(result.x):.2f} W.m-3")
 
-# Run optimisation
-optim = pybop.XNES(
-    cost, verbose=True, allow_infeasible_solutions=False, max_iterations=10
-)
-results = optim.run()
-print(f"Initial gravimetric power density: {cost1(optim.x0):.2f} W.kg-1")
-print(f"Optimised gravimetric power density: {cost1(results.x):.2f} W.kg-1")
-print(f"Initial volumetric power density: {cost2(optim.x0):.2f} W.m-3")
-print(f"Optimised volumetric power density: {cost2(results.x):.2f} W.m-3")
-print(
-    f"Optimised discharge rate: {results.x[-1]:.2f} A = {results.x[-1] / nominal_capacity:.2f} C"
-)
+# Plot the optimisation result
+result.plot_surface()
 
 # Plot the timeseries output
-pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
-
-# Plot the cost landscape with optimisation path
-pybop.plot.surface(optim)
+problem_1.target = "Voltage [V]"
+pybop.plot.problem(problem_1, problem_inputs=result.x, title="Optimised Comparison")
