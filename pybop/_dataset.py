@@ -202,7 +202,7 @@ def import_pyprobe_result(
             "Time [s]",
             "Current function [A]",
             "Voltage [V]",
-            "Discharge capacity [Ah]",
+            "Discharge capacity [A.h]",
         ]
         pyprobe_columns = [
             "Time [s]",
