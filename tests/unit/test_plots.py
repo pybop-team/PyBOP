@@ -32,17 +32,17 @@ class TestPlots:
     @pytest.fixture
     def parameters(self):
         return {
-            "Negative electrode active material volume fraction": pybop.TruncatedGaussian(
-                loc=0.68,
-                scale=0.05,
+            "Negative electrode active material volume fraction": pybop.Gaussian(
+                mean=0.68,
+                sigma=0.05,
                 bounds=[0.5, 0.8],
                 transformation=pybop.ScaledTransformation(
                     coefficient=1 / 0.3, intercept=-0.5
                 ),
             ),
-            "Positive electrode active material volume fraction": pybop.TruncatedGaussian(
-                loc=0.58,
-                scale=0.05,
+            "Positive electrode active material volume fraction": pybop.Gaussian(
+                mean=0.58,
+                sigma=0.05,
                 bounds=[0.4, 0.7],
                 transformation=pybop.ScaledTransformation(
                     coefficient=1 / 0.3, intercept=-0.4
@@ -198,9 +198,9 @@ class TestPlots:
         # Test with less than two paramters
         parameter_values.update(
             {
-                "Negative electrode active material volume fraction": pybop.TruncatedGaussian(
-                    loc=0.68,
-                    scale=0.05,
+                "Negative electrode active material volume fraction": pybop.Gaussian(
+                    mean=0.68,
+                    sigma=0.05,
                     bounds=[0.5, 0.8],
                 ),
             }
@@ -218,14 +218,14 @@ class TestPlots:
         # Test with more than two paramters
         parameter_values.update(
             {
-                "Positive electrode active material volume fraction": pybop.TruncatedGaussian(
-                    loc=0.58,
-                    scale=0.05,
+                "Positive electrode active material volume fraction": pybop.Gaussian(
+                    mean=0.58,
+                    sigma=0.05,
                     bounds=[0.4, 0.7],
                 ),
-                "Positive particle radius [m]": pybop.TruncatedGaussian(
-                    loc=4.8e-06,
-                    scale=0.05e-06,
+                "Positive particle radius [m]": pybop.Gaussian(
+                    mean=4.8e-06,
+                    sigma=0.05e-06,
                     bounds=[4e-06, 6e-06],
                 ),
             }
@@ -245,9 +245,9 @@ class TestPlots:
         # Fitting parameters
         parameter_values.update(
             {
-                "Positive electrode thickness [m]": pybop.TruncatedGaussian(
-                    scale=60e-6,
-                    loc=1e-6,
+                "Positive electrode thickness [m]": pybop.Gaussian(
+                    sigma=60e-6,
+                    mean=1e-6,
                     bounds=[10e-6, 80e-6],
                 )
             }

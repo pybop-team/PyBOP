@@ -40,9 +40,9 @@ class TestOptimisation:
     @pytest.fixture
     def parameters(self):
         return {
-            "Negative electrode active material volume fraction": pybop.TruncatedGaussian(
-                loc=0.55,
-                scale=0.05,
+            "Negative electrode active material volume fraction": pybop.Gaussian(
+                mean=0.55,
+                sigma=0.05,
                 bounds=[0.375, 0.75],
             ),
             "Positive electrode active material volume fraction": pybop.ParameterDistribution(
@@ -77,7 +77,6 @@ class TestOptimisation:
     def test_optimisation_f_guessed(self, f_guessed, problem):
         x0 = problem.parameters.get_initial_values()
         options = pybop.PintsOptions(
-            sigma=0.05,
             max_iterations=100,
             max_unchanged_iterations=25,
             absolute_tolerance=1e-5,

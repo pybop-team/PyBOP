@@ -40,11 +40,11 @@ class TestOptimisation:
     @pytest.fixture
     def two_parameters(self):
         return {
-            "Negative electrode active material volume fraction": pybop.TruncatedGaussian(
-                bounds=[0.58, 0.62], loc=0.6, scale=0.02
+            "Negative electrode active material volume fraction": pybop.Gaussian(
+                bounds=[0.58, 0.62], mean=0.6, sigma=0.02
             ),
-            "Positive electrode active material volume fraction": pybop.TruncatedGaussian(
-                bounds=[0.48, 0.52], loc=0.5, scale=0.05
+            "Positive electrode active material volume fraction": pybop.Gaussian(
+                bounds=[0.48, 0.52], mean=0.5, sigma=0.05
             ),
         }
 

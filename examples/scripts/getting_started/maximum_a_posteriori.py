@@ -64,7 +64,6 @@ problem = pybop.Problem(simulator, posterior)
 # Set up the optimiser
 options = pybop.PintsOptions(
     verbose=True,
-    sigma=0.05,
     max_unchanged_iterations=20,
     min_iterations=20,
     max_iterations=50,

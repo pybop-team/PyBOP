@@ -19,8 +19,8 @@ class TestParameter:
 
     @pytest.fixture
     def parameter(self):
-        return pybop.TruncatedGaussian(
-            bounds=[0.375, 0.7], loc=0.6, scale=0.02, initial_value=0.6
+        return pybop.Gaussian(
+            bounds=[0.375, 0.7], mean=0.6, sigma=0.02, initial_value=0.6
         )
 
     @pytest.fixture
@@ -44,13 +44,9 @@ class TestParameter:
         assert (samples >= 0.375).all() and (samples <= 0.7).all()
 
     def test_parameter_update(self, parameter):
-        # Test value update
-        parameter.update_value(value=0.534)
-        assert parameter.current_value == 0.534
-
         # Test initial value update
         parameter.update_initial_value(value=0.654)
-        assert parameter.current_value == 0.654
+        assert parameter.initial_value == 0.654
 
     def test_parameter_margin(self, parameter):
         assert parameter._margin == 1e-4
@@ -80,7 +76,7 @@ class TestParameter:
             pybop.Parameter(bounds=[0.7, 0.3])
 
     def test_sample_initial_values(self):
-        parameter = pybop.TruncatedGaussian(bounds=[0.375, 0.7], loc=0.6, scale=0.02)
+        parameter = pybop.Gaussian(bounds=[0.375, 0.7], mean=0.6, sigma=0.02)
         sample = parameter._initial_value
         assert (sample >= 0.375) and (sample <= 0.7)
 
@@ -94,10 +90,10 @@ class TestParameters:
 
     @pytest.fixture
     def parameter(self):
-        return pybop.TruncatedGaussian(
+        return pybop.Gaussian(
             bounds=[0.375, 0.7],
-            loc=0.6,
-            scale=0.02,
+            mean=0.6,
+            sigma=0.02,
             initial_value=0.6,
         )
 
@@ -120,10 +116,10 @@ class TestParameters:
             pybop.Parameters(
                 {
                     name: parameter,
-                    "Positive electrode active material volume fraction": pybop.TruncatedGaussian(
+                    "Positive electrode active material volume fraction": pybop.Gaussian(
                         bounds=[0.375, 0.7],
-                        loc=0.6,
-                        scale=0.02,
+                        mean=0.6,
+                        sigma=0.02,
                         initial_value=0.6,
                     ),
                 }
@@ -181,10 +177,10 @@ class TestParameters:
         # Test unbounded transformation causes ValueError due to NaN
         params = pybop.Parameters(
             {
-                name: pybop.TruncatedGaussian(
+                name: pybop.Gaussian(
                     bounds=[-1, 1],
-                    loc=0.01,
-                    scale=0.2,
+                    mean=0.01,
+                    sigma=0.2,
                     transformation=pybop.LogTransformation(),
                 )
             }

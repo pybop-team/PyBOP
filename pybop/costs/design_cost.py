@@ -1,6 +1,8 @@
 import numpy as np
 
 from pybop.costs.base_cost import BaseCost
+from pybop.parameters.parameter import Inputs
+from pybop.simulators.base_simulator import Solution
 
 
 class DesignCost(BaseCost):
@@ -23,47 +25,49 @@ class DesignCost(BaseCost):
         self.target = target or ["Voltage [V]"]
         self.domain = "Time [s]"
 
-    def compute(
+    def evaluate(
         self,
-        y: dict,
-        dy: np.ndarray | None = None,
+        sol: Solution,
+        inputs: Inputs | None = None,
+        calculate_sensitivities: bool = False,
     ) -> float:
         """
         Returns the value of the cost variable.
 
         Parameters
         ----------
-        y : dict
-            The dictionary of predictions with keys designating the output variables for fitting.
-        dy : np.ndarray, optional
-            The corresponding gradient with respect to the parameters for each output variable.
-            Note: not used in design optimisation classes.
+        sol : pybop.Solution | pybamm.Solution
+            The simulation result.
+        inputs : Inputs, optional
+            Input parameters (default: None).
+        calculate_sensitivities : bool
+            Whether to also return the sensitivities (default: False).
 
         Returns
         -------
         float
             The value of the output variable.
         """
-        if not self.verify_prediction(y):
-            return self.failure(dy)
+        if not self.verify_prediction(sol):
+            return self.failure(calculate_sensitivities)
 
-        return y[self.target[0]][-1]
+        return sol[self.target[0]].data[-1]
 
-    def verify_prediction(self, y: dict):
+    def verify_prediction(self, sol: Solution):
         """
         Verify that the prediction matches the target data.
 
         Parameters
         ----------
-        y : dict
-            A dictionary of predictions with keys designating the output variables for fitting.
+        sol : pybop.Solution | pybamm.Solution
+            The simulation result.
 
         Returns
         -------
         bool
             True if the prediction matches the target data, otherwise False.
         """
-        if not all(np.isfinite(y[var]) for var in self.target):
+        if not all(np.isfinite(sol[var].data) for var in self.target):
             return False
 
         return True

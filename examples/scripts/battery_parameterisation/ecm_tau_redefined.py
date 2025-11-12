@@ -98,7 +98,6 @@ problem = pybop.Problem(simulator, cost)
 
 # Set up the optimiser
 options = pybop.PintsOptions(
-    sigma=[1e-4, 1e-4, 0.02],  # Set parameter specific step size
     max_unchanged_iterations=30,
     max_iterations=125,
 )

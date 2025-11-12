@@ -98,9 +98,14 @@ class InverseOCV:
 
         # Set up a root-finding cost function
         class OCVRoot(pybop.BaseSimulator):
-            def simulate(self, inputs, calculate_sensitivities: bool = False):
-                diff = np.abs(ocv_function(inputs["Root"]) - ocv_value)
-                return {"Difference": np.asarray([diff])}
+            def batch_solve(self, inputs, calculate_sensitivities: bool = False):
+                solutions = []
+                for x in inputs:
+                    diff = np.abs(ocv_function(x["Root"]) - ocv_value)
+                    sol = pybop.Solution()
+                    sol.set_solution_variable("Difference", data=np.asarray([diff]))
+                    solutions.append(sol)
+                return solutions
 
         # Minimise to find the stoichiometry
         cost = pybop.DesignCost(target="Difference")

@@ -62,7 +62,7 @@ f_best = []
 # Run the optimisation
 for i in range(50):
     x = optim.optimiser.ask()
-    f = [problem(x[0], calculate_grad=True)]
+    f = [problem.evaluate(x[0], calculate_sensitivities=True).get_values()]
     optim.optimiser.tell(f)
 
     # Store best solution so far
@@ -76,5 +76,5 @@ for i in range(50):
 
 # Plot the timeseries output
 pybop.plot.problem(
-    problem, problem_inputs=optim.optimiser.x_best(), title="Optimised Comparison"
+    problem, problem_inputs=optim.optimiser.x_best()[0], title="Optimised Comparison"
 )

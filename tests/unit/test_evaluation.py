@@ -29,10 +29,10 @@ class TestEvaluation:
     @pytest.fixture
     def parameters(self):
         return {
-            "Negative electrode active material volume fraction": pybop.TruncatedGaussian(
+            "Negative electrode active material volume fraction": pybop.Gaussian(
                 bounds=[0.375, 0.625],
-                loc=0.5,
-                scale=0.01,
+                mean=0.5,
+                sigma=0.01,
                 transformation=pybop.ScaledTransformation(
                     coefficient=1 / 0.25, intercept=-0.375
                 ),
@@ -100,23 +100,23 @@ class TestEvaluation:
             self.x_search.append(0.002)
 
         # First compute the cost and sensitivities in the model space
-        cost1 = problem.__call__(self.x_model)
-        cost1_ws, grad1_wrt_model_parameters = problem.__call__(
-            self.x_model, calculate_grad=True
-        )
+        cost1 = problem.evaluate(self.x_model).values
+        cost1_ws, grad1_wrt_model_parameters = problem.evaluate(
+            self.x_model, calculate_sensitivities=True
+        ).get_values()
 
         numerical_grad1 = []
         for i in range(len(self.x_model)):
             delta = 1e-8 * np.abs(self.x_model[i])
             self.x_model[i] += delta / 2
-            cost_right = problem.__call__(self.x_model)
+            cost_right = problem(self.x_model)
             self.x_model[i] -= delta
-            cost_left = problem.__call__(self.x_model)
+            cost_left = problem(self.x_model)
             self.x_model[i] += delta / 2
             numerical_grad1.append((cost_right - cost_left) / delta)
         numerical_grad1 = np.asarray(numerical_grad1).reshape(-1)
         np.testing.assert_allclose(
-            grad1_wrt_model_parameters, numerical_grad1, rtol=2e-3
+            grad1_wrt_model_parameters[0], numerical_grad1, rtol=2e-3
         )
 
         jac = problem.parameters.transformation.jacobian(self.x_search)
@@ -148,7 +148,7 @@ class TestEvaluation:
             numerical_grad2.append((cost_right - cost_left) / delta)
         numerical_grad2 = np.asarray(numerical_grad2).reshape(-1)
         np.testing.assert_allclose(
-            grad1_wrt_search_parameters, sign * numerical_grad2, rtol=2e-3
+            grad1_wrt_search_parameters[0], sign * numerical_grad2, rtol=2e-3
         )
 
         evaluator_ws = pybop.ScalarEvaluator(
@@ -160,7 +160,7 @@ class TestEvaluation:
         cost2_ws, grad2_with_transformations = evaluator_ws.evaluate(self.x_search)
         np.testing.assert_allclose(sign * cost2_ws, cost1, rtol=1e-5)
         np.testing.assert_allclose(
-            sign * grad2_with_transformations, grad1_wrt_search_parameters, rtol=5e-5
+            sign * grad2_with_transformations, grad1_wrt_search_parameters[0], rtol=5e-5
         )
 
         # Also test the sign change for maximisation
@@ -182,5 +182,7 @@ class TestEvaluation:
         cost_ws3, grad3_with_transformations = evaluator_ws.evaluate(self.x_search)
         np.testing.assert_allclose(-sign * cost_ws3, cost1, rtol=1e-5)
         np.testing.assert_allclose(
-            -sign * grad3_with_transformations, grad1_wrt_search_parameters, rtol=5e-5
+            -sign * grad3_with_transformations,
+            grad1_wrt_search_parameters[0],
+            rtol=5e-5,
         )

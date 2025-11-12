@@ -134,33 +134,22 @@ class Test_SPM_Parameterisation:
             cost = cost_class(dataset)
         problem = pybop.Problem(simulator, cost)
 
-        max_unchanged_iter = 100
-        sigma0 = (
-            [0.02, 0.02, 2e-3]
-            if isinstance(cost, pybop.GaussianLogLikelihood)
-            else 0.02
-        )
-        if optimiser is pybop.SimulatedAnnealing:
-            max_unchanged_iter = 450
-            sigma0 = [0.05, 0.05]
-            if isinstance(cost, pybop.GaussianLogLikelihood):
-                sigma0.append(2e-3)
-
         # Construct optimisation object
+        maxiter = 500
         if optimiser is pybop.SciPyDifferentialEvolution:
-            options = pybop.SciPyDifferentialEvolutionOptions(maxiter=450)
+            options = pybop.SciPyDifferentialEvolutionOptions(maxiter=maxiter)
         elif optimiser is pybop.SciPyMinimize:
-            options = pybop.SciPyMinimizeOptions(maxiter=450)
+            options = pybop.SciPyMinimizeOptions(maxiter=maxiter)
         else:
             options = pybop.PintsOptions(
-                max_iterations=450,
-                max_unchanged_iterations=max_unchanged_iter,
-                sigma=sigma0,
+                max_iterations=maxiter,
+                max_unchanged_iterations=50,
             )
 
         if optimiser in [
             pybop.SciPyDifferentialEvolution,
             pybop.CuckooSearch,
+            pybop.IRPropMin,
         ]:
             bounds = {"lower": [0.375, 0.375], "upper": [0.775, 0.775]}
             if isinstance(cost, pybop.GaussianLogLikelihood):
@@ -258,9 +247,6 @@ class Test_SPM_Parameterisation:
             options = pybop.PintsOptions(
                 max_iterations=250,
                 max_unchanged_iterations=60,
-                sigma=[0.03, 0.03, 6e-3, 6e-3]
-                if isinstance(two_signal_problem.cost, pybop.GaussianLogLikelihood)
-                else 0.03,
             )
 
         if multi_optimiser is pybop.SciPyDifferentialEvolution:

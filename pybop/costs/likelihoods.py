@@ -3,7 +3,7 @@ import scipy.stats as stats
 
 from pybop._dataset import Dataset
 from pybop.costs.error_measures import ErrorMeasure
-from pybop.parameters.parameter import Parameter, Parameters
+from pybop.parameters.parameter import Inputs, Parameter, Parameters
 from pybop.parameters.priors import JointPrior, ParameterDistribution, Uniform
 
 
@@ -27,7 +27,7 @@ class LogLikelihood(ErrorMeasure):
 
 class GaussianLogLikelihoodKnownSigma(LogLikelihood):
     """
-    This class represents a Gaussian log-likelihood with a known sigma, which computes the
+    This class represents a Gaussian log-likelihood with a known sigma, which evaluates the
     log-likelihood under the assumption that measurement noise on the target data follows a
     Gaussian distribution.
 
@@ -51,6 +51,7 @@ class GaussianLogLikelihoodKnownSigma(LogLikelihood):
         self,
         r: np.ndarray,
         dy: np.ndarray | None = None,
+        inputs: Inputs | None = None,
     ) -> float | tuple[float, np.ndarray]:
         """
         Compute the Gaussian log-likelihood for the given parameters with known sigma.
@@ -80,7 +81,7 @@ class GaussianLogLikelihoodKnownSigma(LogLikelihood):
 
 class GaussianLogLikelihood(LogLikelihood):
     """
-    This class represents a Gaussian log-likelihood, which computes the log-likelihood under
+    This class represents a Gaussian log-likelihood, which evaluates the log-likelihood under
     the assumption that measurement noise on the target data follows a Gaussian distribution.
 
     This class estimates the standard deviation of the Gaussian distribution alongside the
@@ -161,11 +162,16 @@ class GaussianLogLikelihood(LogLikelihood):
         self,
         r: np.ndarray,
         dy: np.ndarray | None = None,
+        inputs: Inputs | None = None,
     ) -> float | tuple[float, np.ndarray]:
         """
         Compute the Gaussian log-likelihood for the given parameters.
         """
-        sigma = self.sigma.get_values()
+        inputs = inputs or self.parameters.to_dict("initial")
+        sigma_values = []
+        for name in self.sigma.keys():
+            sigma_values.append(inputs[name])
+        sigma = np.asarray(sigma_values)
 
         sum_r2 = np.sum(np.real(r * np.conj(r)), axis=1)
         l = np.sum(
@@ -196,15 +202,12 @@ class LogPosterior(LogLikelihood):
         The prior class of type ``ParameterDistribution`` or ``stats.distributions.rv_frozen``.
         If not provided, the prior class will be taken from the parameter priors
         constructed in the `pybop.Parameters` class.
-    gradient_step : float, default: 1e-3
-        The step size for the finite-difference gradient calculation
     """
 
     def __init__(
         self,
         log_likelihood: LogLikelihood,
         prior: ParameterDistribution | stats.distributions.rv_frozen | None = None,
-        gradient_step: float = 1e-3,
     ):
         dataset = Dataset(log_likelihood.dataset)
         dataset.domain = log_likelihood.domain
@@ -213,15 +216,12 @@ class LogPosterior(LogLikelihood):
         self.parameters = self.log_likelihood.parameters
         self.prior = prior
         self.joint_prior = None  # must be built with model parameters included
-        self.gradient_step = gradient_step
 
     def set_joint_prior(self):
         if self.prior is None:
             self.joint_prior = JointPrior(*self.parameters)
         elif isinstance(self.prior, stats.distributions.rv_frozen):
-            self.joint_prior = ParameterDistribution(
-                self.prior, gradient_step=self.gradient_step
-            )
+            self.joint_prior = ParameterDistribution(self.prior)
         elif isinstance(self.prior, ParameterDistribution):
             self.joint_prior = self.prior
         else:
@@ -233,20 +233,25 @@ class LogPosterior(LogLikelihood):
         self,
         r: np.ndarray,
         dy: np.ndarray | None = None,
+        inputs: Inputs | None = None,
     ) -> float | tuple[float, np.ndarray]:
+        # Get the values of all input parameters
+        inputs = inputs or self.parameters.to_dict("initial")
+        input_values = np.asarray(list(inputs.values()))
+
         # Compute log prior (and gradient)
         if dy is not None:
-            log_prior, dp = self.joint_prior.logpdfS1(self.parameters.get_values())
+            log_prior, dp = self.joint_prior.logpdfS1(input_values)
         else:
-            log_prior = self.joint_prior.logpdf(self.parameters.get_values())
+            log_prior = self.joint_prior.logpdf(input_values)
 
         if not np.isfinite(log_prior).any():
             return self.failure(dy)
 
         # Compute log likelihood and add log prior (and gradients)
         if dy is not None:
-            log_likelihood, dl = self.log_likelihood(r, dy)
+            log_likelihood, dl = self.log_likelihood(r, dy, inputs=inputs)
 
             return log_likelihood + log_prior, dl + dp
 
-        return self.log_likelihood(r) + log_prior
+        return self.log_likelihood(r, inputs=inputs) + log_prior

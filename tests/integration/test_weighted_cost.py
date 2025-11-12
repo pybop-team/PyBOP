@@ -114,7 +114,6 @@ class TestWeightedCost:
     def test_fitting_costs(self, weighted_fitting_problem):
         x0 = weighted_fitting_problem.parameters.get_initial_values()
         options = pybop.PintsOptions(
-            sigma=0.03,
             max_iterations=250,
             max_unchanged_iterations=35,
         )
@@ -144,14 +143,14 @@ class TestWeightedCost:
         initial_state = {"Initial SoC": 1.0}
         parameter_values.update(
             {
-                "Positive electrode thickness [m]": pybop.TruncatedGaussian(
-                    loc=5e-05,
-                    scale=5e-06,
+                "Positive electrode thickness [m]": pybop.Gaussian(
+                    mean=5e-05,
+                    sigma=5e-06,
                     bounds=[2e-06, 10e-05],
                 ),
-                "Negative electrode thickness [m]": pybop.TruncatedGaussian(
-                    loc=5e-05,
-                    scale=5e-06,
+                "Negative electrode thickness [m]": pybop.Gaussian(
+                    mean=5e-05,
+                    sigma=5e-06,
                     bounds=[2e-06, 10e-05],
                 ),
             }

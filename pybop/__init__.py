@@ -66,7 +66,7 @@ from .transformation.transformations import (
 # Parameter classes
 #
 from .parameters.parameter import Parameter, Parameters, Bounds
-from .parameters.priors import (ParameterDistribution, TruncatedGaussian, Gaussian, Uniform, Exponential, JointPrior)
+from .parameters.priors import (ParameterDistribution, Gaussian, Uniform, Exponential, JointPrior)
 
 #
 # Model classes
@@ -89,6 +89,7 @@ from .problems.meta_problem import MetaProblem
 # Simulator classes
 #
 from .simulators.base_simulator import BaseSimulator
+from .simulators.solution import Solution
 
 #
 # Cost classes

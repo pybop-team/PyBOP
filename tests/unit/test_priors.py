@@ -35,7 +35,7 @@ class TestPriors:
         base = pybop.ParameterDistribution()
         assert isinstance(base, pybop.ParameterDistribution)
         with pytest.raises(NotImplementedError):
-            base._logpdfS1(0.0)
+            base.logpdfS1(0.0)
 
     def test_priors(self, Gaussian, Uniform, Exponential, JointPrior1, JointPrior2):
         # Test pdf
@@ -58,12 +58,13 @@ class TestPriors:
         np.testing.assert_allclose(Uniform.cdf(0.5), 0.5, atol=1e-4)
         np.testing.assert_allclose(Exponential.cdf(1), 0.6321205588285577, atol=1e-4)
 
-        # Test __call__
-        assert Gaussian(0.5) == Gaussian.logpdf(0.5)
-        assert Uniform(0.5) == Uniform.logpdf(0.5)
-        assert Exponential(1) == Exponential.logpdf(1)
-        assert JointPrior1([0.5, 0.5]) == Gaussian.logpdf(0.5) + Uniform.logpdf(0.5)
-        assert JointPrior2([0.5, 1]) == Gaussian.logpdf(0.5) + Exponential.logpdf(1)
+        # Test logpdf
+        assert JointPrior1.logpdf([0.5, 0.5]) == Gaussian.logpdf(0.5) + Uniform.logpdf(
+            0.5
+        )
+        assert JointPrior2.logpdf([0.5, 1]) == Gaussian.logpdf(
+            0.5
+        ) + Exponential.logpdf(1)
 
         # Test Gaussian.logpdfS1
         p, dp = Gaussian.logpdfS1(0.5)
@@ -95,18 +96,20 @@ class TestPriors:
         # Test JointPrior1 non-symmetric
         with pytest.raises(AssertionError):
             np.testing.assert_allclose(
-                JointPrior1([0.4, 0.5]), JointPrior1([0.5, 0.4]), atol=1e-4
+                JointPrior1.logpdf([0.4, 0.5]),
+                JointPrior1.logpdf([0.5, 0.4]),
+                atol=1e-4,
             )
 
         # Test JointPrior2 non-symmetric
         with pytest.raises(AssertionError):
             np.testing.assert_allclose(
-                JointPrior2([0.4, 1]), JointPrior2([1, 0.4]), atol=1e-4
+                JointPrior2.logpdf([0.4, 1]), JointPrior2.logpdf([1, 0.4]), atol=1e-4
             )
 
         # Test JointPrior with incorrect dimensions
         with pytest.raises(ValueError, match="Input x must have length 2, got 1"):
-            JointPrior1([0.4])
+            JointPrior1.logpdf([0.4])
 
         with pytest.raises(ValueError, match="Input x must have length 2, got 1"):
             JointPrior1.logpdfS1([0.4])

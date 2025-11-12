@@ -58,7 +58,6 @@ problem = pybop.Problem(simulator, cost)
 options = pybop.PintsOptions(
     verbose=True,
     verbose_print_rate=20,
-    sigma=0.02,
     max_iterations=100,
     max_unchanged_iterations=45,
 )

@@ -43,7 +43,6 @@ problem = pybop.Problem(simulator, cost)
 # Set up the optimiser
 options = pybop.PintsOptions(
     verbose=True,
-    sigma=0.02,
     max_iterations=100,
     max_unchanged_iterations=20,
 )

@@ -25,12 +25,8 @@ class TestClassification:
     def parameters(self, request):
         self.ground_truth = request.param
         return {
-            "R0 [Ohm]": pybop.TruncatedGaussian(
-                bounds=[0.02, 0.08], loc=0.05, scale=0.01
-            ),
-            "R1 [Ohm]": pybop.TruncatedGaussian(
-                bounds=[0.02, 0.08], loc=0.05, scale=0.01
-            ),
+            "R0 [Ohm]": pybop.Gaussian(bounds=[0.02, 0.08], mean=0.05, sigma=0.01),
+            "R1 [Ohm]": pybop.Gaussian(bounds=[0.02, 0.08], mean=0.05, sigma=0.01),
         }
 
     @pytest.fixture

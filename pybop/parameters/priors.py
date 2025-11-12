@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.stats as stats
 
-from pybop import Bounds, Parameter, Parameters
+from pybop import Bounds, Parameter
 from pybop.transformation.base_transformation import Transformation
 
 
@@ -26,7 +26,6 @@ class ParameterDistribution(Parameter):
         initial_value: float = None,
         transformation: Transformation | None = None,
         margin: float = 1e-4,
-        gradient_step: float = 1e-3,
     ):
         super().__init__(
             initial_value=initial_value, transformation=transformation, margin=margin
@@ -42,7 +41,6 @@ class ParameterDistribution(Parameter):
         if distribution is not None:
             lower, upper = self._distribution.support()
             self._bounds = Bounds(lower, upper)
-        self.gradient_step = gradient_step
 
     def pdf(self, x):
         """
@@ -155,23 +153,6 @@ class ParameterDistribution(Parameter):
         else:
             return self._distribution.rvs(size=size, random_state=random_state)
 
-    def __call__(self, x):
-        """
-        Evaluates the distribution at x.
-
-        Parameters
-        ----------
-        x : float
-            The point(s) at which to evaluate the distribution.
-
-        Returns
-        -------
-        float
-            The value(s) of the distribution at x.
-        """
-        inputs = self.verify(x)
-        return self.logpdf(inputs)
-
     def logpdfS1(self, x):
         """
         Evaluates the first derivative of the distribution at x.
@@ -186,12 +167,15 @@ class ParameterDistribution(Parameter):
         float
             The value(s) of the first derivative at x.
         """
-        inputs = self.verify(x)
-        return self._logpdfS1(inputs)
+        x = self.verify(x)
+        return self.logpdf(x), self._dlogpdf_dx(x)
 
-    def _logpdfS1(self, x):
+    def _dlogpdf_dx(self, x):
         """
-        Evaluates the first derivative of the distribution at x.
+        Evaluates the first derivative of the log distribution at x.
+
+        Overwrite this function in a subclass to improve upon this generic
+        finite difference approximation.
 
         Parameters
         ----------
@@ -206,23 +190,12 @@ class ParameterDistribution(Parameter):
         if self._distribution is None:
             raise NotImplementedError
         else:
-            # Compute log prior first
-            log_prior = self.logpdf(x)
+            # Use a finite difference approximation of the gradient
+            delta = max(abs(x) * 1e-3, np.finfo(float).eps)
+            log_prior_upper = self.logpdf(x + delta)
+            log_prior_lower = self.logpdf(x - delta)
 
-            # Compute a finite difference approximation of the gradient of the log prior
-            delta = x * self.gradient_step
-
-            upper_value = x + delta
-            lower_value = x - delta
-
-            log_prior_upper = self.__call__(upper_value)
-            log_prior_lower = self.__call__(lower_value)
-
-            gradient = (log_prior_upper - log_prior_lower) / (
-                2 * delta + np.finfo(float).eps
-            )
-
-        return log_prior, gradient
+            return (log_prior_upper - log_prior_lower) / (2 * delta)
 
     def verify(self, x):
         """
@@ -314,9 +287,9 @@ class Gaussian(ParameterDistribution):
         else:
             self._bounds = None
 
-    def _logpdfS1(self, x):
+    def _dlogpdf_dx(self, x):
         """
-        Evaluates the first derivative of the gaussian (log) distribution at x.
+        Evaluates the first derivative of the log Gaussian distribution at x.
 
         Parameters
         ----------
@@ -328,7 +301,7 @@ class Gaussian(ParameterDistribution):
         float
             The value(s) of the first derivative at x.
         """
-        return self.__call__(x), (self.loc - x) / self.scale**2
+        return (self.loc - x) / self.scale**2
 
 
 class Uniform(ParameterDistribution):
@@ -366,7 +339,7 @@ class Uniform(ParameterDistribution):
         self.upper = upper
         self._n_parameters = 1
 
-    def _logpdfS1(self, x):
+    def _dlogpdf_dx(self, x):
         """
         Evaluates the first derivative of the log uniform distribution at x.
 
@@ -380,9 +353,7 @@ class Uniform(ParameterDistribution):
         float
             The value(s) of the first derivative at x.
         """
-        log_pdf = self.__call__(x)
-        dlog_pdf = np.zeros_like(x)
-        return log_pdf, dlog_pdf
+        return np.zeros_like(x)
 
     @property
     def mean(self):
@@ -438,7 +409,7 @@ class Exponential(ParameterDistribution):
         self.loc = loc
         self.scale = scale
 
-    def _logpdfS1(self, x):
+    def _dlogpdf_dx(self, x):
         """
         Evaluates the first derivative of the log exponential distribution at x.
 
@@ -452,12 +423,7 @@ class Exponential(ParameterDistribution):
         float
             The value(s) of the first derivative at x.
         """
-        log_pdf = self.__call__(x)
-        dlog_pdf = -1 / self.scale * np.ones_like(x)
-        return log_pdf, dlog_pdf
-
-    def bounds(self) -> None:
-        return None
+        return -1 / self.scale * np.ones_like(x)
 
     def __repr__(self):
         """
@@ -516,9 +482,9 @@ class JointPrior(ParameterDistribution):
                 f"Input x must have length {self._n_parameters}, got {len(x)}"
             )
 
-        return sum(prior(x) for prior, x in zip(self._priors, x, strict=False))
+        return sum(prior.logpdf(x) for prior, x in zip(self._priors, x, strict=False))
 
-    def _logpdfS1(self, x: float | np.ndarray) -> tuple[float, np.ndarray]:
+    def logpdfS1(self, x: float | np.ndarray) -> tuple[float, np.ndarray]:
         """
         Evaluates the first derivative of the joint log-prior distribution at a given point.
 
@@ -557,37 +523,3 @@ class JointPrior(ParameterDistribution):
     def __repr__(self) -> str:
         priors_repr = ", ".join([repr(prior) for prior in self._priors])
         return f"{self.__class__.__name__}(priors: [{priors_repr}])"
-
-
-class TruncatedGaussian(ParameterDistribution):
-    def __init__(
-        self,
-        bounds: list[float],
-        loc: float = 0.0,
-        scale: float = 1.0,
-        initial_value: float = None,
-        transformation: Transformation | None = None,
-        margin: float = 1e-4,
-    ):
-        distribution = stats.truncnorm(
-            (bounds[0] - loc) / scale, (bounds[1] - loc) / scale, loc=loc, scale=scale
-        )
-        ParameterDistribution.__init__(
-            self,
-            distribution=distribution,
-            initial_value=initial_value,
-            transformation=transformation,
-            margin=margin,
-        )
-
-
-def joint_prior_from_parameters(
-    parameters: Parameters, gradient_step: float = 1e-3
-) -> ParameterDistribution:
-    priors = [
-        ParameterDistribution(param.distribution, gradient_step=gradient_step)
-        if not isinstance(param, ParameterDistribution)
-        else param
-        for param in parameters
-    ]
-    return JointPrior(*priors)

@@ -1,10 +1,12 @@
 import numpy as np
 
+from pybop._utils import FailedSolution
 from pybop.analysis.sensitivity_analysis import sensitivity_analysis
 from pybop.costs.base_cost import BaseCost
+from pybop.costs.evaluation import Evaluation
 from pybop.costs.likelihoods import LogPosterior
 from pybop.parameters.parameter import Inputs, Parameters
-from pybop.simulators.base_simulator import BaseSimulator
+from pybop.simulators.base_simulator import BaseSimulator, Solution
 
 
 class Problem:
@@ -52,10 +54,13 @@ class Problem:
 
         # Objective-specific configuration
         if isinstance(self._cost, LogPosterior):
+            self._cost.log_likelihood.parameters = self.parameters
             self._cost.set_joint_prior()
 
-        # Reset parameters from both model and cost
-        self.parameters.reset_to_initial()
+    def get_model_inputs(self, inputs):
+        all_values = list(inputs.values())
+        n = len(self._simulator.parameters)
+        return self._simulator.parameters.to_dict(all_values[:n])
 
     @property
     def target(self):
@@ -70,32 +75,47 @@ class Problem:
     def n_outputs(self):
         return len(self._target)
 
-    def __call__(
-        self,
-        inputs: Inputs | list | np.ndarray,
-        calculate_grad: bool = False,
-    ) -> (
-        float | tuple[float, np.ndarray] | list[float] | list[tuple[float, np.ndarray]]
-    ):
+    def __call__(self, inputs: Inputs | list[Inputs]) -> float | list[float]:
         """
-        Compute cost and optional gradient for given input parameters.
+        Evaluate the cost for one or more sets of inputs and return the cost value(s).
 
         Parameters
         ----------
-        inputs : Inputs | list[Inputs] | list[float] | np.adarray
-            Input parameters for cost computation. Supports list-like evaluation of
-            multiple input values, shaped [N,M] where N is the number of input positions
-            to evaluate and M is the number of inputs for the underlying model (i.e. parameters).
-        calculate_grad : bool
-            If True, the gradient will be computed as well as the cost (default: False).
+        inputs : Inputs | list[Inputs]
+            Input parameters for cost evaluation. Supports a list of inputs.
 
         Returns
         -------
-        Union[float, list, tuple[float, np.ndarray], list[tuple[float, np.ndarray]]]
-            - Single input, no gradient: float
-            - Multiple inputs, no gradient: list[float]
-            - Single input with gradient: tuple[float, np.ndarray]
-            - Multiple inputs with gradient: list[tuple[float, np.ndarray]]
+        float | list[float]
+            The cost value(s).
+        """
+        evaluation = self.evaluate(inputs=inputs, calculate_sensitivities=False)
+
+        return (
+            evaluation.values[0]
+            if len(evaluation.values) == 1
+            else evaluation.values.tolist()
+        )
+
+    def evaluate(
+        self, inputs: Inputs | list[Inputs], calculate_sensitivities: bool = False
+    ) -> Evaluation:
+        """
+        Evaluate the cost for one or more sets of inputs and return the cost value(s)
+        and (optionally) the sensitivities.
+
+        Parameters
+        ----------
+        inputs : Inputs | list[Inputs]
+            Input parameters for cost evaluation. Supports a list of inputs.
+        calculate_sensitivities : bool
+            Whether to also return the sensitivities (default: False).
+
+        Returns
+        -------
+        Evaluation
+            The cost value(s) and (optionally) the gradient of the cost with respect to
+            each input parameter.
         """
         # Convert values to parameter inputs
         if not isinstance(inputs, dict):
@@ -104,107 +124,155 @@ class Problem:
                 inputs = [self.parameters.to_dict(v) for v in values]
         inputs_list = inputs if isinstance(inputs, list) else [inputs]
 
-        results = []
-        for inputs in inputs_list:
-            result = self.single_call(inputs, calculate_grad=calculate_grad)
-            results.append(result)
+        return self.evaluate_batch(
+            inputs=inputs_list, calculate_sensitivities=calculate_sensitivities
+        )
 
-        return results[0] if len(inputs_list) == 1 else results
+    def evaluate_batch(
+        self, inputs: list[Inputs], calculate_sensitivities: bool = False
+    ) -> Evaluation:
+        """
+        Evaluate the cost for each set of inputs and return the cost value(s) and
+        (optionally) the sensitivities.
 
-    def single_call(
-        self,
-        inputs: Inputs,
-        calculate_grad: bool,
-    ) -> float | tuple[float, np.ndarray]:
-        """Evaluate the cost and (optionally) the gradient for a single set of inputs."""
-        if calculate_grad:
-            calculate_grad = self._has_sensitivities
+        Parameters
+        ----------
+        inputs : list[Inputs]
+            A list of input parameters.
+        calculate_sensitivities : bool
+            Whether to also return the sensitivities (default: False).
 
-        # Check the validity of the parameters before evaluating the cost
-        if not self.parameters.verify_inputs(inputs):
-            return self._cost.failure(calculate_grad if calculate_grad else None)
+        Returns
+        -------
+        Evaluation
+            Cost values of len(inputs) and (optionally) the gradient of the cost with respect to
+            each input parameter with shape (len(inputs), len(parameters)).
+        """
+        if calculate_sensitivities:
+            calculate_sensitivities = self._has_sensitivities
 
-        self.parameters.update(values=list(inputs.values()))
+        validity = []
+        valid_inputs = []
+        for x in inputs:
+            # Check the validity of the inputs so we only evaluate valid parameters
+            if self.parameters.verify_inputs(x):
+                validity.append(True)
+                valid_inputs.append(x)
+            else:
+                validity.append(False)
 
-        if calculate_grad:
-            y, dy = self.simulateS1(self._simulator.parameters.to_dict())
-            return self._cost.compute(y, dy=dy)
+        # Run simulations for the valid parameters
+        solutions = self.simulate_batch(
+            valid_inputs, calculate_sensitivities=calculate_sensitivities
+        )
 
-        y = self.simulate(self._simulator.parameters.to_dict())
-        return self._cost.compute(y, dy=None)
+        # Preallocate the evaluation results
+        evaluation = Evaluation()
+        evaluation.preallocate(
+            n_inputs=len(inputs),
+            n_parameters=len(self.parameters),
+            calculate_sensitivities=calculate_sensitivities,
+        )
 
-    def batch_call(
-        self, inputs_list: list[Inputs], calculate_grad: bool
-    ) -> list[float] | list[tuple[float, np.ndarray]]:
-        """Evaluate the cost and (optionally) the gradient for a list of inputs."""
+        # Evaluate the cost for the valid parameters
+        valid_indices = [i for i, valid in enumerate(validity) if valid]
+        # TODO: Parallelise the cost computations
+        if calculate_sensitivities:
+            for i, sol in enumerate(solutions):
+                e, de = self._cost.evaluate(
+                    sol,
+                    inputs=valid_inputs[i],
+                    calculate_sensitivities=calculate_sensitivities,
+                )
+                evaluation.insert_result(i=valid_indices[i], value=e, sensitivities=de)
+        else:
+            for i, sol in enumerate(solutions):
+                e = self._cost.evaluate(
+                    sol,
+                    inputs=valid_inputs[i],
+                    calculate_sensitivities=calculate_sensitivities,
+                )
+                evaluation.insert_result(i=valid_indices[i], value=e)
 
-        # TODO: Upgrade the cost evaluations for batch processing
+        if False in validity:
+            # Insert failure outputs for the invalid parameters into the lists of results
+            invalid_indices = [i for i, valid in enumerate(validity) if not valid]
+            if calculate_sensitivities:
+                y, dy = self._cost.failure(calculate_sensitivities)
+                for i in invalid_indices:
+                    evaluation.insert_result(i=i, value=y, sensitivities=dy)
+            else:
+                y = self._cost.failure(calculate_sensitivities)
+                for i in invalid_indices:
+                    evaluation.insert_result(i=i, value=y)
 
-        if calculate_grad:
-            costs, grads = [], []
-            for inputs in inputs_list:
-                out = self.single_call(inputs, calculate_grad=True)
-                costs.append(out[0])
-                grads.append(out[1])
-            return np.asarray(costs), np.asarray(grads)
-
-        costs = []
-        for inputs in inputs_list:
-            costs.append(self.single_call(inputs, calculate_grad=False))
-        return np.atleast_1d(costs)
+        return evaluation
 
     def simulate(
-        self, inputs: Inputs
-    ) -> (
-        dict[str, np.ndarray]
-        | tuple[dict[str, np.ndarray], dict[str, dict[str, np.ndarray]]]
-    ):
+        self, inputs: Inputs | list[Inputs], calculate_sensitivities: bool = False
+    ) -> Solution | list[Solution]:
         """
-        Evaluate the model with the given parameters and return the target.
+        Simulate the model for one or more sets of inputs and return the solution and
+        (optionally) the sensitivities.
 
         Parameters
         ----------
-        inputs : Inputs
-            Parameters for evaluation of the model.
+        inputs : Inputs | list[Inputs]
+            Input parameters. Support a list of inputs.
+        calculate_sensitivities : bool
+            Whether to also return the sensitivities (default: False).
 
         Returns
         -------
-        dict[str, np.ndarray[np.float64]]
-            The simulated model output y(t), or y(ω) for EIS, for the given inputs.
+        Solution | list[Solution]
+            The simulated model output y(t) and (optionally) the sensitivities dy/dx(t)
+             for output variable(s) y, domain t and parameter(s) x.
         """
-        return self._simulator.simulate(inputs=inputs, calculate_sensitivities=False)
+        if not isinstance(inputs, list):
+            return self.simulate_batch(
+                inputs=[inputs], calculate_sensitivities=calculate_sensitivities
+            )[0]
 
-    def simulateS1(self, inputs: Inputs):
+        return self.simulate_batch(
+            inputs=inputs, calculate_sensitivities=calculate_sensitivities
+        )
+
+    def simulate_batch(
+        self, inputs: list[Inputs], calculate_sensitivities: bool = False
+    ) -> list[Solution | FailedSolution]:
         """
-        Evaluate the model with the given parameters and return the target and
-        their derivatives.
+        Simulate the model for each set of inputs and return the solution and
+        (optionally) the sensitivities.
 
         Parameters
         ----------
-        inputs : Inputs
-            Parameters for evaluation of the model.
+        inputs : list[Inputs]
+            A list of input parameters.
 
         Returns
         -------
-        tuple[dict[str, np.ndarray[np.float64]], dict[str, dict[str, np.ndarray]]]
-            A tuple containing the simulation result y(t) and the sensitivities dy/dx(t)
-            for each parameter x and output variables y simulated with the given inputs.
+        list[Solution]
+            A list of length(inputs) containing the simulated model output y(t) and (optionally)
+            the sensitivities dy/dx(t) for output variable(s) y, domain t and parameter(s) x.
         """
-        return self._simulator.simulate(inputs=inputs, calculate_sensitivities=True)
+        model_inputs = [self.get_model_inputs(x) for x in inputs]
+        return self._simulator.batch_solve(
+            inputs=model_inputs, calculate_sensitivities=calculate_sensitivities
+        )
 
     def get_finite_initial_cost(self):
         """
         Compute the absolute initial cost, resampling the initial parameters if needed.
         """
         x0 = self.parameters.get_initial_values()
-        cost0 = np.abs(self.__call__(x0))
+        cost0 = np.abs(self.evaluate(x0).values[0])
         nsamples = 0
         while np.isinf(cost0) and nsamples < 10:
-            x0 = self.parameters.sample_from_distributions()
+            x0 = self.parameters.sample_from_distributions()[0]
             if x0 is None:
                 break
 
-            cost0 = np.abs(self.__call__(x0))
+            cost0 = np.abs(self.evaluate(x0).values[0])
             nsamples += 1
         if nsamples > 0:
             self.parameters.update(initial_values=x0)

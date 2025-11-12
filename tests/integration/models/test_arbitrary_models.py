@@ -188,8 +188,7 @@ class TestArbitraryModels:
         problem = pybop.Problem(simulator, cost)
 
         # Optimise
-        options = pybop.PintsOptions(sigma=0.02)
-        optim = pybop.IRPropPlus(problem, options=options)
+        optim = pybop.IRPropPlus(problem)
         results = optim.run()
 
         np.testing.assert_allclose(results.x, [-1, -2], rtol=5e-3)

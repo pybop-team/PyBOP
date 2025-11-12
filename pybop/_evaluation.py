@@ -46,14 +46,18 @@ class BaseEvaluator(PintsEvaluator):
                     return np.empty(0), np.empty(0)
 
                 inputs_list = self.problem.parameters.to_inputs(x_model)
-                cost, grad = self.problem.batch_call(inputs_list, calculate_grad=True)
+                cost, grad = self.problem.evaluate_batch(
+                    inputs_list, calculate_sensitivities=True
+                ).get_values()
 
                 # Apply the inverse parameter transformation to the gradient
                 for i, x in enumerate(x_search):
                     jac = self.transformation.jacobian(x)
                     grad[i] = np.matmul(grad[i], jac)
 
-                logger.extend_log(x_search=x_search, x_model=x_model, cost=cost)
+                logger.extend_log(
+                    x_search=x_search, x_model=x_model, cost=cost.tolist()
+                )
 
                 if len(cost) == 1:
                     return -cost, -grad.reshape(-1)
@@ -67,9 +71,13 @@ class BaseEvaluator(PintsEvaluator):
                     return np.empty(0)
 
                 inputs_list = self.problem.parameters.to_inputs(x_model)
-                cost = self.problem.batch_call(inputs_list, calculate_grad=False)
+                cost = self.problem.evaluate_batch(
+                    inputs_list, calculate_sensitivities=False
+                ).get_values()
 
-                logger.extend_log(x_search=x_search, x_model=x_model, cost=cost)
+                logger.extend_log(
+                    x_search=x_search, x_model=x_model, cost=cost.tolist()
+                )
                 return -cost
 
         elif with_sensitivities:
@@ -80,14 +88,18 @@ class BaseEvaluator(PintsEvaluator):
                     return np.empty(0), np.empty(0)
 
                 inputs_list = self.problem.parameters.to_inputs(x_model)
-                cost, grad = self.problem.batch_call(inputs_list, calculate_grad=True)
+                cost, grad = self.problem.evaluate_batch(
+                    inputs_list, calculate_sensitivities=True
+                ).get_values()
 
                 # Apply the inverse parameter transformation to the gradient
                 for i, x in enumerate(x_search):
                     jac = self.transformation.jacobian(x)
                     grad[i] = np.matmul(grad[i], jac)
 
-                logger.extend_log(x_search=x_search, x_model=x_model, cost=cost)
+                logger.extend_log(
+                    x_search=x_search, x_model=x_model, cost=cost.tolist()
+                )
 
                 if len(cost) == 1:
                     return cost, grad.reshape(-1)
@@ -101,9 +113,13 @@ class BaseEvaluator(PintsEvaluator):
                     return np.empty(0), np.empty(0)
 
                 inputs_list = self.problem.parameters.to_inputs(x_model)
-                cost = self.problem.batch_call(inputs_list, calculate_grad=False)
+                cost = self.problem.evaluate_batch(
+                    inputs_list, calculate_sensitivities=False
+                ).get_values()
 
-                logger.extend_log(x_search=x_search, x_model=x_model, cost=cost)
+                logger.extend_log(
+                    x_search=x_search, x_model=x_model, cost=cost.tolist()
+                )
                 return cost
 
         # Pass function to PintsEvaluator

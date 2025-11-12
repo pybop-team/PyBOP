@@ -138,11 +138,6 @@ class TestEISParameterisation:
                 max_iterations=100,
                 absolute_tolerance=1e-6,
                 max_unchanged_iterations=35,
-                sigma=(
-                    [0.05, 0.05, 1e-3]
-                    if isinstance(cost, pybop.GaussianLogLikelihood)
-                    else 0.02
-                ),
             )
 
         # Create optimiser
@@ -184,15 +179,14 @@ class TestEISParameterisation:
                 ],
             }
         )
-        simulator = pybop.pybamm.EISSimulator(
+        solution = pybop.pybamm.EISSimulator(
             model, parameter_values=parameter_values, f_eval=f_eval
-        )
-        solution = simulator.simulate()
+        ).solve()
         return pybop.Dataset(
             {
                 "Frequency [Hz]": f_eval,
                 "Current function [A]": np.zeros_like(f_eval),
-                "Impedance": self.noisy(solution["Impedance"], self.sigma0),
+                "Impedance": self.noisy(solution["Impedance"].data, self.sigma0),
             },
             domain="Frequency [Hz]",
         )
