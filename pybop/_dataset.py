@@ -181,8 +181,18 @@ class Dataset:
 
 def import_pyprobe_result(
     result: PyprobeResult,
-    columns: list[str],
-    pyprobe_columns: list[str] | None = None,
+    columns: list[str] = [
+        "Time [s]",
+        "Current function [A]",
+        "Voltage [V]",
+        "Discharge capacity [Ah]",
+    ],
+    pyprobe_columns: list[str] | None = [
+        "Time [s]",
+        "Current [A]",
+        "Voltage [V]",
+        "Capacity [Ah]",
+    ],
 ) -> Dataset:
     """
     Import a pyprobe.Result into a dictionary
@@ -225,8 +235,9 @@ def import_pyprobe_result(
         elif pyprobe_columns[i] in [
             "Current [A]",
             "Capacity [Ah]",
-            "Discharge capacity [A.h]",
         ]:
+            # The sign convention in PyProBE is that positive current is charging,
+            # the convention in PyBaMM is that positive current means discharging
             data_dict[col] = -1.0 * result.get(pyprobe_columns[i])
         else:
             data_dict[col] = result.get(pyprobe_columns[i])
