@@ -97,9 +97,9 @@ class TestDataset:
     @pytest.mark.skipif(
         sys.version_info < (3, 11), reason="requires python3.11 or higher"
     )
-    def test_pyrobe_import(self):
+    def test_pyprobe_import(self):
         """
-        Function to test import of PyProBE result into a pybop.dataset.
+        Function to test import of PyProBE Result into a pybop.Dataset.
         PyProBE requires Python 3.11 or higher.
         """
         import pyprobe
@@ -170,7 +170,7 @@ class TestDataset:
         cell.import_pybamm_solution("US06 DFN", ["US06"], solution)
 
         # Import data from PyProBE into pybop.dataset
-        dataset_pyprobe = pybop.import_pybrobe_result(
+        dataset_pyprobe = pybop.import_pyprobe_result(
             cell.procedure["US06 DFN"],
             [
                 "Time [s]",
@@ -191,7 +191,7 @@ class TestDataset:
         )
 
         # Different choice of parameters where column names are identical between pyprobe and pybamm
-        dataset_pyprobe2 = pybop.import_pybrobe_result(
+        dataset_pyprobe2 = pybop.import_pyprobe_result(
             cell.procedure["US06 DFN"],
             [
                 "Time [s]",

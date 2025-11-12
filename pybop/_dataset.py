@@ -179,21 +179,23 @@ class Dataset:
         return Dataset(data, domain=self.domain)
 
 
-def import_pybrobe_result(
+def import_pyprobe_result(
     result: PyprobeResult,
     columns: list[str],
     pyprobe_columns: list[str] | None = None,
 ) -> Dataset:
-    """Import a PyprobeResult into a dictionary
+    """
+    Import a pyprobe.Result into a dictionary
 
-    Args:
-        result (str):
-            A pybrobe Result object
-        columns (list of strings):
-            A list of columns to import.
-        pyprobe_columns:
-            An optional list of pyprobe columns names if any of them are not the same as in PyBoP.
-            Otherwise the column names are assumed to be identical with PyBoP.
+    Parameters
+    ----------
+    result : str
+        A pyprobe.Result object.
+    columns : list[str]
+        A list of columns to import.
+    pyprobe_columns : list[str]
+        An optional list of pyprobe columns names if any of them are not the same as in PyBOP.
+        Otherwise the column names are assumed to be identical with PyBOP.
 
     """
     if pyprobe_columns is None:

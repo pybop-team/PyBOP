@@ -62,11 +62,11 @@ bpx = [
     "bpx>=0.5, <0.6",
 ]
 
-pybrobe = [
+pyprobe = [
   "PyProBE-Data;python_version>='3.11'"
 ]
 
-all = ["pybop[plot,scifem,bpx,pybrobe]"]
+all = ["pybop[plot,scifem,bpx,pyprobe]"]
 
 [tool.setuptools.packages.find]
 include = ["pybop", "pybop.*"]
