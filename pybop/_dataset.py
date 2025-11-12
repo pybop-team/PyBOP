@@ -181,18 +181,8 @@ class Dataset:
 
 def import_pyprobe_result(
     result: PyprobeResult,
-    columns: list[str] = [
-        "Time [s]",
-        "Current function [A]",
-        "Voltage [V]",
-        "Discharge capacity [Ah]",
-    ],
-    pyprobe_columns: list[str] | None = [
-        "Time [s]",
-        "Current [A]",
-        "Voltage [V]",
-        "Capacity [Ah]",
-    ],
+    pybop_columns: list[str] | None = None,
+    pyprobe_columns: list[str] | None = None,
 ) -> Dataset:
     """
     Import a pyprobe.Result into a dictionary
@@ -201,18 +191,32 @@ def import_pyprobe_result(
     ----------
     result : str
         A pyprobe.Result object.
-    columns : list[str]
-        A list of columns to import.
+    pybop_columns : list[str]
+        List of pybop column names.
     pyprobe_columns : list[str]
-        An optional list of pyprobe columns names if any of them are not the same as in PyBOP.
-        Otherwise the column names are assumed to be identical with PyBOP.
-
+        An list of pyprobe column names.
+    If only one list of column names is provided, they are assumed to be identical.
     """
-    if pyprobe_columns is None:
-        pyprobe_columns = columns
+    if pybop_columns is None and pyprobe_columns is None:
+        pybop_columns = [
+            "Time [s]",
+            "Current function [A]",
+            "Voltage [V]",
+            "Discharge capacity [Ah]",
+        ]
+        pyprobe_columns = [
+            "Time [s]",
+            "Current [A]",
+            "Voltage [V]",
+            "Capacity [Ah]",
+        ]
+    elif pybop_columns is None:
+        pybop_columns = pyprobe_columns
+    elif pyprobe_columns is None:
+        pyprobe_columns = pybop_columns
 
     data_dict = {}
-    for i, col in enumerate(columns):
+    for i, col in enumerate(pybop_columns):
         if (
             pyprobe_columns[i] == "Cycle"
             and "Cycle" not in result.column_list
