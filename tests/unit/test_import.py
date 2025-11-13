@@ -6,7 +6,8 @@ import pytest
 
 
 class TestImport:
-    @pytest.mark.unit
+    pytestmark = pytest.mark.unit
+
     def test_multiprocessing_init_non_win32(self, monkeypatch):
         """Test multiprocessing init on non-Windows platforms"""
         monkeypatch.setattr(sys, "platform", "linux")
@@ -16,7 +17,6 @@ class TestImport:
             importlib.import_module("pybop")
             mock_set_start_method.assert_called_once_with("fork")
 
-    @pytest.mark.unit
     def test_multiprocessing_init_win32(self, monkeypatch):
         """Test multiprocessing init on Windows"""
         monkeypatch.setattr(sys, "platform", "win32")

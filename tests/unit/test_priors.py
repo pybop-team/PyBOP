@@ -9,6 +9,8 @@ class TestPriors:
     A class to test the priors.
     """
 
+    pytestmark = pytest.mark.unit
+
     @pytest.fixture
     def Gaussian(self):
         return pybop.Gaussian(mean=0.5, sigma=1)
@@ -23,20 +25,16 @@ class TestPriors:
 
     @pytest.fixture
     def JointPrior1(self, Gaussian, Uniform):
-        return pybop.JointLogPrior(Gaussian, Uniform)
+        return pybop.JointPrior(Gaussian, Uniform)
 
     @pytest.fixture
     def JointPrior2(self, Gaussian, Exponential):
-        return pybop.JointLogPrior(Gaussian, Exponential)
+        return pybop.JointPrior(Gaussian, Exponential)
 
-    @pytest.mark.unit
     def test_base_prior(self):
         base = pybop.BasePrior()
         assert isinstance(base, pybop.BasePrior)
-        with pytest.raises(NotImplementedError):
-            base._logpdfS1(0.0)
 
-    @pytest.mark.unit
     def test_priors(self, Gaussian, Uniform, Exponential, JointPrior1, JointPrior2):
         # Test pdf
         np.testing.assert_allclose(Gaussian.pdf(0.5), 0.3989422804014327, atol=1e-4)
@@ -58,12 +56,13 @@ class TestPriors:
         np.testing.assert_allclose(Uniform.cdf(0.5), 0.5, atol=1e-4)
         np.testing.assert_allclose(Exponential.cdf(1), 0.6321205588285577, atol=1e-4)
 
-        # Test __call__
-        assert Gaussian(0.5) == Gaussian.logpdf(0.5)
-        assert Uniform(0.5) == Uniform.logpdf(0.5)
-        assert Exponential(1) == Exponential.logpdf(1)
-        assert JointPrior1([0.5, 0.5]) == Gaussian.logpdf(0.5) + Uniform.logpdf(0.5)
-        assert JointPrior2([0.5, 1]) == Gaussian.logpdf(0.5) + Exponential.logpdf(1)
+        # Test logpdf
+        assert JointPrior1.logpdf([0.5, 0.5]) == Gaussian.logpdf(0.5) + Uniform.logpdf(
+            0.5
+        )
+        assert JointPrior2.logpdf([0.5, 1]) == Gaussian.logpdf(
+            0.5
+        ) + Exponential.logpdf(1)
 
         # Test Gaussian.logpdfS1
         p, dp = Gaussian.logpdfS1(0.5)
@@ -95,18 +94,20 @@ class TestPriors:
         # Test JointPrior1 non-symmetric
         with pytest.raises(AssertionError):
             np.testing.assert_allclose(
-                JointPrior1([0.4, 0.5]), JointPrior1([0.5, 0.4]), atol=1e-4
+                JointPrior1.logpdf([0.4, 0.5]),
+                JointPrior1.logpdf([0.5, 0.4]),
+                atol=1e-4,
             )
 
         # Test JointPrior2 non-symmetric
         with pytest.raises(AssertionError):
             np.testing.assert_allclose(
-                JointPrior2([0.4, 1]), JointPrior2([1, 0.4]), atol=1e-4
+                JointPrior2.logpdf([0.4, 1]), JointPrior2.logpdf([1, 0.4]), atol=1e-4
             )
 
         # Test JointPrior with incorrect dimensions
         with pytest.raises(ValueError, match="Input x must have length 2, got 1"):
-            JointPrior1([0.4])
+            JointPrior1.logpdf([0.4])
 
         with pytest.raises(ValueError, match="Input x must have length 2, got 1"):
             JointPrior1.logpdfS1([0.4])
@@ -116,10 +117,9 @@ class TestPriors:
         np.testing.assert_allclose(
             Uniform.sigma, (Uniform.upper - Uniform.lower) / (2 * np.sqrt(3)), atol=1e-8
         )
-        assert Exponential.mean == Exponential.loc
+        assert Exponential.mean == Exponential.scale
         assert Exponential.sigma == Exponential.scale
 
-    @pytest.mark.unit
     def test_gaussian_rvs(self, Gaussian):
         samples = Gaussian.rvs(size=500)
         mean = np.mean(samples)
@@ -127,36 +127,31 @@ class TestPriors:
         assert abs(mean - 0.5) < 0.2
         assert abs(std - 1) < 0.2
 
-    @pytest.mark.unit
     def test_incorrect_rvs(self, Gaussian):
         with pytest.raises(ValueError):
             Gaussian.rvs(size="a")
         with pytest.raises(ValueError):
             Gaussian.rvs(size=(1, 2, -1))
 
-    @pytest.mark.unit
     def test_uniform_rvs(self, Uniform):
         samples = Uniform.rvs(size=500)
         assert (samples >= 0).all() and (samples <= 1).all()
 
-    @pytest.mark.unit
     def test_exponential_rvs(self, Exponential):
         samples = Exponential.rvs(size=500)
         assert (samples >= 0).all()
         mean = np.mean(samples)
         assert abs(mean - 1) < 0.2
 
-    @pytest.mark.unit
     def test_repr(self, Gaussian, Uniform, Exponential, JointPrior1):
         assert repr(Gaussian) == "Gaussian, loc: 0.5, scale: 1"
         assert repr(Uniform) == "Uniform, loc: 0, scale: 1"
         assert repr(Exponential) == "Exponential, loc: 0, scale: 1"
         assert (
             repr(JointPrior1)
-            == "JointLogPrior(priors: [Gaussian, loc: 0.5, scale: 1, Uniform, loc: 0, scale: 1])"
+            == "JointPrior(priors: [Gaussian, loc: 0.5, scale: 1, Uniform, loc: 0, scale: 1])"
         )
 
-    @pytest.mark.unit
     def test_invalid_size(self, Gaussian, Uniform, Exponential):
         with pytest.raises(ValueError):
             Gaussian.rvs(-1)
@@ -165,13 +160,12 @@ class TestPriors:
         with pytest.raises(ValueError):
             Exponential.rvs(-1)
 
-    @pytest.mark.unit
     def test_incorrect_composed_priors(self, Gaussian, Uniform):
         with pytest.raises(
             ValueError, match="All priors must be instances of BasePrior"
         ):
-            pybop.JointLogPrior(Gaussian, Uniform, "string")
+            pybop.JointPrior(Gaussian, Uniform, "string")
         with pytest.raises(
             ValueError, match="All priors must be instances of BasePrior"
         ):
-            pybop.JointLogPrior(Gaussian, Uniform, 0.5)
+            pybop.JointPrior(Gaussian, Uniform, 0.5)

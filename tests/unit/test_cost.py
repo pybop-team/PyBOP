@@ -1,5 +1,3 @@
-from copy import copy
-
 import numpy as np
 import pybamm
 import pytest
@@ -12,19 +10,16 @@ class TestCosts:
     Class for tests cost functions
     """
 
-    # Define an invalid likelihood class for MAP tests
-    class InvalidLikelihood:
-        def __init__(self, problem, sigma0):
-            pass
+    pytestmark = pytest.mark.unit
 
     @pytest.fixture
-    def model(self, ground_truth):
-        solver = pybamm.IDAKLUSolver()
-        model = pybop.lithium_ion.SPM(solver=solver)
-        model.parameter_set["Negative electrode active material volume fraction"] = (
+    def model_and_parameter_values(self, ground_truth):
+        model = pybamm.lithium_ion.SPM()
+        parameter_values = model.default_parameter_values
+        parameter_values["Negative electrode active material volume fraction"] = (
             ground_truth
         )
-        return model
+        return model, parameter_values
 
     @pytest.fixture
     def ground_truth(self):
@@ -32,23 +27,23 @@ class TestCosts:
 
     @pytest.fixture
     def parameters(self):
-        return pybop.Parameter(
-            "Negative electrode active material volume fraction",
-            prior=pybop.Gaussian(0.5, 0.01),
-            bounds=[0.375, 0.625],
-        )
+        return {
+            "Negative electrode active material volume fraction": pybop.Parameter(
+                prior=pybop.Gaussian(0.5, 0.01),
+                bounds=[0.375, 0.625],
+            )
+        }
 
     @pytest.fixture
     def experiment(self):
-        return pybop.Experiment(
-            [
-                ("Discharge at 1C for 10 minutes (20 second period)"),
-            ]
-        )
+        return pybamm.Experiment(["Discharge at 1C for 10 minutes (20 second period)"])
 
     @pytest.fixture
-    def dataset(self, model, experiment):
-        solution = model.predict(experiment=experiment)
+    def dataset(self, model_and_parameter_values, experiment):
+        model, parameter_values = model_and_parameter_values
+        solution = pybamm.Simulation(
+            model, parameter_values=parameter_values, experiment=experiment
+        ).solve()
         return pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -57,70 +52,41 @@ class TestCosts:
             }
         )
 
-    @pytest.fixture
-    def signal(self):
-        return "Voltage [V]"
+    def test_base(self, dataset):
+        cost = pybop.ErrorMeasure(dataset)
+        with pytest.raises(NotImplementedError):
+            cost([0.5])
 
     @pytest.fixture(params=[2.5, 3.777])
-    def problem(self, model, parameters, dataset, signal, request):
+    def simulator(self, model_and_parameter_values, parameters, dataset, request):
         cut_off = request.param
-        model.parameter_set.update({"Lower voltage cut-off [V]": cut_off})
-        problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
-        return problem
+        model, parameter_values = model_and_parameter_values
+        parameter_values.update({"Lower voltage cut-off [V]": cut_off})
+        parameter_values.update(parameters)
+        return pybop.pybamm.Simulator(
+            model, parameter_values=parameter_values, protocol=dataset
+        )
 
-    @pytest.fixture(
-        params=[
-            pybop.RootMeanSquaredError,
-            pybop.SumSquaredError,
-            pybop.Minkowski,
-            pybop.SumofPower,
-            pybop.ObserverCost,
+    @pytest.mark.parametrize(
+        "cost_class",
+        [
+            pybop.MeanAbsoluteError,
+            pybop.GaussianLogLikelihoodKnownSigma,
             pybop.LogPosterior,
-        ]
+        ],
     )
-    def cost(self, problem, request):
-        cls = request.param
-        if cls in [pybop.SumSquaredError, pybop.RootMeanSquaredError]:
-            return cls(problem)
-        elif cls is pybop.LogPosterior:
-            return cls(pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.002))
-        elif cls in [pybop.Minkowski, pybop.SumofPower]:
-            return cls(problem, p=2)
-        elif cls is pybop.ObserverCost:
-            inputs = problem.parameters.initial_value()
-            state = problem.model.reinit(inputs)
-            n = len(state)
-            sigma_diag = [0.0] * n
-            sigma_diag[0] = 1e-4
-            sigma_diag[1] = 1e-4
-            process_diag = [0.0] * n
-            process_diag[0] = 1e-4
-            process_diag[1] = 1e-4
-            sigma0 = np.diag(sigma_diag)
-            process = np.diag(process_diag)
-            dataset = pybop.Dataset(data_dictionary=problem.dataset)
-            return cls(
-                pybop.UnscentedKalmanFilterObserver(
-                    problem.parameters,
-                    problem.model,
-                    sigma0=sigma0,
-                    process=process,
-                    measure=1e-4,
-                    dataset=dataset,
-                    signal=problem.signal,
-                ),
-            )
+    def test_fitting_costs(self, simulator, dataset, cost_class):
+        if cost_class is pybop.LogPosterior:
+            likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=0.002)
+            cost = cost_class(likelihood)
+        elif issubclass(cost_class, pybop.LogLikelihood):
+            cost = cost_class(dataset, sigma0=0.002)
+        else:
+            cost = cost_class(dataset)
+        problem = pybop.Problem(simulator, cost)
 
-    @pytest.mark.unit
-    def test_base(self, problem):
-        base_cost = pybop.BaseCost(problem)
-        assert base_cost.problem == problem
-        with pytest.raises(NotImplementedError):
-            base_cost([0.5])
-
-    @pytest.mark.unit
-    def test_costs(self, cost):
-        if isinstance(cost, pybop.BaseLikelihood):
+        # Test cost direction
+        if isinstance(cost, pybop.LogLikelihood):
             higher_cost = cost([0.52])
             lower_cost = cost([0.55])
         else:
@@ -131,81 +97,167 @@ class TestCosts:
         )
 
         # Test type of returned value
-        assert np.isscalar(cost([0.5]))
+        assert np.isscalar(problem([0.5]))
+        assert np.isscalar(problem(problem.parameters.to_dict()))
 
-        # Test UserWarnings
-        if isinstance(cost, (pybop.SumSquaredError, pybop.RootMeanSquaredError)):
-            assert cost([0.5]) >= 0
-            with pytest.warns(UserWarning) as record:
-                cost([1.1])
+        if isinstance(cost, pybop.MeanAbsoluteError):
+            assert problem([0.5]) >= 0
 
             # Test option setting
-            cost.set_fail_gradient(10)
-            assert cost._de == 10
+            problem._cost.set_fail_gradient(10)
+            assert problem._cost._de == 10
 
-        if not isinstance(cost, (pybop.ObserverCost, pybop.LogPosterior)):
-            e, de = cost([0.5], calculate_grad=True)
+    @pytest.mark.parametrize(
+        "cost_class, expected_name",
+        [
+            (pybop.MeanSquaredError, "Mean Squared Error"),
+            (pybop.RootMeanSquaredError, "Root Mean Squared Error"),
+            (pybop.MeanAbsoluteError, "Mean Absolute Error"),
+            (pybop.SumSquaredError, "Sum Squared Error"),
+            (pybop.Minkowski, "Minkowski"),
+            (pybop.SumOfPower, "Sum Of Power"),
+        ],
+    )
+    def test_error_measures(self, simulator, dataset, cost_class, expected_name):
+        cost = cost_class(dataset)
+        assert cost.name == expected_name
 
-            assert np.isscalar(e)
-            assert isinstance(de, np.ndarray)
+        problem = pybop.Problem(simulator, cost)
 
-            # Test exception for non-numeric inputs
-            with pytest.raises(
-                TypeError, match="Inputs must be a dictionary or numeric."
-            ):
-                cost(["StringInputShouldNotWork"], calculate_grad=True)
+        # Test cost direction
+        higher_cost = problem.evaluate([0.55]).values
+        lower_cost = problem.evaluate([0.52]).values
+        assert higher_cost > lower_cost or (
+            higher_cost == lower_cost and not np.isfinite(higher_cost)
+        )
 
-            with pytest.warns(UserWarning) as record:
-                cost([1.1], calculate_grad=True)
+        e, de = problem.evaluate([0.5], calculate_sensitivities=True).get_values()
 
-            for i in range(len(record)):
-                assert "Non-physical point encountered" in str(record[i].message)
+        assert np.isscalar(e[0])
+        assert isinstance(de[0], np.ndarray)
 
-            # Test infeasible locations
-            cost.problem.model.allow_infeasible_solutions = False
-            assert cost([1.1]) == np.inf
-            assert cost([1.1], calculate_grad=True) == (np.inf, cost._de)
-            assert cost([0.01]) == np.inf
-            assert cost([0.01], calculate_grad=True) == (np.inf, cost._de)
-
-        # Test exception for non-numeric inputs
-        with pytest.raises(TypeError, match="Inputs must be a dictionary or numeric."):
-            cost(["StringInputShouldNotWork"])
-
-        # Test ValueError for none dy w/ calculate_grad == True
-        if not isinstance(cost, pybop.ObserverCost):
-            with pytest.raises(
-                ValueError,
-                match="Forward model sensitivities need to be provided alongside `calculate_grad=True` for `cost.compute`.",
-            ):
-                cost.compute([1.1], dy=None, calculate_grad=True)
-
-    @pytest.mark.unit
-    def test_minkowski(self, problem):
+    def test_minkowski(self, dataset):
         # Incorrect order
         with pytest.raises(ValueError, match="The order of the Minkowski distance"):
-            pybop.Minkowski(problem, p=-1)
+            pybop.Minkowski(dataset, p=-1)
         with pytest.raises(
             ValueError,
             match="For p = infinity, an implementation of the Chebyshev distance is required.",
         ):
-            pybop.Minkowski(problem, p=np.inf)
+            pybop.Minkowski(dataset, p=np.inf)
 
-    @pytest.mark.unit
-    def test_sumofpower(self, problem):
+    def test_sumofpower(self, dataset):
         # Incorrect order
         with pytest.raises(
             ValueError, match="The order of 'p' must be greater than 0."
         ):
-            pybop.SumofPower(problem, p=-1)
+            pybop.SumOfPower(dataset, p=-1)
 
         with pytest.raises(ValueError, match="p = np.inf is not yet supported."):
-            pybop.SumofPower(problem, p=np.inf)
+            pybop.SumOfPower(dataset, p=np.inf)
 
     @pytest.fixture
-    def design_problem(self, parameters, experiment, signal):
-        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-        parameter_set.update(
+    def randomly_spaced_dataset(self, model_and_parameter_values):
+        model, parameter_values = model_and_parameter_values
+        t_eval = np.linspace(0, 10 * 60, 31) + np.concatenate(
+            ([0], np.random.normal(0, 1, 29), [0])
+        )
+        solution = pybamm.Simulation(model, parameter_values=parameter_values).solve(
+            t_eval=t_eval,
+            t_interp=t_eval,
+        )
+        return pybop.Dataset(
+            {
+                "Time [s]": solution["Time [s]"].data,
+                "Current function [A]": solution["Current [A]"].data,
+                "Voltage [V]": solution["Terminal voltage [V]"].data,
+            }
+        )
+
+    @pytest.mark.parametrize(
+        "cost_class",
+        [
+            pybop.MeanSquaredError,
+            pybop.RootMeanSquaredError,
+            pybop.MeanAbsoluteError,
+            pybop.SumSquaredError,
+            pybop.Minkowski,
+            pybop.SumOfPower,
+        ],
+    )
+    def test_error_weighting(
+        self,
+        model_and_parameter_values,
+        parameters,
+        dataset,
+        randomly_spaced_dataset,
+        cost_class,
+    ):
+        model, parameter_values = model_and_parameter_values
+        parameter_values.update(parameters)
+        simulator = pybop.pybamm.Simulator(
+            model, parameter_values=parameter_values, protocol=dataset
+        )
+        cost = cost_class(dataset, weighting=1.0)
+        problem = pybop.Problem(simulator, cost)
+        x = [0.5]
+        e, de = problem.evaluate(x, calculate_sensitivities=True).get_values()
+
+        # Test that the equal weighting is the same as weighting by one
+        costE = cost_class(dataset, weighting="equal")
+        problemE = pybop.Problem(simulator, costE)
+        eE, deE = problemE.evaluate(x, calculate_sensitivities=True).get_values()
+        np.testing.assert_allclose(e, eE)
+        np.testing.assert_allclose(de, deE)
+
+        # Test that domain-based weighting also matches for evenly spaced data
+        costD = cost_class(dataset, weighting="domain")
+        problemD = pybop.Problem(simulator, costD)
+        eD, deD = problemD.evaluate(x, calculate_sensitivities=True).get_values()
+        np.testing.assert_allclose(e, eD)
+        np.testing.assert_allclose(de, deD)
+
+        # Test that the domain-based weighting accounts for random spacing in the dataset
+        simulator = pybop.pybamm.Simulator(
+            model, parameter_values=parameter_values, protocol=randomly_spaced_dataset
+        )
+        costR = cost_class(randomly_spaced_dataset, weighting="domain")
+        problemR = pybop.Problem(simulator, costR)
+        eR, deR = problemR.evaluate(x, calculate_sensitivities=True).get_values()
+        np.testing.assert_allclose(e, eR, rtol=1e-2, atol=1e-9)
+        np.testing.assert_allclose(de, deR, rtol=1e-2, atol=1e-9)
+
+        # Check that the sum (and therefore mean) are the same as an even weighting
+        np.testing.assert_allclose(
+            np.sum(problemR.cost.weighting),
+            len(problemR.cost.weighting),
+        )
+
+        # Check gradient calculation using finite difference
+        delta = 1e-6 * x[0]
+        cost_right = problemR([x[0] + delta / 2])
+        cost_left = problemR([x[0] - delta / 2])
+        numerical_grad = (cost_right - cost_left) / delta
+        np.testing.assert_allclose(deR, numerical_grad, rtol=6e-3)
+
+    @pytest.fixture
+    def design_simulator(self, parameters, experiment):
+        model = pybamm.lithium_ion.SPM()
+        target_time = 600  # length of dis/charge in the experiment [s]
+        pybop.pybamm.add_variable_to_model(
+            model, "Gravimetric energy density [Wh.kg-1]"
+        )
+        pybop.pybamm.add_variable_to_model(model, "Volumetric energy density [Wh.m-3]")
+        pybop.pybamm.add_variable_to_model(
+            model, "Gravimetric power density [W.kg-1]", target_time=target_time
+        )
+        pybop.pybamm.add_variable_to_model(
+            model, "Volumetric power density [W.m-3]", target_time=target_time
+        )
+
+        parameter_values = pybamm.ParameterValues("Chen2020")
+        pybop.pybamm.set_formation_concentrations(parameter_values)
+        parameter_values.update(
             {
                 "Electrolyte density [kg.m-3]": pybamm.Parameter(
                     "Separator density [kg.m-3]"
@@ -222,84 +274,69 @@ class TestCosts:
                 "Positive electrode carbon-binder density [kg.m-3]": pybamm.Parameter(
                     "Positive electrode density [kg.m-3]"
                 ),
+                "Cell mass [kg]": pybop.pybamm.cell_mass(),
+                "Cell volume [m3]": pybop.pybamm.cell_volume(),
             },
             check_already_exists=False,
         )
-        model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
-        return pybop.DesignProblem(
+        parameter_values.update(parameters)
+        return pybop.pybamm.Simulator(
             model,
-            parameters,
-            experiment,
-            signal=signal,
+            parameter_values=parameter_values,
+            protocol=experiment,
             initial_state={"Initial SoC": 0.5},
         )
 
     @pytest.mark.parametrize(
-        "cost_class, expected_name",
+        "target",
         [
-            (pybop.DesignCost, "Design Cost"),
-            (pybop.GravimetricEnergyDensity, "Gravimetric Energy Density"),
-            (pybop.VolumetricEnergyDensity, "Volumetric Energy Density"),
-            (pybop.GravimetricPowerDensity, "Gravimetric Power Density"),
-            (pybop.VolumetricPowerDensity, "Volumetric Power Density"),
+            "Gravimetric energy density [Wh.kg-1]",
+            "Volumetric energy density [Wh.m-3]",
+            "Gravimetric power density [W.kg-1]",
+            "Volumetric power density [W.m-3]",
         ],
     )
-    @pytest.mark.unit
-    def test_design_costs(self, cost_class, expected_name, design_problem):
-        # Construct Cost
-        cost = cost_class(design_problem)
-        assert cost.name == expected_name
+    def test_design_costs(self, target, design_simulator):
+        cost = pybop.DesignCost(target=target)
+        design_problem = pybop.Problem(design_simulator, cost)
 
-        if cost_class in [pybop.DesignCost]:
-            with pytest.raises(NotImplementedError):
-                cost([0.5])
-        else:
-            # Test type of returned value
-            assert np.isscalar(cost([0.5]))
-            assert cost([0.4]) >= 0  # Should be a viable design
-            assert (
-                cost([0.8]) == -np.inf
-            )  # Should exceed active material + porosity < 1
-            assert cost([1.4]) == -np.inf  # Definitely not viable
-            assert cost([-0.1]) == -np.inf  # Should not be a viable design
-
-            # Test infeasible locations
-            cost.problem.model.allow_infeasible_solutions = False
-            assert cost([1.1]) == -np.inf
-
-            # Test exception for non-numeric inputs
-            with pytest.raises(
-                TypeError, match="Inputs must be a dictionary or numeric."
-            ):
-                cost(["StringInputShouldNotWork"])
-
-            # Compute after updating nominal capacity
-            design_problem.update_capacity = True
-            cost = cost_class(design_problem)
-            cost([0.4])
+        # Test type of returned value
+        assert np.isscalar(design_problem([0.5]))
+        assert design_problem([0.4]) >= 0  # Should be a viable design
+        assert (
+            design_problem([0.8]) == -np.inf
+        )  # Should exceed active material + porosity < 1
+        assert design_problem([1.4]) == -np.inf  # Definitely not viable
+        assert design_problem([-0.1]) == -np.inf  # Should not be a viable design
 
     @pytest.fixture
     def noisy_problem(self, ground_truth, parameters, experiment):
-        model = pybop.lithium_ion.SPM()
-        model.parameter_set["Negative electrode active material volume fraction"] = (
+        model = pybamm.lithium_ion.SPM()
+        parameter_values = model.default_parameter_values
+        parameter_values["Negative electrode active material volume fraction"] = (
             ground_truth
         )
-        sol = model.predict(experiment=experiment)
+        solution = pybamm.Simulation(
+            model, parameter_values=parameter_values, experiment=experiment
+        ).solve()
         noisy_dataset = pybop.Dataset(
             {
-                "Time [s]": sol["Time [s]"].data,
-                "Current function [A]": sol["Current [A]"].data,
-                "Voltage [V]": sol["Voltage [V]"].data
-                + np.random.normal(0, 0.02, len(sol["Time [s]"].data)),
+                "Time [s]": solution["Time [s]"].data,
+                "Current function [A]": solution["Current [A]"].data,
+                "Voltage [V]": solution["Voltage [V]"].data
+                + np.random.normal(0, 0.02, len(solution["Time [s]"].data)),
             }
         )
-        return pybop.FittingProblem(model, parameters, noisy_dataset)
 
-    @pytest.mark.unit
-    def test_weighted_fitting_cost(self, noisy_problem):
-        problem = noisy_problem
-        cost1 = pybop.SumSquaredError(problem)
-        cost2 = pybop.RootMeanSquaredError(problem)
+        parameter_values.update(parameters)
+        return noisy_dataset, pybop.pybamm.Simulator(
+            model, parameter_values=parameter_values, protocol=noisy_dataset
+        )
+
+    def test_weighted_fitting_cost(self, noisy_problem, parameters, dataset):
+        dataset, simulator = noisy_problem
+        cost1 = pybop.SumSquaredError(dataset)
+        cost2 = pybop.RootMeanSquaredError(dataset)
 
         # Test with and without weights
         weighted_cost = pybop.WeightedCost(cost1, cost2)
@@ -312,7 +349,7 @@ class TestCosts:
             TypeError,
             match="All costs must be instances of BaseCost.",
         ):
-            pybop.WeightedCost(cost1.problem)
+            pybop.WeightedCost(parameters)
         with pytest.raises(
             ValueError,
             match="Weights must be numeric values.",
@@ -327,103 +364,81 @@ class TestCosts:
         # Test with identical problems
         weight = 100
         weighted_cost_2 = pybop.WeightedCost(cost1, cost2, weights=[1, weight])
-        assert weighted_cost_2.has_identical_problems is True
-        assert weighted_cost_2.has_separable_problem is False
-        assert weighted_cost_2.problem is problem
-        assert weighted_cost_2([0.5]) >= 0
+        problem_1 = pybop.Problem(simulator, cost1)
+        problem_2 = pybop.Problem(simulator, cost2)
+        weighted_2 = pybop.Problem(simulator, weighted_cost_2)
+        assert weighted_2.evaluate([0.5]).values >= 0
         np.testing.assert_allclose(
-            weighted_cost_2([0.6]),
-            cost1([0.6]) + weight * cost2([0.6]),
+            weighted_2.evaluate([0.6]).values,
+            problem_1.evaluate([0.6]).values
+            + weight * problem_2.evaluate([0.6]).values,
             atol=1e-5,
         )
 
         # Test with different problems
-        cost3 = pybop.RootMeanSquaredError(copy(problem))
+        cost3 = pybop.RootMeanSquaredError(dataset)
         weighted_cost_3 = pybop.WeightedCost(cost1, cost3, weights=[1, weight])
-        assert weighted_cost_3.has_identical_problems is False
-        assert weighted_cost_3.has_separable_problem is False
-        assert weighted_cost_3.problem is None
-        assert weighted_cost_3([0.5]) >= 0
+        problem_3 = pybop.Problem(simulator, cost3)
+        weighted_3 = pybop.Problem(simulator, weighted_cost_3)
+        assert weighted_3.evaluate([0.5]).values >= 0
         np.testing.assert_allclose(
-            weighted_cost_3([0.6]),
-            cost1([0.6]) + weight * cost3([0.6]),
+            weighted_3.evaluate([0.6]).values,
+            problem_1.evaluate([0.6]).values
+            + weight * problem_3.evaluate([0.6]).values,
             atol=1e-5,
         )
 
-        errors_2, sensitivities_2 = weighted_cost_2([0.5], calculate_grad=True)
-        errors_3, sensitivities_3 = weighted_cost_3([0.5], calculate_grad=True)
+        errors_2, sensitivities_2 = weighted_2.evaluate(
+            [0.5], calculate_sensitivities=True
+        ).get_values()
+        errors_3, sensitivities_3 = weighted_3.evaluate(
+            [0.5], calculate_sensitivities=True
+        ).get_values()
         np.testing.assert_allclose(errors_2, errors_3, atol=1e-5)
         np.testing.assert_allclose(sensitivities_2, sensitivities_3, atol=1e-5)
 
         # Test LogPosterior explicitly
-        cost4 = pybop.LogPosterior(pybop.GaussianLogLikelihood(problem))
-        weighted_cost_4 = pybop.WeightedCost(cost1, cost4, weights=[1, -1 / weight])
-        assert weighted_cost_4.has_identical_problems is True
-        assert weighted_cost_4.has_separable_problem is False
+        cost4 = pybop.LogPosterior(pybop.GaussianLogLikelihood(dataset))
+        weighted_cost_4 = pybop.WeightedCost(cost1, cost4, weights=[1, 1 / weight])
+        problem_4 = pybop.Problem(simulator, cost4)
+        weighted_4 = pybop.Problem(simulator, weighted_cost_4)
         sigma = 0.01
         assert np.isfinite(cost4.parameters["Sigma for output 1"].prior.logpdf(sigma))
-        assert np.isfinite(weighted_cost_4([0.5, sigma]))
+        assert np.isfinite(weighted_4.evaluate([0.5, sigma]).values)
         np.testing.assert_allclose(
-            weighted_cost_4([0.6, sigma]),
-            cost1([0.6, sigma]) - 1 / weight * cost4([0.6, sigma]),
+            weighted_4.evaluate([0.6, sigma]).values,
+            problem_1.evaluate([0.6]).values
+            - 1 / weight * problem_4.evaluate([0.6, sigma]).values,
+            atol=1e-5,
+        )
+        assert np.isfinite(weighted_4.evaluate([0.5, sigma]).values)
+        np.testing.assert_allclose(
+            weighted_4.evaluate([0.6, sigma]).values,
+            problem_1.evaluate([0.6]).values
+            - 1 / weight * problem_4.evaluate([0.6, sigma]).values,
             atol=1e-5,
         )
 
-    @pytest.mark.unit
-    def test_weighted_design_cost(self, design_problem):
-        cost1 = pybop.GravimetricEnergyDensity(design_problem)
-        cost2 = pybop.VolumetricEnergyDensity(design_problem)
+    def test_weighted_design_cost(self, design_simulator):
+        cost_1 = pybop.DesignCost(target="Gravimetric energy density [Wh.kg-1]")
+        cost_2 = pybop.DesignCost(target="Volumetric energy density [Wh.m-3]")
+        problem_1 = pybop.Problem(design_simulator, cost_1)
+        problem_2 = pybop.Problem(design_simulator, cost_2)
 
-        # Test DesignCosts with identical problems
-        weighted_cost = pybop.WeightedCost(cost1, cost2)
-        assert weighted_cost.has_identical_problems is True
-        assert weighted_cost.has_separable_problem is False
-        assert weighted_cost.problem is design_problem
-        assert weighted_cost([0.5]) >= 0
+        weighted_cost = pybop.WeightedCost(cost_1, cost_2)
+        problem = pybop.Problem(design_simulator, weighted_cost)
+        assert problem.evaluate([0.5]).values >= 0
         np.testing.assert_allclose(
-            weighted_cost([0.6]),
-            cost1([0.6]) + cost2([0.6]),
+            problem.evaluate([0.6]).values,
+            problem_1.evaluate([0.6]).values + problem_2.evaluate([0.6]).values,
             atol=1e-5,
         )
 
-        # Test DesignCosts with different problems
-        cost3 = pybop.VolumetricEnergyDensity(copy(design_problem))
-        weighted_cost = pybop.WeightedCost(cost1, cost3)
-        assert weighted_cost.has_identical_problems is False
-        assert weighted_cost.has_separable_problem is False
-        for i, _ in enumerate(weighted_cost.costs):
-            assert isinstance(weighted_cost.costs[i].problem, pybop.DesignProblem)
-
-        assert weighted_cost([0.5]) >= 0
-        np.testing.assert_allclose(
-            weighted_cost([0.6]),
-            cost1([0.6]) + cost2([0.6]),
-            atol=1e-5,
-        )
-
-    @pytest.mark.unit
-    def test_weighted_design_cost_with_update_capacity(self, design_problem):
-        design_problem.update_capacity = True
-        cost1 = pybop.GravimetricEnergyDensity(design_problem)
-        cost2 = pybop.VolumetricEnergyDensity(design_problem)
-        weighted_cost = pybop.WeightedCost(cost1, cost2, weights=[1, 1])
-
-        assert weighted_cost.has_identical_problems is True
-        assert weighted_cost.has_separable_problem is False
-        assert weighted_cost.problem is design_problem
-        assert weighted_cost([0.5]) >= 0
-        np.testing.assert_allclose(
-            weighted_cost([0.6]),
-            cost1([0.6]) + cost2([0.6]),
-            atol=1e-5,
-        )
-
-    @pytest.mark.unit
-    def test_mixed_problem_classes(self, problem, design_problem):
-        cost1 = pybop.SumSquaredError(problem)
-        cost2 = pybop.GravimetricEnergyDensity(design_problem)
+    def test_mixed_problem_classes(self, dataset, design_simulator):
+        cost1 = pybop.SumSquaredError(dataset)
+        cost2 = pybop.DesignCost(target="Gravimetric energy density [Wh.kg-1]")
         with pytest.raises(
             TypeError,
-            match="All problems must be of the same class type.",
+            match="Costs must be either all design costs or all error measures",
         ):
             pybop.WeightedCost(cost1, cost2)

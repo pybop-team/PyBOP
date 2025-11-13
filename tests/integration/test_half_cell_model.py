@@ -1,4 +1,5 @@
 import numpy as np
+import pybamm
 import pytest
 from pybamm import Parameter
 
@@ -9,6 +10,8 @@ class TestHalfCellModel:
     """
     A class to test optimisation of a PyBaMM half-cell model.
     """
+
+    pytestmark = pytest.mark.integration
 
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -21,9 +24,16 @@ class TestHalfCellModel:
 
     @pytest.fixture
     def model(self):
-        options = {"working electrode": "positive"}
-        parameter_set = pybop.lithium_ion.SPM(options=options).default_parameter_values
-        parameter_set.update(
+        model = pybamm.lithium_ion.SPM(options={"working electrode": "positive"})
+        pybop.pybamm.add_variable_to_model(
+            model, "Gravimetric energy density [Wh.kg-1]"
+        )
+        return model
+
+    @pytest.fixture
+    def parameter_values(self, model):
+        parameter_values = model.default_parameter_values
+        parameter_values.update(
             {
                 "Electrolyte density [kg.m-3]": Parameter(
                     "Positive electrode density [kg.m-3]"
@@ -44,120 +54,107 @@ class TestHalfCellModel:
                 ),
                 "Positive electrode density [kg.m-3]": 3262.0,
                 "Separator density [kg.m-3]": 0.0,
+                "Cell mass [kg]": pybop.pybamm.cell_mass(),
             },
             check_already_exists=False,
         )
         x = self.ground_truth
-        parameter_set.update(
-            {
-                "Positive electrode active material volume fraction": x[0],
-            }
+        parameter_values.update(
+            {"Positive electrode active material volume fraction": x[0]}
         )
-        return pybop.lithium_ion.SPM(parameter_set=parameter_set, options=options)
+        return parameter_values
 
     @pytest.fixture
     def parameters(self):
-        return pybop.Parameters(
-            pybop.Parameter(
-                "Positive electrode active material volume fraction",
+        return {
+            "Positive electrode active material volume fraction": pybop.Parameter(
                 prior=pybop.Uniform(0.4, 0.75),
                 # no bounds
             ),
-        )
+        }
 
-    @pytest.fixture(params=[0.4])
-    def init_soc(self, request):
-        return request.param
-
-    def noise(self, sigma, values):
-        return np.random.normal(0, sigma, values)
+    def noisy(self, data, sigma):
+        return data + np.random.normal(0, sigma, len(data))
 
     @pytest.fixture
-    def fitting_cost(self, model, parameters, init_soc):
-        # Form dataset
-        solution = self.get_data(model, init_soc)
-        dataset = pybop.Dataset(
-            {
-                "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": solution["Voltage [V]"].data
-                + self.noise(self.sigma0, len(solution["Time [s]"].data)),
-            }
-        )
+    def fitting_problem(self, model, parameter_values, parameters):
+        parameter_values.set_initial_state(0.4, options=model.options)
+        dataset = self.get_data(model, parameter_values)
 
         # Define the cost to optimise
-        problem = pybop.FittingProblem(model, parameters, dataset)
-        return pybop.SumSquaredError(problem)
+        parameter_values.update(parameters)
+        simulator = pybop.pybamm.Simulator(
+            model, parameter_values=parameter_values, protocol=dataset
+        )
+        cost = pybop.SumSquaredError(dataset)
+        return pybop.Problem(simulator, cost)
 
-    @pytest.mark.integration
-    def test_fitting_costs(self, fitting_cost):
-        x0 = fitting_cost.parameters.initial_value()
-        optim = pybop.CuckooSearch(
-            cost=fitting_cost,
-            sigma0=0.03,
+    def test_fitting_costs(self, fitting_problem):
+        x0 = fitting_problem.parameters.get_initial_values()
+        options = pybop.PintsOptions(
             max_iterations=250,
             max_unchanged_iterations=35,
         )
-
-        initial_cost = optim.cost(optim.parameters.initial_value())
-        results = optim.run()
+        optim = pybop.CuckooSearch(fitting_problem, options=options)
+        result = optim.run()
 
         # Assertions
+        initial_cost = optim.problem(x0)
         if not np.allclose(x0, self.ground_truth, atol=1e-5):
-            if optim.minimising:
-                assert initial_cost > results.final_cost
+            if result.minimising:
+                assert initial_cost > result.best_cost
             else:
-                assert initial_cost < results.final_cost
-        np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
+                assert initial_cost < result.best_cost
+        np.testing.assert_allclose(result.x, self.ground_truth, atol=1.5e-2)
 
     @pytest.fixture
-    def design_cost(self, model):
+    def design_problem(self, model, parameter_values):
+        pybop.pybamm.set_formation_concentrations(parameter_values)
         initial_state = {"Initial SoC": 1.0}
-        parameters = pybop.Parameters(
-            pybop.Parameter(
-                "Positive electrode thickness [m]",
-                prior=pybop.Gaussian(5e-05, 5e-06),
-                bounds=[2e-06, 10e-05],
-            ),
+        parameter_values.update(
+            {
+                "Positive electrode thickness [m]": pybop.Parameter(
+                    prior=pybop.Gaussian(5e-05, 5e-06),
+                    bounds=[2e-06, 10e-05],
+                ),
+            }
         )
-        experiment = pybop.Experiment(
-            ["Discharge at 1C until 3.5 V (5 seconds period)"],
+        experiment = pybamm.Experiment(
+            ["Discharge at 1C until 3.5 V (5 seconds period)"]
         )
-
-        problem = pybop.DesignProblem(
+        simulator = pybop.pybamm.Simulator(
             model,
-            parameters,
-            experiment=experiment,
+            parameter_values=parameter_values,
+            protocol=experiment,
             initial_state=initial_state,
-            update_capacity=True,
         )
-        return pybop.GravimetricEnergyDensity(problem)
+        cost = pybop.DesignCost(target="Gravimetric energy density [Wh.kg-1]")
+        return pybop.Problem(simulator, cost)
 
-    @pytest.mark.integration
-    def test_design_costs(self, design_cost):
-        optim = pybop.CuckooSearch(
-            design_cost,
-            max_iterations=15,
-            allow_infeasible_solutions=False,
-        )
-        initial_values = optim.parameters.initial_value()
-        initial_cost = optim.cost(initial_values)
-        results = optim.run()
+    def test_design_costs(self, design_problem):
+        options = pybop.PintsOptions(max_iterations=15)
+        optim = pybop.CuckooSearch(design_problem, options=options)
+        initial_values = optim.problem.parameters.get_initial_values()
+        initial_cost = optim.problem(initial_values)
+        result = optim.run()
 
         # Assertions
-        assert initial_cost < results.final_cost
-        for i, _ in enumerate(results.x):
-            assert results.x[i] < initial_values[i]
+        assert initial_cost < result.best_cost
 
-    def get_data(self, model, init_soc):
-        initial_state = {"Initial SoC": init_soc}
-        experiment = pybop.Experiment(
+    def get_data(self, model, parameter_values):
+        experiment = pybamm.Experiment(
             [
-                (
-                    "Discharge at 0.5C for 3 minutes (4 second period)",
-                    "Charge at 0.5C for 3 minutes (4 second period)",
-                ),
+                "Discharge at 0.5C for 3 minutes (4 second period)",
+                "Charge at 0.5C for 3 minutes (4 second period)",
             ]
         )
-        sim = model.predict(initial_state=initial_state, experiment=experiment)
-        return sim
+        solution = pybamm.Simulation(
+            model, parameter_values=parameter_values, experiment=experiment
+        ).solve()
+        return pybop.Dataset(
+            {
+                "Time [s]": solution["Time [s]"].data,
+                "Current function [A]": solution["Current [A]"].data,
+                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma0),
+            }
+        )

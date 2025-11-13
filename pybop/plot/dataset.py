@@ -18,7 +18,7 @@ def dataset(dataset, signal=None, trace_names=None, show=True, **layout_kwargs):
     **layout_kwargs : optional
         Valid Plotly layout keys and their values,
         e.g. `xaxis_title="Time / s"` or
-        `xaxis={"title": "Time / s", "titlefont_size": 18}`.
+        `xaxis={"title": "Time [s]", font={"size":14}}`
 
     Returns
     -------
@@ -44,11 +44,11 @@ def dataset(dataset, signal=None, trace_names=None, show=True, **layout_kwargs):
 
     # Create the figure
     fig = trajectories(
-        x=dataset["Time [s]"],
+        x=dataset[dataset.domain],
         y=y,
         trace_names=trace_names,
         show=False,
-        xaxis_title="Time / s",
+        xaxis_title=StandardPlot.remove_brackets(dataset.domain),
         yaxis_title=yaxis_title,
     )
     fig.update_layout(**layout_kwargs)

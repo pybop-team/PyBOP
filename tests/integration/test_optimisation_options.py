@@ -1,6 +1,5 @@
-import sys
-
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
@@ -10,6 +9,8 @@ class TestOptimisation:
     """
     A class to run integration tests on the Optimisation class.
     """
+
+    pytestmark = pytest.mark.integration
 
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -21,64 +22,48 @@ class TestOptimisation:
 
     @pytest.fixture
     def model(self):
-        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        return pybamm.lithium_ion.SPM()
+
+    @pytest.fixture
+    def parameter_values(self):
+        parameter_values = pybamm.ParameterValues("Chen2020")
         x = self.ground_truth
-        parameter_set.update(
+        parameter_values.update(
             {
                 "Negative electrode active material volume fraction": x[0],
                 "Positive electrode active material volume fraction": x[1],
             }
         )
-        return pybop.lithium_ion.SPM(parameter_set=parameter_set)
+        return parameter_values
 
     @pytest.fixture
     def parameters(self):
-        return pybop.Parameters(
-            pybop.Parameter(
-                "Negative electrode active material volume fraction",
+        return {
+            "Negative electrode active material volume fraction": pybop.Parameter(
                 prior=pybop.Gaussian(0.55, 0.05),
                 bounds=[0.375, 0.75],
             ),
-            pybop.Parameter(
-                "Positive electrode active material volume fraction",
+            "Positive electrode active material volume fraction": pybop.Parameter(
                 prior=pybop.Gaussian(0.55, 0.05),
                 # no bounds
             ),
-        )
+        }
 
-    @pytest.fixture(
-        params=[
-            pybop.GaussianLogLikelihoodKnownSigma,
-            pybop.RootMeanSquaredError,
-            pybop.SumSquaredError,
-        ]
-    )
-    def cost_class(self, request):
-        return request.param
-
-    def noise(self, sigma, values):
-        return np.random.normal(0, sigma, values)
+    def noisy(self, data, sigma):
+        return data + np.random.normal(0, sigma, len(data))
 
     @pytest.fixture
-    def spm_costs(self, model, parameters, cost_class):
-        # Form dataset
-        initial_state = {"Initial SoC": 0.5}
-        solution = self.get_data(model, initial_state)
-        dataset = pybop.Dataset(
-            {
-                "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": solution["Voltage [V]"].data
-                + self.noise(0.002, len(solution["Time [s]"].data)),
-            }
-        )
+    def problem(self, model, parameter_values, parameters):
+        parameter_values.set_initial_state(0.5)
+        dataset = self.get_data(model, parameter_values)
 
         # Define the cost to optimise
-        problem = pybop.FittingProblem(model, parameters, dataset)
-        if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
-            return cost_class(problem, sigma0=0.002)
-        else:
-            return cost_class(problem)
+        parameter_values.update(parameters)
+        simulator = pybop.pybamm.Simulator(
+            model, parameter_values=parameter_values, protocol=dataset
+        )
+        cost = pybop.SumSquaredError(dataset)
+        return pybop.Problem(simulator, cost)
 
     @pytest.mark.parametrize(
         "f_guessed",
@@ -87,46 +72,43 @@ class TestOptimisation:
             False,
         ],
     )
-    @pytest.mark.integration
-    def test_optimisation_f_guessed(self, f_guessed, spm_costs):
-        x0 = spm_costs.parameters.initial_value()
-        # Test each optimiser
-        optim = pybop.XNES(
-            cost=spm_costs,
-            sigma0=0.05,
-            max_iterations=250,
-            max_unchanged_iterations=35,
+    def test_optimisation_f_guessed(self, f_guessed, problem):
+        x0 = problem.parameters.get_initial_values()
+        options = pybop.PintsOptions(
+            max_iterations=100,
+            max_unchanged_iterations=25,
             absolute_tolerance=1e-5,
             use_f_guessed=f_guessed,
         )
+        optim = pybop.XNES(problem, options=options)
 
-        # Set parallelisation if not on Windows
-        if sys.platform != "win32":
-            optim.set_parallel(1)
-
-        initial_cost = optim.cost(x0)
-        results = optim.run()
+        initial_cost = optim.problem(x0)
+        result = optim.run()
 
         # Assertions
         if not np.allclose(x0, self.ground_truth, atol=1e-5):
-            if optim.minimising:
-                assert initial_cost > results.final_cost
+            if result.minimising:
+                assert initial_cost > result.best_cost
             else:
-                assert initial_cost < results.final_cost
+                assert initial_cost < result.best_cost
         else:
             raise ValueError("Initial value is the same as the ground truth value.")
-        np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
+        np.testing.assert_allclose(result.x, self.ground_truth, atol=1.5e-2)
 
-    def get_data(self, model, initial_state):
-        # Update the initial state and save the ground truth initial concentrations
-        experiment = pybop.Experiment(
+    def get_data(self, model, parameter_values):
+        experiment = pybamm.Experiment(
             [
-                (
-                    "Discharge at 0.5C for 3 minutes (5 second period)",
-                    "Charge at 0.5C for 3 minutes (5 second period)",
-                ),
+                "Discharge at 0.5C for 3 minutes (10 second period)",
+                "Charge at 0.5C for 3 minutes (10 second period)",
             ]
-            * 2
         )
-        sim = model.predict(initial_state=initial_state, experiment=experiment)
-        return sim
+        solution = pybamm.Simulation(
+            model, parameter_values=parameter_values, experiment=experiment
+        ).solve()
+        return pybop.Dataset(
+            {
+                "Time [s]": solution["Time [s]"].data,
+                "Current function [A]": solution["Current [A]"].data,
+                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, 0.002),
+            }
+        )

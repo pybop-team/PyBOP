@@ -1,4 +1,5 @@
 import matplotlib
+import numpy as np
 import plotly
 import pytest
 
@@ -26,14 +27,6 @@ def pytest_addoption(parser):
         "--notebooks", action="store_true", default=False, help="run notebook tests"
     )
     parser.addoption("--docs", action="store_true", default=False, help="run doc tests")
-
-
-def pytest_terminal_summary(terminalreporter, exitstatus, config):
-    """Add additional section to terminal summary reporting."""
-    total_time = sum([x.duration for x in terminalreporter.stats.get("passed", [])])
-    num_tests = len(terminalreporter.stats.get("passed", []))
-    print(f"\nTotal number of tests completed: {num_tests}")
-    print(f"Total time taken: {total_time:.2f} seconds")
 
 
 def pytest_configure(config):
@@ -84,3 +77,8 @@ def pytest_collection_modifyitems(config, items):
                 reason=f"Test does not match the selected options: {', '.join(selected_markers)}"
             )
             item.add_marker(skip_this)
+
+
+@pytest.fixture(autouse=True)
+def set_random_seed():
+    np.random.seed(40)

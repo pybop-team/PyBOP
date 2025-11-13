@@ -1,4 +1,5 @@
 import numpy as np
+import pints
 from pints import PopulationBasedOptimiser
 from scipy.special import gamma
 
@@ -47,15 +48,19 @@ class CuckooSearchImpl(PopulationBasedOptimiser):
       https://doi.org/10.1016/j.chaos.2011.06.004.
     """
 
-    def __init__(self, x0, sigma0=0.05, boundaries=None, pa=0.25):
+    def __init__(
+        self,
+        x0: np.ndarray,
+        sigma0: list[float] | None,
+        boundaries: pints.Boundaries | None,
+    ):
         super().__init__(x0, sigma0, boundaries=boundaries)
 
         # Problem dimensionality
         self._dim = len(x0)
 
         # Population size and abandon rate
-        self._n = self._population_size
-        self._pa = pa
+        self._pa = 0.25
         self.step_size = self._sigma0
         self.beta = 1.5
 
@@ -63,19 +68,25 @@ class CuckooSearchImpl(PopulationBasedOptimiser):
         self._running = False
         self._ready_for_tell = False
 
+        self._finite_boundaries = (
+            self._boundaries
+            and not any(np.isinf(self._boundaries.lower()))
+            and not any(np.isinf(self._boundaries.upper()))
+        )
+
         # Initialise nests
-        if self._boundaries:
+        if self._finite_boundaries:
             self._nests = np.random.uniform(
                 low=self._boundaries.lower(),
                 high=self._boundaries.upper(),
-                size=(self._n, self._dim),
+                size=(self._population_size, self._dim),
             )
         else:
             self._nests = np.random.normal(
-                self._x0, self._sigma0, size=(self._n, self._dim)
+                self._x0, self._sigma0, size=(self._population_size, self._dim)
             )
 
-        self._fitness = np.full(self._n, np.inf)
+        self._fitness = np.full(self._population_size, np.inf)
 
         # Initialise best solutions
         self._x_best = np.copy(x0)
@@ -112,7 +123,7 @@ class CuckooSearchImpl(PopulationBasedOptimiser):
         self._iterations += 1
 
         # Compare cuckoos with current nests
-        for i in range(self._n):
+        for i in range(self._population_size):
             f_new = replies[i]
             if f_new < self._fitness[i]:
                 self._nests[i] = self.cuckoos[i]
@@ -122,7 +133,7 @@ class CuckooSearchImpl(PopulationBasedOptimiser):
                     self._x_best = self.cuckoos[i]
 
         # Abandon some worse nests
-        n_abandon = int(self._pa * self._n)
+        n_abandon = int(self._pa * self._population_size)
         worst_nests = np.argsort(self._fitness)[-n_abandon:]
         for idx in worst_nests:
             self.abandon_nests(idx)
@@ -151,7 +162,7 @@ class CuckooSearchImpl(PopulationBasedOptimiser):
         """
         Updates the nests to abandon the worst performers and reinitialise.
         """
-        if self._boundaries:
+        if self._finite_boundaries:
             self._nests[idx] = np.random.uniform(
                 low=self._boundaries.lower(),
                 high=self._boundaries.upper(),
@@ -163,7 +174,7 @@ class CuckooSearchImpl(PopulationBasedOptimiser):
         """
         Clip the input array to the boundaries if available.
         """
-        if self._boundaries:
+        if self._finite_boundaries:
             x = np.clip(x, self._boundaries.lower(), self._boundaries.upper())
         return x
 
@@ -198,3 +209,14 @@ class CuckooSearchImpl(PopulationBasedOptimiser):
         Returns the name of the optimiser.
         """
         return "Cuckoo Search"
+
+    @property
+    def pa(self):
+        return self._pa
+
+    @pa.setter
+    def pa(self, pa):
+        """Setter for abandonment rate"""
+        if not isinstance(pa, int | float) or not 0 < pa <= 1:
+            raise ValueError("pa must be a numeric value between 0 and 1.")
+        self._pa = float(pa)

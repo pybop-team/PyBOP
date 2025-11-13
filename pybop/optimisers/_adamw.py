@@ -1,8 +1,11 @@
 #
-# Extends the Pints' Adam Class with a Weight Decay addition
+# Initially based off Pints' Adam class, adds weight decay
 #
 
+import warnings
+
 import numpy as np
+import pints
 from pints import Optimiser as PintsOptimiser
 
 
@@ -53,9 +56,18 @@ class AdamWImpl(PintsOptimiser):
            https://doi.org/10.48550/arXiv.1711.05101
     """
 
-    def __init__(self, x0, sigma0=0.015, boundaries=None):
+    def __init__(
+        self,
+        x0: np.ndarray,
+        sigma0: list[float] | None,
+        boundaries: pints.Boundaries | None,
+    ):
         if boundaries is not None:
-            print("NOTE: Boundaries ignored by AdamW")
+            warnings.warn(
+                "Boundaries ignored by AdamW",
+                UserWarning,
+                stacklevel=2,
+            )
 
         self.boundaries = None
         super().__init__(x0, sigma0, self.boundaries)
@@ -215,7 +227,7 @@ class AdamWImpl(PintsOptimiser):
         Sets the lam decay constant. This is the weight decay rate
         that helps in finding the optimal solution.
         """
-        if not isinstance(lam, (int, float)) or not 0 < lam <= 1:
+        if not isinstance(lam, int | float) or not 0 < lam <= 1:
             raise ValueError("lam must be a numeric value between 0 and 1.")
 
         self._lam = float(lam)
@@ -229,7 +241,7 @@ class AdamWImpl(PintsOptimiser):
         """
         Sets the b1 momentum decay constant.
         """
-        if not isinstance(b1, (int, float)) or not 0 < b1 <= 1:
+        if not isinstance(b1, int | float) or not 0 < b1 <= 1:
             raise ValueError("b1 must be a numeric value between 0 and 1.")
 
         self._b1 = float(b1)
@@ -243,7 +255,7 @@ class AdamWImpl(PintsOptimiser):
         """
         Sets the b2 momentum decay constant.
         """
-        if not isinstance(b2, (int, float)) or not 0 < b2 <= 1:
+        if not isinstance(b2, int | float) or not 0 < b2 <= 1:
             raise ValueError("b2 must be a numeric value between 0 and 1.")
 
         self._b2 = float(b2)

@@ -238,4 +238,8 @@ class PosteriorSummary:
         return ess
 
     def rhat(self):
+        """
+        Computes the Gelman-Rubin statistic which diagnoses MCMC convergence. For well-mixed and
+        stationary chains R-hat will be close to one, otherwise it is higher.
+        """
         return pints.rhat(self.chains)

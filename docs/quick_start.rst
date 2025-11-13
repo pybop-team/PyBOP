@@ -6,7 +6,8 @@ Welcome to the Quick Start Guide for PyBOP. This guide will help you get up and 
 Getting Started with PyBOP
 --------------------------
 
-PyBOP is equipped with a series of robust tools that can help you optimise various parameters within your battery models to better match empirical data or to explore the effects of different parameters on battery behavior.
+For detailed installation instructions, including how to install specific versions or from source, see the :ref:`installation` section.
+Here we give the simplest method.
 
 To begin using PyBOP:
 
@@ -15,8 +16,6 @@ To begin using PyBOP:
    .. code-block:: console
 
        pip install pybop
-
-   For detailed installation instructions, including how to install specific versions or from source, see the :ref:`installation` section.
 
 2. Once PyBOP is installed, you can import it in your Python scripts or Jupyter notebooks:
 
@@ -28,6 +27,8 @@ To begin using PyBOP:
 
 Exploring Examples
 ------------------
+
+PyBOP is equipped with a tools for optimising various parameters within your battery models to better match empirical data or to explore the effects of different parameters on battery behaviour.
 
 To help you get acquainted with PyBOP's capabilities, we provide a collection of examples that demonstrate common use cases and features of the package:
 
@@ -46,7 +47,9 @@ These examples are also available on our `GitHub repository <https://github.com/
 Next Steps
 ----------
 
-Once you're comfortable with the basics demonstrated in the examples, you can dive deeper into the functionality of PyBOP by delving into the :ref:`api-reference` for detailed API documentation.
+Once you're comfortable with the basics demonstrated in the examples, check out the different :ref:`optimisers` available in PyBOP.
+
+You can also dive deeper into the functionality of PyBOP by delving into the :ref:`api-reference` for detailed API documentation.
 
 Support and Contributions
 -------------------------

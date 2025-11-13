@@ -1,6 +1,5 @@
-import warnings
-
 import numpy as np
+import pybamm
 import pytest
 from packaging import version
 
@@ -12,7 +11,8 @@ class TestPlots:
     A class to test the plot classes.
     """
 
-    @pytest.mark.unit
+    pytestmark = pytest.mark.unit
+
     def test_standard_plot(self):
         # Test standard plot
         trace_names = pybop.plot.StandardPlot.remove_brackets(
@@ -27,40 +27,39 @@ class TestPlots:
 
     @pytest.fixture
     def model(self):
-        # Define an example model
-        return pybop.lithium_ion.SPM()
+        return pybamm.lithium_ion.SPM()
 
     @pytest.fixture
     def parameters(self):
-        return pybop.Parameters(
-            pybop.Parameter(
-                "Negative electrode active material volume fraction",
+        return {
+            "Negative electrode active material volume fraction": pybop.Parameter(
                 prior=pybop.Gaussian(0.68, 0.05),
                 bounds=[0.5, 0.8],
+                transformation=pybop.ScaledTransformation(
+                    coefficient=1 / 0.3, intercept=-0.5
+                ),
             ),
-            pybop.Parameter(
-                "Positive electrode active material volume fraction",
+            "Positive electrode active material volume fraction": pybop.Parameter(
                 prior=pybop.Gaussian(0.58, 0.05),
                 bounds=[0.4, 0.7],
+                transformation=pybop.ScaledTransformation(
+                    coefficient=1 / 0.3, intercept=-0.4
+                ),
             ),
-        )
+        }
 
     @pytest.fixture
     def dataset(self, model):
-        # Generate data
         t_eval = np.arange(0, 50, 2)
-        values = model.predict(t_eval=t_eval)
-
-        # Form dataset
+        solution = pybamm.Simulation(model).solve(t_eval=t_eval)
         return pybop.Dataset(
             {
                 "Time [s]": t_eval,
-                "Current function [A]": values["Current [A]"].data,
-                "Voltage [V]": values["Voltage [V]"].data,
+                "Current function [A]": solution["Current [A]"](t_eval),
+                "Voltage [V]": solution["Voltage [V]"](t_eval),
             }
         )
 
-    @pytest.mark.unit
     def test_dataset_plots(self, dataset):
         # Test plot of Dataset objects
         pybop.plot.trajectories(
@@ -72,96 +71,104 @@ class TestPlots:
 
     @pytest.fixture
     def fitting_problem(self, model, parameters, dataset):
-        return pybop.FittingProblem(model, parameters, dataset)
+        parameter_values = model.default_parameter_values
+        parameter_values.update(parameters)
+        simulator = pybop.pybamm.Simulator(
+            model, parameter_values=parameter_values, protocol=dataset
+        )
+        cost = pybop.SumSquaredError(dataset)
+        return pybop.Problem(simulator, cost)
 
     @pytest.fixture
     def experiment(self):
-        return pybop.Experiment(
-            [
-                ("Discharge at 1C for 10 minutes (20 second period)"),
-            ]
-        )
+        return pybamm.Experiment(["Discharge at 1C for 10 minutes (20 second period)"])
 
     @pytest.fixture
     def design_problem(self, model, parameters, experiment):
-        model = pybop.lithium_ion.SPM()
-        return pybop.DesignProblem(model, parameters, experiment)
+        parameter_values = model.default_parameter_values
+        pybop.pybamm.set_formation_concentrations(parameter_values)
+        parameter_values.update(parameters)
+        simulator = pybop.pybamm.Simulator(
+            model, parameter_values=parameter_values, protocol=experiment
+        )
+        return pybop.Problem(simulator)
 
-    @pytest.mark.unit
     def test_problem_plots(self, fitting_problem, design_problem):
         # Test plot of Problem objects
-        pybop.plot.quick(fitting_problem, title="Optimised Comparison")
-        pybop.plot.quick(design_problem)
+        pybop.plot.problem(fitting_problem, title="Optimised Comparison")
+        pybop.plot.problem(design_problem)
 
         # Test conversion of values into inputs
-        pybop.plot.quick(fitting_problem, problem_inputs=[0.6, 0.6])
+        pybop.plot.problem(
+            fitting_problem, inputs=fitting_problem.parameters.to_dict([0.6, 0.6])
+        )
 
-    @pytest.fixture
-    def cost(self, fitting_problem):
-        # Define an example cost
-        return pybop.SumSquaredError(fitting_problem)
-
-    @pytest.mark.unit
-    def test_cost_plots(self, cost):
+    def test_cost_plots(self, fitting_problem):
         # Test plot of Cost objects
-        pybop.plot.contour(cost, gradient=True, steps=5)
+        pybop.plot.contour(fitting_problem, gradient=True, steps=5)
+
+        pybop.plot.contour(fitting_problem, gradient=True, steps=5, transformed=True)
 
         # Test without bounds
-        for param in cost.parameters:
-            param.bounds = None
+        fitting_problem.parameters.remove_bounds()
         with pytest.raises(ValueError, match="All parameters require bounds for plot."):
-            pybop.plot.contour(cost, steps=5)
+            pybop.plot.contour(fitting_problem, steps=5)
 
         # Test with bounds
-        pybop.plot.contour(cost, bounds=np.array([[0.5, 0.8], [0.4, 0.7]]), steps=5)
+        pybop.plot.contour(
+            fitting_problem, bounds=np.array([[0.5, 0.8], [0.4, 0.7]]), steps=5
+        )
 
     @pytest.fixture
-    def optim(self, cost):
+    def result(self, fitting_problem):
         # Define and run an example optimisation
-        optim = pybop.Optimisation(cost)
-        optim.run()
-        return optim
+        optim = pybop.XNES(fitting_problem)
+        return optim.run()
 
-    @pytest.mark.unit
-    def test_optim_plots(self, optim):
+    def test_optim_plots(self, result):
         bounds = np.asarray([[0.5, 0.8], [0.4, 0.7]])
 
         # Plot convergence
-        pybop.plot.convergence(optim)
-        optim._minimising = False
-        pybop.plot.convergence(optim)
+        result.plot_convergence()
 
         # Plot the parameter traces
-        pybop.plot.parameters(optim)
+        result.plot_parameters()
 
         # Plot the cost landscape with optimisation path
-        pybop.plot.contour(optim, steps=3)
+        result.plot_contour(steps=3)
 
         # Plot the cost landscape w/ optim & bounds
-        pybop.plot.contour(optim, steps=3, bounds=bounds)
-
-        # Plot the cost landscape using optimisation path
-        pybop.plot.contour(optim, steps=3, use_optim_log=True)
+        result.plot_contour(steps=3, bounds=bounds)
 
         # Plot gradient cost landscape
-        pybop.plot.contour(optim, gradient=True, steps=5)
+        result.plot_contour(gradient=True, steps=5)
 
         # Plot voronoi
-        pybop.plot.surface(optim)
+        result.plot_surface(normalise=False)
 
         # Plot voronoi w/ bounds
-        pybop.plot.surface(optim, bounds=bounds)
+        result.plot_surface(bounds=bounds)
+
+        with pytest.raises(
+            ValueError, match="Lower bounds must be strictly less than upper bounds."
+        ):
+            result.plot_surface(bounds=[[0.5, 0.8], [0.7, 0.4]])
 
     @pytest.fixture
-    def posterior_summary(self, fitting_problem):
-        posterior = pybop.LogPosterior(
-            pybop.GaussianLogLikelihoodKnownSigma(fitting_problem, sigma0=2e-3)
+    def posterior_summary(self, model, parameters, dataset):
+        parameter_values = model.default_parameter_values
+        parameter_values.update(parameters)
+        simulator = pybop.pybamm.Simulator(
+            model, parameter_values=parameter_values, protocol=dataset
         )
-        sampler = pybop.SliceStepoutMCMC(posterior, chains=1, iterations=1)
-        results = sampler.run()
-        return pybop.PosteriorSummary(results)
+        likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=2e-3)
+        posterior = pybop.LogPosterior(likelihood)
+        problem = pybop.Problem(simulator, posterior)
+        options = pybop.PintsSamplerOptions(n_chains=1, max_iterations=1)
+        sampler = pybop.SliceStepoutMCMC(problem, options=options)
+        result = sampler.run()
+        return pybop.PosteriorSummary(result.chains)
 
-    @pytest.mark.unit
     def test_posterior_plots(self, posterior_summary):
         # Plot trace
         posterior_summary.plot_trace()
@@ -175,102 +182,71 @@ class TestPlots:
         # Plot summary table
         posterior_summary.summary_table()
 
-    @pytest.mark.unit
-    def test_with_ipykernel(self, dataset, cost, optim):
+    def test_with_ipykernel(self, dataset, fitting_problem, result):
         import ipykernel
 
         assert version.parse(ipykernel.__version__) >= version.parse("0.6")
         pybop.plot.dataset(dataset, signal=["Voltage [V]"])
-        pybop.plot.contour(cost, gradient=True, steps=5)
-        pybop.plot.convergence(optim)
-        pybop.plot.parameters(optim)
-        pybop.plot.contour(optim, steps=5)
+        pybop.plot.contour(fitting_problem, gradient=True, steps=5)
+        result.plot_convergence()
+        result.plot_parameters()
+        result.plot_contour(steps=5)
 
-    @pytest.mark.unit
-    def test_gaussianlogliklihood_plots(self, fitting_problem):
-        # Test plot of GaussianLogLikelihood
-        likelihood = pybop.GaussianLogLikelihood(fitting_problem)
-        optim = pybop.CMAES(likelihood, max_iterations=5)
-        optim.run()
-
-        # Plot parameters
-        pybop.plot.parameters(optim)
-
-    @pytest.mark.unit
     def test_contour_incorrect_number_of_parameters(self, model, dataset):
+        parameter_values = model.default_parameter_values
+
         # Test with less than two paramters
-        parameters = pybop.Parameters(
-            pybop.Parameter(
-                "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.68, 0.05),
-                bounds=[0.5, 0.8],
-            ),
+        parameter_values.update(
+            {
+                "Negative electrode active material volume fraction": pybop.Parameter(
+                    prior=pybop.Gaussian(0.68, 0.05),
+                    bounds=[0.5, 0.8],
+                ),
+            }
         )
-        fitting_problem = pybop.FittingProblem(model, parameters, dataset)
-        cost = pybop.SumSquaredError(fitting_problem)
+        simulator = pybop.pybamm.Simulator(
+            model, parameter_values=parameter_values, protocol=dataset
+        )
+        cost = pybop.SumSquaredError(dataset)
+        fitting_problem = pybop.Problem(simulator, cost)
         with pytest.raises(
             ValueError, match="This cost function takes fewer than 2 parameters."
         ):
-            pybop.plot.contour(cost)
+            pybop.plot.contour(fitting_problem)
 
         # Test with more than two paramters
-        parameters = pybop.Parameters(
-            pybop.Parameter(
-                "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.68, 0.05),
-                bounds=[0.5, 0.8],
-            ),
-            pybop.Parameter(
-                "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.58, 0.05),
-                bounds=[0.4, 0.7],
-            ),
-            pybop.Parameter(
-                "Positive particle radius [m]",
-                prior=pybop.Gaussian(4.8e-06, 0.05e-06),
-                bounds=[4e-06, 6e-06],
-            ),
+        parameter_values.update(
+            {
+                "Positive electrode active material volume fraction": pybop.Parameter(
+                    prior=pybop.Gaussian(0.58, 0.05),
+                    bounds=[0.4, 0.7],
+                ),
+                "Positive particle radius [m]": pybop.Parameter(
+                    prior=pybop.Gaussian(4.8e-06, 0.05e-06),
+                    bounds=[4e-06, 6e-06],
+                ),
+            }
         )
-        fitting_problem = pybop.FittingProblem(model, parameters, dataset)
-        cost = pybop.SumSquaredError(fitting_problem)
-        pybop.plot.contour(cost)
-
-    @pytest.mark.unit
-    def test_contour_prior_bounds(self, model, dataset):
-        # Test with prior bounds
-        parameters = pybop.Parameters(
-            pybop.Parameter(
-                "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.68, 0.01),
-            ),
-            pybop.Parameter(
-                "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.58, 0.01),
-            ),
+        simulator = pybop.pybamm.Simulator(
+            model, parameter_values=parameter_values, protocol=dataset
         )
-        fitting_problem = pybop.FittingProblem(model, parameters, dataset)
-        cost = pybop.SumSquaredError(fitting_problem)
-        with pytest.warns(
-            UserWarning,
-            match="Bounds were created from prior distributions.",
-        ):
-            warnings.simplefilter("always")
-            pybop.plot.contour(cost)
+        cost = pybop.SumSquaredError(dataset)
+        fitting_problem = pybop.Problem(simulator, cost)
+        pybop.plot.contour(fitting_problem)
 
-    @pytest.mark.unit
     def test_nyquist(self):
         # Define model
-        model = pybop.lithium_ion.SPM(
-            eis=True, options={"surface form": "differential"}
-        )
+        model = pybamm.lithium_ion.SPM(options={"surface form": "differential"})
+        parameter_values = model.default_parameter_values
 
         # Fitting parameters
-        parameters = pybop.Parameters(
-            pybop.Parameter(
-                "Positive electrode thickness [m]",
-                prior=pybop.Gaussian(60e-6, 1e-6),
-                bounds=[10e-6, 80e-6],
-            )
+        parameter_values.update(
+            {
+                "Positive electrode thickness [m]": pybop.Parameter(
+                    prior=pybop.Gaussian(60e-6, 1e-6),
+                    bounds=[10e-6, 80e-6],
+                )
+            }
         )
 
         # Form dataset
@@ -279,17 +255,22 @@ class TestPlots:
                 "Frequency [Hz]": np.logspace(-4, 5, 10),
                 "Current function [A]": np.ones(10) * 0.0,
                 "Impedance": np.ones(10) * 0.0,
-            }
+            },
+            domain="Frequency [Hz]",
         )
 
-        signal = ["Impedance"]
         # Generate problem, cost function, and optimisation class
-        problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
+        simulator = pybop.pybamm.EISSimulator(
+            model,
+            parameter_values=parameter_values,
+            f_eval=dataset["Frequency [Hz]"],
+        )
+        cost = pybop.MeanAbsoluteError(dataset, target="Impedance")
+        problem = pybop.Problem(simulator, cost)
 
         # Plot the nyquist
-        pybop.plot.nyquist(
-            problem, problem_inputs=[60e-6], title="Optimised Comparison"
-        )
+        inputs = problem.parameters.to_dict([60e-6])
+        pybop.plot.nyquist(problem, inputs=inputs, title="Optimised Comparison")
 
         # Without inputs
         pybop.plot.nyquist(problem, title="Optimised Comparison")

@@ -14,7 +14,7 @@ PYBAMM_VERSION = os.environ.get("PYBAMM_VERSION", None)
 
 @nox.session
 def unit(session):
-    session.install("-e", ".[all,dev]", silent=False)
+    session.install("-e", ".[all,dev]", "--upgrade", silent=False)
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
     session.run("pytest", "--unit")
@@ -22,27 +22,33 @@ def unit(session):
 
 @nox.session
 def coverage(session):
-    session.install("-e", ".[all,dev]", silent=False)
+    session.install("-e", ".[all,dev]", "--upgrade", silent=False)
     session.install("pip")
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
-    session.run("pytest", "--unit", "--cov", "--cov-append", "--cov-report=xml")
     session.run(
         "pytest",
-        "--integration",
-        "--cov",
-        "--cov-append",
+        "--unit",
+        "--cov=pybop",
         "--cov-report=xml",
+        "--cov-config=pyproject.toml",
     )
     session.run(
-        "pytest", "--plots", "--cov", "--cov-append", "--cov-report=xml", "-n", "0"
+        "pytest",
+        "--plots",
+        "--cov=pybop",
+        "--cov-append",
+        "--cov-report=xml",
+        "--cov-config=pyproject.toml",
+        "-n",
+        "0",
     )
 
 
 @nox.session
 def plots(session):
     """Run the tests that generate plots."""
-    session.install("-e", ".[plot,dev]", silent=False)
+    session.install("-e", ".[plot,dev]", "--upgrade", silent=False)
     session.install("pip")
     session.run("pytest", "--plots", "-n", "0")
 
@@ -50,23 +56,22 @@ def plots(session):
 @nox.session
 def integration(session):
     """Run the integration tests."""
-    session.install("-e", ".[all,dev]", silent=False)
+    session.install("-e", ".[all,dev]", "--upgrade", silent=False)
     session.run("pytest", "--integration")
 
 
 @nox.session
 def examples(session):
-    """Run the examples and notebooks"""
-    session.install("-e", ".[all,dev]", silent=False)
+    """Run the example scripts."""
+    session.install("-e", ".[all,dev]", "--upgrade", silent=False)
     session.run("pytest", "--examples")
-    notebooks(session)
 
 
 @nox.session
 def notebooks(session):
     """Run the Jupyter notebooks."""
     session.install("openpyxl", "ipywidgets")
-    session.install("-e", ".[all,dev]", silent=False)
+    session.install("-e", ".[all,dev]", "--upgrade", silent=False)
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
     session.run(
@@ -82,7 +87,7 @@ def notebooks(session):
 def notebooks_overwrite(session):
     """Run the Jupyter notebooks."""
     session.install("openpyxl", "ipywidgets")
-    session.install("-e", ".[all,dev]", silent=False)
+    session.install("-e", ".[all,dev]", "--upgrade", silent=False)
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
     session.run(
@@ -98,7 +103,7 @@ def notebooks_overwrite(session):
 @nox.session(name="tests")
 def run_tests(session):
     """Run all or a user-defined set of tests."""
-    session.install("-e", ".[all,dev]", silent=False)
+    session.install("-e", ".[all,dev]", "--upgrade", silent=False)
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
     specific_tests = session.posargs if session.posargs else []
@@ -108,6 +113,7 @@ def run_tests(session):
         "--integration",
         "--nbmake",
         "--examples",
+        "--notebooks",
         "-n",
         "auto",
         *specific_tests,
@@ -120,7 +126,7 @@ def run_doc_tests(session):
     Checks if the documentation can be built, runs any doctests (currently not
     used).
     """
-    session.install("-e", ".[plot,docs,dev]", silent=False)
+    session.install("-e", ".[plot,docs,dev]", "--upgrade", silent=False)
     session.run("pytest", "--docs", "-n", "0")
 
 
@@ -135,7 +141,7 @@ def lint(session):
     session.run("pre-commit", "run", "--all-files")
 
 
-@nox.session(name="quick", reuse_venv=True)
+@nox.session(name="quick")
 def run_quick(session):
     """
     Run integration tests, unit tests, and doctests sequentially
@@ -149,7 +155,7 @@ def run_quick(session):
 @nox.session
 def benchmarks(session):
     """Run the benchmarks."""
-    session.install("-e", ".[all,dev]", silent=False)
+    session.install("-e", ".[all,dev]", "--upgrade", silent=False)
     session.install("asv[virtualenv]")
     session.run("asv", "run", "--show-stderr", "--python=same")
 
@@ -161,7 +167,7 @@ def docs(session):
     Credit: PyBaMM Team
     """
     envbindir = session.bin
-    session.install("-e", ".[all,docs]", silent=False)
+    session.install("-e", ".[all,docs]", "--upgrade", silent=False)
     session.chdir("docs")
     # Local development
     if session.interactive:

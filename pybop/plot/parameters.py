@@ -1,21 +1,26 @@
+from typing import TYPE_CHECKING
+
 from pybop import GaussianLogLikelihood
 from pybop.plot.standard_plots import StandardSubplot
 
+if TYPE_CHECKING:
+    from pybop._result import OptimisationResult
 
-def parameters(optim, show=True, **layout_kwargs):
+
+def parameters(result: "OptimisationResult", show=True, **layout_kwargs):
     """
-    Plot the evolution of parameters during the optimization process using Plotly.
+    Plot the evolution of parameters during the optimisation process using Plotly.
 
     Parameters
     ----------
-    optim : object
-        Optimisation object containing the history of parameter values and associated cost.
+    result : pybop.OptimisationResult
+        Optimisation result containing the history of parameter values and associated cost.
     show : bool, optional
         If True, the figure is shown upon creation (default: True).
     **layout_kwargs : optional
         Valid Plotly layout keys and their values,
         e.g. `xaxis_title="Time [s]"` or
-        `xaxis={"title": "Time [s]", "titlefont_size": 18}`.
+        `xaxis={"title": "Time [s]", font={"size":14}}`
 
     Returns
     -------
@@ -24,17 +29,17 @@ def parameters(optim, show=True, **layout_kwargs):
     """
 
     # Extract parameters and log from the optimisation object
-    parameters = optim.cost.parameters
-    x = list(range(len(optim.log["x"])))
-    y = [list(item) for item in zip(*optim.log["x"])]
+    parameters = result.optim.problem.parameters
+    x = list(range(len(result.x_model)))
+    y = [list(item) for item in zip(*result.x_model, strict=False)]
 
     # Create lists of axis titles and trace names
     axis_titles = []
-    trace_names = parameters.keys()
+    trace_names = parameters.names
     for name in trace_names:
         axis_titles.append(("Function Call", name))
 
-    if isinstance(optim.cost, GaussianLogLikelihood):
+    if isinstance(result.optim.problem, GaussianLogLikelihood):
         axis_titles.append(("Function Call", "Sigma"))
         trace_names.append("Sigma")
 

@@ -1,19 +1,22 @@
 import io
 import re
 import sys
-import warnings
 
 import numpy as np
+import pybamm
 import pytest
 from pints import PopulationBasedOptimiser
 
 import pybop
+from pybop.optimisers.pints_optimisers import AdamWImpl, IRPropPlusImpl
 
 
 class TestOptimisation:
     """
     A class to test the optimisation class.
     """
+
+    pytestmark = pytest.mark.unit
 
     @pytest.fixture
     def dataset(self):
@@ -27,56 +30,56 @@ class TestOptimisation:
 
     @pytest.fixture
     def one_parameter(self):
-        return pybop.Parameter(
-            "Positive electrode active material volume fraction",
-            prior=pybop.Gaussian(0.6, 0.02),
-            bounds=[0.58, 0.62],
-        )
+        return {
+            "Positive electrode active material volume fraction": pybop.Parameter(
+                prior=pybop.Gaussian(0.5, 0.02),
+                bounds=[0.48, 0.52],
+            )
+        }
 
     @pytest.fixture
     def two_parameters(self):
-        return pybop.Parameters(
-            pybop.Parameter(
-                "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.6, 0.2),
+        return {
+            "Negative electrode active material volume fraction": pybop.Parameter(
+                prior=pybop.Gaussian(0.6, 0.02),
                 bounds=[0.58, 0.62],
             ),
-            pybop.Parameter(
-                "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.55, 0.05),
-                bounds=[0.53, 0.57],
+            "Positive electrode active material volume fraction": pybop.Parameter(
+                prior=pybop.Gaussian(0.5, 0.05),
+                bounds=[0.48, 0.52],
             ),
-        )
+        }
 
     @pytest.fixture
     def model(self):
-        return pybop.lithium_ion.SPM()
+        return pybamm.lithium_ion.SPM()
 
     @pytest.fixture
-    def cost(self, model, one_parameter, dataset):
-        problem = pybop.FittingProblem(
-            model,
-            one_parameter,
-            dataset,
+    def problem(self, model, one_parameter, dataset):
+        parameter_values = model.default_parameter_values
+        parameter_values.update(one_parameter)
+        simulator = pybop.pybamm.Simulator(
+            model, parameter_values=parameter_values, protocol=dataset
         )
-        return pybop.SumSquaredError(problem)
+        cost = pybop.SumSquaredError(dataset)
+        return pybop.Problem(simulator, cost)
 
     @pytest.fixture
-    def two_param_cost(self, model, two_parameters, dataset):
-        problem = pybop.FittingProblem(
-            model,
-            two_parameters,
-            dataset,
+    def two_param_problem(self, model, two_parameters, dataset):
+        parameter_values = model.default_parameter_values
+        parameter_values.update(two_parameters)
+        simulator = pybop.pybamm.Simulator(
+            model, parameter_values=parameter_values, protocol=dataset
         )
-        return pybop.SumSquaredError(problem)
+        cost = pybop.SumSquaredError(dataset)
+        return pybop.Problem(simulator, cost)
 
     @pytest.mark.parametrize(
         "optimiser, expected_name, sensitivities",
         [
-            (pybop.SciPyMinimize, "SciPyMinimize", False),
+            (pybop.SciPyMinimize, "SciPyMinimize", True),
             (pybop.SciPyDifferentialEvolution, "SciPyDifferentialEvolution", False),
             (pybop.GradientDescent, "Gradient descent", True),
-            (pybop.Adam, "Adam", True),
             (pybop.AdamW, "AdamW", True),
             (
                 pybop.CMAES,
@@ -88,42 +91,31 @@ class TestOptimisation:
             (pybop.XNES, "Exponential Natural Evolution Strategy (xNES)", False),
             (pybop.PSO, "Particle Swarm Optimisation (PSO)", False),
             (pybop.IRPropMin, "iRprop-", True),
+            (pybop.IRPropPlus, "iRprop+", True),
             (pybop.NelderMead, "Nelder-Mead", False),
+            (pybop.RandomSearch, "Random Search", False),
+            (pybop.SimulatedAnnealing, "Simulated Annealing", False),
         ],
     )
-    @pytest.mark.unit
     def test_optimiser_classes(
-        self, two_param_cost, optimiser, expected_name, sensitivities
+        self, two_param_problem, optimiser, expected_name, sensitivities
     ):
         # Test class construction
-        cost = two_param_cost
-        optim = optimiser(cost=cost)
+        problem = two_param_problem
+        optim = optimiser(problem)
 
-        assert optim.cost is not None
-        assert optim.name() == expected_name
+        assert optim.problem is not None
+        assert optim.name == expected_name
+        assert optim._needs_sensitivities == sensitivities
 
-        # Test pybop.Optimisation construction
-        optim = pybop.Optimisation(cost=cost, optimiser=optimiser)
-
-        assert optim.cost is not None
-        assert optim.name() == expected_name
-        assert optim.needs_sensitivities == sensitivities
-
-        if optimiser not in [pybop.SciPyDifferentialEvolution]:
+        if issubclass(optimiser, pybop.BasePintsOptimiser) and optimiser not in [
+            pybop.PSO
+        ]:
             # Test construction without bounds
-            optim = optimiser(cost=cost, bounds=None)
-            assert optim.bounds is None
-            if issubclass(optimiser, pybop.BasePintsOptimiser):
-                assert optim._boundaries is None
-
-    @pytest.mark.unit
-    def test_no_optimisation_parameters(self, model, dataset):
-        problem = pybop.FittingProblem(
-            model=model, parameters=pybop.Parameters(), dataset=dataset
-        )
-        cost = pybop.RootMeanSquaredError(problem)
-        with pytest.raises(ValueError, match="There are no parameters to optimise."):
-            pybop.Optimisation(cost=cost)
+            problem.parameters.remove_bounds()
+            optim = optimiser(problem)
+            assert all(np.isinf(optim.problem.parameters.get_bounds()["lower"]))
+            assert all(np.isinf(optim.problem.parameters.get_bounds()["upper"]))
 
     @pytest.mark.parametrize(
         "optimiser",
@@ -131,77 +123,67 @@ class TestOptimisation:
             pybop.SciPyMinimize,
             pybop.SciPyDifferentialEvolution,
             pybop.GradientDescent,
-            pybop.Adam,
             pybop.AdamW,
             pybop.SNES,
             pybop.XNES,
             pybop.PSO,
             pybop.IRPropMin,
+            pybop.IRPropPlus,
             pybop.NelderMead,
             pybop.CuckooSearch,
+            pybop.RandomSearch,
+            pybop.SimulatedAnnealing,
         ],
     )
-    @pytest.mark.unit
-    def test_optimiser_kwargs(self, cost, optimiser):
-        def assert_log_update(optim):
-            optim.log_update(x=[0.7], cost=[0.01])
-            assert optim.log["x"][-1] == 0.7
-            assert optim.log["cost"][-1] == 0.01
-
-        def check_max_iterations(optim):
-            results = optim.run()
-            assert results.n_iterations == 3
-
-        def check_incorrect_update(optim):
-            with pytest.raises(
-                TypeError, match="Input must be a list, tuple, or numpy array"
-            ):
-                optim.log_update(x="Incorrect")
-
-        def check_bounds_handling(optim, expected_bounds, should_raise=False):
-            if should_raise:
-                with pytest.raises(
-                    ValueError, match="Either all bounds or no bounds must be set"
-                ):
-                    optim = optimiser(cost=cost, bounds=expected_bounds)
-            else:
-                assert optim.bounds == expected_bounds
-
+    def test_optimiser_kwargs(self, problem, optimiser):
         def check_multistart(optim, n_iters, multistarts):
-            results = optim.run()
+            result = optim.run()
             if isinstance(optim, pybop.BasePintsOptimiser):
-                assert len(optim.log["x_best"]) == n_iters * multistarts
-                assert results.average_iterations() == n_iters
-
-        optim = optimiser(cost=cost, max_iterations=3, tol=1e-6)
-        cost_bounds = cost.parameters.get_bounds()
-
-        check_max_iterations(optim)
-        assert_log_update(optim)
-        check_incorrect_update(optim)
-
-        multistart_optim = optimiser(cost, multistart=2, max_iterations=2)
-        check_multistart(multistart_optim, 2, 2)
-
-        if optimiser in [pybop.GradientDescent, pybop.Adam, pybop.NelderMead]:
-            optim = optimiser(cost=cost, bounds=cost_bounds)
-            assert optim.bounds is None
-        elif optimiser in [pybop.PSO]:
-            check_bounds_handling(optim, cost_bounds)
-            check_bounds_handling(
-                optim, {"upper": [np.inf], "lower": [0.57]}, should_raise=True
-            )
-        else:
-            bounds = {"upper": [0.63], "lower": [0.57]}
-            check_bounds_handling(optim, cost_bounds)
-            optim = optimiser(cost=cost, bounds=bounds)
-            assert optim.bounds == bounds
+                assert result.total_iterations() == n_iters * multistarts
+                assert result.total_evaluations() >= n_iters * multistarts
+                assert result.total_runtime() >= result._time[0]
 
         if issubclass(optimiser, pybop.BasePintsOptimiser):
-            optim = optimiser(
-                cost=cost,
+            options = pybop.PintsOptions(max_iterations=3)
+        elif optimiser is pybop.SciPyMinimize:
+            options = pybop.SciPyMinimizeOptions(maxiter=3)
+        elif optimiser is pybop.SciPyDifferentialEvolution:
+            options = pybop.SciPyDifferentialEvolutionOptions(maxiter=3)
+        optim = optimiser(problem, options=options)
+
+        # Check maximum iterations applied
+        result = optim.run()
+        assert result.n_iterations <= 3
+
+        # Test multistart
+        if issubclass(optimiser, pybop.BasePintsOptimiser):
+            options = pybop.PintsOptions(max_iterations=6, multistart=2)
+        elif optimiser is pybop.SciPyMinimize:
+            options = pybop.SciPyMinimizeOptions(maxiter=6, multistart=2)
+        elif optimiser is pybop.SciPyDifferentialEvolution:
+            options = pybop.SciPyDifferentialEvolutionOptions(maxiter=6, multistart=2)
+        multistart_optim = optimiser(problem, options=options)
+        check_multistart(multistart_optim, 6, 2)
+
+        bounds = {"upper": [0.53], "lower": [0.47]}
+        if optimiser in [pybop.GradientDescent, pybop.AdamW, pybop.NelderMead]:
+            optim = optimiser(problem)
+            assert optim._optimiser._boundaries is None
+        elif optimiser in [pybop.PSO]:
+            with pytest.raises(
+                ValueError, match="Either all bounds or no bounds must be set"
+            ):
+                problem.parameters.update(bounds={"upper": [np.inf], "lower": [0.57]})
+                optimiser(problem)
+            problem.parameters.update(bounds=bounds)
+        elif issubclass(optimiser, pybop.BasePintsOptimiser):
+            problem.parameters.update(bounds=bounds)
+            optim = optimiser(problem)
+            assert optim._optimiser._boundaries is not None
+
+        if issubclass(optimiser, pybop.BasePintsOptimiser):
+            options = pybop.PintsOptions(
                 use_f_guessed=True,
-                parallel=False,
                 min_iterations=3,
                 max_unchanged_iterations=5,
                 absolute_tolerance=1e-2,
@@ -209,67 +191,33 @@ class TestOptimisation:
                 max_evaluations=20,
                 threshold=1e-4,
             )
-            with pytest.warns(
-                UserWarning,
-                match="Unrecognised keyword arguments: {'unrecognised': 10} will not be used.",
-            ):
-                warnings.simplefilter("always")
-                optimiser(cost=cost, unrecognised=10)
+            optim = optimiser(problem, options=options)
             assert not optim.optimiser.running()
+
+            # Check max_iterations setter
+            optim.set_max_iterations("default")
 
             # Check population setter
             if isinstance(optim.optimiser, PopulationBasedOptimiser):
-                optim = pybop.Optimisation(
-                    cost=cost, optimiser=optimiser, population_size=100
-                )
+                optim = optimiser(problem)
+                optim.set_population_size(100)
                 assert optim.optimiser.population_size() == 100
-        else:
-            bounds_list = [
-                (lower, upper) for lower, upper in zip(bounds["lower"], bounds["upper"])
-            ]
-            optim = optimiser(cost=cost, bounds=bounds_list, tol=1e-2)
-            assert optim.bounds == bounds_list
-
-        if optimiser in [
-            pybop.SciPyMinimize,
-            pybop.SciPyDifferentialEvolution,
-            pybop.XNES,
-        ]:
-            optim = optimiser(cost=cost, options=dict(max_iterations=10))
-            with pytest.raises(
-                Exception,
-                match="A duplicate max_evaluations option was found in the options dictionary.",
-            ):
-                optimiser(
-                    cost=cost, max_evaluations=5, options=dict(max_evaluations=10)
-                )
-
-            if optimiser in [pybop.SciPyDifferentialEvolution, pybop.SciPyMinimize]:
-                with pytest.raises(
-                    Exception, match="option was passed in addition to the expected"
-                ):
-                    optimiser(cost=cost, maxiter=5, max_iterations=10)
 
         if optimiser == pybop.SciPyDifferentialEvolution:
-            pop_maxiter_optim = optimiser(cost=cost, maxiter=3, popsize=5)
-            assert pop_maxiter_optim._options["maxiter"] == 3
-            assert pop_maxiter_optim._options["popsize"] == 5
+            options = pybop.SciPyDifferentialEvolutionOptions(maxiter=3, popsize=5)
+            pop_maxiter_optim = optimiser(problem, options=options)
+            assert pop_maxiter_optim._options.maxiter == 3
+            assert pop_maxiter_optim._options.popsize == 5
 
-            invalid_bounds_cases = [
-                None,
-                [(0, np.inf)],
-                {"upper": [np.inf], "lower": [0.57]},
-            ]
-
-            for bounds_case in invalid_bounds_cases:
-                with pytest.raises(
-                    ValueError,
-                    match="Bounds must be specified for differential_evolution.",
-                ):
-                    optimiser(cost=cost, bounds=bounds_case)
-
-        if optimiser in [pybop.AdamW, pybop.CuckooSearch, pybop.GradientDescent]:
-            optim = optimiser(cost)
+        if optimiser in [
+            pybop.AdamW,
+            pybop.IRPropPlus,
+            pybop.CuckooSearch,
+            pybop.GradientDescent,
+            pybop.RandomSearch,
+            pybop.SimulatedAnnealing,
+        ]:
+            optim = optimiser(problem)
             with pytest.raises(
                 RuntimeError, match=re.escape("ask() must be called before tell().")
             ):
@@ -289,7 +237,7 @@ class TestOptimisation:
                     optim.optimiser.set_learning_rate(-0.1)
 
             if optimiser is pybop.AdamW:
-                optim = optimiser(cost=cost, b1=0.9, b2=0.999, lam=0.1)
+                optim = optimiser(problem)
                 optim.optimiser.b1 = 0.9
                 optim.optimiser.b2 = 0.9
                 optim.optimiser.lam = 0.1
@@ -313,93 +261,126 @@ class TestOptimisation:
                         optim.optimiser.lam = i
 
                 assert optim.optimiser.n_hyper_parameters() == 5
-                assert optim.optimiser.x_guessed() == optim.optimiser._x0
+                x0 = optim.problem.parameters.get_initial_values()
+                assert optim.optimiser.x_guessed() == x0
 
-        else:
-            x0 = cost.parameters.initial_value()
-            assert optim.x0 == x0
-            x0_new = np.array([0.6])
-            optim = optimiser(cost=cost, x0=x0_new)
-            assert optim.x0 == x0_new
-            assert optim.x0 != x0
+            if optimiser is pybop.SimulatedAnnealing:
+                assert optim.optimiser.n_hyper_parameters() == 2
+                assert optim.optimiser.temperature == 1.0
+                assert optim.optimiser.cooling_rate == 0.95
 
-    @pytest.mark.unit
-    def test_cuckoo_no_bounds(self, cost):
-        optim = pybop.CuckooSearch(cost=cost, bounds=None, max_iterations=1)
+                optim.optimiser.cooling_rate = 0.9
+                assert optim.optimiser.cooling_rate == 0.9
+
+                optim.optimiser.temperature = 0.74
+                assert optim.optimiser.temperature == 0.74
+
+                with pytest.raises(TypeError, match="Cooling rate must be a number"):
+                    optim.optimiser.cooling_rate = "0.94"
+
+                with pytest.raises(
+                    ValueError, match="Cooling rate must be between 0 and 1"
+                ):
+                    optim.optimiser.cooling_rate = 1.1
+
+                with pytest.raises(ValueError, match="Temperature must be positive"):
+                    optim.optimiser.temperature = -1.1
+
+                with pytest.raises(TypeError, match="Temperature must be a number"):
+                    optim.optimiser.temperature = "0.94"
+
+            if optimiser is pybop.CuckooSearch:
+                optim.optimiser.pa = 0.6
+                assert optim.optimiser.pa == 0.6
+
+                with pytest.raises(
+                    Exception, match="must be a numeric value between 0 and 1."
+                ):
+                    optim.optimiser.pa = "test"
+
+        elif isinstance(optimiser, pybop.BasePintsOptimiser):
+            problem.get_finite_initial_cost()
+            x0 = problem.parameters.get_initial_values()
+            assert optim._logger.x_model[0] == x0
+            x0_new = np.array([0.5])
+            problem.parameters.update(initial_values=x0_new)
+            optim = optimiser(problem)
+            assert optim._logger.x_model[0] == x0_new
+            assert optim._logger.x_model[-1] != x0
+
+    def test_cuckoo_no_bounds(self, problem):
+        problem.parameters.remove_bounds()
+        options = pybop.PintsOptions(max_iterations=1)
+        optim = pybop.CuckooSearch(problem, options=options)
         optim.run()
-        assert optim.optimiser._boundaries is None
+        assert all(np.isinf(optim.problem.parameters.get_bounds()["lower"]))
+        assert all(np.isinf(optim.problem.parameters.get_bounds()["upper"]))
 
-    @pytest.mark.unit
-    def test_scipy_minimize_with_jac(self, cost):
+    def test_randomsearch_bounds(self, two_param_problem):
+        # Test clip_candidates with bound
+        bounds = {"upper": [0.62, 0.54], "lower": [0.58, 0.46]}
+        two_param_problem.parameters.update(bounds=bounds)
+        options = pybop.PintsOptions(max_iterations=1)
+        optim = pybop.RandomSearch(two_param_problem, options=options)
+        candidates = np.array([[0.57, 0.55], [0.63, 0.44]])
+        clipped_candidates = optim.optimiser.clip_candidates(candidates)
+        expected_clipped = np.array([[0.58, 0.54], [0.62, 0.46]])
+        assert np.allclose(clipped_candidates, expected_clipped)
+
+        # Test clip_candidates without bound
+        two_param_problem.parameters.remove_bounds()
+        optim = pybop.RandomSearch(two_param_problem, options=options)
+        candidates = np.array([[0.57, 0.52], [0.63, 0.58]])
+        clipped_candidates = optim.optimiser.clip_candidates(candidates)
+        assert np.allclose(clipped_candidates, candidates)
+
+    def test_randomsearch_ask_without_bounds(self, two_param_problem):
+        # Initialize optimiser without boundaries
+        two_param_problem.parameters.remove_bounds()
+        two_param_problem.parameters.update(initial_values=[0.6, 0.55])
+        options = pybop.PintsOptions(max_iterations=1)
+        optim = pybop.RandomSearch(two_param_problem, options=options)
+
+        # Set population size, generate candidates
+        optim.set_population_size(2)
+        candidates = optim.optimiser.ask()
+
+        # Assert the shape of the candidates
+        assert candidates.shape == (2, 2)
+        assert np.all(candidates >= optim.optimiser._x0 - 6 * optim.optimiser._sigma0)
+        assert np.all(candidates <= optim.optimiser._x0 + 6 * optim.optimiser._sigma0)
+
+    def test_adamw_impl_bounds(self):
+        with pytest.warns(UserWarning, match="Boundaries ignored by AdamW"):
+            AdamWImpl(x0=[0.1], sigma0=None, boundaries=[0.0, 0.2])
+
+    def test_irprop_plus_impl_incorrect_steps(self):
+        with pytest.raises(ValueError, match="Minimum step size"):
+            optim = IRPropPlusImpl(x0=[0.1], sigma0=None, boundaries=None)
+            optim.step_max = 1e-8
+            optim.ask()
+
+    def test_scipy_minimize_with_jac(self, problem):
         # Check a method that uses gradient information
-        optim = pybop.SciPyMinimize(
-            cost=cost, method="L-BFGS-B", jac=True, max_iterations=1
-        )
-        results = optim.run()
-        assert results.get_scipy_result() == optim.result.scipy_result
+        options = pybop.SciPyMinimizeOptions(method="L-BFGS-B", jac=True, maxiter=1)
+        optim = pybop.SciPyMinimize(problem, options=options)
+        result = optim.run()
+        assert result.scipy_result is not None
 
-        with pytest.raises(
-            ValueError,
-            match="Expected the jac option to be either True, False or None.",
-        ):
-            optim = pybop.SciPyMinimize(cost=cost, jac="Invalid string")
-
-    @pytest.mark.unit
-    def test_scipy_minimize_invalid_x0(self, cost):
-        # Check a starting point that returns an infinite cost
-        invalid_x0 = np.array([1.1])
-        optim = pybop.SciPyMinimize(
-            cost=cost,
-            x0=invalid_x0,
-            max_iterations=10,
-            allow_infeasible_solutions=False,
-        )
-        optim.run()
-        assert abs(optim._cost0) != np.inf
-
-    @pytest.mark.unit
-    def test_single_parameter(self, cost):
+    def test_single_parameter(self, problem):
         # Test catch for optimisers that can only run with multiple parameters
         with pytest.raises(
             ValueError,
             match=r"requires optimisation of >= 2 parameters at once.",
         ):
-            pybop.CMAES(cost=cost)
+            pybop.CMAES(problem)
 
-    @pytest.mark.unit
-    def test_invalid_cost(self):
-        # Test without valid cost
-        with pytest.raises(
-            Exception,
-            match="The cost is not a recognised cost object or function.",
-        ):
-            pybop.Optimisation(cost="Invalid string")
+    def test_invalid_problem(self):
+        # Test without valid problem
+        with pytest.raises(Exception, match="Expected a pybop.Problem instance, got"):
+            pybop.XNES(problem="Invalid string")
 
-        def invalid_cost(x):
-            return [1, 2]
-
-        with pytest.raises(
-            Exception,
-            match="not a scalar numeric value.",
-        ):
-            pybop.Optimisation(cost=invalid_cost)
-
-        # Test valid cost
-        def valid_cost(x):
-            return x[0] ** 2
-
-        pybop.Optimisation(cost=valid_cost, x0=np.asarray([0.1]))
-
-    @pytest.mark.unit
-    def test_default_optimiser(self, cost):
-        optim = pybop.Optimisation(cost=cost)
-        assert optim.name() == "Exponential Natural Evolution Strategy (xNES)"
-
-        # Test getting incorrect attribute
-        assert not hasattr(optim, "not_a_valid_attribute")
-
-    @pytest.mark.unit
-    def test_incorrect_optimiser_class(self, cost):
+    def test_incorrect_optimiser_class(self, problem):
         class RandomClass:
             pass
 
@@ -407,124 +388,39 @@ class TestOptimisation:
             ValueError,
             match="The optimiser is not a recognised PINTS optimiser class.",
         ):
-            pybop.BasePintsOptimiser(cost=cost, pints_optimiser=RandomClass)
+            pybop.BasePintsOptimiser(problem, pints_optimiser=RandomClass)
 
         with pytest.raises(NotImplementedError):
-            pybop.BaseOptimiser(cost=cost)
+            pybop.BaseOptimiser(problem)
 
-        with pytest.raises(ValueError):
-            pybop.Optimisation(cost=cost, optimiser=RandomClass)
-
-    @pytest.mark.unit
-    @pytest.mark.parametrize(
-        "mean, sigma, expect_exception",
-        [
-            (0.85, 0.2, False),
-            (0.85, 0.001, True),
-            (1.0, 0.5, False),
-        ],
-    )
-    def test_scipy_prior_resampling(
-        self, model, dataset, mean, sigma, expect_exception
-    ):
-        # Set up the parameter with a Gaussian prior
-        parameter = pybop.Parameter(
-            "Negative electrode active material volume fraction",
-            prior=pybop.Gaussian(mean, sigma),
-            bounds=[0.55, 0.95],
-        )
-
-        # Define the problem and cost
-        problem = pybop.FittingProblem(model, parameter, dataset)
-        cost = pybop.SumSquaredError(problem)
-
-        # Create the optimisation class with infeasible solutions disabled
-        opt = pybop.SciPyMinimize(
-            cost=cost,
-            allow_infeasible_solutions=False,
-            max_iterations=1,
-        )
-
-        # If small sigma, expect a ValueError due inability to resample a non np.inf cost
-        if expect_exception:
-            with pytest.raises(
-                ValueError,
-                match="The initial parameter values return an infinite cost.",
-            ):
-                opt.run()
-        else:
-            opt.run()
-
-            # Test cost_wrapper inf return
-            cost = opt.cost_wrapper(np.array([0.9]))
-            assert cost in [1.729, 1.81, 1.9]
-
-    @pytest.mark.unit
-    def test_scipy_noprior(self, model, dataset):
-        # Test that Scipy minimize handles no-priors correctly
-        # Set up the parameter with no prior
-        parameter = pybop.Parameter(
-            "Negative electrode active material volume fraction",
-            initial_value=1,  # Intentionally infeasible!
-            bounds=[0.55, 0.95],
-        )
-
-        # Define the problem and cost
-        problem = pybop.FittingProblem(model, parameter, dataset)
-        cost = pybop.SumSquaredError(problem)
-
-        # Create the optimisation class with infeasible solutions disabled
-        opt = pybop.SciPyMinimize(
-            cost=cost,
-            allow_infeasible_solutions=False,
-            max_iterations=1,
-        )
-        with pytest.raises(
-            ValueError,
-            match="The initial parameter values return an infinite cost.",
-        ):
-            opt.run()
-
-    @pytest.mark.unit
-    def test_scipy_bounds(self, cost):
-        # Create the optimisation class with incorrect bounds type
-        with pytest.raises(
-            TypeError,
-            match="Bounds provided must be either type dict, list or SciPy.optimize.bounds object.",
-        ):
-            pybop.SciPyMinimize(
-                cost=cost,
-                bounds="This is a bad bound",
-                max_iterations=1,
-            )
-
-    @pytest.mark.unit
-    def test_halting(self, cost):
+    def test_halting(self, problem, model):
         # Add a parameter transformation
-        cost.parameters[
+        problem.parameters[
             "Positive electrode active material volume fraction"
-        ].transformation = pybop.IdentityTransformation()
+        ]._transformation = pybop.IdentityTransformation()
 
         # Test max evalutions
-        optim = pybop.GradientDescent(cost=cost, max_evaluations=1, verbose=True)
-        optim.run()
-        assert optim.result.n_iterations == 1
+        options = pybop.PintsOptions(max_evaluations=1, verbose=True)
+        optim = pybop.GradientDescent(problem, options=options)
+        result = optim.run()
+        assert result.n_iterations == 1  # some iterations take more than one evaluation
 
         # Test max unchanged iterations
-        optim = pybop.GradientDescent(
-            cost=cost, max_unchanged_iterations=1, min_iterations=1
-        )
-        results = optim.run()
-        assert optim.result.n_iterations == 2
+        options = pybop.PintsOptions(max_unchanged_iterations=1, min_iterations=1)
+        optim = pybop.XNES(problem, options=options)
+        result = optim.run()
+        assert result.n_iterations == 2
 
         assert (
-            str(results) == f"OptimisationResult:\n"
-            f"  Initial parameters: {results.x0}\n"
-            f"  Optimised parameters: {results.x}\n"
-            f"  Final cost: {results.final_cost}\n"
-            f"  Optimisation time: {results.time} seconds\n"
-            f"  Number of iterations: {results.n_iterations}\n"
-            f"  SciPy result available: No"
+            str(result) == f"OptimisationResult:\n"
+            f"  Best result from {result.n_runs} run(s).\n"
+            f"  Initial parameters: {result.x0}\n"
+            f"  Optimised parameters: {result.x}\n"
+            f"  Best cost: {result.best_cost}\n"
+            f"  Optimisation time: {result.time} seconds\n"
+            f"  Number of iterations: {result.n_iterations}\n"
+            f"  Number of evaluations: {result.n_evaluations}\n"
+            f"  Reason for stopping: {result.message}"
         )
 
         # Test guessed values
@@ -546,7 +442,8 @@ class TestOptimisation:
             optim.set_max_evaluations(-1)
 
         # Reset optim
-        optim = pybop.Optimisation(cost=cost, sigma0=0.015, verbose=True)
+        options = pybop.PintsOptions(verbose=True)
+        optim = pybop.XNES(problem, options=options)
 
         # Confirm setting threshold == None
         optim.set_threshold(None)
@@ -557,17 +454,9 @@ class TestOptimisation:
         captured_output = io.StringIO()
         sys.stdout = captured_output
         optim.set_threshold(np.inf)
-        results = optim.run()
+        result = optim.run()
         assert (
-            captured_output.getvalue().strip()
-            == f"Halt: Objective function crossed threshold: inf.\n"
-            f"OptimisationResult:\n"
-            f"  Initial parameters: {results.x0}\n"
-            f"  Optimised parameters: {results.x}\n"
-            f"  Final cost: {results.final_cost}\n"
-            f"  Optimisation time: {results.time} seconds\n"
-            f"  Number of iterations: {results.n_iterations}\n"
-            f"  SciPy result available: No"
+            "Objective function crossed threshold: inf." in captured_output.getvalue()
         )
 
         optim.set_max_unchanged_iterations()
@@ -586,8 +475,8 @@ class TestOptimisation:
             return "Optimiser error message"
 
         optim.optimiser.stop = optimiser_error
-        optim.run()
-        assert optim.result.n_iterations == 1
+        result = optim.run()
+        assert result.n_iterations == 1
 
         # Test no stopping condition
         with pytest.raises(
@@ -599,35 +488,35 @@ class TestOptimisation:
             optim._threshold = None
             optim.run()
 
-    @pytest.mark.unit
-    def test_infeasible_solutions(self, cost):
-        # Test infeasible solutions
-        for optimiser in [pybop.SciPyMinimize, pybop.GradientDescent]:
-            optim = optimiser(
-                cost=cost, allow_infeasible_solutions=False, max_iterations=1
-            )
-            optim.run()
-            assert optim.result.n_iterations == 1
+    def test_optimisation_result(self, problem):
+        logger = pybop.Logger(minimising=True)
+        logger.iteration = 1
+        logger.extend_log(
+            x_search=[np.asarray([1e-3])], x_model=[np.asarray([1e-3])], cost=[0.1]
+        )
 
-    @pytest.mark.unit
-    def test_unphysical_result(self, cost):
-        # Trigger parameters not physically viable warning
-        optim = pybop.Optimisation(cost=cost, max_iterations=3)
-        results = optim.run()
-        results.check_physical_viability(np.array([2]))
-
-    @pytest.mark.unit
-    def test_optimisation_results(self, cost):
         # Construct OptimisationResult
-        results = pybop.OptimisationResult(x=[1e-3], cost=cost, n_iterations=1)
+        result = pybop.OptimisationResult(
+            optim=pybop.XNES(problem),
+            optim_name="Test name",
+            logger=logger,
+            time=0.1,
+            message="Test message",
+        )
 
         # Asserts
-        assert results.x[0] == 1e-3
-        assert results.final_cost == cost([1e-3])
-        assert results.n_iterations == 1
+        assert result.optim_name == "Test name"
+        assert result.x[0] == 1e-3
+        assert result.n_iterations == 1
+        assert result.message == "Test message"
 
-        # Test non-finite results
-        with pytest.raises(
-            ValueError, match="Optimised parameters do not produce a finite cost value"
-        ):
-            pybop.OptimisationResult(x=[1e-5], cost=cost, n_iterations=1)
+        # Test list-like functionality with "best" properties
+        options = pybop.PintsOptions(max_iterations=1, multistart=3)
+        optim = pybop.XNES(problem, options=options)
+        result = optim.run()
+
+        assert result.x in result._x
+        assert result.time == np.sum(result._time)
+        assert result.n_iterations in result._n_iterations
+        assert result.n_evaluations in result._n_evaluations
+        assert result.x0 in result._x0

@@ -1,0 +1,236 @@
+import warnings
+
+import numpy as np
+import pybamm
+import pytest
+
+import pybop
+
+
+class TestApplications:
+    """
+    A class to test the application methods.
+    """
+
+    pytestmark = pytest.mark.integration
+
+    def test_monotonicity_check(self):
+        appl = pybop.BaseApplication()
+
+        with pytest.warns(UserWarning, match="OCV is not strictly monotonic."):
+            warnings.simplefilter("always")
+            appl.check_monotonicity(np.asarray([3, 4, 3]))
+
+    @pytest.fixture
+    def parameter_values(self):
+        return pybamm.ParameterValues("Chen2020")
+
+    def noise(self, sigma, values):
+        return np.random.normal(0, sigma, values)
+
+    @pytest.fixture
+    def discharge_dataset(self, parameter_values):
+        ocp_function = parameter_values["Positive electrode OCP [V]"]
+
+        discharge_sto = np.linspace(0, 0.9, 91)
+        discharge_voltage = ocp_function(discharge_sto + 0.02) + self.noise(1e-3, 91)
+
+        return pybop.Dataset(
+            {"Stoichiometry": discharge_sto, "Voltage [V]": discharge_voltage}
+        )
+
+    @pytest.fixture
+    def charge_dataset(self, parameter_values):
+        ocp_function = parameter_values["Positive electrode OCP [V]"]
+
+        charge_sto = np.linspace(1, 0.1, 91)
+        charge_voltage = ocp_function(charge_sto - 0.02) + self.noise(1e-3, 91)
+
+        return pybop.Dataset(
+            {"Stoichiometry": charge_sto, "Voltage [V]": charge_voltage}
+        )
+
+    def test_interpolant(self, parameter_values, discharge_dataset):
+        parameter_values = pybop.lithium_ion.SPDiffusion.create_grouped_parameters(
+            parameter_values
+        )
+        parameter_values["Electrode OCP [V]"] = pybop.Interpolant(
+            discharge_dataset["Stoichiometry"], discharge_dataset["Voltage [V]"]
+        )
+        model = pybop.lithium_ion.SPDiffusion(build=True)
+        t_eval = np.linspace(0, 10, 100)
+        solution = pybamm.Simulation(model, parameter_values=parameter_values).solve(
+            t_eval=t_eval, t_interp=t_eval
+        )
+        assert len(solution["Voltage [V]"].data) == 100
+
+    def test_ocp_merge(self, discharge_dataset, charge_dataset):
+        ocp_merge = pybop.OCPMerge(
+            ocp_discharge=discharge_dataset,
+            ocp_charge=charge_dataset,
+        )
+        merged_dataset = ocp_merge()
+
+        np.testing.assert_allclose(
+            merged_dataset["Stoichiometry"][0], discharge_dataset["Stoichiometry"][0]
+        )
+        np.testing.assert_allclose(
+            merged_dataset["Voltage [V]"][0], discharge_dataset["Voltage [V]"][0]
+        )
+        np.testing.assert_allclose(
+            merged_dataset["Stoichiometry"][-1], charge_dataset["Stoichiometry"][0]
+        )
+        np.testing.assert_allclose(
+            merged_dataset["Voltage [V]"][-1], charge_dataset["Voltage [V]"][0]
+        )
+
+        # Test with opposite voltage gradient
+        discharge_dataset["Voltage [V]"] = np.flipud(discharge_dataset["Voltage [V]"])
+        charge_dataset["Voltage [V]"] = np.flipud(charge_dataset["Voltage [V]"])
+        ocp_merge = pybop.OCPMerge(
+            ocp_discharge=discharge_dataset,
+            ocp_charge=charge_dataset,
+        )
+        merged_dataset = ocp_merge()
+
+        np.testing.assert_allclose(
+            merged_dataset["Stoichiometry"][0], charge_dataset["Stoichiometry"][-1]
+        )
+        np.testing.assert_allclose(
+            merged_dataset["Voltage [V]"][0], charge_dataset["Voltage [V]"][-1]
+        )
+        np.testing.assert_allclose(
+            merged_dataset["Stoichiometry"][-1],
+            discharge_dataset["Stoichiometry"][-1],
+        )
+        np.testing.assert_allclose(
+            merged_dataset["Voltage [V]"][-1], discharge_dataset["Voltage [V]"][-1]
+        )
+
+    def test_ocp_average(self, discharge_dataset, charge_dataset):
+        for allow_stretching in [True, False]:
+            # Estimate the shift and generate the average open-circuit potential
+            ocp_average = pybop.OCPAverage(
+                ocp_discharge=discharge_dataset,
+                ocp_charge=charge_dataset,
+                allow_stretching=allow_stretching,
+            )
+            ocp_average()
+
+            np.testing.assert_allclose(ocp_average.stretch, 1.0, rtol=1e-3, atol=1e-3)
+            np.testing.assert_allclose(ocp_average.shift, 0.02, rtol=1e-3, atol=1e-3)
+
+    def test_stoichiometry_fit(self, parameter_values):
+        ocv_function = parameter_values["Positive electrode OCP [V]"]
+        nom_capacity = parameter_values["Nominal cell capacity [A.h]"]
+
+        sto = np.linspace(0, 0.9, 91)
+        voltage = ocv_function(sto) + self.noise(2e-3, 91)
+
+        # Create the OCV dataset
+        ocv_dataset = pybop.Dataset(
+            {
+                "Charge capacity [A.h]": (sto + 0.1) * nom_capacity,
+                "Voltage [V]": voltage,
+            }
+        )
+
+        # Estimate the stoichiometry corresponding to the GITT-OCV
+        ocv_fit = pybop.OCPCapacityToStoichiometry(
+            ocv_dataset=ocv_dataset,
+            ocv_function=ocv_function,
+        )
+        ocv_fit()
+
+        np.testing.assert_allclose(ocv_fit.stretch, nom_capacity, rtol=2e-3, atol=2e-3)
+        np.testing.assert_allclose(
+            ocv_fit.shift, 0.1 * nom_capacity, rtol=5e-3, atol=5e-3
+        )
+
+    @pytest.fixture
+    def half_cell_model(self):
+        return pybamm.lithium_ion.SPMe(options={"working electrode": "positive"})
+
+    @pytest.fixture
+    def half_cell_parameter_values(self):
+        return pybamm.ParameterValues("Xu2019")
+
+    @pytest.fixture
+    def pulse_data(self, half_cell_model, half_cell_parameter_values):
+        sigma = 5e-4
+        experiment = pybamm.Experiment(
+            [
+                "Rest for 1 second",
+                "Discharge at 2C for 5 minutes (10 second period)",
+                "Rest for 15 minutes (10 second period)",
+            ]
+        )
+        half_cell_parameter_values.set_initial_state(
+            0.9, options=half_cell_model.options
+        )
+        solution = pybamm.Simulation(
+            half_cell_model,
+            parameter_values=half_cell_parameter_values,
+            experiment=experiment,
+        ).solve()
+        corrupt_values = solution["Voltage [V]"].data + np.random.normal(
+            0, sigma, len(solution.t)
+        )
+        start = np.where(solution["Time [s]"].data == 1)[0][0] - 1
+        return pybop.Dataset(
+            {
+                "Time [s]": solution["Time [s]"].data[start:],
+                "Current function [A]": solution["Current [A]"].data[start:],
+                "Discharge capacity [A.h]": solution["Discharge capacity [A.h]"].data[
+                    start:
+                ],
+                "Voltage [V]": corrupt_values[start:],
+            }
+        )
+
+    def test_gitt_pulse_fit(
+        self, half_cell_model, half_cell_parameter_values, pulse_data
+    ):
+        parameter_values = pybop.lithium_ion.SPDiffusion.create_grouped_parameters(
+            half_cell_parameter_values
+        )
+        diffusion_time = parameter_values["Particle diffusion time scale [s]"]
+
+        gitt_fit = pybop.GITTPulseFit(parameter_values=parameter_values)
+        gitt_result = gitt_fit(gitt_pulse=pulse_data)
+
+        np.testing.assert_allclose(
+            gitt_result.best_inputs["Particle diffusion time scale [s]"],
+            diffusion_time,
+            rtol=5e-2,
+        )
+
+    def test_gitt_fit(self, half_cell_model, half_cell_parameter_values, pulse_data):
+        parameter_values = pybop.lithium_ion.SPDiffusion.create_grouped_parameters(
+            half_cell_parameter_values
+        )
+        diffusion_time = parameter_values["Particle diffusion time scale [s]"]
+
+        with pytest.raises(
+            ValueError, match="The initial current in the pulse dataset must be zero."
+        ):
+            gitt_fit = pybop.GITTFit(
+                gitt_dataset=pulse_data,
+                pulse_index=[np.arange(2, len(pulse_data["Current function [A]"]))],
+                parameter_values=parameter_values,
+            )
+            gitt_fit()
+
+        gitt_fit = pybop.GITTFit(
+            gitt_dataset=pulse_data,
+            pulse_index=[np.arange(len(pulse_data["Current function [A]"]))],
+            parameter_values=parameter_values,
+        )
+        gitt_parameter_data = gitt_fit()
+
+        np.testing.assert_allclose(
+            gitt_parameter_data["Particle diffusion time scale [s]"],
+            np.asarray([diffusion_time]),
+            rtol=5e-2,
+        )
+        assert gitt_parameter_data["Root Mean Squared Error [V]"][0] < 2e-3

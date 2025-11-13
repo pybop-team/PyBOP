@@ -4,10 +4,35 @@
       "url": "https://pybop-docs.readthedocs.io/en/latest/"
     },
     {
-      "name": "v24.9 (stable)",
-      "version": "v24.9",
-      "url": "https://pybop-docs.readthedocs.io/en/v24.9.1/",
+      "name": "v25.10 (stable)",
+      "version": "v25.10",
+      "url": "https://pybop-docs.readthedocs.io/en/v25.10/",
       "preferred": true
+    },
+    {
+      "name": "v25.6",
+      "version": "v25.6",
+      "url": "https://pybop-docs.readthedocs.io/en/v25.6/"
+    },
+    {
+      "name": "v25.3",
+      "version": "v25.3",
+      "url": "https://pybop-docs.readthedocs.io/en/v25.3/"
+    },
+    {
+      "name": "v25.1",
+      "version": "v25.1",
+      "url": "https://pybop-docs.readthedocs.io/en/v25.1/"
+    },
+    {
+      "name": "v24.12",
+      "version": "v24.12",
+      "url": "https://pybop-docs.readthedocs.io/en/v24.12/"
+    },
+    {
+      "name": "v24.9",
+      "version": "v24.9",
+      "url": "https://pybop-docs.readthedocs.io/en/v24.9.1/"
     },
     {
       "name": "v24.6",

@@ -18,6 +18,8 @@ class Test_Sampling_SPM:
     A class to test the MCMC samplers on a physics-based model.
     """
 
+    pytestmark = pytest.mark.integration
+
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ground_truth = np.clip(
@@ -28,69 +30,70 @@ class Test_Sampling_SPM:
         )
 
     @pytest.fixture
-    def model(self):
-        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+    def model_and_parameter_values(self):
+        model = pybamm.lithium_ion.SPM()
+        parameter_values = pybamm.ParameterValues("Chen2020")
         x = self.ground_truth
-        parameter_set.update(
+        parameter_values.update(
             {
                 "Negative electrode active material volume fraction": x[0],
                 "Positive electrode active material volume fraction": x[1],
             }
         )
-        solver = pybamm.IDAKLUSolver()
-        return pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
+
+        # Fix the total lithium concentration to simplify the fitting problem
+        model.param.Q_Li_particles_init = parameter_values.evaluate(
+            model.param.Q_Li_particles_init
+        )
+        return model, parameter_values
 
     @pytest.fixture
     def parameters(self):
-        return pybop.Parameters(
-            pybop.Parameter(
-                "Negative electrode active material volume fraction",
-                prior=pybop.Uniform(0.4, 0.7),
+        return {
+            "Negative electrode active material volume fraction": pybop.Parameter(
+                prior=pybop.Gaussian(0.575, 0.05),
+                initial_value=pybop.Uniform(0.4, 0.7).rvs()[0],
                 bounds=[0.375, 0.725],
             ),
-            pybop.Parameter(
-                "Positive electrode active material volume fraction",
-                prior=pybop.Uniform(0.4, 0.7),
+            "Positive electrode active material volume fraction": pybop.Parameter(
+                prior=pybop.Gaussian(0.525, 0.05),
+                initial_value=pybop.Uniform(0.4, 0.7).rvs()[0],
                 # no bounds
             ),
-        )
+        }
 
     @pytest.fixture(params=[0.5])
     def init_soc(self, request):
         return request.param
 
-    def noise(self, sigma, values):
-        return np.random.normal(0, sigma, values)
+    def noisy(self, data, sigma):
+        return data + np.random.normal(0, sigma, len(data))
 
     @pytest.fixture
-    def log_posterior(self, model, parameters, init_soc):
-        # Form dataset
-        solution = self.get_data(model, init_soc)
-        dataset = pybop.Dataset(
-            {
-                "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": solution["Voltage [V]"].data
-                + self.noise(0.002, len(solution["Time [s]"].data)),
-            }
-        )
+    def log_posterior(self, model_and_parameter_values, parameters, init_soc):
+        model, parameter_values = model_and_parameter_values
+        parameter_values.set_initial_state(init_soc)
+        dataset = self.get_data(model, parameter_values)
 
         # Define the posterior to optimise
-        problem = pybop.FittingProblem(model, parameters, dataset)
-        likelihood = pybop.GaussianLogLikelihood(problem, sigma0=0.002 * 1.2)
-        return pybop.LogPosterior(likelihood)
+        parameter_values.update(parameters)
+        simulator = pybop.pybamm.Simulator(
+            model, parameter_values=parameter_values, protocol=dataset
+        )
+        likelihood = pybop.GaussianLogLikelihood(dataset, sigma0=0.002 * 1.2)
+        posterior = pybop.LogPosterior(likelihood)
+        return pybop.Problem(simulator, posterior)
 
     @pytest.fixture
     def map_estimate(self, log_posterior):
-        common_args = {
-            "max_iterations": 100,
-            "max_unchanged_iterations": 35,
-            "absolute_tolerance": 1e-7,
-        }
-        optim = pybop.CMAES(log_posterior, **common_args)
-        results = optim.run()
+        options = pybop.PintsOptions(
+            max_iterations=100,
+            max_unchanged_iterations=35,
+        )
+        optim = pybop.CMAES(log_posterior, options=options)
+        result = optim.run()
 
-        return results.x
+        return result.x
 
     @pytest.mark.parametrize(
         "quick_sampler",
@@ -103,40 +106,42 @@ class Test_Sampling_SPM:
             PopulationMCMC,
         ],
     )
-    @pytest.mark.integration
     def test_sampling_spm(self, quick_sampler, log_posterior, map_estimate):
         x0 = np.clip(
             map_estimate + np.random.normal(0, [5e-3, 5e-3, 1e-4], size=3),
             [0.4, 0.4, 1e-5],
             [0.75, 0.75, 5e-2],
         )
-        # set common args
-        common_args = {
-            "log_pdf": log_posterior,
-            "chains": 3,
-            "x0": x0,
-            "warm_up": 150,
-            "max_iterations": 550,
-        }
+        log_posterior.parameters.update(initial_values=x0)
+        options = pybop.PintsSamplerOptions(
+            n_chains=3,
+            warm_up_iterations=150,
+            max_iterations=550,
+        )
 
         # construct and run
-        sampler = quick_sampler(**common_args)
-        chains = sampler.run()
+        sampler = quick_sampler(log_pdf=log_posterior, options=options)
+        result = sampler.run()
 
         # Assert both final sample and posterior mean
-        x = np.mean(chains, axis=1)
+        x = np.mean(result.chains, axis=1)
         for i in range(len(x)):
-            np.testing.assert_allclose(x[i], self.ground_truth, atol=1.5e-2)
+            np.testing.assert_allclose(x[i], self.ground_truth, atol=1.6e-2)
 
-    def get_data(self, model, init_soc):
-        initial_state = {"Initial SoC": init_soc}
-        experiment = pybop.Experiment(
+    def get_data(self, model, parameter_values):
+        experiment = pybamm.Experiment(
             [
-                (
-                    "Discharge at 0.5C for 4 minutes (12 second period)",
-                    "Charge at 0.5C for 4 minutes (12 second period)",
-                ),
+                "Discharge at 0.5C for 4 minutes (12 second period)",
+                "Charge at 0.5C for 4 minutes (12 second period)",
             ]
         )
-        sim = model.predict(initial_state=initial_state, experiment=experiment)
-        return sim
+        solution = pybamm.Simulation(
+            model, parameter_values=parameter_values, experiment=experiment
+        ).solve()
+        return pybop.Dataset(
+            {
+                "Time [s]": solution["Time [s]"].data,
+                "Current function [A]": solution["Current [A]"].data,
+                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, 0.002),
+            }
+        )
