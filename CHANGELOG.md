@@ -204,8 +204,8 @@ To understand how to update your use of PyBOP, please take a look at the example
 
 - [#473](https://github.com/pybop-team/PyBOP/pull/473) - Bugfixes for transformation class, adds optional `apply_transform` arg to `BaseCost.__call__()`, adds `log_update()` method to `BaseOptimiser`
 - [#464](https://github.com/pybop-team/PyBOP/issues/464) - Fix order of design `parameter_set` updates and refactor `update_capacity`.
-- [#468](https://github.com/pybop-team/PyBOP/issue/468) - Renames `quick_plot.py` to `standard_plots.py`.
-- [#454](https://github.com/pybop-team/PyBOP/issue/454) - Fixes benchmarking suite.
+- [#468](https://github.com/pybop-team/PyBOP/issues/468) - Renames `quick_plot.py` to `standard_plots.py`.
+- [#454](https://github.com/pybop-team/PyBOP/issues/454) - Fixes benchmarking suite.
 - [#421](https://github.com/pybop-team/PyBOP/issues/421) - Adds a default value for the initial SOC for design problems.
 
 ## Breaking Changes
