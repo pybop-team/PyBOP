@@ -11,9 +11,7 @@ if TYPE_CHECKING:
 from pybop._dataset import Dataset
 from pybop._utils import FailedSolution, RecommendedSolver
 from pybop.parameters.parameter import Parameter, Parameters
-from pybop.simulators.base_simulator import (
-    BaseSimulator,
-)
+from pybop.simulators.base_simulator import BaseSimulator
 
 
 class Simulator(BaseSimulator):

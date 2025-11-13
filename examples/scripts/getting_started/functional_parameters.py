@@ -84,7 +84,7 @@ optim = pybop.SciPyMinimize(problem, options=options)
 result = optim.run()
 
 # Plot the timeseries output
-pybop.plot.problem(problem, problem_inputs=result.x, title="Optimised Comparison")
+pybop.plot.problem(problem, inputs=result.best_inputs, title="Optimised Comparison")
 
 # Plot the optimisation result
 result.plot_convergence()

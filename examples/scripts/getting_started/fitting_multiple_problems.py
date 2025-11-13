@@ -65,8 +65,8 @@ result = optim.run()
 print("True parameters:", [parameter_values[p] for p in problem.parameters.keys()])
 
 # Plot the timeseries output
-pybop.plot.problem(problems[0], problem_inputs=result.x, title="Optimised Comparison")
-pybop.plot.problem(problems[1], problem_inputs=result.x, title="Optimised Comparison")
+pybop.plot.problem(problems[0], inputs=result.best_inputs, title="Optimised Comparison")
+pybop.plot.problem(problems[1], inputs=result.best_inputs, title="Optimised Comparison")
 
 # Plot the optimisation result
 result.plot_convergence()

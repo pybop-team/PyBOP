@@ -1,5 +1,4 @@
-import numpy as np
-
+from pybop._utils import FailedSolution
 from pybop.costs.base_cost import BaseCost
 from pybop.parameters.parameter import Inputs
 from pybop.simulators.base_simulator import Solution
@@ -27,7 +26,7 @@ class DesignCost(BaseCost):
 
     def evaluate(
         self,
-        sol: Solution,
+        sol: Solution | FailedSolution,
         inputs: Inputs | None = None,
         calculate_sensitivities: bool = False,
     ) -> float:
@@ -48,26 +47,8 @@ class DesignCost(BaseCost):
         float
             The value of the output variable.
         """
-        if not self.verify_prediction(sol):
+        # Return failure cost if the solution failed
+        if isinstance(sol, FailedSolution):
             return self.failure(calculate_sensitivities)
 
         return sol[self.target[0]].data[-1]
-
-    def verify_prediction(self, sol: Solution):
-        """
-        Verify that the prediction matches the target data.
-
-        Parameters
-        ----------
-        sol : pybop.Solution | pybamm.Solution
-            The simulation result.
-
-        Returns
-        -------
-        bool
-            True if the prediction matches the target data, otherwise False.
-        """
-        if not all(np.isfinite(sol[var].data) for var in self.target):
-            return False
-
-        return True

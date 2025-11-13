@@ -91,4 +91,4 @@ result.plot_surface()
 
 # Plot the timeseries output
 problem_1.target = "Voltage [V]"
-pybop.plot.problem(problem_1, problem_inputs=result.x, title="Optimised Comparison")
+pybop.plot.problem(problem_1, inputs=result.best_inputs, title="Optimised Comparison")
