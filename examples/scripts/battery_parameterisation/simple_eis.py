@@ -77,7 +77,7 @@ result = optim.run()
 print(result)
 
 # Plot the nyquist
-pybop.plot.nyquist(problem, problem_inputs=result.x, title="Optimised Comparison")
+pybop.plot.nyquist(problem, inputs=result.best_inputs, title="Optimised Comparison")
 
 # Plot the optimisation result
 result.plot_convergence()

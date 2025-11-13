@@ -47,8 +47,8 @@ optim = pybop.GradientDescent(problem, options=options)
 result = optim.run()
 print(result)
 
-# Plot the timeseries output, for the best run using the result.x attribute
-pybop.plot.problem(problem, problem_inputs=result.x, title="Optimised Comparison")
+# Plot the timeseries output
+pybop.plot.problem(problem, inputs=result.best_inputs, title="Optimised Comparison")
 
 # Plot the optimisation result
 result.plot_convergence()

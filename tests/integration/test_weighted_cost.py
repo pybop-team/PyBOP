@@ -120,15 +120,15 @@ class TestWeightedCost:
         optim = pybop.CuckooSearch(problem=weighted_fitting_problem, options=options)
 
         initial_cost = optim.problem(optim.problem.parameters.get_initial_values())
-        results = optim.run()
+        result = optim.run()
 
         # Assertions
         if not np.allclose(x0, self.ground_truth, atol=1e-5):
-            if results.minimising:
-                assert initial_cost > results.best_cost
+            if result.minimising:
+                assert initial_cost > result.best_cost
             else:
-                assert initial_cost < results.best_cost
-        np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
+                assert initial_cost < result.best_cost
+        np.testing.assert_allclose(result.x, self.ground_truth, atol=1.5e-2)
 
     @pytest.fixture
     def design_targets(self):
@@ -172,12 +172,12 @@ class TestWeightedCost:
         optim = pybop.CuckooSearch(problem, options=options)
         initial_values = optim.problem.parameters.get_initial_values()
         initial_cost = optim.problem(initial_values)
-        results = optim.run()
+        result = optim.run()
 
         # Assertions
-        assert initial_cost < results.best_cost
-        for i, _ in enumerate(results.x):
-            assert results.x[i] > initial_values[i]
+        assert initial_cost < result.best_cost
+        for i, _ in enumerate(result.x):
+            assert result.x[i] > initial_values[i]
 
     def get_data(self, model, parameter_values):
         experiment = pybamm.Experiment(

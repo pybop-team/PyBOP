@@ -159,20 +159,20 @@ class Test_SPM_Parameterisation:
             )
 
         initial_cost = optim.problem(x0)
-        results = optim.run()
+        result = optim.run()
 
         # Assertions
         if np.allclose(x0, self.ground_truth, atol=1e-5):
             raise AssertionError("Initial guess is too close to ground truth")
 
-        if results.minimising:
-            assert initial_cost > results.best_cost
+        if result.minimising:
+            assert initial_cost > result.best_cost
         else:
-            assert initial_cost < results.best_cost
+            assert initial_cost < result.best_cost
 
-        np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
+        np.testing.assert_allclose(result.x, self.ground_truth, atol=1.5e-2)
         if isinstance(optim.problem.cost, pybop.GaussianLogLikelihood):
-            np.testing.assert_allclose(results.x[-1], self.sigma0, atol=1e-3)
+            np.testing.assert_allclose(result.x[-1], self.sigma0, atol=1e-3)
 
     @pytest.fixture
     def two_signal_problem(self, parameters, model_and_parameter_values, cost_class):
@@ -243,20 +243,20 @@ class Test_SPM_Parameterisation:
             self.ground_truth = np.concatenate((self.ground_truth, combined_sigma0))
 
         initial_cost = optim.problem(optim.problem.parameters.get_initial_values())
-        results = optim.run()
+        result = optim.run()
 
         # Assertions
         if np.allclose(x0, self.ground_truth, atol=1e-5):
             raise AssertionError("Initial guess is too close to ground truth")
 
-        if results.minimising:
-            assert initial_cost > results.best_cost
+        if result.minimising:
+            assert initial_cost > result.best_cost
         else:
-            assert initial_cost < results.best_cost
+            assert initial_cost < result.best_cost
 
-        np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
+        np.testing.assert_allclose(result.x, self.ground_truth, atol=1.5e-2)
         if isinstance(two_signal_problem.cost, pybop.GaussianLogLikelihood):
-            np.testing.assert_allclose(results.x[-2:], combined_sigma0, atol=5e-4)
+            np.testing.assert_allclose(result.x[-2:], combined_sigma0, atol=5e-4)
 
     @pytest.mark.parametrize("init_soc", [0.4, 0.6])
     def test_model_misparameterisation(
@@ -288,14 +288,14 @@ class Test_SPM_Parameterisation:
         initial_cost = problem(problem.parameters.get_initial_values())
 
         # Run the optimisation problem
-        results = optim.run()
+        result = optim.run()
 
         # Assertion for best_cost
-        assert initial_cost > results.best_cost
+        assert initial_cost > result.best_cost
 
         # Assertion for x
         with np.testing.assert_raises(AssertionError):
-            np.testing.assert_allclose(results.x, self.ground_truth, atol=2e-2)
+            np.testing.assert_allclose(result.x, self.ground_truth, atol=2e-2)
 
     def get_data(self, model, parameter_values, include_ocv=False):
         experiment = pybamm.Experiment(

@@ -44,7 +44,9 @@ gitt_result = gitt_fit(gitt_pulse=dataset)
 
 # Plot the timeseries output
 pybop.plot.problem(
-    gitt_fit.problem, problem_inputs=gitt_result.x, title="Optimised Comparison"
+    gitt_fit.problem,
+    inputs=gitt_result.best_inputs,
+    title="Optimised Comparison",
 )
 
 # Plot the optimisation result

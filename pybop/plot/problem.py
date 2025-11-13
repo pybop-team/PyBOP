@@ -11,7 +11,7 @@ from pybop.simulators.solution import Solution
 
 def problem(
     problem: Problem,
-    problem_inputs: Inputs = None,
+    inputs: Inputs = None,
     show: bool = True,
     **layout_kwargs,
 ):
@@ -25,7 +25,7 @@ def problem(
     ----------
     problem : pybop.Problem
         Problem object with dataset and targets attributes.
-    problem_inputs : Inputs
+    inputs : Inputs
         Optimised (or example) parameter values.
     show : bool, optional
         If True, the figure is shown upon creation (default: True).
@@ -39,8 +39,10 @@ def problem(
     plotly.graph_objs.Figure
         The Plotly figure object for the scatter plot.
     """
-    if not isinstance(problem_inputs, dict):
-        problem_inputs = problem.parameters.to_dict(problem_inputs)
+    if inputs is None:
+        inputs = problem.parameters.to_dict()
+    elif not isinstance(inputs, dict):
+        raise TypeError(f"Expecting a dictionary, received {type(inputs)}")
 
     domain = problem.domain
     if problem.domain_data is None:
@@ -50,7 +52,7 @@ def problem(
         initial_inputs = problem.simulator.parameters.to_dict("initial")
         target_output = problem.simulate(initial_inputs)
         target_domain = target_output[domain].data
-        model_output = problem.simulate(problem_inputs)
+        model_output = problem.simulate(inputs)
         model_domain = model_output[domain].data
         problem.target = target
     else:
@@ -61,7 +63,7 @@ def problem(
                 target, data=problem.target_data[target]
             )
         target_domain = problem.domain_data
-        model_output = problem.simulate(problem_inputs)
+        model_output = problem.simulate(inputs)
         model_domain = target_domain[: len(model_output[target].data)]
 
     # Create a plot for each output
