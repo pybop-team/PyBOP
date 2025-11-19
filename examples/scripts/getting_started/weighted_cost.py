@@ -75,7 +75,7 @@ for cost in [weighted_cost, cost1, cost2]:
     print("True parameters:", true_values)
 
     # Plot the timeseries output
-    pybop.plot.problem(problem, problem_inputs=result.x, title="Optimised Comparison")
+    pybop.plot.problem(problem, inputs=result.best_inputs, title="Optimised Comparison")
 
     # Plot the optimisation result
     result.plot_convergence()

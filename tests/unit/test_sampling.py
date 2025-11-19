@@ -83,7 +83,7 @@ class TestPintsSamplers:
         return pybop.Problem(simulator, posterior)
 
     @pytest.fixture
-    def chains(self):
+    def n_chains(self):
         return 3
 
     @pytest.fixture
@@ -116,15 +116,15 @@ class TestPintsSamplers:
         return request.param
 
     def test_initialisation_and_run(
-        self, posterior_problem, chains, MCMC, multi_samplers
+        self, posterior_problem, n_chains, MCMC, multi_samplers
     ):
         options = pybop.PintsSamplerOptions(
-            n_chains=chains,
+            n_chains=n_chains,
             max_iterations=1,
             verbose=True,
         )
         sampler = MCMC(log_pdf=posterior_problem, options=options)
-        assert sampler.options.n_chains == chains
+        assert sampler.options.n_chains == n_chains
         assert sampler._log_pdf == posterior_problem
         x0 = posterior_problem.parameters.get_initial_values()
         if isinstance(sampler, multi_samplers):
@@ -139,9 +139,9 @@ class TestPintsSamplers:
         assert sampler.verbose is True
 
         # Run the sampler
-        samples = sampler.run()
-        assert samples is not None
-        assert samples.shape == (chains, 1, 2)
+        result = sampler.run()
+        assert result.chains is not None
+        assert result.chains.shape == (n_chains, 1, 2)
 
     def test_effective_sample_size(self, posterior_problem):
         chains = np.asarray([[[0, 0]]])
@@ -153,8 +153,8 @@ class TestPintsSamplers:
         n_chains = 3
         options = pybop.PintsSamplerOptions(n_chains=n_chains, max_iterations=3)
         sampler = pybop.HaarioBardenetACMC(log_pdf=posterior_problem, options=options)
-        chains = sampler.run()
-        summary = pybop.PosteriorSummary(chains)
+        result = sampler.run()
+        summary = pybop.PosteriorSummary(result.chains)
 
         # Non mixed chains
         ess = summary.effective_sample_size()
@@ -166,7 +166,7 @@ class TestPintsSamplers:
         assert len(ess) == posterior_problem.n_parameters
         assert all(e > 0 for e in ess)
 
-    def test_single_parameter_sampling(self, model, dataset, MCMC, chains):
+    def test_single_parameter_sampling(self, model, dataset, MCMC, n_chains):
         parameter_values = model.default_parameter_values
         parameter_values.update(
             {
@@ -188,15 +188,15 @@ class TestPintsSamplers:
 
         # Construct and run
         options = pybop.PintsSamplerOptions(
-            n_chains=chains,
+            n_chains=n_chains,
             max_iterations=3,
             verbose=True,
         )
         sampler = MCMC(log_pdf=posterior, options=options)
         result = sampler.run()
-        summary = pybop.PosteriorSummary(result)
-        autocorr = summary.autocorrelation(result[0, :, 0])
-        assert autocorr.shape == (result[0, :, 0].shape[0] - 2,)
+        summary = pybop.PosteriorSummary(result.chains)
+        autocorr = summary.autocorrelation(result.chains[0, :, 0])
+        assert autocorr.shape == (result.chains[0, :, 0].shape[0] - 2,)
 
     def test_invalid_initialisation(self, posterior_problem):
         with pytest.raises(ValueError, match="Number of chains must be greater than 0"):
@@ -211,9 +211,9 @@ class TestPintsSamplers:
             DifferentialEvolutionMCMC,
         ],
     )
-    def test_no_chains_in_memory(self, posterior_problem, chains, sampler):
+    def test_no_chains_in_memory(self, posterior_problem, n_chains, sampler):
         options = sampler.default_options()
-        options.n_chains = chains
+        options.n_chains = n_chains
         options.max_iterations = 1
         options.chains_in_memory = False
         sampler = sampler(posterior_problem, options=options)
@@ -229,10 +229,10 @@ class TestPintsSamplers:
     @patch("logging.basicConfig")
     @patch("logging.info")
     def test_initialise_logging(
-        self, mock_info, mock_basicConfig, posterior_problem, chains
+        self, mock_info, mock_basicConfig, posterior_problem, n_chains
     ):
         options = AdaptiveCovarianceMCMC.default_options()
-        options.n_chains = chains
+        options.n_chains = n_chains
         options.evaluation_files = ["eval1.txt", "eval2.txt"]
         options.chain_files = ["chain1.txt", "chain2.txt"]
         sampler = AdaptiveCovarianceMCMC(posterior_problem, options=options)
@@ -257,8 +257,8 @@ class TestPintsSamplers:
         sampler._initialise_logging()
         assert mock_info.call_count == len(expected_calls)  # No additional calls
 
-    def test_check_stopping_criteria(self, posterior_problem, chains):
-        options = pybop.PintsSamplerOptions(n_chains=chains)
+    def test_check_stopping_criteria(self, posterior_problem, n_chains):
+        options = pybop.PintsSamplerOptions(n_chains=n_chains)
         sampler = AdaptiveCovarianceMCMC(log_pdf=posterior_problem, options=options)
         # Set stopping criteria
         sampler.set_max_iterations(10)

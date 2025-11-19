@@ -4,10 +4,21 @@ import pybamm
 import pybop
 
 """
-An alternative approach to the problem described in
-examples/scripts/ecm_tau_constraints.py in which constraints are placed
-on tau1 = R1 * C1. Here, tau1 is introduced as a parameter of the model
-and C1 is replaced by 1/R1 so that the bounds can be applied directly.
+When fitting empirical models, the parameters we are able to identify
+will be constrained from the data that's available. For example, it's
+no good trying to fit an RC timescale of 0.1 s from data sampled at
+1 Hz! Likewise, an RC timescale of 100 s cannot be meaningfully fitted
+to just 10 s of data. To ensure the optimiser doesn't propose
+excessively long or short timescales - beyond what can reasonably be
+inferred from the data - it is common to apply nonlinear constraints
+on the parameter space.
+
+In this example, constraints are placed on tau1 = R1 * C1. Here, tau1
+is introduced as a parameter of the model and C1 is replaced by 1/R1
+so that the bounds can be applied directly.
+
+An alternative approach is given in the ecm_scipy_constraints notebook,
+in which nonlinear constraints are applied directly via SciPy minimize.
 """
 
 # Define model
@@ -116,7 +127,7 @@ print("True parameters:", true_values)
 print("Estimated parameters:", result.x.tolist() + [result.x[2] / result.x[1]])
 
 # Plot the timeseries output
-pybop.plot.problem(problem, problem_inputs=result.x, title="Optimised Comparison")
+pybop.plot.problem(problem, inputs=result.best_inputs, title="Optimised Comparison")
 
 # Plot the optimisation result
 result.plot_convergence()

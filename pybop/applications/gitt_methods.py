@@ -51,7 +51,7 @@ class GITTPulseFit(BaseApplication):
         self.verbose = verbose
         self.optimiser = optimiser
         self.optim = None
-        self.results = None
+        self.result = None
 
     def __call__(self, gitt_pulse: pybop.Dataset) -> pybop.OptimisationResult:
         # Update starting point
@@ -71,12 +71,12 @@ class GITTPulseFit(BaseApplication):
         # Build and run the optimisation problem
         options = pybop.SciPyMinimizeOptions(verbose=self.verbose, tol=1e-8)
         self.optim = self.optimiser(problem=self.problem, options=options)
-        self.results = self.optim.run()
-        self.parameter_values.update(self.problem.parameters.to_dict(self.results.x))
+        self.result = self.optim.run()
+        self.parameter_values.update(self.problem.parameters.to_dict(self.result.x))
 
-        # pybop.plot.problem(problem=problem, problem_inputs=self.results.x)
+        # pybop.plot.problem(problem=problem, inputs=self.result.best_inputs)
 
-        return self.results
+        return self.result
 
 
 class GITTFit(BaseApplication):
@@ -147,12 +147,12 @@ class GITTFit(BaseApplication):
 
             # Estimate the parameters for this pulse
             try:
-                gitt_results = self.gitt_pulse(
+                gitt_result = self.gitt_pulse(
                     gitt_pulse=self.gitt_dataset.get_subset(index)
                 )
                 self.pulses.append(copy(self.gitt_pulse.optim))
 
-                # Log the results
+                # Log the result
                 diffusion_time.append(
                     self.gitt_pulse.parameter_values[
                         "Particle diffusion time scale [s]"
@@ -164,7 +164,7 @@ class GITTFit(BaseApplication):
                 stoichiometry.append(
                     self.gitt_pulse.parameter_values["Initial stoichiometry"]
                 )
-                final_costs.append(gitt_results.best_cost)
+                final_costs.append(gitt_result.best_cost)
 
             except (Exception, SystemExit, KeyboardInterrupt):
                 self.pulses.append(None)

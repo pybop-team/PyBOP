@@ -113,5 +113,5 @@ class InverseOCV:
         problem = pybop.Problem(OCVRoot(self.parameters), cost)
         options = pybop.SciPyMinimizeOptions(verbose=self.verbose)
         optim = self.optimiser(problem=problem, options=options)
-        results = optim.run()
-        return results.x[0]
+        result = optim.run()
+        return result.best_inputs["Root"]

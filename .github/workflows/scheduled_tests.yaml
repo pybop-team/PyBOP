@@ -6,9 +6,9 @@ on:
     branches:
       - main
 
-  # runs every day at 03:00 UTC
+  # run every Monday at 03:45 UTC
   schedule:
-    - cron: '0 3 * * *'
+    - cron: '45 3 * * 1'
 
 # Check noxfile.py for associated environment variables
 env:
@@ -98,8 +98,11 @@ jobs:
       - name: Integration tests with nox
         run: python -m nox -s integration
 
-      - name: Run examples with nox
+      - name: Run example scripts with nox
         run: python -m nox -s examples
+
+      - name: Run example notebooks with nox
+        run: python -m nox -s notebooks
 
   # M-series Mac Mini
   build-apple-mseries:
@@ -139,6 +142,7 @@ jobs:
           python -m nox -s unit
           python -m nox -s integration
           python -m nox -s examples
+          python -m nox -s notebooks
 
       - name: Uninstall pyenv-virtualenv & python
         if: always()

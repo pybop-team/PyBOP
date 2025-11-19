@@ -104,10 +104,12 @@ for model in [pybop.lithium_ion.WeppnerHuggins(), pybop.lithium_ion.SPDiffusion(
     # Run the optimisation problem
     result = optim.run()
     print(result)
-    print("Diffusion time [s]:", result.x[0])
+    print(
+        "Diffusion time [s]:", result.best_inputs["Particle diffusion time scale [s]"]
+    )
 
     # Plot the timeseries output
-    pybop.plot.problem(problem, problem_inputs=result.x, title=model.name)
+    pybop.plot.problem(problem, inputs=result.best_inputs, title=model.name)
 
 print(
     "Note the different optimised values for the particle diffusion time scale,"

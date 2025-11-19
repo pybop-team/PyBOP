@@ -241,9 +241,13 @@ class OCPAverage(BaseApplication):
         # Optimise the fit between the charge and discharge branches
         options = pybop.SciPyMinimizeOptions(verbose=self.verbose)
         self.optim = self.optimiser(problem=self.problem, options=options)
-        self.results = self.optim.run()
-        self.stretch = np.sqrt(self.results.x[1]) if self.allow_stretching else 1.0
-        self.shift = self.results.x[0] / (self.stretch + 1.0)
+        self.result = self.optim.run()
+        self.stretch = (
+            np.sqrt(self.result.best_inputs["stretch"])
+            if self.allow_stretching
+            else 1.0
+        )
+        self.shift = self.result.best_inputs["shift"] / (self.stretch + 1.0)
 
         if self.verbose:
             print(
@@ -358,9 +362,9 @@ class OCPCapacityToStoichiometry(BaseApplication):
         # Optimise the fit between the OCV function and the dataset
         options = pybop.SciPyMinimizeOptions(verbose=self.verbose)
         self.optim = self.optimiser(problem=problem, options=options)
-        self.results = self.optim.run()
-        self.stretch = self.results.x[1]
-        self.shift = self.results.x[0]
+        self.result = self.optim.run()
+        self.stretch = self.result.best_inputs["stretch"]
+        self.shift = self.result.best_inputs["shift"]
 
         if self.verbose:
             print(

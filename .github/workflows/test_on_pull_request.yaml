@@ -62,7 +62,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-13, macos-14]
+        os: [ubuntu-latest, windows-latest, macos-15-intel, macos-14]
         python-version: ["3.10", "3.11", "3.12"]
         exclude: # We run the coverage tests on macos-14 with Python 3.12
           - os: macos-14
@@ -84,7 +84,7 @@ jobs:
         run: |
           nox -s unit
 
-  example_tests:
+  example_scripts:
     needs: style
     runs-on: ${{ matrix.os }}
     strategy:
@@ -109,20 +109,23 @@ jobs:
         run: |
           nox -s examples
 
-  # Notebooks on macos-14
   example_notebooks:
     needs: style
-    runs-on: macos-14
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
-    name: Test notebooks (macos-14 / Python 3.12)
+      matrix:
+        os: [macos-14]
+        python-version: ["3.12"]
+
+    name: Test notebooks (${{ matrix.os }} / Python ${{ matrix.python-version }})
 
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python 3.12
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
-          python-version: 3.12
+          python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip nox[uv] openpyxl ipywidgets

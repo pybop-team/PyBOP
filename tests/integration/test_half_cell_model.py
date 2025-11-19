@@ -97,16 +97,16 @@ class TestHalfCellModel:
             max_unchanged_iterations=35,
         )
         optim = pybop.CuckooSearch(fitting_problem, options=options)
-        results = optim.run()
+        result = optim.run()
 
         # Assertions
         initial_cost = optim.problem(x0)
         if not np.allclose(x0, self.ground_truth, atol=1e-5):
-            if results.minimising:
-                assert initial_cost > results.best_cost
+            if result.minimising:
+                assert initial_cost > result.best_cost
             else:
-                assert initial_cost < results.best_cost
-        np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
+                assert initial_cost < result.best_cost
+        np.testing.assert_allclose(result.x, self.ground_truth, atol=1.5e-2)
 
     @pytest.fixture
     def design_problem(self, model, parameter_values):
@@ -140,10 +140,10 @@ class TestHalfCellModel:
         optim = pybop.CuckooSearch(design_problem, options=options)
         initial_values = optim.problem.parameters.get_initial_values()
         initial_cost = optim.problem(initial_values)
-        results = optim.run()
+        result = optim.run()
 
         # Assertions
-        assert initial_cost < results.best_cost
+        assert initial_cost < result.best_cost
 
     def get_data(self, model, parameter_values):
         experiment = pybamm.Experiment(

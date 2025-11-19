@@ -2,11 +2,17 @@
 
 ## Features
 
+- [#815](https://github.com/pybop-team/PyBOP/pull/815) - Adds function import_pyprobe_result to import a pyprobe.result into a pybop.dataset. Allows for creating a dataset directly from a pybamm.solution object.
+
 ## Optimisations
+
+- [#816](https://github.com/pybop-team/PyBOP/pull/816) - Enable simulator multi-processing via the evaluators.
 
 ## Bug Fixes
 
 ## Breaking Changes
+
+- [#829](https://github.com/pybop-team/PyBOP/pull/829) - Create `SamplingResult` and best inputs property for results.
 
 # [v25.10](https://github.com/pybop-team/PyBOP/tree/v25.10) - 2025-10-31
 
