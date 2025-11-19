@@ -32,10 +32,12 @@ class TestLogPosterior:
     @pytest.fixture
     def parameter(self, ground_truth):
         return {
-            "Negative electrode active material volume fraction": pybop.Gaussian(
-                bounds=[0.375, 0.625],
-                mean=0.5,
-                sigma=0.01,
+            "Negative electrode active material volume fraction": pybop.ParameterDistribution(
+                distribution=pybop.Gaussian(
+                    0.5,
+                    0.01,
+                    truncated_at=[0.375, 0.625],
+                ),
                 initial_value=ground_truth,
             )
         }
@@ -91,10 +93,10 @@ class TestLogPosterior:
 
         problem._cost.set_joint_prior()
         assert problem._cost.joint_prior is not None
-        assert isinstance(problem._cost.joint_prior, pybop.JointPrior)
+        assert isinstance(problem._cost.joint_prior, pybop.JointDistribution)
 
-        for i, p in enumerate(problem.parameters):
-            assert p == problem._cost.joint_prior._priors[i]
+        for i, p in enumerate(problem.parameters.distributions()):
+            assert p == problem._cost.joint_prior._distributions[i]
 
     @pytest.fixture
     def problem(self, simulator, likelihood, prior):

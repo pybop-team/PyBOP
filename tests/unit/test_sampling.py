@@ -48,15 +48,19 @@ class TestPintsSamplers:
     @pytest.fixture
     def parameters(self):
         return {
-            "Negative electrode active material volume fraction": pybop.Gaussian(
-                mean=0.6,
-                sigma=0.2,
-                bounds=[0.58, 0.62],
+            "Negative electrode active material volume fraction": pybop.ParameterDistribution(
+                distribution=pybop.Gaussian(
+                    0.6,
+                    0.2,
+                    truncated_at=[0.58, 0.62],
+                ),
             ),
-            "Positive electrode active material volume fraction": pybop.Gaussian(
-                mean=0.55,
-                sigma=0.05,
-                bounds=[0.53, 0.57],
+            "Positive electrode active material volume fraction": pybop.ParameterDistribution(
+                distribution=pybop.Gaussian(
+                    0.55,
+                    0.05,
+                    truncated_at=[0.53, 0.57],
+                ),
             ),
         }
 
@@ -74,7 +78,7 @@ class TestPintsSamplers:
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=0.01)
         prior1 = pybop.Gaussian(0.7, 0.02)
         prior2 = pybop.Gaussian(0.6, 0.02)
-        composed_prior = pybop.JointPrior(prior1, prior2)
+        composed_prior = pybop.JointDistribution(prior1, prior2)
         posterior = pybop.LogPosterior(likelihood, prior=composed_prior)
         return pybop.Problem(simulator, posterior)
 
@@ -166,8 +170,8 @@ class TestPintsSamplers:
         parameter_values = model.default_parameter_values
         parameter_values.update(
             {
-                "Negative electrode active material volume fraction": pybop.Gaussian(
-                    0.6, 0.2, bounds=[0.58, 0.62]
+                "Negative electrode active material volume fraction": pybop.ParameterDistribution(
+                    distribution=pybop.Gaussian(0.6, 0.2, truncated_at=[0.58, 0.62])
                 )
             }
         )

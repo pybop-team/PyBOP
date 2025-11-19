@@ -20,18 +20,18 @@ class TestTransformation:
     def parameters(self):
         return pybop.Parameters(
             {
-                "Identity": pybop.Parameter(
+                "Identity": pybop.ParameterInfo(
                     transformation=pybop.IdentityTransformation(),
                 ),
-                "Scaled": pybop.Parameter(
+                "Scaled": pybop.ParameterInfo(
                     transformation=pybop.ScaledTransformation(
                         coefficient=2.0, intercept=1
                     ),
                 ),
-                "Log": pybop.Parameter(
+                "Log": pybop.ParameterInfo(
                     transformation=pybop.LogTransformation(),
                 ),
-                "UnitHyperCube": pybop.Parameter(
+                "UnitHyperCube": pybop.ParameterInfo(
                     transformation=pybop.UnitHyperCube(10, 100)
                 ),
             }

@@ -172,7 +172,7 @@ class OCPAverage(BaseApplication):
         # Define the optimisation parameters
         self.parameters = pybop.Parameters(
             {
-                "shift": pybop.Parameter(
+                "shift": pybop.ParameterInfo(
                     initial_value=0.05,
                 ),
             }
@@ -180,7 +180,7 @@ class OCPAverage(BaseApplication):
         if self.allow_stretching:
             self.parameters.add(
                 "stretch",
-                pybop.Parameter(
+                pybop.ParameterInfo(
                     initial_value=1.0,
                 ),
             )
@@ -321,10 +321,10 @@ class OCPCapacityToStoichiometry(BaseApplication):
         # Define the optimisation parameters
         self.parameters = pybop.Parameters(
             {
-                "shift": pybop.Parameter(
+                "shift": pybop.ParameterInfo(
                     initial_value=0,
                 ),
-                "stretch": pybop.Parameter(
+                "stretch": pybop.ParameterInfo(
                     initial_value=np.max(self.ocv_dataset["Charge capacity [A.h]"])
                     - np.min(self.ocv_dataset["Charge capacity [A.h]"]),
                 ),

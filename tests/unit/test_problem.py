@@ -21,11 +21,19 @@ class TestProblem:
     @pytest.fixture
     def parameters(self):
         return {
-            "Negative particle radius [m]": pybop.Gaussian(
-                bounds=[1e-6, 5e-5], mean=2e-05, sigma=0.1e-5
+            "Negative particle radius [m]": pybop.ParameterDistribution(
+                distribution=pybop.Gaussian(
+                    2e-05,
+                    0.1e-5,
+                    truncated_at=[1e-6, 5e-5],
+                )
             ),
-            "Positive particle radius [m]": pybop.Gaussian(
-                bounds=[1e-6, 5e-5], mean=0.5e-05, sigma=0.1e-5
+            "Positive particle radius [m]": pybop.ParameterDistribution(
+                distribution=pybop.Gaussian(
+                    0.5e-05,
+                    0.1e-5,
+                    truncated_at=[1e-6, 5e-5],
+                )
             ),
         }
 

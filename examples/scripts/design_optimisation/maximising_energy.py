@@ -44,15 +44,11 @@ parameter_values.update(
 # Fitting parameters
 parameter_values.update(
     {
-        "Positive electrode thickness [m]": pybop.Gaussian(
-            7.56e-05,
-            0.1e-05,
-            bounds=[65e-06, 10e-05],
+        "Positive electrode thickness [m]": pybop.ParameterDistribution(
+            pybop.Gaussian(7.56e-05, 0.1e-05, truncated_at=[65e-06, 10e-05]),
         ),
-        "Positive particle radius [m]": pybop.Gaussian(
-            5.22e-06,
-            0.1e-06,
-            bounds=[2e-06, 9e-06],
+        "Positive particle radius [m]": pybop.ParameterDistribution(
+            pybop.Gaussian(5.22e-06, 0.1e-06, truncated_at=[2e-06, 9e-06]),
         ),
     }
 )

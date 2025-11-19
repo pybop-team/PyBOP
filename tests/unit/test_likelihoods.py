@@ -29,10 +29,12 @@ class TestLikelihoods:
     @pytest.fixture
     def parameters(self):
         return {
-            "Negative electrode active material volume fraction": pybop.Gaussian(
-                bounds=[0.375, 0.625],
-                mean=0.5,
-                sigma=0.01,
+            "Negative electrode active material volume fraction": pybop.ParameterDistribution(
+                distribution=pybop.Gaussian(
+                    0.5,
+                    0.01,
+                    truncated_at=[0.375, 0.625],
+                )
             )
         }
 
@@ -120,7 +122,7 @@ class TestLikelihoods:
         # Test invalid sigma
         with pytest.raises(
             TypeError,
-            match=r"Expected sigma0 to contain Parameter objects or numeric values.",
+            match=r"Expected sigma0 to contain ParameterDistribution objects or numeric values.",
         ):
             likelihood = pybop.GaussianLogLikelihood(dataset, sigma0="Invalid string")
             pybop.Problem(simulator, likelihood)

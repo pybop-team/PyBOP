@@ -17,10 +17,12 @@ class TestModelAndExperimentChanges:
         params=[
             [
                 {
-                    "Negative particle radius [m]": pybop.Gaussian(  # geometric parameter
-                        mean=6e-06,
-                        sigma=0.1e-6,
-                        bounds=[1e-6, 9e-6],
+                    "Negative particle radius [m]": pybop.ParameterDistribution(  # geometric parameter
+                        distribution=pybop.Gaussian(
+                            6e-06,
+                            0.1e-6,
+                            truncated_at=[1e-6, 9e-6],
+                        ),
                         initial_value=5.86e-6,
                     ),
                 },
@@ -28,10 +30,12 @@ class TestModelAndExperimentChanges:
             ],
             [
                 {
-                    "Positive particle diffusivity [m2.s-1]": pybop.Gaussian(  # non-geometric parameter
-                        mean=3.43e-15,
-                        sigma=1e-15,
-                        bounds=[1e-15, 5e-15],
+                    "Positive particle diffusivity [m2.s-1]": pybop.ParameterDistribution(  # non-geometric parameter
+                        distribution=pybop.Gaussian(
+                            3.43e-15,
+                            1e-15,
+                            truncated_at=[1e-15, 5e-15],
+                        ),
                         initial_value=4e-15,
                     ),
                 },

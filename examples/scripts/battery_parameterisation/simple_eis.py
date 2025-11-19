@@ -50,8 +50,12 @@ dataset = pybop.Dataset(
 # Fitting parameters
 parameter_values.update(
     {
-        "Negative electrode active material volume fraction": pybop.Uniform(0.4, 0.75),
-        "Positive electrode active material volume fraction": pybop.Uniform(0.4, 0.75),
+        "Negative electrode active material volume fraction": pybop.ParameterDistribution(
+            pybop.Uniform(0.4, 0.75)
+        ),
+        "Positive electrode active material volume fraction": pybop.ParameterDistribution(
+            pybop.Uniform(0.4, 0.75)
+        ),
     }
 )
 

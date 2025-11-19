@@ -1,6 +1,5 @@
 import numpy as np
 import pybamm
-from scipy import stats
 
 import pybop
 from benchmarks.benchmark_utils import set_random_seed
@@ -51,14 +50,12 @@ class BenchmarkOptimisationConstruction:
         # Define fitting parameters
         parameter_values.update(
             {
-                "Negative electrode active material volume fraction": pybop.Parameter(
-                    distribution=stats.norm(loc=0.6, scale=0.02),
-                    bounds=[0.375, 0.7],
+                "Negative electrode active material volume fraction": pybop.ParameterDistribution(
+                    pybop.Gaussian(0.6, 0.02, truncated_at=[0.375, 0.7]),
                     initial_value=0.63,
                 ),
-                "Positive electrode active material volume fraction": pybop.Parameter(
-                    distribution=stats.norm(loc=0.5, scale=0.02),
-                    bounds=[0.375, 0.625],
+                "Positive electrode active material volume fraction": pybop.ParameterDistribution(
+                    pybop.Gaussian(0.5, 0.02, truncated_at=[0.375, 0.625]),
                     initial_value=0.51,
                 ),
             }

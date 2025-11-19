@@ -1,5 +1,6 @@
 import numpy as np
 import pybamm
+from scipy import stats
 
 import pybop
 
@@ -23,8 +24,12 @@ dataset = pybop.Dataset(
 # Fitting parameters
 parameter_values.update(
     {
-        "Negative electrode active material volume fraction": pybop.Gaussian(0.6, 0.1),
-        "Positive electrode active material volume fraction": pybop.Gaussian(0.6, 0.1),
+        "Negative electrode active material volume fraction": pybop.ParameterDistribution(
+            stats.norm(0.6, 0.1)
+        ),
+        "Positive electrode active material volume fraction": pybop.ParameterDistribution(
+            stats.norm(0.6, 0.1)
+        ),
     }
 )
 

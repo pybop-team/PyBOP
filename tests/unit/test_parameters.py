@@ -19,8 +19,13 @@ class TestParameter:
 
     @pytest.fixture
     def parameter(self):
-        return pybop.Gaussian(
-            bounds=[0.375, 0.7], mean=0.6, sigma=0.02, initial_value=0.6
+        return pybop.ParameterDistribution(
+            distribution=pybop.Gaussian(
+                0.6,
+                0.02,
+                truncated_at=[0.375, 0.7],
+            ),
+            initial_value=0.6,
         )
 
     @pytest.fixture
@@ -33,11 +38,11 @@ class TestParameter:
         assert parameter.bounds == [0.375, 0.7]
         assert parameter.initial_value == 0.6
 
-    # def test_parameter_repr(self, parameter):
-    #     assert (
-    #         repr(parameter)
-    #         == "Parameter: Prior: Gaussian, loc: 0.6, scale: 0.02 \n Bounds: [0.375, 0.7] \n Value: 0.6"
-    #     )
+    def test_parameter_repr(self, parameter):
+        assert (
+            repr(parameter)
+            == f"ParameterDistribution - Distribution: Gaussian, mean: {parameter.distribution.mean()}, standard deviation: {parameter.distribution.std()}, support: (0.375, 0.7), Initial value: 0.6"
+        )
 
     def test_parameter_sampling(self, parameter):
         samples = parameter.sample_from_distribution(n_samples=500)
@@ -54,7 +59,7 @@ class TestParameter:
         assert parameter._margin == 1e-3
 
     def test_no_bounds(self, name):
-        parameter = pybop.Parameter()
+        parameter = pybop.ParameterInfo()
         assert parameter.bounds is None
 
         # Test get_bounds with bounds == None
@@ -73,10 +78,16 @@ class TestParameter:
         with pytest.raises(
             ParameterValidationError, match="must be less than upper bound"
         ):
-            pybop.Parameter(bounds=[0.7, 0.3])
+            pybop.ParameterBounds(bounds=[0.7, 0.3])
 
     def test_sample_initial_values(self):
-        parameter = pybop.Gaussian(bounds=[0.375, 0.7], mean=0.6, sigma=0.02)
+        parameter = pybop.ParameterDistribution(
+            distribution=pybop.Gaussian(
+                0.6,
+                0.02,
+                truncated_at=[0.375, 0.7],
+            )
+        )
         sample = parameter._initial_value
         assert (sample >= 0.375) and (sample <= 0.7)
 
@@ -90,10 +101,12 @@ class TestParameters:
 
     @pytest.fixture
     def parameter(self):
-        return pybop.Gaussian(
-            bounds=[0.375, 0.7],
-            mean=0.6,
-            sigma=0.02,
+        return pybop.ParameterDistribution(
+            distribution=pybop.Gaussian(
+                0.6,
+                0.02,
+                truncated_at=[0.375, 0.7],
+            ),
             initial_value=0.6,
         )
 
@@ -116,10 +129,12 @@ class TestParameters:
             pybop.Parameters(
                 {
                     name: parameter,
-                    "Positive electrode active material volume fraction": pybop.Gaussian(
-                        bounds=[0.375, 0.7],
-                        mean=0.6,
-                        sigma=0.02,
+                    "Positive electrode active material volume fraction": pybop.ParameterDistribution(
+                        distribution=pybop.Gaussian(
+                            0.6,
+                            0.02,
+                            truncated_at=[0.375, 0.7],
+                        ),
                         initial_value=0.6,
                     ),
                 }
@@ -133,7 +148,7 @@ class TestParameters:
         with pytest.raises(ParameterNotFoundError, match="not found"):
             params.remove(name="Negative electrode active material volume fraction")
 
-        with pytest.raises(TypeError, match="Expected Parameter instance"):
+        with pytest.raises(TypeError, match="Expected ParameterInfo instance"):
             params.add(name, parameter="Invalid string")
         with pytest.raises(TypeError, match="The input name is not a string."):
             params.remove(name=parameter)
@@ -150,19 +165,19 @@ class TestParameters:
         # Construct params
         params = pybop.Parameters(
             {
-                "LogParam": pybop.Parameter(
+                "LogParam": pybop.ParameterBounds(
                     bounds=[0, 1],
                     transformation=pybop.LogTransformation(),
                 ),
-                "ScaledParam": pybop.Parameter(
+                "ScaledParam": pybop.ParameterBounds(
                     bounds=[0, 1],
                     transformation=pybop.ScaledTransformation(1, 0.5),
                 ),
-                "IdentityParam": pybop.Parameter(
+                "IdentityParam": pybop.ParameterBounds(
                     bounds=[0, 1],
                     transformation=pybop.IdentityTransformation(),
                 ),
-                "UnitHyperParam": pybop.Parameter(
+                "UnitHyperParam": pybop.ParameterBounds(
                     bounds=[0, 1],
                     transformation=pybop.UnitHyperCube(1, 2),
                 ),
@@ -177,10 +192,12 @@ class TestParameters:
         # Test unbounded transformation causes ValueError due to NaN
         params = pybop.Parameters(
             {
-                name: pybop.Gaussian(
-                    bounds=[-1, 1],
-                    mean=0.01,
-                    sigma=0.2,
+                name: pybop.ParameterDistribution(
+                    distribution=pybop.Gaussian(
+                        0.01,
+                        0.2,
+                        truncated_at=[-1, 1],
+                    ),
                     transformation=pybop.LogTransformation(),
                 )
             }
@@ -223,7 +240,7 @@ class TestParameters:
     def test_initial_values_without_attributes(self):
         # Test without initial values
         parameter = pybop.Parameters(
-            {"Negative electrode conductivity [S.m-1]": pybop.Parameter()}
+            {"Negative electrode conductivity [S.m-1]": pybop.ParameterInfo()}
         )
         with pytest.raises(ParameterError, match="has no initial value"):
             parameter.get_initial_values()

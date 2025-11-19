@@ -1,7 +1,7 @@
 from copy import copy
 
 from pybop._utils import FailedSolution
-from pybop.parameters.parameter import Inputs, Parameter, Parameters
+from pybop.parameters.parameter import Inputs, ParameterInfo, Parameters
 from pybop.simulators.solution import Solution
 
 
@@ -13,21 +13,21 @@ class BaseSimulator:
     def __init__(self, parameters: Parameters | None = None):
         if parameters is None:
             parameters = Parameters()
-        # Check if parameters is a list of pybop.Parameter objects
+        # Check if parameters is a list of pybop.ParameterInfo objects
         elif isinstance(parameters, list):
-            if all(isinstance(param, Parameter) for param in parameters):
+            if all(isinstance(param, ParameterInfo) for param in parameters):
                 parameters = Parameters(*parameters)
             else:
                 raise TypeError(
-                    "All elements in the list must be pybop.Parameter objects."
+                    "All elements in the list must be pybop.ParameterInfo objects."
                 )
-        # Check if parameters is a single pybop.Parameter object
-        elif isinstance(parameters, Parameter):
+        # Check if parameters is a single pybop.ParameterInfo object
+        elif isinstance(parameters, ParameterInfo):
             parameters = Parameters(parameters)
         # Check if parameters is already a pybop.Parameters object
         elif not isinstance(parameters, Parameters):
             raise TypeError(
-                "The input parameters must be a pybop.Parameter, a list of pybop.Parameter objects, or a pybop.Parameters object."
+                "The input parameters must be a pybop.ParameterInfo, a list of pybop.ParameterInfo objects, or a pybop.Parameters object."
             )
 
         self.parameters = parameters

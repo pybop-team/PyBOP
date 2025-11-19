@@ -1,11 +1,8 @@
 import numpy as np
 import scipy.stats as stats
 
-from pybop import Bounds, Parameter
-from pybop.transformation.base_transformation import Transformation
 
-
-class ParameterDistribution(Parameter):
+class Distribution:
     """
     A base class for defining parameter distributions.
 
@@ -22,25 +19,12 @@ class ParameterDistribution(Parameter):
 
     def __init__(
         self,
-        distribution: stats.rv_continuous = None,
-        initial_value: float = None,
-        transformation: Transformation | None = None,
-        margin: float = 1e-4,
+        distribution: stats.distributions.rv_frozen | None = None,
     ):
-        super().__init__(
-            initial_value=initial_value, transformation=transformation, margin=margin
-        )
         self._distribution = distribution
-        if initial_value is None and distribution is not None:
-            initial_value = self.sample_from_distribution()[0]
-        self._initial_value = (
-            float(initial_value) if initial_value is not None else None
-        )
-        self._current_value = self._initial_value
 
-        if distribution is not None:
-            lower, upper = self._distribution.support()
-            self._bounds = Bounds(lower, upper)
+    def support(self):
+        return self._distribution.support()
 
     def pdf(self, x):
         """
@@ -192,10 +176,10 @@ class ParameterDistribution(Parameter):
         else:
             # Use a finite difference approximation of the gradient
             delta = max(abs(x) * 1e-3, np.finfo(float).eps)
-            log_prior_upper = self.logpdf(x + delta)
-            log_prior_lower = self.logpdf(x - delta)
+            log_distribution_upper = self.logpdf(x + delta)
+            log_distribution_lower = self.logpdf(x - delta)
 
-            return (log_prior_upper - log_prior_lower) / (2 * delta)
+            return (log_distribution_upper - log_distribution_lower) / (2 * delta)
 
     def verify(self, x):
         """
@@ -211,9 +195,8 @@ class ParameterDistribution(Parameter):
         """
         Returns a string representation of the object.
         """
-        return f"{self.__class__.__name__}, mean: {self.mean}, standard deviation: {self.sigma}"
+        return f"{self.__class__.__name__}, mean: {self.mean()}, standard deviation: {self.std()}, support: {self.support()}"
 
-    @property
     def mean(self):
         """
         Get the mean of the distribution.
@@ -225,8 +208,7 @@ class ParameterDistribution(Parameter):
         """
         return self._distribution.mean()
 
-    @property
-    def sigma(self):
+    def std(self):
         """
         Get the standard deviation of the distribution.
 
@@ -238,7 +220,7 @@ class ParameterDistribution(Parameter):
         return self._distribution.std()
 
 
-class Gaussian(ParameterDistribution):
+class Gaussian(Distribution):
     """
     Represents a Gaussian (normal) distribution with a given mean and standard deviation.
 
@@ -257,35 +239,22 @@ class Gaussian(ParameterDistribution):
         self,
         mean,
         sigma,
-        bounds: list[float] = None,
-        initial_value: float = None,
-        transformation: Transformation | None = None,
-        margin: float = 1e-4,
+        truncated_at: list[float] = None,
     ):
-        if bounds is not None:
+        if truncated_at is not None:
             distribution = stats.truncnorm(
-                (bounds[0] - mean) / sigma,
-                (bounds[1] - mean) / sigma,
+                (truncated_at[0] - mean) / sigma,
+                (truncated_at[1] - mean) / sigma,
                 loc=mean,
                 scale=sigma,
             )
         else:
             distribution = stats.norm(loc=mean, scale=sigma)
-        ParameterDistribution.__init__(
-            self,
-            distribution,
-            initial_value=initial_value,
-            transformation=transformation,
-            margin=margin,
-        )
+        super().__init__(distribution)
         self.name = "Gaussian"
         self._n_parameters = 1
         self.loc = mean
         self.scale = sigma
-        if bounds is not None:
-            self._bounds = Bounds(bounds[0], bounds[1])
-        else:
-            self._bounds = None
 
     def _dlogpdf_dx(self, x):
         """
@@ -304,7 +273,7 @@ class Gaussian(ParameterDistribution):
         return (self.loc - x) / self.scale**2
 
 
-class Uniform(ParameterDistribution):
+class Uniform(Distribution):
     """
     Represents a uniform distribution over a specified interval.
 
@@ -323,17 +292,8 @@ class Uniform(ParameterDistribution):
         self,
         lower,
         upper,
-        initial_value: float = None,
-        transformation: Transformation | None = None,
-        margin: float = 1e-4,
     ):
-        ParameterDistribution.__init__(
-            self,
-            stats.uniform(loc=lower, scale=upper - lower),
-            initial_value=initial_value,
-            transformation=transformation,
-            margin=margin,
-        )
+        super().__init__(stats.uniform(loc=lower, scale=upper - lower))
         self.name = "Uniform"
         self.lower = lower
         self.upper = upper
@@ -355,7 +315,6 @@ class Uniform(ParameterDistribution):
         """
         return np.zeros_like(x)
 
-    @property
     def mean(self):
         """
         Returns the mean of the distribution.
@@ -376,7 +335,7 @@ class Uniform(ParameterDistribution):
         return f"{self.__class__.__name__}, lower: {self.lower}, upper: {self.upper}"
 
 
-class Exponential(ParameterDistribution):
+class Exponential(Distribution):
     """
     Represents an exponential distribution with a specified scale parameter.
 
@@ -393,17 +352,8 @@ class Exponential(ParameterDistribution):
         self,
         scale: float,
         loc: float = 0,
-        initial_value: float = None,
-        transformation: Transformation | None = None,
-        margin: float = 1e-4,
     ):
-        ParameterDistribution.__init__(
-            self,
-            stats.expon(loc=loc, scale=scale),
-            initial_value=initial_value,
-            transformation=transformation,
-            margin=margin,
-        )
+        super().__init__(stats.expon(loc=loc, scale=scale))
         self.name = "Exponential"
         self._n_parameters = 1
         self.loc = loc
@@ -432,39 +382,39 @@ class Exponential(ParameterDistribution):
         return f"{self.__class__.__name__}, loc: {self.loc}, scale: {self.scale}"
 
 
-class JointPrior(ParameterDistribution):
+class JointDistribution(Distribution):
     """
-    Represents a joint prior distribution composed of multiple prior distributions.
+    Represents a joint distribution distribution composed of multiple distribution distributions.
 
     Parameters
     ----------
-    priors : ParameterDistribution
-        One or more prior distributions to combine into a joint distribution.
+    distributions : Distribution
+        One or more distribution distributions to combine into a joint distribution.
     """
 
-    def __init__(self, *priors: ParameterDistribution | stats.distributions.rv_frozen):
+    def __init__(self, *distributions: Distribution | stats.distributions.rv_frozen):
         super().__init__()
 
-        if all(prior is None for prior in priors):
+        if all(distribution is None for distribution in distributions):
             return
 
         if not all(
-            isinstance(prior, (ParameterDistribution, stats.distributions.rv_frozen))
-            for prior in priors
+            isinstance(distribution, (Distribution, stats.distributions.rv_frozen))
+            for distribution in distributions
         ):
-            raise ValueError("All priors must be instances of ParameterDistribution")
+            raise ValueError("All distributions must be instances of Distribution")
 
-        self._n_parameters = len(priors)
-        self._priors: list[ParameterDistribution] = [
-            prior
-            if isinstance(prior, ParameterDistribution)
-            else ParameterDistribution(prior)
-            for prior in priors
+        self._n_parameters = len(distributions)
+        self._distributions: list[Distribution] = [
+            distribution
+            if isinstance(distribution, Distribution)
+            else Distribution(distribution)
+            for distribution in distributions
         ]
 
     def logpdf(self, x: float | np.ndarray) -> float:
         """
-        Evaluates the joint log-prior distribution at a given point.
+        Evaluates the joint log-distribution distribution at a given point.
 
         Parameters
         ----------
@@ -482,11 +432,14 @@ class JointPrior(ParameterDistribution):
                 f"Input x must have length {self._n_parameters}, got {len(x)}"
             )
 
-        return sum(prior.logpdf(x) for prior, x in zip(self._priors, x, strict=False))
+        return sum(
+            distribution.logpdf(x)
+            for distribution, x in zip(self._distributions, x, strict=False)
+        )
 
     def logpdfS1(self, x: float | np.ndarray) -> tuple[float, np.ndarray]:
         """
-        Evaluates the first derivative of the joint log-prior distribution at a given point.
+        Evaluates the first derivative of the joint log-distribution distribution at a given point.
 
         Parameters
         ----------
@@ -507,8 +460,8 @@ class JointPrior(ParameterDistribution):
         log_probs = []
         derivatives = []
 
-        for prior, xi in zip(self._priors, x, strict=False):
-            p, dp = prior.logpdfS1(xi)
+        for distribution, xi in zip(self._distributions, x, strict=False):
+            p, dp = distribution.logpdfS1(xi)
             log_probs.append(p)
             derivatives.append(dp)
 
@@ -521,5 +474,7 @@ class JointPrior(ParameterDistribution):
         return output, doutput.T
 
     def __repr__(self) -> str:
-        priors_repr = ", ".join([repr(prior) for prior in self._priors])
-        return f"{self.__class__.__name__}(priors: [{priors_repr}])"
+        distributions_repr = "; ".join(
+            [repr(distribution) for distribution in self._distributions]
+        )
+        return f"{self.__class__.__name__}(distributions: [{distributions_repr}])"

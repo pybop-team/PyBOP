@@ -83,7 +83,7 @@ class TestGroupedModels:
     def parameters(self):
         """Create parameter objects for reuse."""
         return {
-            param_name: pybop.Parameter(initial_value=val)
+            param_name: pybop.ParameterInfo(initial_value=val)
             for param_name, val in CHARGE_TRANSFER_PARAMS
         }
 

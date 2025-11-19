@@ -3,8 +3,8 @@ import scipy.stats as stats
 
 from pybop._dataset import Dataset
 from pybop.costs.error_measures import ErrorMeasure
-from pybop.parameters.parameter import Inputs, Parameter, Parameters
-from pybop.parameters.priors import JointPrior, ParameterDistribution, Uniform
+from pybop.parameters.parameter import Inputs, ParameterDistribution, Parameters
+from pybop.parameters.priors import Distribution, JointDistribution, Uniform
 
 
 class LogLikelihood(ErrorMeasure):
@@ -98,7 +98,7 @@ class GaussianLogLikelihood(LogLikelihood):
     def __init__(
         self,
         dataset: Dataset,
-        sigma0: float | list[float] | list[Parameter] = 1e-2,
+        sigma0: float | list[float] | list[ParameterDistribution] = 1e-2,
         dsigma_scale: float = 1.0,
         target: str | list[str] = None,
     ):
@@ -107,7 +107,7 @@ class GaussianLogLikelihood(LogLikelihood):
         self._dsigma_scale = dsigma_scale
         self._logpi = -0.5 * self.n_data * np.log(2 * np.pi)
 
-    def set_sigma0(self, sigma0: float | list[float] | list[Parameter]):
+    def set_sigma0(self, sigma0: float | list[float] | list[ParameterDistribution]):
         # Reset
         self.parameters = Parameters()
         self.sigma = Parameters()
@@ -129,17 +129,16 @@ class GaussianLogLikelihood(LogLikelihood):
         return sigma0
 
     def _add_single_sigma(self, index, value):
-        if isinstance(value, Parameter):
+        if isinstance(value, ParameterDistribution):
             sigma = value
         elif isinstance(value, int | float):
-            sigma = Uniform(
-                1e-8 * value,
-                3 * value,
+            sigma = ParameterDistribution(
+                distribution=Uniform(1e-8 * value, 3 * value),
                 initial_value=value,
             )
         else:
             raise TypeError(
-                f"Expected sigma0 to contain Parameter objects or numeric values. "
+                f"Expected sigma0 to contain ParameterDistribution objects or numeric values. "
                 f"Received {type(value)}"
             )
         self.sigma.add(f"Sigma for output {index + 1}", sigma)
@@ -219,10 +218,12 @@ class LogPosterior(LogLikelihood):
 
     def set_joint_prior(self):
         if self.prior is None:
-            self.joint_prior = JointPrior(*self.parameters)
-        elif isinstance(self.prior, stats.distributions.rv_frozen):
-            self.joint_prior = ParameterDistribution(self.prior)
+            self.joint_prior = JointDistribution(*self.parameters.distributions())
+        elif isinstance(self.prior, (stats.distributions.rv_frozen)):
+            self.joint_prior = Distribution(self.prior)
         elif isinstance(self.prior, ParameterDistribution):
+            self.joint_prior = self.prior.distribution
+        elif isinstance(self.prior, Distribution):
             self.joint_prior = self.prior
         else:
             raise TypeError(

@@ -143,15 +143,19 @@ class TestWeightedCost:
         initial_state = {"Initial SoC": 1.0}
         parameter_values.update(
             {
-                "Positive electrode thickness [m]": pybop.Gaussian(
-                    mean=5e-05,
-                    sigma=5e-06,
-                    bounds=[2e-06, 10e-05],
+                "Positive electrode thickness [m]": pybop.ParameterDistribution(
+                    distribution=pybop.Gaussian(
+                        5e-05,
+                        5e-06,
+                        truncated_at=[2e-06, 10e-05],
+                    )
                 ),
-                "Negative electrode thickness [m]": pybop.Gaussian(
-                    mean=5e-05,
-                    sigma=5e-06,
-                    bounds=[2e-06, 10e-05],
+                "Negative electrode thickness [m]": pybop.ParameterDistribution(
+                    distribution=pybop.Gaussian(
+                        5e-05,
+                        5e-06,
+                        truncated_at=[2e-06, 10e-05],
+                    )
                 ),
             }
         )

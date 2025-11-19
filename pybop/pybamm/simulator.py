@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from pybop.parameters.parameter import Inputs
 from pybop._dataset import Dataset
 from pybop._utils import FailedSolution, RecommendedSolver
-from pybop.parameters.parameter import Parameter, Parameters
+from pybop.parameters.parameter import ParameterInfo, Parameters
 from pybop.simulators.base_simulator import (
     BaseSimulator,
 )
@@ -87,7 +87,7 @@ class Simulator(BaseSimulator):
         # Unpack the uncertain parameters from the parameter values
         parameters = Parameters()
         for name, param in parameter_values.items():
-            if isinstance(param, Parameter):
+            if isinstance(param, ParameterInfo):
                 parameters.add(name, param)
         super().__init__(parameters=parameters)
 
