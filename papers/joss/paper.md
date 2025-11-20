@@ -61,16 +61,7 @@ The Python Battery Optimisation and Parameterisation (`PyBOP`) package provides 
 
 The `pybamm.Simulator` returns a solution with corresponding sensitivities, where possible, to enable gradient-based optimisation. Bayesian inference is provided by sampler classes, which use `PINTS`-based Monte Carlo algorithms at the time of submission. In the typical workflow, the classes in \autoref{fig:classes} are constructed in sequence, from left to right. The optimisation result includes a log of the candidate parameters and corresponding cost values. Beyond convergence information, identifiability metrics are provided through Hessian approximation and Sobol sampling from the `salib` package.
 
-Beyond the core architecture, `PyBOP` provides specialised inference and optimisation features. Parameter inference from electrochemical impedance spectroscopy (EIS) simulations is handled through the `pybop.pybamm.EISSimulator`, which discretises and linearises the EIS forward model into sparse mass matrix form with an auto-differentiated Jacobian. The result is returned in the frequency domain and is compatible with the same simulator-cost interface as time-domain simulations. The currently implemented cost classes are listed in \autoref{tab:subclasses}.
-
-:List of available cost classes. \label{tab:subclasses}
-
-| Error Measures          | Likelihood Functions    |
-|:------------------------|:------------------------|
-| Sum-squared error       | Gaussian log likelihood |
-| Root-mean-squared error | Maximum a posteriori    |
-| Minkowski               |                         |
-| Sum-of-power            |                         |
+Beyond the core architecture, `PyBOP` provides specialised inference and optimisation features. Parameter inference from electrochemical impedance spectroscopy (EIS) simulations is handled through the `pybop.pybamm.EISSimulator`, which discretises and linearises the EIS forward model into sparse mass matrix form with an auto-differentiated Jacobian. The result is returned in the frequency domain and is compatible with the same cost classes as time-domain simulations.
 
 The currently available optimisation algorithms are presented in \autoref{tab:optimisers}. Note that SciPy minimize includes several gradient-based and gradient-free methods. Hereafter, point-based parameterisation and design-optimisation tasks are referred to as optimisation tasks. This simplification can be justified by comparing \autoref{eqn:parameterisation} and \autoref{eqn:design}; deterministic parameterisation is an optimisation task to minimise distance-based cost between model output and measured values.
 
