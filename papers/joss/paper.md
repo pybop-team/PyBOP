@@ -79,12 +79,12 @@ Beyond deterministic optimisers (\autoref{tab:optimisers}), `PyBOP` provides Mon
 
 : Sampling methods supported by `PyBOP`, classified according to the candidate proposal method. \label{tab:samplers}
 
-| Gradient-based    | Adaptive                   | Slicing        | Evolutionary           | Other                        |
-|:------------------|:---------------------------|:---------------|:-----------------------|:-----------------------------|
-| Monomial gamma    | Delayed rejection adaptive | Rank shrinking | Differential evolution | Metropolis random walk       |
-| No-U-turn         | Haario Bardenet            | Doubling       |                        | Emcee hammer                 |
-| Hamiltonian       | Haario                     | Stepout        |                        | Metropolis adjusted Langevin |
-| Relativistic      | Rao Blackwell              |                |                        |                              |
+| Gradient-based    | Adaptive                   | Slicing        | Other                        |
+|:------------------|:---------------------------|:---------------|:-----------------------------|
+| Monomial gamma    | Delayed rejection adaptive | Rank shrinking | Metropolis random walk       |
+| No-U-turn         | Haario Bardenet            | Doubling       | Emcee hammer                 |
+| Hamiltonian       | Haario                     | Stepout        | Metropolis adjusted Langevin |
+| Relativistic      | Rao Blackwell              |                | Differential evolution       |
 
 
 # Background
