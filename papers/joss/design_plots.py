@@ -95,11 +95,11 @@ if create_plot["gravimetric"]:
         steps=25,
         show=False,
         xaxis=dict(
-            title=dict(text="Positive electrode thickness / m", font_size=15),
+            title=dict(text="Positive electrode thickness / m", font_size=16),
             tickfont_size=15,
             exponentformat="power",
         ),
-        yaxis=dict(title_font_size=15, tickfont_size=15),
+        yaxis=dict(title_font_size=15, tickfont_size=16),
         legend=dict(
             orientation="h",
             yanchor="bottom",
@@ -121,8 +121,6 @@ if create_plot["prediction"]:
         problem,
         inputs=result.best_inputs,
         title=None,
-        width=585,
-        height=585,
         legend=dict(
             orientation="h",
             yanchor="bottom",
@@ -133,21 +131,21 @@ if create_plot["prediction"]:
         ),
         xaxis=dict(
             showline=True,
-            linewidth=2,
+            linewidth=1,
             linecolor="black",
             mirror=True,
-            title_font_size=15,
+            title_font_size=16,
             tickfont_size=15,
         ),
         yaxis=dict(
             showline=True,
-            linewidth=2,
+            linewidth=1,
             linecolor="black",
             mirror=True,
-            title_font_size=15,
+            title_font_size=16,
             tickfont_size=15,
         ),
-        margin=dict(r=50, t=50),
+        margin=dict(t=60, b=84, r=50, l=15),
         show=False,
     )
 

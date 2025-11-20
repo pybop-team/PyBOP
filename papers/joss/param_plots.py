@@ -64,12 +64,12 @@ if create_plot["simulation"]:
     simulation_plot_dict.traces[0].mode = "markers"
     simulation_fig = simulation_plot_dict(show=False)
     simulation_fig.update_layout(
-        width=595,
-        height=595,
+        width=600,
+        height=600,
         xaxis=dict(
             title=dict(text="Time / s", font_size=16),
             showline=True,
-            linewidth=2,
+            linewidth=1,
             linecolor="black",
             mirror=True,
             tickfont_size=15,
@@ -77,7 +77,7 @@ if create_plot["simulation"]:
         yaxis=dict(
             title=dict(text="Voltage / V", font_size=16),
             showline=True,
-            linewidth=2,
+            linewidth=1,
             linecolor="black",
             mirror=True,
             tickfont_size=15,
@@ -90,7 +90,7 @@ if create_plot["simulation"]:
             x=1,
             font=dict(size=15),
         ),
-        margin=dict(r=50, t=50),
+        margin=dict(t=60, b=84, r=50, l=15),
     )
     simulation_fig.show()
     simulation_fig.write_image("figures/individual/simulation.pdf")
@@ -250,13 +250,20 @@ if create_plot["minimising"]:
     convergence_fig = go.Figure(
         data=convergence_traces,
         layout=dict(
-            xaxis=dict(title=dict(text="Evaluation", font_size=16), tickfont_size=15),
+            xaxis=dict(
+                title=dict(text="Evaluation", font_size=16),
+                tickfont_size=15,
+                linewidth=1,
+                linecolor="black",
+            ),
             yaxis=dict(
                 title=dict(text="Cost", font_size=16),
                 gridcolor=px.colors.qualitative.Pastel2[7],
                 zerolinecolor=px.colors.qualitative.Pastel2[7],
                 zerolinewidth=1,
                 tickfont_size=15,
+                linewidth=1,
+                linecolor="black",
             ),
             legend=dict(
                 yanchor="top",
@@ -326,13 +333,20 @@ if create_plot["maximising"]:
     convergence_fig = go.Figure(
         data=convergence_traces,
         layout=dict(
-            xaxis=dict(title=dict(text="Evaluation", font_size=16), tickfont_size=15),
+            xaxis=dict(
+                title=dict(text="Evaluation", font_size=16),
+                tickfont_size=15,
+                linewidth=1,
+                linecolor="black",
+            ),
             yaxis=dict(
                 title=dict(text="Likelihood", font_size=18),
                 gridcolor=px.colors.qualitative.Pastel2[7],
                 zerolinecolor=px.colors.qualitative.Pastel2[7],
                 zerolinewidth=1,
                 tickfont_size=15,
+                linewidth=1,
+                linecolor="black",
             ),
             legend=dict(
                 yanchor="bottom",
@@ -484,17 +498,23 @@ if create_plot["gradient"]:
         width=480,
         height=910,
         plot_bgcolor="white",
-        xaxis=dict(title_font_size=16, tickfont_size=16),
+        xaxis=dict(
+            title_font_size=16, tickfont_size=16, linewidth=1, linecolor="black"
+        ),
         yaxis=dict(
             title=dict(text="Contact resistance / Ω", font_size=16, standoff=30),
             gridcolor=px.colors.qualitative.Pastel2[7],
             zerolinecolor=px.colors.qualitative.Pastel2[7],
             zerolinewidth=1,
             tickfont_size=16,
+            linewidth=1,
+            linecolor="black",
             range=bounds[0],
         ),
         legend=dict(yanchor="bottom", y=1.02, xanchor="left", x=-0.05, font_size=15),
-        xaxis2=dict(title_font_size=16, tickfont_size=16),
+        xaxis2=dict(
+            title_font_size=16, tickfont_size=16, linewidth=1, linecolor="black"
+        ),
         yaxis2=dict(
             title=dict(
                 text="Negative particle diffusivity / m<sup>2</sup>&#8239;s<sup>-1</sup>",
@@ -506,6 +526,8 @@ if create_plot["gradient"]:
             zerolinewidth=1,
             tickfont_size=16,
             exponentformat="power",
+            linewidth=1,
+            linecolor="black",
             range=bounds[1],
         ),
     )
@@ -566,17 +588,23 @@ if create_plot["evolution"]:
         width=480,
         height=910,
         plot_bgcolor="white",
-        xaxis=dict(title_font_size=16, tickfont_size=16),
+        xaxis=dict(
+            title_font_size=16, tickfont_size=16, linewidth=1, linecolor="black"
+        ),
         yaxis=dict(
             title=dict(text="Contact resistance / Ω", font_size=16, standoff=30),
             gridcolor=px.colors.qualitative.Pastel2[7],
             zerolinecolor=px.colors.qualitative.Pastel2[7],
             zerolinewidth=1,
             tickfont_size=16,
+            linewidth=1,
+            linecolor="black",
             range=bounds[0],
         ),
         legend=dict(yanchor="bottom", y=1.02, xanchor="left", x=-0.05, font_size=14),
-        xaxis2=dict(title_font_size=16, tickfont_size=16),
+        xaxis2=dict(
+            title_font_size=16, tickfont_size=16, linewidth=1, linecolor="black"
+        ),
         yaxis2=dict(
             title=dict(
                 text="Negative particle diffusivity / m<sup>2</sup>&#8239;s<sup>-1</sup>",
@@ -588,6 +616,8 @@ if create_plot["evolution"]:
             zerolinewidth=1,
             tickfont_size=16,
             exponentformat="power",
+            linewidth=1,
+            linecolor="black",
             range=bounds[1],
         ),
     )
@@ -671,17 +701,23 @@ if create_plot["heuristic"]:
         width=480,
         height=910,
         plot_bgcolor="white",
-        xaxis=dict(title_font_size=16, tickfont_size=16),
+        xaxis=dict(
+            title_font_size=16, tickfont_size=16, linewidth=1, linecolor="black"
+        ),
         yaxis=dict(
             title=dict(text="Contact resistance / Ω", font_size=16, standoff=30),
             gridcolor=px.colors.qualitative.Pastel2[7],
             zerolinecolor=px.colors.qualitative.Pastel2[7],
             zerolinewidth=1,
             tickfont_size=16,
+            linewidth=1,
+            linecolor="black",
             range=bounds[0],
         ),
         legend=dict(yanchor="bottom", y=1.02, xanchor="left", x=-0.05, font_size=15),
-        xaxis2=dict(title_font_size=16, tickfont_size=16),
+        xaxis2=dict(
+            title_font_size=16, tickfont_size=16, linewidth=1, linecolor="black"
+        ),
         yaxis2=dict(
             title=dict(
                 text="Negative particle diffusivity / m<sup>2</sup>&#8239;s<sup>-1</sup>",
@@ -693,6 +729,8 @@ if create_plot["heuristic"]:
             zerolinewidth=1,
             tickfont_size=16,
             exponentformat="power",
+            linewidth=1,
+            linecolor="black",
             range=bounds[1],
         ),
     )
@@ -875,11 +913,11 @@ if create_plot["eis"]:
         problem,
         result.best_inputs,
         title="",
-        width=595,
-        height=595,
-        margin=dict(r=50, t=50),
-        xaxis_title_font_size=16,
-        yaxis_title_font_size=16,
+        width=600,
+        height=600,
+        margin=dict(t=60, b=84, r=50, l=15),
+        xaxis=dict(title_font_size=16, linewidth=1),
+        yaxis=dict(title_font_size=16, linewidth=1),
     )
     parameter_fig[0].data[1].update(line=dict(color="#00CC97"))
     parameter_fig[0].write_image("figures/individual/impedance_spectrum.pdf")
