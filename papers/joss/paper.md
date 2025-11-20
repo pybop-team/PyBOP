@@ -190,6 +190,6 @@ We consider maximising gravimetric energy density subject to constraints on two 
 
 # Acknowledgements
 
-We gratefully acknowledge all [contributors](https://github.com/pybop-team/PyBOP?tab=readme-ov-file#contributors-) to `PyBOP`. This work was supported by the Faraday Institution Multiscale Modelling project (FIRG059), UKRI's Horizon Europe Guarantee (10038031), and EU IntelLiGent project (101069765).
+We gratefully acknowledge all [contributors](https://github.com/pybop-team/PyBOP/graphs/contributors) to `PyBOP`. This work was supported by the Faraday Institution Multiscale Modelling project (FIRG059), UKRI's Horizon Europe Guarantee (10038031), and EU IntelLiGent project (101069765).
 
 # References
