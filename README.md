@@ -72,6 +72,7 @@ These include a wide variety of optimisation problems that require careful consi
 Please take inspiration from the following journal articles which show how PyBOP is being used for research:
 
 - "Physics-based battery model parametrisation from impedance data" by [Hallemans et al. (2025)](https://doi.org/10.1149/1945-7111/add41b) with [open-source code and data](https://github.com/Battery-Intelligence-Lab/Hallemans-2025-JES)
+- "Transport limitations in single-crystal NCM cathode electrodes" by [Jackowska et al. (2025)](https://doi.org/10.1016/j.jpowsour.2025.238881) with [open-source code](https://github.com/Battery-Intelligence-Lab/Jackowska-2025-JPS) and [original data](https://edata.bham.ac.uk/)
 
 ### Jupyter Notebooks
 
