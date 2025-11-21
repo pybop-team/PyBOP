@@ -63,27 +63,27 @@ The `pybamm.Simulator` object returns a solution with corresponding sensitivitie
 
 Beyond the core architecture, `PyBOP` provides specialised inference and optimisation features. Parameter inference from electrochemical impedance spectroscopy (EIS) simulations is handled through  `pybop.pybamm.EISSimulator`, which discretises and linearises the EIS forward model into sparse mass matrix form with an auto-differentiated Jacobian. The result is returned in the frequency domain and is compatible with the same cost classes as in the time-domain simulations.
 
-The currently available optimisation algorithms are presented in \autoref{tab:optimisers}. Note that `SciPy minimize` includes several gradient-based and gradient-free methods. Hereafter, point-based parameterisation and design-optimisation tasks are referred to as optimisation tasks. This simplification can be justified by comparing \autoref{eqn:parameterisation} and \autoref{eqn:design}; deterministic parameterisation is an optimisation task to minimise distance-based cost between model output and measured values.
+The currently available optimisation algorithms are presented in \autoref{tab:optimisers}. Note that `SciPy` minimize includes several gradient-based and gradient-free methods. Hereafter, point-based parameterisation and design-optimisation tasks are referred to as optimisation tasks. This simplification can be justified by comparing \autoref{eqn:parameterisation} and \autoref{eqn:design}; deterministic parameterisation is an optimisation task to minimise distance-based cost between model output and measured values.
 
-: Currently supported optimisers classified by candidate solution type, including gradient information. \label{tab:optimisers}
+: Currently supported optimisers classified by optimisation type, including gradient information. \label{tab:optimisers}
 
 | Gradient-based                                    | Evolutionary                          | (Meta)heuristic      |
 |:--------------------------------------------------|:--------------------------------------|:---------------------|
 | Weight decayed adaptive moment estimation (AdamW) | Covariance matrix adaptation (CMA-ES) | Particle swarm (PSO) |
 | Gradient descent                                  | Exponential natural (xNES)            | Nelder-Mead          |
-| SciPy minimize                                    | Separable natural (sNES)              | Cuckoo search        |
-| Improved resilient backpropagation (iRProp-/+)    | SciPy differential evolution          | Simulated annealing  |
+| `SciPy` minimize                                  | Separable natural (sNES)              | Cuckoo search        |
+| Improved resilient backpropagation (iRProp-/+)    | `SciPy` differential evolution        | Simulated annealing  |
 
 
-Beyond deterministic optimisers (\autoref{tab:optimisers}), `PyBOP` provides Monte Carlo sampling routines to estimate parameter distributions within a Bayesian framework. These methods construct posterior parameter distributions that can be used to assess uncertainty and practical identifiability. Individual sampler classes are composed from the `PINTS` library, with a base sampler class implemented for interoperability and direct integration with the `Problem` class. Currently supported samplers are listed in \autoref{tab:samplers}.
+Beyond deterministic optimisers (\autoref{tab:optimisers}), `PyBOP` provides Monte Carlo sampling methods to estimate parameter distributions within a Bayesian framework. These methods estimate posterior parameter distributions that can be used to assess uncertainty and practical identifiability. Individual sampler classes are composed from the `PINTS` library, with a base sampler class implemented for interoperability and direct integration with the `Problem` class. Currently supported samplers are listed in \autoref{tab:samplers}.
 
-: Sampling methods supported by `PyBOP`, classified according to the candidate proposal method. \label{tab:samplers}
+: Sampling methods supported by `PyBOP`, classified according to candidate proposal method. \label{tab:samplers}
 
 | Gradient-based    | Adaptive                   | Slicing        | Other                        |
 |:------------------|:---------------------------|:---------------|:-----------------------------|
-| Monomial gamma    | Delayed rejection adaptive | Rank shrinking | Metropolis random walk       |
+| Monomial gamma    | Delayed rejection adaptive | Rank shrinking | Metropolis adjusted Langevin |
 | No-U-turn         | Haario Bardenet            | Doubling       | Emcee hammer                 |
-| Hamiltonian       | Haario                     | Stepout        | Metropolis adjusted Langevin |
+| Hamiltonian       | Haario                     | Stepout        | Metropolis random walk       |
 | Relativistic      | Rao Blackwell              |                | Differential evolution       |
 
 
@@ -137,7 +137,7 @@ We demonstrate the fitting of synthetic data where the model parameters are know
 
 ![Data and model fit (left) and cost landscape (right) for a frequency-domain EIS parameterisation, at 5% SOC, using the root-mean-squared error cost function. \label{fig:impedance-landscape}](figures/combined/impedance.pdf){ width=100% }
 
-We continue with time-domain identification (\autoref{fig:inference-time-landscape}), however time- and frequency-domain problems may be combined for improved parameterisation. As gradient information is available for our time-domain example, the choice of distance-based cost function and optimiser is unconstrained. Due to the difference in magnitude between the two parameters, we apply a logarithmic transformation which transforms the search space of the optimiser to allow for a common step size, improving convergence. As a demonstration of `PyBOP`'s parameterisation capabilities, \autoref{fig:convergence-min-max} (left) shows convergence rates for distance-minimising cost functions, while \autoref{fig:convergence-min-max} (right) shows analogous results for likelihood maximisation. Optimisation is performed using SciPy minimize with the gradient-based BFGS method.
+We continue with time-domain identification (\autoref{fig:inference-time-landscape}), however time- and frequency-domain problems may be combined for improved parameterisation. As gradient information is available for our time-domain example, the choice of distance-based cost function and optimiser is unconstrained. Due to the difference in magnitude between the two parameters, we apply a logarithmic transformation which transforms the search space of the optimiser to allow for a common step size, improving convergence. As a demonstration of `PyBOP`'s parameterisation capabilities, \autoref{fig:convergence-min-max} (left) shows convergence rates for distance-minimising cost functions, while \autoref{fig:convergence-min-max} (right) shows analogous results for likelihood maximisation. Optimisation is performed using `SciPy` minimize with the gradient-based BFGS method.
 
 ![Convergence of the BFGS method for various cost (left) and likelihood (right) functions. \label{fig:convergence-min-max}](figures/combined/converge.pdf){ width=100% }
 
