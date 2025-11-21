@@ -34,6 +34,9 @@ def classify_using_hessian(
     def cost(x):
         return problem.evaluate(x).values
 
+    cfd_hessian = np.full((2, 2), np.nan, dtype=float)
+    eigenvalues = np.array([np.nan, np.nan], dtype=float)
+    eigenvectors = np.full((2, 2), np.nan, dtype=float)
     n = len(x)
     if n != 2 or len(dx) != n:
         raise ValueError(
@@ -155,98 +158,39 @@ def classify_using_hessian(
 
     print(message)
 
-    try:
-        # Build a plotting span around x. adjust the multiplier if you want a wider/narrower view
-        span_multiplier = 4.0
-        span0 = (x[0] - span_multiplier * dx[0], x[0] + span_multiplier * dx[0])
-        span1 = (x[1] - span_multiplier * dx[1], x[1] + span_multiplier * dx[1])
+    # Build a plotting span around x.
+    span_multiplier = 4.0
+    span0 = (x[0] - span_multiplier * dx[0], x[0] + span_multiplier * dx[0])
+    span1 = (x[1] - span_multiplier * dx[1], x[1] + span_multiplier * dx[1])
 
-        ng = 41  # grid resolution per axis
-        param0 = np.linspace(span0[0], span0[1], ng)
-        param1 = np.linspace(span1[0], span1[1], ng)
+    ng = 41  # grid resolution per axis
+    param0 = np.linspace(span0[0], span0[1], ng)
+    param1 = np.linspace(span1[0], span1[1], ng)
 
-        # Evaluate cost on the grid
-        Z = np.empty((ng, ng), dtype=float)
-        for i in range(ng):
-            for j in range(ng):
-                p = np.array([param0[i], param1[j]], dtype=float)
-                try:
-                    Z[i, j] = float(cost(p))
-                except Exception:
-                    Z[i, j] = np.nan
+    # Evaluate cost on the grid
+    Z = np.empty((ng, ng), dtype=float)
+    for i in range(ng):
+        for j in range(ng):
+            p = np.array([param0[i], param1[j]], dtype=float)
+            try:
+                Z[i, j] = float(cost(p))
+            except Exception:
+                Z[i, j] = np.nan
 
-        # cost contour
-        fig, ax = plt.subplots(figsize=(6, 5))
-        finiteZ = Z[np.isfinite(Z)]
-        if finiteZ.size == 0:
-            ax.text(
-                0.5,
-                0.5,
-                "No finite cost values on contour grid",
-                ha="center",
-                va="center",
-            )
-        else:
-            vmin, vmax = np.nanmin(Z), np.nanmax(Z)
-            # number of contour levels
-            levels = np.linspace(vmin, vmax, 10)
-            # note: Z was filled as Z[i, j] with i along param0 and j along param1,
-            # matplotlib's contour expects x,y meshgrid order; using transpose aligns axes.
-            cs = ax.contour(param0, param1, Z.T, levels=levels)
-            ax.clabel(cs, inline=1, fontsize=8)
+    # Pack everything useful into a dictionary for plotting
+    info = {
+        "hessian_fd": cfd_hessian,
+        "eigenvalues": eigenvalues,
+        "eigenvectors": eigenvectors,
+        "x": np.asarray(x).astype(float),
+        "dx": np.asarray(dx).astype(float),
+        "names": list(names) if names is not None else None,
+        "best_cost": float(best_cost) if np.isfinite(best_cost) else best_cost,
+        "span0": span0,
+        "span1": span1,
+        "param0": param0,
+        "param1": param1,
+        "Z": Z,
+    }
 
-        ax.scatter([x[0]], [x[1]], marker="x", s=60, label="optimum")
-        ax.set_xlabel(names[0] if names is not None else "param0")
-        ax.set_ylabel(names[1] if names is not None else "param1")
-        ax.set_title("Cost contour near optimum")
-        ax.legend(loc="best")
-
-        # eigenvector figure (over same axes)
-        fig_eig, ax_eig = plt.subplots(figsize=(6, 5))
-        ax_eig.scatter([x[0]], [x[1]], marker="x", s=60, label="optimum")
-
-        span_param0_len = span0[1] - span0[0]
-        span_param1_len = span1[1] - span1[0]
-        length = 0.5 * np.sqrt(span_param0_len**2 + span_param1_len**2)
-
-        # Plot eigenvectors
-        if eigenvectors is not None and np.isfinite(eigenvectors).all():
-            for k in range(eigenvectors.shape[1]):
-                v = eigenvectors[:, k].astype(float)
-                nrm = np.linalg.norm(v)
-                if nrm < 1e-20:
-                    continue
-                vn = v / nrm
-                p_minus = x - vn * length
-                p_plus = x + vn * length
-                ax_eig.plot(
-                    [p_minus[0], p_plus[0]],
-                    [p_minus[1], p_plus[1]],
-                    linestyle="--",
-                    linewidth=1.2,
-                    label=f"eig {k} (λ={eigenvalues[k]:.3g})",
-                )
-
-        ax_eig.set_xlabel(names[0] if names is not None else "param0")
-        ax_eig.set_ylabel(names[1] if names is not None else "param0")
-        ax_eig.set_title("Hessian eigenvectors")
-        ax_eig.legend(loc="best")
-
-        # try to set same limits as contour for easy comparison
-        try:
-            ax.set_xlim(span0[0], span0[1])
-            ax.set_ylim(span1[0], span1[1])
-            ax_eig.set_xlim(span0[0], span0[1])
-            ax_eig.set_ylim(span1[0], span1[1])
-        except Exception:
-            pass
-
-        plt.show()
-
-    except Exception as e_plot:
-        try:
-            print("Plotting failed:", e_plot)
-        except Exception:
-            pass
-
-    return message
+    return message,info
