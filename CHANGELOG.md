@@ -10,6 +10,8 @@
 
 ## Bug Fixes
 
+- [#834](https://github.com/pybop-team/PyBOP/issues/834) - Finite difference calculations of the Hessian matrix are updated. A new notebbok file is added which demonstrates sensitivity analysis using SALib.
+
 ## Breaking Changes
 
 - [#829](https://github.com/pybop-team/PyBOP/pull/829) - Create `SamplingResult` and best inputs property for results.
