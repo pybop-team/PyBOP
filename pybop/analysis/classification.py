@@ -88,24 +88,37 @@ def classify_using_hessian(
         # Estimate the Hessian using fourth-order accurate central finite differences
         cfd_hessian = np.zeros((2, 2))
         cfd_hessian[0, 0] = (
-            -costs[2, 1, 1]
-            + 16 * costs[2, 1, 0]
-            - 30 * costs[1, 1, 0]
-            + 16 * costs[0, 1, 0]
-            - costs[0, 1, 1]
-        ) / 12 / (dx[0] ** 2)
+            (
+                -costs[2, 1, 1]
+                + 16 * costs[2, 1, 0]
+                - 30 * costs[1, 1, 0]
+                + 16 * costs[0, 1, 0]
+                - costs[0, 1, 1]
+            )
+            / 12
+            / (dx[0] ** 2)
+        )
         cfd_hessian[0, 1] = (
-            -(costs[2, 2, 1] - costs[2, 0, 1] + costs[0, 0, 1] - costs[0, 2, 1])
-            + 16 * (costs[2, 2, 0] - costs[2, 0, 0] + costs[0, 0, 0] - costs[0, 2, 0])
-        ) / 48 / (dx[0] * dx[1])
+            (
+                -(costs[2, 2, 1] - costs[2, 0, 1] + costs[0, 0, 1] - costs[0, 2, 1])
+                + 16
+                * (costs[2, 2, 0] - costs[2, 0, 0] + costs[0, 0, 0] - costs[0, 2, 0])
+            )
+            / 48
+            / (dx[0] * dx[1])
+        )
         cfd_hessian[1, 0] = cfd_hessian[0, 1]
         cfd_hessian[1, 1] = (
-            -costs[1, 2, 1]
-            + 16 * costs[1, 2, 0]
-            - 30 * costs[1, 1, 0]
-            + 16 * costs[1, 0, 0]
-            - costs[1, 0, 1]
-        ) / 12 / (dx[1] ** 2)
+            (
+                -costs[1, 2, 1]
+                + 16 * costs[1, 2, 0]
+                - 30 * costs[1, 1, 0]
+                + 16 * costs[1, 0, 0]
+                - costs[1, 0, 1]
+            )
+            / 12
+            / (dx[1] ** 2)
+        )
 
         # Compute the eigenvalues and sort into ascending order
         eigenvalues, eigenvectors = np.linalg.eig(cfd_hessian)
@@ -166,7 +179,13 @@ def classify_using_hessian(
         fig, ax = plt.subplots(figsize=(6, 5))
         finiteZ = Z[np.isfinite(Z)]
         if finiteZ.size == 0:
-            ax.text(0.5, 0.5, "No finite cost values on contour grid", ha="center", va="center")
+            ax.text(
+                0.5,
+                0.5,
+                "No finite cost values on contour grid",
+                ha="center",
+                va="center",
+            )
         else:
             vmin, vmax = np.nanmin(Z), np.nanmax(Z)
             # number of contour levels
@@ -188,7 +207,7 @@ def classify_using_hessian(
 
         span_param0_len = span0[1] - span0[0]
         span_param1_len = span1[1] - span1[0]
-        length = 0.5 * np.sqrt(span_param0_len ** 2 + span_param1_len ** 2)
+        length = 0.5 * np.sqrt(span_param0_len**2 + span_param1_len**2)
 
         # Plot eigenvectors
         if eigenvectors is not None and np.isfinite(eigenvectors).all():
@@ -200,8 +219,13 @@ def classify_using_hessian(
                 vn = v / nrm
                 p_minus = x - vn * length
                 p_plus = x + vn * length
-                ax_eig.plot([p_minus[0], p_plus[0]], [p_minus[1], p_plus[1]], linestyle="--",
-                            linewidth=1.2, label=f"eig {k} (λ={eigenvalues[k]:.3g})")
+                ax_eig.plot(
+                    [p_minus[0], p_plus[0]],
+                    [p_minus[1], p_plus[1]],
+                    linestyle="--",
+                    linewidth=1.2,
+                    label=f"eig {k} (λ={eigenvalues[k]:.3g})",
+                )
 
         ax_eig.set_xlabel(names[0] if names is not None else "param0")
         ax_eig.set_ylabel(names[1] if names is not None else "param0")
