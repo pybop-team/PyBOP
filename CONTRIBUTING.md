@@ -53,8 +53,8 @@ We use [Git](https://en.wikipedia.org/wiki/Git) and [GitHub](https://en.wikipedi
 ### A. Before you begin
 
 1. Create an [issue](https://guides.github.com/features/issues/) where new proposals can be discussed before any coding is done.
-2. Create a [branch](https://help.github.com/articles/creating-and-deleting-branches-within-your-repository/) of this repo (ideally on your own [fork](https://help.github.com/articles/fork-a-repo/)), where all changes will be made
-3. Download the source code onto your local system, by [cloning](https://help.github.com/articles/cloning-a-repository/) the repository (or your fork of the repository).
+2. Create a [branch](https://docs.github.com/articles/creating-and-deleting-branches-within-your-repository) of this repo (ideally on your own [fork](https://docs.github.com/articles/fork-a-repo)), where all changes will be made
+3. Download the source code onto your local system, by [cloning](https://docs.github.com/articles/cloning-a-repository) the repository (or your fork of the repository).
 4. [Install](#developer-installation) PyBOP with the developer options.
 5. [Test](#testing) if your installation worked: `nox -s unit` or `$ pytest --unit -v`.
 
@@ -64,7 +64,7 @@ You now have everything you need to start making changes!
 
 6. PyBOP is developed in [Python](https://en.wikipedia.org/wiki/Python_(programming_language)), and makes heavy use of [NumPy](https://en.wikipedia.org/wiki/NumPy) (see also [NumPy for MatLab users](https://numpy.org/doc/stable/user/numpy-for-matlab-users.html) and [Python for R users](https://rebeccabarter.com/blog/2023-09-11-from_r_to_python)).
 7. Make sure to follow our [coding style guidelines](#coding-style-guidelines).
-8. Commit your changes to your branch with [useful, descriptive commit messages](https://chris.beams.io/posts/git-commit/): Remember these are publicly visible and should still make sense a few months ahead in time. While developing, you can keep using the GitHub issue you're working on as a place for discussion. Refer to your commits when discussing specific lines of code. This is achieved by referencing the SHA-hash in the comment. An example of this looks like: `the commit 3e5c1e6 solved the issue...`
+8. Commit your changes to your branch with [useful, descriptive commit messages](https://chris.beams.io/git-commit): Remember these are publicly visible and should still make sense a few months ahead in time. While developing, you can keep using the GitHub issue you're working on as a place for discussion. Refer to your commits when discussing specific lines of code. This is achieved by referencing the SHA-hash in the comment. An example of this looks like: `the commit 3e5c1e6 solved the issue...`
 9. If you want to add a dependency on another library, or re-use code you found somewhere else, have a look at [these guidelines](#dependencies-and-reusing-code).
 
 ### C. Merging your changes with PyBOP
@@ -72,18 +72,18 @@ You now have everything you need to start making changes!
 10. [Test your code!](#testing)
 12. If you added a major new feature, perhaps it should be showcased in an [example notebook](https://github.com/pybop-team/PyBOP/tree/develop/examples/notebooks).
 13. If you've added new functionality, please add additional tests to ensure ample code coverage in PyBOP.
-13. When you feel your code is finished, or at least warrants serious discussion, create a [pull request](https://help.github.com/articles/about-pull-requests/) (PR) on [PyBOP's GitHub page](https://github.com/pybop-team/PyBOP).
+13. When you feel your code is finished, or at least warrants serious discussion, create a [pull request](https://docs.github.com/articles/about-pull-requests) (PR) on [PyBOP's GitHub page](https://github.com/pybop-team/PyBOP).
 14. Once a PR has been created, it will be reviewed by any member of the community. Changes might be suggested which you can make by simply adding new commits to the branch. When everything's finished, someone with the right GitHub permissions will merge your changes into PyBOP main repository.
 
 Finally, if you really, really, _really_ love developing PyBOP, have a look at the current [project infrastructure](#infrastructure).
 
 ## Coding style guidelines
 
-PyBOP follows the [PEP8 recommendations](https://www.python.org/dev/peps/pep-0008/) for coding style. These are very common guidelines, and community tools have been developed to check how well projects implement them.
+PyBOP follows the [PEP8 recommendations](https://peps.python.org/pep-0008/) for coding style. These are very common guidelines, and community tools have been developed to check how well projects implement them.
 
 ### Ruff
 
-We use [ruff](https://github.com/charliermarsh/ruff) to lint and ensure adherence to Python PEP standards. To manually trigger `ruff`, navigate to the PyBOP directory in a console and type
+We use [ruff](https://github.com/astral-sh/ruff) to lint and ensure adherence to Python PEP standards. To manually trigger `ruff`, navigate to the PyBOP directory in a console and type
 
 ```bash
 python -m pip install pre-commit
@@ -140,7 +140,7 @@ This allows people to (1) use PyBOP without ever importing Plotly and (2) config
 
 ### Building documentation
 
-We use [Sphinx](http://www.sphinx-doc.org/en/stable/) to build our documentation. A [Nox](https://nox.thea.codes/en/stable/index.html) session has been created to reduce the overhead when building the documentation locally. To run this session, type
+We use [Sphinx](https://www.sphinx-doc.org/en/stable/) to build our documentation. A [Nox](https://nox.thea.codes/en/stable/index.html) session has been created to reduce the overhead when building the documentation locally. To run this session, type
 
 ```bash
 nox -s docs
@@ -154,7 +154,7 @@ nox -s doctests
 
 ## Testing
 
-All code requires testing. We use the [pytest](https://docs.pytest.org/en/) package for our tests. (These tests typically just check that the code runs without error, and so, are more _debugging_ than _testing_ in a strict sense. Nevertheless, they are very useful to have!)
+All code requires testing. We use the [pytest](https://docs.pytest.org/en/stable/) package for our tests. (These tests typically just check that the code runs without error, and so, are more _debugging_ than _testing_ in a strict sense. Nevertheless, they are very useful to have!)
 
 If you have nox installed, to run unit tests, type
 
@@ -318,7 +318,7 @@ as above, and then use some of the profiling tools. In order of increasing detai
 
 ### Installation via `pip`
 
-Installation of PyBOP and its dependencies is handled via [`pip`](https://pip.pypa.io/) through the [setuptools](http://setuptools.readthedocs.io/) build-backend.
+Installation of PyBOP and its dependencies is handled via [`pip`](https://pip.pypa.io/en/stable/) through the [setuptools](https://setuptools.pypa.io/en/latest/) build-backend.
 
 Configuration files:
 
@@ -340,16 +340,16 @@ Configuration files for various GitHub actions workflow can be found in `.github
 
 ### Codecov
 
-Code coverage (how much of our code is seen by the (Linux) unit tests) is tested using [Codecov](https://docs.codecov.io/), a report is visible on https://codecov.io/gh/pybop-team/PyBOP.
+Code coverage (how much of our code is seen by the (Linux) unit tests) is tested using [Codecov](https://docs.codecov.com/docs), a report is visible on https://app.codecov.io/gh/pybop-team/PyBOP.
 
 
 ### GitHub
 
 GitHub does some magic with particular filenames. In particular:
 
-- The first page people see when they go to [our GitHub page](https://github.com/pybop-team/PyBOP) displays the contents of [README.md](https://github.com/pybop-team/PyBOP/blob/develop/README.md), which is written in the [Markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet) format. Some guidelines can be found [here](https://help.github.com/articles/about-readmes/).
-- The license for using PyBOP is stored in [LICENSE](https://github.com/pybop-team/PyBOP/blob/develop/LICENSE), and [automatically](https://help.github.com/articles/adding-a-license-to-a-repository/) linked to by GitHub.
-- This file, [CONTRIBUTING.md](https://github.com/pybop-team/PyBOP/blob/develop/CONTRIBUTING.md) is recognised as the contribution guidelines and a link is [automatically](https://github.com/blog/1184-contributing-guidelines) displayed when new issues or pull requests are created.
+- The first page people see when they go to [our GitHub page](https://github.com/pybop-team/PyBOP) displays the contents of [README.md](https://github.com/pybop-team/PyBOP/blob/develop/README.md), which is written in the [Markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet) format. Some guidelines can be found [here](https://docs.github.com/articles/about-readmes).
+- The license for using PyBOP is stored in [LICENSE](https://github.com/pybop-team/PyBOP/blob/develop/LICENSE), and [automatically](https://docs.github.com/articles/adding-a-license-to-a-repository) linked to by GitHub.
+- This file, [CONTRIBUTING.md](https://github.com/pybop-team/PyBOP/blob/develop/CONTRIBUTING.md) is recognised as the contribution guidelines and a link is [automatically](https://github.blog/2012-09-17-contributing-guidelines/) displayed when new issues or pull requests are created.
 
 ## Acknowledgements
 
