@@ -15,6 +15,8 @@ px = PlotlyManager().px
 make_subplots = PlotlyManager().make_subplots
 plt.rcParams.update({"text.usetex": True})  # Enable LaTeX
 np.random.seed(8)  # Set random seed for reproducibility
+axis_font_size = 24
+tick_font_size = 16
 
 # Choose which plots to show and save
 create_plot = {}
@@ -56,7 +58,7 @@ if create_plot["simulation"]:
         x=solution["Time [s]"].data,
         y=[corrupt_values, solution["Battery open-circuit voltage [V]"].data, values],
         trace_names=[
-            "Voltage with noise",
+            "Voltage w. noise",
             "Open-circuit voltage",
             "Voltage",
         ],
@@ -67,20 +69,20 @@ if create_plot["simulation"]:
         width=600,
         height=600,
         xaxis=dict(
-            title=dict(text="Time / s", font_size=16),
+            title=dict(text="Time / s", font_size=axis_font_size),
             showline=True,
             linewidth=1,
             linecolor="black",
             mirror=True,
-            tickfont_size=15,
+            tickfont_size=tick_font_size,
         ),
         yaxis=dict(
-            title=dict(text="Voltage / V", font_size=16),
+            title=dict(text="Voltage / V", font_size=axis_font_size),
             showline=True,
             linewidth=1,
             linecolor="black",
             mirror=True,
-            tickfont_size=15,
+            tickfont_size=tick_font_size,
         ),
         legend=dict(
             orientation="h",
@@ -88,7 +90,7 @@ if create_plot["simulation"]:
             y=1.02,
             xanchor="right",
             x=1,
-            font=dict(size=15),
+            font_size=tick_font_size,
         ),
         margin=dict(t=60, b=84, r=50, l=15),
     )
@@ -142,15 +144,16 @@ if create_plot["landscape"]:
         title=None,
         show=False,
         xaxis=dict(
-            title=dict(text="Contact resistance / Ω", font_size=16), tickfont_size=15
+            title=dict(text="Contact resistance / Ω", font_size=axis_font_size),
+            tickfont_size=tick_font_size,
         ),
         yaxis=dict(
             title=dict(
                 text="Negative particle diffusivity / m<sup>2</sup>&#8239;s<sup>-1</sup>",
-                font_size=16,
+                font_size=axis_font_size,
                 standoff=0,
             ),
-            tickfont_size=15,
+            tickfont_size=tick_font_size,
             exponentformat="power",
         ),
         legend=dict(
@@ -159,12 +162,12 @@ if create_plot["landscape"]:
             y=1.02,
             xanchor="right",
             x=1,
-            font=dict(size=15),
+            font_size=tick_font_size,
         ),
-        coloraxis_colorbar=dict(tickfont=dict(size=18)),
+        coloraxis_colorbar=dict(tickfont_size=tick_font_size),
         margin=dict(t=50),
     )
-    landscape_fig.update_traces(colorbar=dict(tickfont=dict(size=15)))
+    landscape_fig.update_traces(colorbar=dict(tickfont_size=tick_font_size))
     landscape_fig.add_trace(
         go.Scatter(
             x=[initial_value[0]],
@@ -251,17 +254,17 @@ if create_plot["minimising"]:
         data=convergence_traces,
         layout=dict(
             xaxis=dict(
-                title=dict(text="Evaluation", font_size=16),
-                tickfont_size=15,
+                title=dict(text="Evaluation", font_size=axis_font_size),
+                tickfont_size=tick_font_size,
                 linewidth=1,
                 linecolor="black",
             ),
             yaxis=dict(
-                title=dict(text="Cost", font_size=16),
+                title=dict(text="Cost", font_size=axis_font_size),
                 gridcolor=px.colors.qualitative.Pastel2[7],
                 zerolinecolor=px.colors.qualitative.Pastel2[7],
                 zerolinewidth=1,
-                tickfont_size=15,
+                tickfont_size=tick_font_size,
                 linewidth=1,
                 linecolor="black",
             ),
@@ -270,7 +273,7 @@ if create_plot["minimising"]:
                 y=0.95,
                 xanchor="right",
                 x=0.99,
-                font_size=14,
+                font_size=tick_font_size,
                 bordercolor="black",
                 borderwidth=1,
             ),
@@ -334,17 +337,17 @@ if create_plot["maximising"]:
         data=convergence_traces,
         layout=dict(
             xaxis=dict(
-                title=dict(text="Evaluation", font_size=16),
-                tickfont_size=15,
+                title=dict(text="Evaluation", font_size=axis_font_size),
+                tickfont_size=tick_font_size,
                 linewidth=1,
                 linecolor="black",
             ),
             yaxis=dict(
-                title=dict(text="Likelihood", font_size=18),
+                title=dict(text="Likelihood", font_size=axis_font_size),
                 gridcolor=px.colors.qualitative.Pastel2[7],
                 zerolinecolor=px.colors.qualitative.Pastel2[7],
                 zerolinewidth=1,
-                tickfont_size=15,
+                tickfont_size=tick_font_size,
                 linewidth=1,
                 linecolor="black",
             ),
@@ -353,7 +356,7 @@ if create_plot["maximising"]:
                 y=0.15,
                 xanchor="right",
                 x=0.99,
-                font_size=14,
+                font_size=tick_font_size,
                 bordercolor="black",
                 borderwidth=1,
             ),
@@ -456,7 +459,7 @@ if create_plot["gradient"]:
                 y=1.02,
                 xanchor="left",
                 x=-0.05,
-                font_size=1,
+                font_size=tick_font_size,
             )
         )
         parameter_fig.update_traces(dict(mode="markers"))
@@ -481,8 +484,8 @@ if create_plot["gradient"]:
             contour.update_traces(
                 showscale=(i == num_optimisers - 1),
                 colorbar=dict(
-                    title=dict(text="Cost", font=dict(size=18)),
-                    tickfont=dict(size=16),
+                    title=dict(text="Cost", font_size=axis_font_size),
+                    tickfont_size=tick_font_size,
                 ),
                 selector=dict(type="contour"),
             )
@@ -499,32 +502,42 @@ if create_plot["gradient"]:
         height=910,
         plot_bgcolor="white",
         xaxis=dict(
-            title_font_size=16, tickfont_size=16, linewidth=1, linecolor="black"
+            title_font_size=axis_font_size,
+            tickfont_size=tick_font_size,
+            linewidth=1,
+            linecolor="black",
         ),
         yaxis=dict(
-            title=dict(text="Contact resistance / Ω", font_size=16, standoff=30),
+            title=dict(
+                text="Contact resistance / Ω", font_size=axis_font_size, standoff=30
+            ),
             gridcolor=px.colors.qualitative.Pastel2[7],
             zerolinecolor=px.colors.qualitative.Pastel2[7],
             zerolinewidth=1,
-            tickfont_size=16,
+            tickfont_size=tick_font_size,
             linewidth=1,
             linecolor="black",
             range=bounds[0],
         ),
-        legend=dict(yanchor="bottom", y=1.02, xanchor="left", x=-0.05, font_size=15),
+        legend=dict(
+            yanchor="bottom", y=1.02, xanchor="left", x=-0.05, font_size=tick_font_size
+        ),
         xaxis2=dict(
-            title_font_size=16, tickfont_size=16, linewidth=1, linecolor="black"
+            title_font_size=axis_font_size,
+            tickfont_size=tick_font_size,
+            linewidth=1,
+            linecolor="black",
         ),
         yaxis2=dict(
             title=dict(
                 text="Negative particle diffusivity / m<sup>2</sup>&#8239;s<sup>-1</sup>",
-                font_size=16,
+                font_size=axis_font_size,
                 standoff=0,
             ),
             gridcolor=px.colors.qualitative.Pastel2[7],
             zerolinecolor=px.colors.qualitative.Pastel2[7],
             zerolinewidth=1,
-            tickfont_size=16,
+            tickfont_size=tick_font_size,
             exponentformat="power",
             linewidth=1,
             linecolor="black",
@@ -589,32 +602,42 @@ if create_plot["evolution"]:
         height=910,
         plot_bgcolor="white",
         xaxis=dict(
-            title_font_size=16, tickfont_size=16, linewidth=1, linecolor="black"
+            title_font_size=axis_font_size,
+            tickfont_size=tick_font_size,
+            linewidth=1,
+            linecolor="black",
         ),
         yaxis=dict(
-            title=dict(text="Contact resistance / Ω", font_size=16, standoff=30),
+            title=dict(
+                text="Contact resistance / Ω", font_size=axis_font_size, standoff=30
+            ),
             gridcolor=px.colors.qualitative.Pastel2[7],
             zerolinecolor=px.colors.qualitative.Pastel2[7],
             zerolinewidth=1,
-            tickfont_size=16,
+            tickfont_size=tick_font_size,
             linewidth=1,
             linecolor="black",
             range=bounds[0],
         ),
-        legend=dict(yanchor="bottom", y=1.02, xanchor="left", x=-0.05, font_size=14),
+        legend=dict(
+            yanchor="bottom", y=1.02, xanchor="left", x=-0.05, font_size=tick_font_size
+        ),
         xaxis2=dict(
-            title_font_size=16, tickfont_size=16, linewidth=1, linecolor="black"
+            title_font_size=axis_font_size,
+            tickfont_size=tick_font_size,
+            linewidth=1,
+            linecolor="black",
         ),
         yaxis2=dict(
             title=dict(
                 text="Negative particle diffusivity / m<sup>2</sup>&#8239;s<sup>-1</sup>",
-                font_size=16,
+                font_size=axis_font_size,
                 standoff=0,
             ),
             gridcolor=px.colors.qualitative.Pastel2[7],
             zerolinecolor=px.colors.qualitative.Pastel2[7],
             zerolinewidth=1,
-            tickfont_size=16,
+            tickfont_size=tick_font_size,
             exponentformat="power",
             linewidth=1,
             linecolor="black",
@@ -677,19 +700,27 @@ if create_plot["heuristic"]:
 
     # Update layout to configure the color bar and plot dimensions
     subplot_contour_fig.update_xaxes(
-        dict(title_font_size=12, tickfont_size=16, range=bounds[0])
+        dict(
+            title_font_size=axis_font_size,
+            tickfont_size=tick_font_size,
+            range=bounds[0],
+        )
     )
     subplot_contour_fig.update_yaxes(
-        dict(title_font_size=12, tickfont_size=16, range=bounds[1])
+        dict(
+            title_font_size=axis_font_size,
+            tickfont_size=tick_font_size,
+            range=bounds[1],
+        )
     )
     subplot_contour_fig.update_layout(
         showlegend=False,
         height=400 * 3,
         width=400 * max_optims,
     )
-    subplot_contour_fig.update_annotations(font_size=18)
+    subplot_contour_fig.update_annotations(font_size=axis_font_size)
     subplot_contour_fig.update_annotations(
-        y=-0.01, font_size=18, selector={"text": "Contact resistance / Ω"}
+        y=-0.01, font_size=axis_font_size, selector={"text": "Contact resistance / Ω"}
     )
 
     # Show figure and save image
@@ -702,32 +733,42 @@ if create_plot["heuristic"]:
         height=910,
         plot_bgcolor="white",
         xaxis=dict(
-            title_font_size=16, tickfont_size=16, linewidth=1, linecolor="black"
+            title_font_size=axis_font_size,
+            tickfont_size=tick_font_size,
+            linewidth=1,
+            linecolor="black",
         ),
         yaxis=dict(
-            title=dict(text="Contact resistance / Ω", font_size=16, standoff=30),
+            title=dict(
+                text="Contact resistance / Ω", font_size=axis_font_size, standoff=30
+            ),
             gridcolor=px.colors.qualitative.Pastel2[7],
             zerolinecolor=px.colors.qualitative.Pastel2[7],
             zerolinewidth=1,
-            tickfont_size=16,
+            tickfont_size=tick_font_size,
             linewidth=1,
             linecolor="black",
             range=bounds[0],
         ),
-        legend=dict(yanchor="bottom", y=1.02, xanchor="left", x=-0.05, font_size=15),
+        legend=dict(
+            yanchor="bottom", y=1.02, xanchor="left", x=-0.05, font_size=tick_font_size
+        ),
         xaxis2=dict(
-            title_font_size=16, tickfont_size=16, linewidth=1, linecolor="black"
+            title_font_size=axis_font_size,
+            tickfont_size=tick_font_size,
+            linewidth=1,
+            linecolor="black",
         ),
         yaxis2=dict(
             title=dict(
                 text="Negative particle diffusivity / m<sup>2</sup>&#8239;s<sup>-1</sup>",
-                font_size=16,
+                font_size=axis_font_size,
                 standoff=0,
             ),
             gridcolor=px.colors.qualitative.Pastel2[7],
             zerolinecolor=px.colors.qualitative.Pastel2[7],
             zerolinewidth=1,
-            tickfont_size=16,
+            tickfont_size=tick_font_size,
             exponentformat="power",
             linewidth=1,
             linecolor="black",
@@ -776,7 +817,7 @@ if create_plot["posteriors"]:
         formatter.set_scientific(True)  # Ensure scientific notation
         ax.xaxis.set_major_formatter(formatter)
         ax.yaxis.set_major_formatter(formatter)
-        ax.tick_params(axis="both", which="major", labelsize=14)
+        ax.tick_params(axis="both", which="major", labelsize=tick_font_size)
 
     # Subplot for parameter 0
     ax1 = fig.add_subplot(gs[0, 0])
@@ -787,10 +828,10 @@ if create_plot["posteriors"]:
         alpha=0.6,
         color="tab:blue",
     )
-    ax1.set_xlabel(r"Contact resistance / $\Omega$", fontsize=16)
-    ax1.set_ylabel("Density", fontsize=16)
+    ax1.set_xlabel(r"Contact resistance / $\Omega$", fontsize=18)
+    ax1.set_ylabel("Density", fontsize=18)
     ax1.set_ylim(0, 775)
-    ax1.tick_params(axis="both", which="major", labelsize=16)
+    ax1.tick_params(axis="both", which="major", labelsize=tick_font_size)
     ax1.axvspan(
         summary.get_summary_statistics()[("ci_lower")][0],
         summary.get_summary_statistics()[("ci_upper")][0],
@@ -810,9 +851,9 @@ if create_plot["posteriors"]:
         color="tab:red",
         label="$R_n$",
     )
-    ax2.set_xlabel(r"Negative particle diffusivity / m$^2\,$s$^{-1}$", fontsize=16)
+    ax2.set_xlabel(r"Negative particle diffusivity / m$^2\,$s$^{-1}$", fontsize=18)
     ax2.set_ylim(0, 775)
-    ax2.tick_params(axis="both", which="major", labelsize=16)
+    ax2.tick_params(axis="both", which="major", labelsize=tick_font_size)
     ax2.axvspan(
         summary.get_summary_statistics()[("ci_lower")][1],
         summary.get_summary_statistics()[("ci_upper")][1],
@@ -831,9 +872,9 @@ if create_plot["posteriors"]:
         alpha=0.6,
         color="tab:purple",
     )
-    ax3.set_xlabel("Observation Noise / V", fontsize=16)
+    ax3.set_xlabel("Observation Noise / V", fontsize=18)
     ax3.set_ylim(0, 775)
-    ax3.tick_params(axis="both", which="major", labelsize=16)
+    ax3.tick_params(axis="both", which="major", labelsize=tick_font_size)
     ax3.axvspan(
         summary.get_summary_statistics()[("ci_lower")][2],
         summary.get_summary_statistics()[("ci_upper")][2],
@@ -916,8 +957,8 @@ if create_plot["eis"]:
         width=600,
         height=600,
         margin=dict(t=60, b=84, r=50, l=15),
-        xaxis=dict(title_font_size=16, linewidth=1),
-        yaxis=dict(title_font_size=16, linewidth=1),
+        xaxis=dict(title_font_size=axis_font_size, linewidth=1),
+        yaxis=dict(title_font_size=axis_font_size, linewidth=1),
     )
     parameter_fig[0].data[1].update(line=dict(color="#00CC97"))
     parameter_fig[0].write_image("figures/individual/impedance_spectrum.pdf")
@@ -927,15 +968,16 @@ if create_plot["eis"]:
         steps=25,
         show=False,
         xaxis=dict(
-            title=dict(text="Contact resistance / Ω", font_size=16), tickfont_size=15
+            title=dict(text="Contact resistance / Ω", font_size=axis_font_size),
+            tickfont_size=tick_font_size,
         ),
         yaxis=dict(
             title=dict(
                 text="Negative particle diffusivity / m<sup>2</sup>&#8239;s<sup>-1</sup>",
-                font_size=16,
+                font_size=axis_font_size,
                 standoff=0,
             ),
-            tickfont_size=15,
+            tickfont_size=tick_font_size,
             exponentformat="power",
         ),
         legend=dict(
@@ -944,9 +986,9 @@ if create_plot["eis"]:
             y=1.02,
             xanchor="right",
             x=1,
-            font=dict(size=15),
+            font_size=tick_font_size,
         ),
-        coloraxis_colorbar=dict(tickfont=dict(size=18)),
+        coloraxis_colorbar=dict(tickfont_size=tick_font_size),
         margin=dict(t=50),
         title=None,
     )

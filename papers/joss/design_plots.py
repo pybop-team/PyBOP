@@ -10,12 +10,13 @@ from pybop.plot import PlotlyManager
 
 go = PlotlyManager().go
 np.random.seed(8)
+axis_font_size = 24
+tick_font_size = 20
 
 # Choose which plots to show and save
 create_plot = {}
 create_plot["gravimetric"] = True  # takes longer
 create_plot["prediction"] = True
-
 
 # Define model and parameter values
 model = pybamm.lithium_ion.SPMe()
@@ -85,8 +86,8 @@ optim = pybop.NelderMead(problem, options=options)
 result = optim.run()
 print(result)
 print("Estimated parameters:", result.x)
-print(f"Initial gravimetric energy density: {problem(result.x0):.2f} Wh.kg-1")
-print(f"Optimised gravimetric energy density: {problem(result.x):.2f} Wh.kg-1")
+print(f"Initial gravimetric energy density: {problem(result.x0):.1f} Wh.kg-1")
+print(f"Optimised gravimetric energy density: {problem(result.x):.1f} Wh.kg-1")
 
 if create_plot["gravimetric"]:
     # Plot the cost landscape with optimisation path
@@ -95,20 +96,22 @@ if create_plot["gravimetric"]:
         steps=25,
         show=False,
         xaxis=dict(
-            title=dict(text="Positive electrode thickness / m", font_size=16),
-            tickfont_size=15,
+            title=dict(
+                text="Positive electrode thickness / m", font_size=axis_font_size
+            ),
+            tickfont_size=tick_font_size,
             exponentformat="power",
         ),
-        yaxis=dict(title_font_size=15, tickfont_size=16),
+        yaxis=dict(title_font_size=axis_font_size, tickfont_size=tick_font_size),
         legend=dict(
             orientation="h",
             yanchor="bottom",
             y=1.02,
             xanchor="right",
             x=1,
-            font=dict(size=15),
+            font_size=tick_font_size,
         ),
-        coloraxis_colorbar=dict(tickfont=dict(size=18)),
+        coloraxis_colorbar=dict(tickfont_size=tick_font_size),
         margin=dict(t=50),
         title=None,
     )
@@ -127,23 +130,23 @@ if create_plot["prediction"]:
             y=1.02,
             xanchor="right",
             x=1,
-            font=dict(size=14),
+            font_size=tick_font_size - 2,
         ),
         xaxis=dict(
             showline=True,
             linewidth=1,
             linecolor="black",
             mirror=True,
-            title_font_size=16,
-            tickfont_size=15,
+            title_font_size=axis_font_size,
+            tickfont_size=tick_font_size,
         ),
         yaxis=dict(
             showline=True,
             linewidth=1,
             linecolor="black",
             mirror=True,
-            title_font_size=16,
-            tickfont_size=15,
+            title_font_size=axis_font_size,
+            tickfont_size=tick_font_size,
         ),
         margin=dict(t=60, b=84, r=50, l=15),
         show=False,
@@ -153,9 +156,9 @@ if create_plot["prediction"]:
     prediction_fig.data[1].update(line=dict(color="#00CC97"))
     prediction_fig.data[
         0
-    ].name = f"Initial: {problem(result.x0):.2f} W&#8239;h&#8239;kg<sup>-1</sup>"
+    ].name = f"Initial: {problem(result.x0):.1f} W&#8239;h&#8239;kg<sup>-1</sup>"
     prediction_fig.data[
         1
-    ].name = f"Optimised: {problem(result.x):.2f} W&#8239;h&#8239;kg<sup>-1</sup>"
+    ].name = f"Optimised: {problem(result.x):.1f} W&#8239;h&#8239;kg<sup>-1</sup>"
     prediction_fig.show()
     prediction_fig.write_image("figures/individual/design_prediction.pdf")
