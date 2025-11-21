@@ -1,6 +1,6 @@
 <div align="center">
 
-  <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/logo/PyBOP_logo_flat.png" alt="logo.svg" width="600" />
+  <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/logo/PyBOP_logo.svg" alt="The PyBOP logo." width="600" />
 
   # Python Battery Optimisation and Parameterisation
 
@@ -27,7 +27,11 @@ a model, problem, cost, then optimiser to defining a simulator, cost, problem, a
 To understand how to update your use of PyBOP, please take a look at the example notebooks and scripts.
 
 <p align="center">
-    <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/PyBOP-high-level.svg" alt="pybop_arch.svg" width="700" />
+    <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/PyBOP-high-level.svg" alt="A diagram showing the PyBOP logo surrounded by connections to experimental data as an input, forward simulations provided by PyBaMM, results for parameteriation and design optimisation, as well as funding bodies (the Faraday Institution, EU IntelLiGent and DigiBatt projects)." width="700" />
+</p>
+
+<p align="center">
+    <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/PyBOP_components.drawio.pdf" alt="A diagram showing the main PyBOP classes: the Simulator and Cost, which together define the optimisation Problem, and the Optimiser or Sampler which generates the Result." width="700" />
 </p>
 
 ## 💻 Installation
