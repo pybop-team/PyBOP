@@ -278,7 +278,7 @@ To understand how to update your use of PyBOP, please take a look at the example
 
 - [#322](https://github.com/pybop-team/PyBOP/pull/322) - Add `Parameters` class to store and access multiple parameters in one object (API change).
 - [#285](https://github.com/pybop-team/PyBOP/pull/285) - Drop support for Python 3.8.
-- [#251](https://github.com/pybop-team/PyBOP/pull/251) - Drop support for PyBaMM v23.5
+- [#251](https://github.com/pybop-team/PyBOP/issues/251) - Drop support for PyBaMM v23.5
 - [#236](https://github.com/pybop-team/PyBOP/issues/236) - Restructures the optimiser classes (API change).
 
 # [v24.3.1](https://github.com/pybop-team/PyBOP/tree/v24.3.1) - 2024-06-17
