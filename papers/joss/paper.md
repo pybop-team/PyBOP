@@ -166,7 +166,7 @@ To estimate the full posterior parameter distribution, however, one must use sam
 
 In general, design optimisation can be written as a constrained optimisation problem,
 \begin{equation}
-\min_{\mathbf{\theta} \in \Omega} ~ \mathcal{L}(\mathbf{\theta}) ~~~
+\min_{\mathbf{\theta} \in \Omega} ~ -\mathcal{L}(\mathbf{\theta}) ~~~
 \textrm{subject to equations (\ref{dynamics})\textrm{-}(\ref{initial_conditions}),}
 \label{eqn:design}
 \end{equation}
