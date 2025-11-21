@@ -4,9 +4,9 @@ import pytest
 import pybop
 
 
-class TestPriors:
+class TestDistributions:
     """
-    A class to test the priors.
+    A class to test the distribution.
     """
 
     pytestmark = pytest.mark.unit
@@ -31,13 +31,13 @@ class TestPriors:
     def JointDistribution2(self, Gaussian, Exponential):
         return pybop.JointDistribution(Gaussian, Exponential)
 
-    def test_base_prior(self):
+    def test_distribution_class(self):
         base = pybop.Distribution()
         assert isinstance(base, pybop.Distribution)
         with pytest.raises(NotImplementedError):
             base.logpdfS1(0.0)
 
-    def test_priors(
+    def test_distributions(
         self, Gaussian, Uniform, Exponential, JointDistribution1, JointDistribution2
     ):
         # Test pdf

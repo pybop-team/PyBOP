@@ -50,7 +50,6 @@ class Test_SPM_Parameterisation:
             "Positive electrode active material volume fraction": pybop.ParameterDistribution(
                 stats.uniform(0.3, 0.9 - 0.3),
                 initial_value=stats.uniform(0.4, 0.75 - 0.4).rvs(),
-                # no bounds
             ),
         }
 
@@ -64,7 +63,6 @@ class Test_SPM_Parameterisation:
             "Positive electrode active material volume fraction": pybop.ParameterDistribution(
                 pybop.Uniform(0.3, 0.9),
                 initial_value=stats.uniform(0.4, 0.75 - 0.4).rvs(),
-                # no bounds
             ),
         }
 

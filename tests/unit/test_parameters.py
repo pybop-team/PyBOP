@@ -33,8 +33,6 @@ class TestParameter:
         return "Negative electrode active material volume fraction"
 
     def test_parameter_construction(self, parameter):
-        # assert parameter.distribution.mean == 0.6
-        # assert parameter.distribution.std == 0.02
         assert parameter.bounds == [0.375, 0.7]
         assert parameter.initial_value == 0.6
 
@@ -262,9 +260,9 @@ class TestParameters:
         new_params = pybop.Parameters(params)
         assert name in new_params.keys()
 
-    # def test_parameters_repr(self, name, parameter):
-    #     params = pybop.Parameters({name: parameter})
-    #     assert (
-    #         repr(params)
-    #         == "Parameters(1):\n Negative electrode active material volume fraction: prior= Gaussian, loc: 0.6, scale: 0.02, value=0.6, bounds=[0.375, 0.7]"
-    #     )
+    def test_parameters_repr(self, name, parameter):
+        params = pybop.Parameters({name: parameter})
+        assert (
+            repr(params)
+            == f"Parameters(1):\n Negative electrode active material volume fraction: ParameterDistribution - Distribution: Gaussian, mean: {parameter.distribution.mean()}, standard deviation: {parameter.distribution.std()}, support: (0.375, 0.7), Initial value: 0.6"
+        )

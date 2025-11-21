@@ -198,15 +198,18 @@ class LogPosterior(LogLikelihood):
     log_likelihood : LogLikelihood
         The likelihood class of type ``LogLikelihood``.
     prior : Optional, Union[pybop.ParameterDistribution, stats.distributions.rv_frozen]
-        The prior class of type ``ParameterDistribution`` or ``stats.distributions.rv_frozen``.
-        If not provided, the prior class will be taken from the parameter priors
+        The prior class of type ``ParameterDistribution``, ``Distribution`` or ``stats.distributions.rv_frozen``.
+        If not provided, the prior class will be taken from the parameter distributions
         constructed in the `pybop.Parameters` class.
     """
 
     def __init__(
         self,
         log_likelihood: LogLikelihood,
-        prior: ParameterDistribution | stats.distributions.rv_frozen | None = None,
+        prior: ParameterDistribution
+        | stats.distributions.rv_frozen
+        | Distribution
+        | None = None,
     ):
         dataset = Dataset(log_likelihood.dataset)
         dataset.domain = log_likelihood.domain
@@ -227,7 +230,7 @@ class LogPosterior(LogLikelihood):
             self.joint_prior = self.prior
         else:
             raise TypeError(
-                "All priors must either be of type pybop.ParameterDistribution or scipy.stats.distributions.rv_frozen"
+                "All priors must either be of type pybop.ParameterDistribution, Distribution or scipy.stats.distributions.rv_frozen"
             )
 
     def __call__(

@@ -99,8 +99,6 @@ class ParameterInfo:
     ----------
     initial_value : NumericValue, optional
         Initial parameter value
-    bounds : tuple[float, float], optional
-        Parameter bounds as (lower, upper)
     transformation : Transformation, optional
         Parameter transformation
     margin : float, default=1e-4
@@ -253,6 +251,25 @@ class ParameterInfo:
 
 
 class ParameterBounds(ParameterInfo):
+    """
+    Subclass of ParameterInfo
+
+    This class accepts bounds in its constructor and sets the parameter
+    distribution to None or to a uniform distribution if both the lower
+    and the upper bound are finite.
+
+    Parameters
+    ----------
+    initial_value : NumericValue, optional
+        Initial parameter value
+    bounds : tuple[float, float], optional
+        Parameter bounds as (lower, upper)
+    transformation : Transformation, optional
+        Parameter transformation
+    margin : float, default=1e-4
+        Safety margin for bounds sampling
+    """
+
     def __init__(
         self,
         bounds: BoundsPair,
@@ -271,7 +288,7 @@ class ParameterBounds(ParameterInfo):
             self._distribution = stats.uniform(
                 loc=bounds[0], scale=bounds[1] - bounds[0]
             )
-            # Sample uniformly of no initial value provided
+            # Sample uniformly if no initial value provided
             if initial_value is None:
                 initial_value = self.sample_from_distribution()[0]
 
@@ -288,6 +305,26 @@ class ParameterBounds(ParameterInfo):
 
 
 class ParameterDistribution(ParameterInfo):
+    """
+    Subclass of ParameterInfo
+
+    This class accepts a distribution but no bounds in its constructor. The bounds are
+    set based on the support of the distribution. If a bounded version of an unbounded
+    distribution is required, this can be achieved by applying the scipy.stats.truncate
+    to a scipy.stats.rv_continuous distribution.
+
+    Parameters
+    ----------
+    initial_value : NumericValue, optional
+        Initial parameter value
+    distribution : stats.distribution.rv_frozen | Distribution
+        Distribution of the parameter
+    transformation : Transformation, optional
+        Parameter transformation
+    margin : float, default=1e-4
+        Safety margin for bounds sampling
+    """
+
     def __init__(
         self,
         distribution: stats.distributions.rv_frozen | Distribution,
@@ -719,8 +756,7 @@ class Parameters:
 
     def __repr__(self) -> str:
         param_summary = "\n".join(
-            f" {name}: initial value={param.initial_value}, bounds={param.bounds}"
-            for name, param in self._parameters.items()
+            f" {name}: {param}" for name, param in self._parameters.items()
         )
         return f"Parameters({len(self)}):\n{param_summary}"
 

@@ -40,7 +40,7 @@ problem = pybop.Problem(simulator, cost)
 
 # Construct the optimiser with 10 multistart runs
 # Each of these runs has a random starting position sampled
-# from the parameter priors
+# from the parameter distributions
 options = pybop.PintsOptions(max_iterations=50, multistart=10)
 optim = pybop.GradientDescent(problem, options=options)
 

@@ -402,7 +402,9 @@ class JointDistribution(Distribution):
             isinstance(distribution, (Distribution, stats.distributions.rv_frozen))
             for distribution in distributions
         ):
-            raise ValueError("All distributions must be instances of Distribution")
+            raise ValueError(
+                "All distributions must be instances of Distribution or scipy.stats.distributions.rv_frozen"
+            )
 
         self._n_parameters = len(distributions)
         self._distributions: list[Distribution] = [
