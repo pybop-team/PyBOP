@@ -3,8 +3,12 @@ from pybamm import Parameter
 
 import pybop
 
-# The aim of this script is to show how to systematically update
-# design parameters which depend on the optimisation parameters.
+"""
+In this example, we introduce the functionality to link parameters in the underlying
+PyBaMM model. Linking parameters can ensure correlated parameters are consistently
+updated, ensuring that physical definitions are maintained. For this example, we link
+the electrode porosity, active material volume fraction and binder fraction.
+"""
 
 # Define model
 model = pybamm.lithium_ion.SPMe()
@@ -33,11 +37,26 @@ parameter_values.update(
     check_already_exists=False,
 )
 
-# Link parameters
+# Add and link parameters
 parameter_values.update(
     {
-        "Positive electrode porosity": 1
-        - Parameter("Positive electrode active material volume fraction")
+        "Positive electrode binder fraction": 0.02,
+        "Negative electrode binder fraction": 0.02,
+    },
+    check_already_exists=False,
+)
+parameter_values.update(
+    {
+        "Positive electrode porosity": (
+            1.0
+            - Parameter("Positive electrode active material volume fraction")
+            - Parameter("Positive electrode binder fraction")
+        ),
+        "Negative electrode porosity": (
+            1.0
+            - Parameter("Negative electrode active material volume fraction")
+            - Parameter("Negative electrode binder fraction")
+        ),
     }
 )
 

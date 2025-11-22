@@ -18,17 +18,17 @@ experiment = pybamm.Experiment(
         "Rest for 20 minutes",
     ]
 )
-sol = pybamm.Simulation(
+solution = pybamm.Simulation(
     model, parameter_values=parameter_values, experiment=experiment
 ).solve()
-corrupt_values = sol["Voltage [V]"].data + np.random.normal(
-    0, sigma, len(sol["Voltage [V]"].data)
+corrupt_values = solution["Voltage [V]"].data + np.random.normal(
+    0, sigma, len(solution["Voltage [V]"].data)
 )
 dataset = pybop.Dataset(
     {
-        "Time [s]": sol.t,
-        "Current function [A]": sol["Current [A]"].data,
-        "Discharge capacity [A.h]": sol["Discharge capacity [A.h]"].data,
+        "Time [s]": solution.t,
+        "Current function [A]": solution["Current [A]"].data,
+        "Discharge capacity [A.h]": solution["Discharge capacity [A.h]"].data,
         "Voltage [V]": corrupt_values,
     }
 )
@@ -44,9 +44,7 @@ gitt_result = gitt_fit(gitt_pulse=dataset)
 
 # Plot the timeseries output
 pybop.plot.problem(
-    gitt_fit.problem,
-    inputs=gitt_result.best_inputs,
-    title="Optimised Comparison",
+    gitt_fit.problem, inputs=gitt_result.best_inputs, title="Optimised Comparison"
 )
 
 # Plot the optimisation result

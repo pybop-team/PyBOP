@@ -1,31 +1,32 @@
-import os
-
 import numpy as np
 import pybamm
 
 import pybop
 
-# Get the current directory location and convert to absolute path
-current_dir = os.path.dirname(os.path.abspath(__file__))
-dataset_path = os.path.join(
-    current_dir, "../../data/synthetic/spm_charge_discharge_75.csv"
-)
-
-# Import the synthetic dataset
-csv_data = np.loadtxt(dataset_path, delimiter=",", skiprows=1)
-dataset = pybop.Dataset(
-    {
-        "Time [s]": csv_data[:, 0],
-        "Current function [A]": csv_data[:, 1],
-        "Voltage [V]": csv_data[:, 2],
-        "Bulk open-circuit voltage [V]": csv_data[:, 3],
-    }
-)
+"""
+In this example, we introduce the Adaptive Moment Estimation with Weight Decay (AdamW)
+optimisation algorithm. This optimiser uses gradient information for trajectory and
+step-size determination.
+"""
 
 # Define model and parameter values
 model = pybamm.lithium_ion.SPM()
 parameter_values = pybamm.ParameterValues("Chen2020")
-parameter_values.set_initial_state(f"{csv_data[0, 2]} V")
+
+# Generate a synthetic dataset
+sigma = 5e-3
+t_eval = np.linspace(0, 500, 240)
+solution = pybamm.Simulation(model, parameter_values=parameter_values).solve(
+    t_eval=t_eval
+)
+dataset = pybop.Dataset(
+    {
+        "Time [s]": t_eval,
+        "Voltage [V]": solution["Voltage [V]"](t_eval)
+        + np.random.normal(0, sigma, len(t_eval)),
+        "Current function [A]": solution["Current [A]"](t_eval),
+    }
+)
 
 # Fitting parameters
 parameter_values.update(
@@ -47,9 +48,7 @@ parameter_values.update(
 simulator = pybop.pybamm.Simulator(
     model, parameter_values=parameter_values, protocol=dataset
 )
-cost = pybop.SumOfPower(
-    dataset, target=["Voltage [V]", "Bulk open-circuit voltage [V]"], p=2.5
-)
+cost = pybop.SumOfPower(dataset, p=2.5)
 problem = pybop.Problem(simulator, cost)
 
 # Set up the optimiser

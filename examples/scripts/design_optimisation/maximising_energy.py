@@ -3,14 +3,15 @@ from pybamm import Parameter
 
 import pybop
 
-# A design optimisation example loosely based on work by L.D. Couto
-# available at https://doi.org/10.1016/j.energy.2022.125966.
+"""
+A design optimisation example loosely based on work by L.D. Couto available at
+https://doi.org/10.1016/j.energy.2022.125966.
 
-# The target is to maximise the energy density over a range of
-# possible design parameter values, including for example:
-# cross-sectional area = height x width (only need change one)
-# electrode widths, particle radii, volume fractions and
-# separator width.
+The target is to maximise the energy density over a range of possible design parameter
+values, including for example:
+cross-sectional area = height x width (only need change one)
+electrode widths, particle radii, volume fractions and separator width.
+"""
 
 # Define model
 model = pybamm.lithium_ion.SPMe()
@@ -81,6 +82,8 @@ options = pybop.PintsOptions(max_iterations=10)
 optim = pybop.PSO(problem, options=options)
 result = optim.run()
 print(result)
+
+# Compare the designs
 print(f"Initial gravimetric energy density: {problem_1(result.x0):.2f} Wh.kg-1")
 print(f"Optimised gravimetric energy density: {problem_1(result.x):.2f} Wh.kg-1")
 print(f"Initial volumetric energy density: {problem_2(result.x0):.2f} Wh.m-3")

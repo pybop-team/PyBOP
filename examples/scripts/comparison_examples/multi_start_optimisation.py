@@ -3,6 +3,13 @@ import pybamm
 
 import pybop
 
+"""
+This example introduces the multi-start functionality in PyBOP. Multi-starting the
+optimisation problem allows for an increased likelihood of converging to a global
+optimal location within the search space. This is helpful for local optimisation
+algorithms such as: Gradient Descent, AdamW, IRPropMin, ScipyMinimize, etc.
+"""
+
 # Define model and parameter values
 model = pybamm.lithium_ion.SPM()
 parameter_values = pybamm.ParameterValues("Chen2020")
@@ -10,12 +17,16 @@ parameter_values = pybamm.ParameterValues("Chen2020")
 # Generate a synthetic dataset
 sigma = 0.001
 t_eval = np.arange(0, 900, 3)
-sol = pybamm.Simulation(model, parameter_values=parameter_values).solve(t_eval=t_eval)
-corrupt_values = sol["Voltage [V]"](t_eval) + np.random.normal(0, sigma, len(t_eval))
+solution = pybamm.Simulation(model, parameter_values=parameter_values).solve(
+    t_eval=t_eval
+)
+corrupt_values = solution["Voltage [V]"](t_eval) + np.random.normal(
+    0, sigma, len(t_eval)
+)
 dataset = pybop.Dataset(
     {
         "Time [s]": t_eval,
-        "Current function [A]": sol["Current [A]"](t_eval),
+        "Current function [A]": solution["Current [A]"](t_eval),
         "Voltage [V]": corrupt_values,
     }
 )
@@ -32,14 +43,13 @@ parameter_values.update(
     }
 )
 
-# Generate problem, cost function classes
+# Build the problem
 simulator = pybop.pybamm.Simulator(model, parameter_values, protocol=dataset)
 cost = pybop.RootMeanSquaredError(dataset)
 problem = pybop.Problem(simulator, cost)
 
-# Construct the optimiser with 10 multistart runs
-# Each of these runs has a random starting position sampled
-# from the parameter priors
+# Construct the optimiser with 10 multistart runs. Each of these runs has a random
+# starting position sampled from the parameter priors
 options = pybop.PintsOptions(max_iterations=50, multistart=10)
 optim = pybop.GradientDescent(problem, options=options)
 
