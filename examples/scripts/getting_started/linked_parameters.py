@@ -12,7 +12,7 @@ the electrode porosity, active material volume fraction and binder fraction.
 
 # Define model
 model = pybamm.lithium_ion.SPMe()
-pybop.pybamm.add_variable_to_model(model, "Gravimetric energy density [Wh.kg-1]")
+pybop.pybamm.add_variable_to_model(model, "Gravimetric energy density [W.h.kg-1]")
 
 # Define parameter set and additional parameters needed for the cost function
 parameter_values = pybamm.ParameterValues("Chen2020")
@@ -89,7 +89,7 @@ simulator = pybop.pybamm.Simulator(
     protocol=experiment,
     initial_state={"Initial SoC": 1.0},
 )
-cost = pybop.DesignCost(target="Gravimetric energy density [Wh.kg-1]")
+cost = pybop.DesignCost(target="Gravimetric energy density [W.h.kg-1]")
 problem = pybop.Problem(simulator, cost)
 
 # Set up the optimiser
@@ -98,8 +98,8 @@ optim = pybop.XNES(problem, options=options)
 
 # Run the optimisation
 result = optim.run()
-print(f"Initial gravimetric energy density: {problem(result.x0):.2f} Wh.kg-1")
-print(f"Optimised gravimetric energy density: {problem(result.x):.2f} Wh.kg-1")
+print(f"Initial gravimetric energy density: {problem(result.x0):.2f} W.h.kg-1")
+print(f"Optimised gravimetric energy density: {problem(result.x):.2f} W.h.kg-1")
 
 # Plot the optimisation result
 result.plot_surface()
