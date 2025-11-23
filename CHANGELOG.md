@@ -7,6 +7,7 @@
 ## Optimisations
 
 - [#816](https://github.com/pybop-team/PyBOP/pull/816) - Enable simulator multi-processing via the evaluators.
+- [#837](https://github.com/pybop-team/PyBOP/pull/837) - Update the descriptons in the example scripts and notebooks.
 
 ## Bug Fixes
 
