@@ -55,14 +55,14 @@ problem = pybop.Problem(simulator, cost)
 options = pybop.PintsOptions(
     verbose=True,
     verbose_print_rate=20,
-    max_iterations=100,
-    max_unchanged_iterations=45,
+    max_iterations=150,
+    max_unchanged_iterations=40,
 )
 optim = pybop.AdamW(problem, options=options)
 
 # Reduce the momentum influence for the reduced number of optimiser iterations
-optim.optimiser.b1 = 0.9
-optim.optimiser.b2 = 0.9
+optim.optimiser.b1 = 0.75
+optim.optimiser.b2 = 0.75
 
 # Run the optimisation
 result = optim.run()

@@ -35,10 +35,10 @@ dataset = pybop.Dataset(
 parameter_values.update(
     {
         "Negative electrode active material volume fraction": pybop.Parameter(
-            prior=pybop.Gaussian(0.6, 0.1),
+            prior=pybop.Gaussian(0.65, 0.1),
         ),
         "Positive electrode active material volume fraction": pybop.Parameter(
-            prior=pybop.Gaussian(0.6, 0.1),
+            prior=pybop.Gaussian(0.55, 0.1),
         ),
     }
 )
@@ -48,10 +48,11 @@ simulator = pybop.pybamm.Simulator(model, parameter_values, protocol=dataset)
 cost = pybop.RootMeanSquaredError(dataset)
 problem = pybop.Problem(simulator, cost)
 
-# Construct the optimiser with 10 multistart runs. Each of these runs has a random
+# Construct the optimiser with multistart. Each of these runs has a random
 # starting position sampled from the parameter priors
-options = pybop.PintsOptions(max_iterations=50, multistart=10)
+options = pybop.PintsOptions(max_iterations=150, multistart=5)
 optim = pybop.GradientDescent(problem, options=options)
+optim.optimiser.set_learning_rate(eta=0.02)
 
 # Run the optimisation
 result = optim.run()

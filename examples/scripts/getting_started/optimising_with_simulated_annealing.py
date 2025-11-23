@@ -56,14 +56,14 @@ problem = pybop.Problem(simulator, cost)
 # Set up the optimiser
 options = pybop.PintsOptions(
     verbose=True,
-    max_iterations=120,
-    max_unchanged_iterations=60,
+    max_iterations=150,
+    max_unchanged_iterations=40,
 )
 optim = pybop.SimulatedAnnealing(problem, options=options)
 
 # Update initial temperature and cooling rate to bias towards better solutions (lower exploration)
-optim.optimiser.temperature = 0.9
-optim.optimiser.cooling_rate = 0.8
+optim.optimiser.temperature = 0.01
+optim.optimiser.cooling_rate = 0.9
 
 # Run the optimisation
 result = optim.run()
