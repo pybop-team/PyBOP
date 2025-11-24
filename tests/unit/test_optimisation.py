@@ -87,7 +87,7 @@ class TestOptimisation:
                 False,
             ),
             (pybop.CuckooSearch, "Cuckoo Search", False),
-            (pybop.SNES, "Seperable Natural Evolution Strategy (SNES)", False),
+            (pybop.SNES, "Separable Natural Evolution Strategy (SNES)", False),
             (pybop.XNES, "Exponential Natural Evolution Strategy (xNES)", False),
             (pybop.PSO, "Particle Swarm Optimisation (PSO)", False),
             (pybop.IRPropMin, "iRprop-", True),
