@@ -21,10 +21,10 @@ class Distribution:
         self,
         distribution: stats.distributions.rv_frozen | None = None,
     ):
-        self._distribution = distribution
+        self.distribution = distribution
 
     def support(self):
-        return self._distribution.support()
+        return self.distribution.support()
 
     def pdf(self, x):
         """
@@ -40,10 +40,10 @@ class Distribution:
         float
             The probability density function value at x.
         """
-        if self._distribution is None:
+        if self.distribution is None:
             raise NotImplementedError
         else:
-            return self._distribution.pdf(x)
+            return self.distribution.pdf(x)
 
     def logpdf(self, x):
         """
@@ -59,10 +59,10 @@ class Distribution:
         float
             The logarithm of the probability density function value at x.
         """
-        if self._distribution is None:
+        if self.distribution is None:
             raise NotImplementedError
         else:
-            return self._distribution.logpdf(x)
+            return self.distribution.logpdf(x)
 
     def icdf(self, q):
         """
@@ -78,10 +78,10 @@ class Distribution:
         float
             The inverse cumulative distribution function value at q.
         """
-        if self._distribution is None:
+        if self.distribution is None:
             raise NotImplementedError
         else:
-            return self._distribution.ppf(q)
+            return self.distribution.ppf(q)
 
     def cdf(self, x):
         """
@@ -97,10 +97,10 @@ class Distribution:
         float
             The cumulative distribution function value at x.
         """
-        if self._distribution is None:
+        if self.distribution is None:
             raise NotImplementedError
         else:
-            return self._distribution.cdf(x)
+            return self.distribution.cdf(x)
 
     def rvs(self, size=1, random_state=None):
         """
@@ -132,10 +132,10 @@ class Distribution:
         if isinstance(size, tuple) and any(s < 1 for s in size):
             raise ValueError("size must be a tuple of positive integers")
 
-        if self._distribution is None:
+        if self.distribution is None:
             raise NotImplementedError
         else:
-            return self._distribution.rvs(size=size, random_state=random_state)
+            return self.distribution.rvs(size=size, random_state=random_state)
 
     def logpdfS1(self, x):
         """
@@ -171,7 +171,7 @@ class Distribution:
         float
             The value(s) of the first derivative at x.
         """
-        if self._distribution is None:
+        if self.distribution is None:
             raise NotImplementedError
         else:
             # Use a finite difference approximation of the gradient
@@ -206,7 +206,7 @@ class Distribution:
         float
             The mean of the distribution.
         """
-        return self._distribution.mean()
+        return self.distribution.mean()
 
     def std(self):
         """
@@ -217,7 +217,7 @@ class Distribution:
         float
             The standard deviation of the distribution.
         """
-        return self._distribution.std()
+        return self.distribution.std()
 
 
 class Gaussian(Distribution):
@@ -320,13 +320,6 @@ class Uniform(Distribution):
         Returns the mean of the distribution.
         """
         return (self.upper - self.lower) / 2
-
-    @property
-    def sigma(self):
-        """
-        Returns the standard deviation of the distribution.
-        """
-        return (self.upper - self.lower) / (2 * np.sqrt(3))
 
     def __repr__(self):
         """

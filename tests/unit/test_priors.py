@@ -121,7 +121,7 @@ class TestDistributions:
         # Test properties
         assert Uniform.mean() == (Uniform.upper - Uniform.lower) / 2
         np.testing.assert_allclose(
-            Uniform.sigma, (Uniform.upper - Uniform.lower) / (2 * np.sqrt(3)), atol=1e-8
+            Uniform.std(), (Uniform.upper - Uniform.lower) / (2 * np.sqrt(3)), atol=1e-8
         )
         assert Exponential.mean() == Exponential.scale
         assert Exponential.std() == Exponential.scale
