@@ -95,6 +95,57 @@ class TestClassification:
         logger.extend_log(x_search=[x0], x_model=[x0], cost=[problem(x0)])
         result = pybop.OptimisationResult(optim=optim, logger=logger, time=1.0)
 
+        message, info = pybop.classify_using_hessian(result)
+
+        assert isinstance(info, dict)
+        for k in (
+            "hessian_fd",
+            "eigenvalues",
+            "eigenvectors",
+            "x",
+            "dx",
+            "names",
+            "best_cost",
+            "span0",
+            "span1",
+            "param0",
+            "param1",
+            "Z",
+        ):
+            assert k in info
+        assert "hessian_fd" in info and info["hessian_fd"].shape == (2, 2)
+        assert "eigenvalues" in info and info["eigenvalues"].shape == (2,)
+        assert "eigenvectors" in info and info["eigenvectors"].shape == (2, 2)
+        assert info["x"].shape == (2,)
+        assert "Z" in info and info["Z"].ndim == 2
+        assert info["Z"].shape[0] == info["Z"].shape[1]  # grid is square
+
+        # Hessian should be finite
+        H = info["hessian_fd"]
+        assert np.isfinite(H).all()
+        assert np.allclose(H, H.T, atol=1e-8)  # finite-difference symmetry
+
+        # Eigenvalues should be sorted ascending
+        evals = info["eigenvalues"]
+        assert evals[0] <= evals[1]
+
+        # Eigenvectors should be finite
+        evecs = info["eigenvectors"]
+        assert np.isfinite(evecs).all()
+        for k in range(evecs.shape[1]):
+            nrm = np.linalg.norm(evecs[:, k])
+            assert nrm > 0.0
+
+        # Check the grid Z contains at least some finite values
+        Z = info["Z"]
+        assert np.isfinite(Z).any()
+
+        # Check p0 and p1
+        p0 = info["param0"]
+        p1 = info["param1"]
+        assert p0.min() < x[0] < p0.max()
+        assert p1.min() < x[1] < p1.max()
+
         if np.all(x == np.asarray([0.05, 0.05])):
             message, _ = pybop.classify_using_hessian(result)
             assert message == "The optimiser has located a minimum."
@@ -188,40 +239,3 @@ class TestClassification:
             "Classification cannot proceed due to infinite cost value(s)."
             " The result is near the upper bound of R0_a [Ohm]."
         )
-
-    def test_return_info_keys_and_shapes(self, simulator, dataset):
-        cost = pybop.RootMeanSquaredError(dataset)
-        problem = pybop.Problem(simulator, cost)
-        x = np.asarray([0.05, 0.05])
-        bounds = problem.parameters.get_bounds()
-        x0 = np.clip(x, bounds["lower"], bounds["upper"])
-        optim = pybop.XNES(problem)
-        logger = pybop.Logger(minimising=problem.minimising)
-        logger.iteration = 1
-        logger.extend_log(x_search=[x0], x_model=[x0], cost=[problem(x0)])
-        result = pybop.OptimisationResult(optim=optim, logger=logger, time=1.0)
-
-        _, info = pybop.classify_using_hessian(result)
-        # info must be a dict; check types and shapes
-        assert isinstance(info, dict)
-        for k in (
-            "hessian_fd",
-            "eigenvalues",
-            "eigenvectors",
-            "x",
-            "dx",
-            "names",
-            "best_cost",
-            "span0",
-            "span1",
-            "param0",
-            "param1",
-            "Z",
-        ):
-            assert k in info
-        assert info["hessian_fd"].shape == (2, 2)
-        assert info["eigenvalues"].shape == (2,)
-        assert info["eigenvectors"].shape == (2, 2)
-        assert info["x"].shape == (2,)
-        assert info["Z"].ndim == 2
-        assert info["Z"].shape[0] == info["Z"].shape[1]  # grid is square
