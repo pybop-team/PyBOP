@@ -43,6 +43,7 @@ parameter_values.update(
         "Element-1 initial overpotential [V]": 0,
     }
 )
+
 # Add definitions for R's, C's, and initial overpotentials for any additional RC elements
 parameter_values.update(
     {
@@ -52,6 +53,9 @@ parameter_values.update(
     },
     check_already_exists=False,
 )
+
+# PyBaMM wants to see capacitances, but it's better to fit time-constants, so let's introduce
+# tau1,2 to enable that
 parameter_values.update(
     {
         "tau1 [s]": parameter_values["R1 [Ohm]"] * parameter_values["C1 [F]"],
@@ -66,18 +70,25 @@ parameter_values.update(
     }
 )
 
-# Generate a synthetic dataset
+# Generate a synthetic dataset. When working with experimental observations, we wouldn't need
+# to generate synthetic data, but here it gives us a known ground-truth to work with
 sigma = 0.001
 t_eval = np.arange(0, 600, 3)
-sol = pybamm.Simulation(model, parameter_values=parameter_values).solve(t_eval=t_eval)
-corrupt_values = sol["Voltage [V]"](t_eval) + np.random.normal(0, sigma, len(t_eval))
+solution = pybamm.Simulation(model, parameter_values=parameter_values).solve(
+    t_eval=t_eval
+)
+corrupt_values = solution["Voltage [V]"](t_eval) + np.random.normal(
+    0, sigma, len(t_eval)
+)
 dataset = pybop.Dataset(
     {
         "Time [s]": t_eval,
-        "Current function [A]": sol["Current [A]"](t_eval),
+        "Current function [A]": solution["Current [A]"](t_eval),
         "Voltage [V]": corrupt_values,
     }
 )
+
+# Save the true values
 true_values = [parameter_values[p] for p in ["R0 [Ohm]", "R1 [Ohm]", "tau1 [s]"]]
 true_values.append(parameter_values.evaluate(pybamm.Parameter("C1 [F]")))
 
@@ -114,8 +125,10 @@ optim = pybop.XNES(problem, options=options)
 # Run the optimisation
 result = optim.run()
 print(result)
+
+# Compare identified to true parameter values
 print("True parameters:", true_values)
-print("Estimated parameters:", result.x.tolist() + [result.x[2] / result.x[1]])
+print("Identified parameters:", result.x.tolist() + [result.x[2] / result.x[1]])
 
 # Plot the timeseries output
 pybop.plot.problem(problem, inputs=result.best_inputs, title="Optimised Comparison")

@@ -3,6 +3,12 @@ import pybamm
 
 import pybop
 
+"""
+In this example, we present a method for full-cell stoichiometry balancing. This is
+completed by identifying the initial and maximum concentrations in each electrode
+using low-rate discharge observations.
+"""
+
 # Define model and parameter values
 model = pybamm.lithium_ion.SPM()
 parameter_values = pybamm.ParameterValues("Chen2020")
@@ -24,7 +30,7 @@ experiment = pybamm.Experiment(
         "Charge at 0.1C until 4.2V (3 min period)",
     ]
 )
-sol = pybamm.Simulation(
+solution = pybamm.Simulation(
     model, parameter_values=parameter_values, experiment=experiment
 ).solve()
 
@@ -35,11 +41,13 @@ def noisy(data, sigma):
 
 dataset = pybop.Dataset(
     {
-        "Time [s]": sol.t,
-        "Current function [A]": sol["Current [A]"].data,
-        "Voltage [V]": noisy(sol["Voltage [V]"].data, sigma),
+        "Time [s]": solution.t,
+        "Current function [A]": solution["Current [A]"].data,
+        "Voltage [V]": noisy(solution["Voltage [V]"].data, sigma),
     }
 )
+
+# Save the true values
 true_values = [
     parameter_values[p]
     for p in [
@@ -85,10 +93,13 @@ problem = pybop.Problem(simulator, cost)
 options = pybop.SciPyMinimizeOptions(maxiter=125, method="Nelder-Mead")
 optim = pybop.SciPyMinimize(problem, options=options)
 
-# Run the optimisation for Maximum Likelihood Estimate (MLE)
+# Run the optimisation
 result = optim.run()
 print(result)
-print("True values:", true_values)
+
+# Compare identified to true parameter values
+print("True parameters:", true_values)
+print("Identified parameters:", result.x)
 
 # Plot the timeseries output
 pybop.plot.problem(problem, inputs=result.best_inputs, title="Optimised Comparison")

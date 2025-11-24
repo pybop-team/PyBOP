@@ -5,6 +5,10 @@ import pybamm
 
 import pybop
 
+"""
+Example of parameter estimation using an equivalent circuit model.
+"""
+
 # Define the model
 model = pybamm.equivalent_circuit.Thevenin(options={"number of rc elements": 2})
 
@@ -54,15 +58,21 @@ parameter_values.update(
 # Generate a synthetic dataset
 sigma = 0.001
 t_eval = np.arange(0, 900, 3)
-sol = pybamm.Simulation(model, parameter_values=parameter_values).solve(t_eval=t_eval)
-corrupt_values = sol["Voltage [V]"](t_eval) + np.random.normal(0, sigma, len(t_eval))
+solution = pybamm.Simulation(model, parameter_values=parameter_values).solve(
+    t_eval=t_eval
+)
+corrupt_values = solution["Voltage [V]"](t_eval) + np.random.normal(
+    0, sigma, len(t_eval)
+)
 dataset = pybop.Dataset(
     {
         "Time [s]": t_eval,
-        "Current function [A]": sol["Current [A]"](t_eval),
+        "Current function [A]": solution["Current [A]"](t_eval),
         "Voltage [V]": corrupt_values,
     }
 )
+
+# Save the true values
 true_values = [parameter_values[p] for p in ["R0 [Ohm]", "R1 [Ohm]"]]
 
 # Fitting parameters
@@ -93,7 +103,10 @@ optim = pybop.CMAES(problem, options=options)
 # Run the optimisation
 result = optim.run()
 print(result)
-print("True values:", true_values)
+
+# Compare identified to true parameter values
+print("True parameters:", true_values)
+print("Identified parameters:", result.x)
 
 # Plot the timeseries output
 pybop.plot.problem(problem, inputs=result.best_inputs, title="Optimised Comparison")
