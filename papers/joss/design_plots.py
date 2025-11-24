@@ -20,7 +20,7 @@ create_plot["prediction"] = True
 
 # Define model and parameter values
 model = pybamm.lithium_ion.SPMe()
-pybop.pybamm.add_variable_to_model(model, "Gravimetric energy density [Wh.kg-1]")
+pybop.pybamm.add_variable_to_model(model, "Gravimetric energy density [W.h.kg-1]")
 parameter_values = pybamm.ParameterValues("Chen2020")
 pybop.pybamm.set_formation_concentrations(parameter_values)
 parameter_values.update(
@@ -75,7 +75,7 @@ simulator = pybop.pybamm.Simulator(
     protocol=experiment,
     solver=pybamm.IDAKLUSolver(atol=1e-6, rtol=1e-6),
 )
-cost = pybop.DesignCost(target="Gravimetric energy density [Wh.kg-1]")
+cost = pybop.DesignCost(target="Gravimetric energy density [W.h.kg-1]")
 problem = pybop.Problem(simulator, cost)
 
 # Set up the optimiser
@@ -86,8 +86,8 @@ optim = pybop.NelderMead(problem, options=options)
 result = optim.run()
 print(result)
 print("Estimated parameters:", result.x)
-print(f"Initial gravimetric energy density: {problem(result.x0):.1f} Wh.kg-1")
-print(f"Optimised gravimetric energy density: {problem(result.x):.1f} Wh.kg-1")
+print(f"Initial gravimetric energy density: {problem(result.x0):.1f} W.h.kg-1")
+print(f"Optimised gravimetric energy density: {problem(result.x):.1f} W.h.kg-1")
 
 if create_plot["gravimetric"]:
     # Plot the cost landscape with optimisation path
