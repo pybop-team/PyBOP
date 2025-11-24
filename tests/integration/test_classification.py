@@ -161,8 +161,9 @@ class TestClassification:
         # Check p0 and p1
         p0 = info["param0"]
         p1 = info["param1"]
-        assert p0.min() < x[0] < p0.max()
-        assert p1.min() < x[1] < p1.max()
+        x_center = info.get("x", np.asarray(x))
+        assert p0.min() < x_center[0] < p0.max()
+        assert p1.min() < x_center[1] < p1.max()
 
         if np.all(x == np.asarray([0.05, 0.05])):
             message, _ = pybop.classify_using_hessian(result)
