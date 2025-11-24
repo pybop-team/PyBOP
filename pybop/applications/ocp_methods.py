@@ -156,7 +156,7 @@ class OCPAverage(BaseApplication):
         sto_evenly_spaced = np.linspace(
             np.min(self.ocp_discharge["Stoichiometry"]),
             np.max(self.ocp_discharge["Stoichiometry"]),
-            101,
+            n_sto_points,
         )
         interpolated_dataset = pybop.Dataset(
             {
