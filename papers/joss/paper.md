@@ -11,9 +11,11 @@ authors:
   - name: Brady Planden
     orcid: 0000-0002-1082-9125
     affiliation: 1
+    equal-contrib: true
   - name: Nicola E. Courtier
     affiliation: "1, 2"
     orcid: 0000-0002-5714-1096
+    equal-contrib: true
   - name: Martin Robinson
     orcid: 0000-0002-1572-6782
     affiliation: 3
