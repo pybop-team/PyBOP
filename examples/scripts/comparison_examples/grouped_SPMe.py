@@ -4,6 +4,12 @@ import pybamm
 
 import pybop
 
+"""
+This example introduces the Grouped SPMe, a model which groups the correlated parameters
+of the Single Particle Model with Electrolyte (SPMe) into a minimum set of parameters for
+identification purposes.
+"""
+
 # Prepare figure
 layout_options = dict(
     xaxis_title="Time / s",
@@ -11,7 +17,7 @@ layout_options = dict(
 )
 plot_dict = pybop.plot.StandardPlot(layout_options=layout_options)
 
-# Unpack parameter values from Chen2020
+# Use the Chen2020 parameters
 parameter_values = pybamm.ParameterValues("Chen2020")
 
 # Fix the electrolyte diffusivity and conductivity
