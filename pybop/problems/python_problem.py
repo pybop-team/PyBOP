@@ -2,7 +2,7 @@ from collections.abc import Callable, Sequence
 
 import numpy as np
 
-from pybop import Parameters
+from pybop.parameters.parameter import Inputs, Parameters
 from pybop.problems.base_problem import Problem
 
 
@@ -46,7 +46,7 @@ class PythonProblem(Problem):
     ...     pybop_params=my_params,
     ...     weights=[1.0]
     ... )
-    >>> result = problem.run()
+    >>> result = problem.run(params)
 
     Notes
     -----
@@ -66,9 +66,9 @@ class PythonProblem(Problem):
         self._funs_with_sens = (
             tuple(funs_with_sens) if funs_with_sens is not None else None
         )
-        self._weights = weights
+        self._weights = np.asarray(weights) if weights is not None else None
 
-    def run(self) -> float:
+    def _compute_costs(self, inputs: list[Inputs]) -> np.ndarray:
         """
         Execute all standard functions with current parameters and return weighted sum.
 
@@ -77,34 +77,31 @@ class PythonProblem(Problem):
 
         Returns
         -------
-        float
-            Weighted sum of all function results
+        weighted_costs : np.ndarray
+            Weighted sum of function values as a 1D array.
 
         Raises
         ------
         RuntimeError
             If no standard functions are available (i.e., only sensitivity functions exist)
         """
-
         if self._funs is None:
             raise RuntimeError(
                 "No standard functions configured. This problem uses sensitivity functions. "
                 "Use run_with_sensitivities() instead."
             )
 
-        # Vectorised evaluation
-        try:
-            results = np.fromiter(
-                (func(self.params.get_values()) for func in self._funs),
-                dtype=np.float64,
-                count=len(self._funs),
-            )
-        except (TypeError, ValueError) as e:
-            raise RuntimeError(f"function evaluation failed: {e}") from e
+        weighted_costs = np.empty(len(inputs))
+        for i, x in enumerate(inputs):
+            val = list(x.values())
+            costs = np.asarray([float(func(val)) for func in self._funs])
+            weighted_costs[i] = np.dot(self._weights, costs)
 
-        return np.dot(results, self._weights)
+        return weighted_costs
 
-    def run_with_sensitivities(self) -> tuple[float, np.ndarray]:
+    def _compute_costs_and_sensitivities(
+        self, inputs: list[Inputs]
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Execute all sensitivity functions and return weighted results with gradients.
 
@@ -113,10 +110,12 @@ class PythonProblem(Problem):
 
         Returns
         -------
-        tuple[float, np.ndarray]
-            Tuple containing:
-            - Weighted sum of function values (float)
-            - Weighted sum of parameter gradients (np.ndarray)
+        tuple[np.ndarray, np.ndarray]
+            A tuple containing the cost and parameter sensitivities:
+
+            - value (np.ndarray): Weighted sum of function values as a 1D array
+            - sensitivities (np.ndarray): Weighted sum of parameter gradients
+              with shape (n_params,)
 
         Raises
         ------
@@ -131,20 +130,20 @@ class PythonProblem(Problem):
 
         # Pre-allocate arrays
         n_funs = len(self._funs_with_sens)
-        values = np.empty(n_funs, dtype=np.float64)
+        costs = np.empty(n_funs, dtype=np.float64)
         gradients = []
 
         # Evaluate funcs and collect results
-        try:
-            for i, func in enumerate(self._funs_with_sens):
-                val, grad = func(self.params.get_values())
-                values[i] = float(val)  # Ensure scalar
-                gradients.append(np.asarray(grad, dtype=np.float64))
-        except (TypeError, ValueError, AttributeError) as e:
-            raise RuntimeError(f"Sensitivity function evaluation failed: {e}") from e
+        values = np.fromiter(
+            inputs[0].values(), dtype=np.float64
+        )  # todo: update for multiple inputs
+        for i, func in enumerate(self._funs_with_sens):
+            cost, grad = func(values)
+            costs[i] = float(cost)  # Ensure scalar
+            gradients.append(np.asarray(grad, dtype=np.float64))
 
         # Compute weighted results
-        weighted_value = np.dot(values, self._weights)
+        weighted_costs = np.dot(costs, self._weights[:, np.newaxis])
 
         # Stack and weight gradients
         if gradients:
@@ -153,15 +152,8 @@ class PythonProblem(Problem):
         else:
             weighted_gradient = np.array([])
 
-        return weighted_value, weighted_gradient
+        return weighted_costs, weighted_gradient
 
-    def set_params(self, p: np.ndarray) -> None:
-        """
-        Sets the parameter values for simulation.
-
-        Parameters
-        ----------
-        p : np.ndarray
-            Array of parameter values
-        """
-        self.check_and_store_params(p)
+    @property
+    def has_sensitivities(self):
+        return True if self._funs_with_sens is not None else False

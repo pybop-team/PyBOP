@@ -72,9 +72,7 @@ class TestPintsSamplers:
         for p in parameters:
             builder.add_parameter(p)
         builder.add_cost(
-            pybop.costs.pybamm.NegativeGaussianLogLikelihood(
-                "Voltage [V]", "Voltage [V]", sigma=0.01
-            )
+            pybop.costs.pybamm.NegativeGaussianLogLikelihood("Voltage [V]", sigma=0.01)
         )
         return builder.build()
 
@@ -168,9 +166,7 @@ class TestPintsSamplers:
         builder.set_dataset(dataset)
         builder.add_parameter(p)
         builder.add_cost(
-            pybop.costs.pybamm.NegativeGaussianLogLikelihood(
-                "Voltage [V]", "Voltage [V]", sigma=0.01
-            )
+            pybop.costs.pybamm.NegativeGaussianLogLikelihood("Voltage [V]", sigma=0.01)
         )
         problem = builder.build()
 
@@ -226,11 +222,7 @@ class TestPintsSamplers:
         options.n_chains = chains
         options.evaluation_files = ["eval1.txt", "eval2.txt"]
         options.chain_files = ["chain1.txt", "chain2.txt"]
-        options.parallel = True
         sampler = AdaptiveCovarianceMCMC(log_posterior, options=options)
-
-        # Set parallel workers
-        sampler.set_parallel(parallel=2)
         sampler._initialise_logging()
 
         # Check if basicConfig was called with correct arguments
@@ -242,7 +234,6 @@ class TestPintsSamplers:
         expected_calls = [
             call("Using Haario-Bardenet adaptive covariance MCMC"),
             call("Generating 3 chains."),
-            call("Running in parallel with 2 worker processes."),
             call("Writing chains to chain1.txt etc."),
             call("Writing evaluations to eval1.txt etc."),
         ]
@@ -266,25 +257,6 @@ class TestPintsSamplers:
             ValueError, match="Number of iterations must be greater than 0"
         ):
             sampler.set_max_iterations(-1)
-
-    def test_set_parallel(self, log_posterior, x0, chains):
-        options = AdaptiveCovarianceMCMC.default_options()
-        options.n_chains = chains
-        sampler = AdaptiveCovarianceMCMC(log_posterior, options=options)
-
-        # Disable parallelism
-        sampler.set_parallel(False)
-        assert sampler.options.parallel is False
-        assert sampler.options.n_workers == 1
-
-        # Enable parallelism
-        sampler.set_parallel(True)
-        assert sampler.options.parallel is True
-
-        # Enable parallelism with number of workers
-        sampler.set_parallel(2)
-        assert sampler.options.parallel is True
-        assert sampler.options.n_workers == 2
 
     def test_base_chain_processor(self, log_posterior, x0):
         options = pybop.MALAMCMC.default_options()

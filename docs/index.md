@@ -13,12 +13,12 @@ Welcome to PyBOP, a Python package dedicated to the optimisation and parameteris
 ```{gallery-grid}
 :grid-columns: 1 2 2 2
 
-- header: "{fas}`bolt;pst-color-primary` Installation"
-  content: "Setting up PyBOP is straightforward. Follow our step-by-step guide to install PyBOP on your system."
-  link: "installation.html"
 - header: "{fas}`circle-half-stroke;pst-color-primary` Quick Start"
-  content: "Discover how to use PyBOP effectively. From basic tasks to advanced features, learn how to solve real-world problems with PyBOP."
+  content: "Follow our step-by-step guide to install PyBOP on your system. Discover examples that demonstrate basic tasks through to advanced features."
   link: "quick_start.html"
+- header: "{fas}`magnifying-glass;pst-color-primary` Optimisers"
+  content: "View the selection of optimisers and samplers available in PyBOP."
+  link: "optimisers.html"
 - header: "{fab}`python;pst-color-primary` Contributing"
   content: "Contribute to the PyBOP project and become a part of our growing community."
   link: "Contributing.html"
@@ -31,7 +31,8 @@ Welcome to PyBOP, a Python package dedicated to the optimisation and parameteris
 :maxdepth: 2
 :hidden:
 
-installation
 quick_start
+installation
+optimisers
 Contributing <Contributing>
 ```

@@ -1,8 +1,7 @@
 import numpy as np
 
-from pybop import Parameters
-from pybop._pybamm_eis_pipeline import PybammEISPipeline
-from pybop.parameters.parameter import Inputs
+from pybop.parameters.parameter import Inputs, Parameters
+from pybop.pipelines._pybamm_eis_pipeline import PybammEISPipeline
 from pybop.problems.base_problem import Problem
 
 
@@ -23,40 +22,32 @@ class PybammEISProblem(Problem):
         super().__init__(pybop_params=pybop_params)
         self._pipeline = eis_pipeline
         self._costs = costs
-        self._cost_weights = cost_weights
         self._fitting_data = fitting_data
-        self._compute_initial_cost_and_resample()
+        self._cost_weights = (
+            np.asarray(cost_weights) if cost_weights is not None else None
+        )
 
-    def set_params(self, p: np.ndarray) -> None:
+    def _compute_costs(self, inputs: list[Inputs]) -> np.ndarray:
         """
-        Sets the parameters for the simulation and cost function.
+        Evaluates the underlying simulation and cost function.
+
+        Returns
+        -------
+        cost : np.ndarray
+            A 1D array containing the weighted sum of cost variables for each proposal.
         """
-        self.check_and_store_params(p)
+        cost_matrix = np.empty((len(self._costs), len(inputs)))
 
-        # rebuild the pipeline (if needed)
-        self._pipeline.pybamm_pipeline.rebuild(self._params.to_dict())
+        for i, x in enumerate(inputs):
+            res = self._pipeline.solve(x) - self._fitting_data
 
-        # Initialise the pipeline
-        self._pipeline.initialise_eis_pipeline()
+            # Weighted cost w/ new axis to ensure the returned object is np.ndarray
+            cost_matrix[:, i] = [cost(res) for cost in self._costs]
 
-    def run(self) -> float:
-        """
-        Evaluates the underlying simulation and cost function using the
-        parameters set in the previous call to `set_params`.
-        """
-        self.check_set_params_called()
+        return self._cost_weights @ cost_matrix
 
-        # run simulation
-        res = self._pipeline.solve() - self._fitting_data
-
-        return np.dot(self._cost_weights, [cost(res) for cost in self._costs])
-
-    def simulate(self, inputs: Inputs) -> np.ndarray:
-        for key, value in inputs.items():
-            self._pipeline.pybamm_pipeline.parameter_values[key] = value
-        self._pipeline.pybamm_pipeline.build()
-        self._pipeline.initialise_eis_pipeline()
-        return self._pipeline.solve()
+    def simulate(self, inputs: Inputs | list[Inputs]) -> np.ndarray:
+        return self._pipeline.solve(inputs)
 
     @property
     def pipeline(self):
@@ -65,3 +56,7 @@ class PybammEISProblem(Problem):
     @property
     def fitting_data(self):
         return self._fitting_data
+
+    @property
+    def has_sensitivities(self):
+        return False

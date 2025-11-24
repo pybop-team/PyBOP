@@ -1,217 +1,342 @@
 import warnings
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from scipy.interpolate import griddata
 
-from pybop import BaseOptimiser, Problem
 from pybop.plot.plotly_manager import PlotlyManager
+from pybop.problems.base_problem import Problem
+
+if TYPE_CHECKING:
+    from pybop._result import OptimisationResult
 
 
-def contour(
-    call_object: Problem | BaseOptimiser,
-    gradient: bool = False,
-    bounds: np.ndarray | None = None,
-    apply_transform: bool = False,
-    steps: int = 10,
-    show: bool = True,
-    use_optim_log: bool = False,
-    **layout_kwargs,
-):
+@dataclass
+class ContourConfig:
+    """Container for contour config"""
+
+    gradient: bool = (False,)
+    bounds: np.ndarray | None = (None,)
+    apply_transform: bool = (False,)
+    steps: int = (10,)
+    show: bool = (True,)
+    use_optim_log: bool = (False,)
+
+
+@dataclass
+class PlotData:
+    """Container for plot data."""
+
+    x: np.ndarray
+    y: np.ndarray
+    costs: np.ndarray
+    bounds: np.ndarray
+    parameter_names: list[str]
+    gradients: np.ndarray | None = None
+
+
+class ContourPlotter:
     """
-    Plot a 2D visualisation of a cost landscape using Plotly.
-
-    This function generates a contour plot representing the cost landscape for a provided
-    callable cost function over a grid of parameter values within the specified bounds.
-
-    Parameters
-    ----------
-    call_object : Union([pybop.BaseCost, pybop.BaseOptimiser, pybop.Problem])
-        Either:
-        - the cost function to be evaluated. Must accept a list of parameter values and return a cost value.
-        - an Optimisation object which provides a specific optimisation trace overlaid on the cost landscape.
-    gradient : bool, optional
-        If True, the gradient is shown (default: False).
-    bounds : numpy.ndarray, optional
-        A 2x2 array specifying the [min, max] bounds for each parameter. If None, uses
-        `parameters.bounds_as_numpy`.
-    apply_transform : bool, optional
-        Uses the transformed parameter values (as seen by the optimiser) for plotting.
-    steps : int, optional
-        The number of grid points to divide the parameter space into along each dimension (default: 10).
-    show : bool, optional
-        If True, the figure is shown upon creation (default: True).
-    use_optim_log : bool, optional
-        If True, the optimisation log is used to shape the cost landscape (default: False).
-    **layout_kwargs : optional
-        Valid Plotly layout keys and their values,
-        e.g. `xaxis_title="Time [s]"` or
-        `xaxis={"title": "Time [s]", font={"size":14}}`
-
-    Returns
-    -------
-    plotly.graph_objs.Figure
-        The Plotly figure object containing the cost landscape plot.
-
-    Raises
-    ------
-    ValueError
-        If the cost function does not return a valid cost when called with a parameter list.
+    A class for contour plots.
     """
-    if isinstance(call_object, BaseOptimiser):
-        optim = call_object
-        problem = optim.problem
-    elif isinstance(call_object, Problem):
-        problem = call_object
-        optim = None
-    else:
-        raise TypeError(
-            "The `call_object` must be a pybop.Problem or pybop.BaseOptimiser instance."
-        )
-    parameters = problem.params
-    names = list(parameters.keys())
-    additional_values = []
 
-    if len(parameters) < 2:
-        raise ValueError("This problem takes fewer than 2 parameters.")
+    def __init__(self, problem: Problem, result: "OptimisationResult" = None):
+        self.problem = problem
+        self.result = result
+        self.params = self.problem.params
+        self.parameter_names = list(self.params.keys())
+        self._additional_params = []
+        self._parameter_objects_cache = None
+        self._validate_parameters()
 
-    if len(parameters) > 2:
-        warnings.warn(
-            "This problem requires more than 2 parameters. "
-            "Plotting in 2d with fixed values for the additional parameters.",
-            UserWarning,
-            stacklevel=2,
-        )
-        for (
-            i,
-            param,
-        ) in enumerate(parameters):
-            if i > 1:
-                additional_values.append(param.current_value)
-                print(f"Fixed {param.name}:", param.current_value)
+    def _validate_parameters(
+        self,
+    ):
+        """Validate parameter dimensions"""
+        if len(self.params) < 2:
+            raise ValueError("This problem takes fewer than 2 parameters.")
 
-    # Set up parameter bounds
-    if bounds is None:
-        bounds = parameters.get_bounds_array()
-
-    # Generate grid
-    x = np.linspace(bounds[0, 0], bounds[0, 1], steps)
-    y = np.linspace(bounds[1, 0], bounds[1, 1], steps)
-
-    # Initialize cost matrix
-    costs = np.zeros((len(y), len(x)))
-
-    grads = []
-    grad_parameter_costs = []
-    if gradient:
-        # Determine the number of gradient outputs from cost.compute
-        num_gradients = len(parameters)
-
-        # Create an array to hold each gradient output
-        grads = [np.zeros((len(y), len(x))) for _ in range(num_gradients)]
-
-    # Populate cost matrix
-    for i, xi in enumerate(x):
-        for j, yj in enumerate(y):
-            p = np.asarray([xi, yj] + additional_values)
-            problem.set_params(p)
-            if gradient:
-                costs[j, i], (*current_grads,) = problem.run_with_sensitivities()
-                for k, grad_output in enumerate(current_grads):
-                    grads[k][j, i] = grad_output
-            else:
-                costs[j, i] = problem.run()
-
-    # Append the arrays to the grad_parameter_costs list
-    if gradient:
-        grad_parameter_costs.extend(grads)
-
-    if optim is not None and use_optim_log:
-        # Flatten the cost matrix and parameter values
-        flat_x = np.tile(x, len(y))
-        flat_y = np.repeat(y, len(x))
-        flat_costs = costs.flatten()
-
-        # Append the optimisation trace to the data
-        parameter_log = np.asarray(optim.log.x_model)
-        flat_x = np.concatenate((flat_x, parameter_log[:, 0]))
-        flat_y = np.concatenate((flat_y, parameter_log[:, 1]))
-        flat_costs = np.concatenate((flat_costs, optim.log.cost))
-
-        # Order the parameter values and estimate the cost using interpolation
-        x = np.unique(flat_x)
-        y = np.unique(flat_y)
-        xf, yf = np.meshgrid(x, y)
-        costs = griddata((flat_x, flat_y), flat_costs, (xf, yf), method="linear")
-
-    # Apply any transformation if requested
-    def transform_array_of_values(list_of_values, parameter):
-        """Apply transformation if requested."""
-        if apply_transform:
-            return np.asarray(
-                [parameter.transformation.to_search(value) for value in list_of_values]
-            ).flatten()
-        return list_of_values
-
-    x = transform_array_of_values(x, parameters[names[0]])
-    y = transform_array_of_values(y, parameters[names[1]])
-    bounds[0] = transform_array_of_values(bounds[0], parameters[names[0]])
-    bounds[1] = transform_array_of_values(bounds[1], parameters[names[1]])
-
-    # Import plotly only when needed
-    go = PlotlyManager().go
-
-    # Set default layout properties
-    layout_options = dict(
-        title="Cost Landscape",
-        title_x=0.5,
-        title_y=0.905,
-        width=600,
-        height=600,
-        xaxis=dict(range=bounds[0], showexponent="last", exponentformat="e"),
-        yaxis=dict(range=bounds[1], showexponent="last", exponentformat="e"),
-        legend=dict(orientation="h", yanchor="bottom", y=1, xanchor="right", x=1),
-    )
-    layout_options["xaxis_title"] = (
-        "Transformed " + names[0] if apply_transform else names[0]
-    )
-    layout_options["yaxis_title"] = (
-        "Transformed " + names[1] if apply_transform else names[1]
-    )
-    layout = go.Layout(layout_options)
-
-    # Create contour plot and update the layout
-    fig = go.Figure(
-        data=[go.Contour(x=x, y=y, z=costs, colorscale="Viridis", connectgaps=True)],
-        layout=layout,
-    )
-
-    if optim is not None:
-        # Plot the optimisation trace
-        optim_trace = np.asarray([item[:2] for item in optim.log.x_model])
-        optim_trace = optim_trace.reshape(-1, 2)
-
-        fig.add_trace(
-            go.Scatter(
-                x=transform_array_of_values(optim_trace[:, 0], parameters[names[0]]),
-                y=transform_array_of_values(optim_trace[:, 1], parameters[names[1]]),
-                mode="markers",
-                marker=dict(
-                    color=[i / len(optim_trace) for i in range(len(optim_trace))],
-                    colorscale="Greys",
-                    size=8,
-                    showscale=False,
-                ),
-                showlegend=False,
+        if len(self.params) > 2:
+            warnings.warn(
+                f"Problem has {len(self.params)} parameters. "
+                "Plotting in 2d with fixed values for the additional parameters.",
+                UserWarning,
+                stacklevel=2,
             )
+            self._log_fixed_params()
+
+    def _log_fixed_params(self):
+        """Log fixed parameters."""
+        for i, param in enumerate(self.params):
+            if i > 1:
+                print(f"Fixed {param.name}:", param.current_value)
+            self._additional_params = self.parameter_names[2:]
+
+    def _get_bounds(
+        self, bounds_tuple: tuple[tuple[float, float], ...] | None
+    ) -> np.ndarray:
+        """Get bounds array"""
+        if bounds_tuple is not None:
+            return np.array(bounds_tuple)
+        return self.params.get_bounds_array()
+
+    def _create_parameter_grid(
+        self, bounds: np.ndarray, steps: int
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Create a grid of parameter values for evaluation.
+
+        Returns x_values, y_values, and coordinates
+        """
+        x_values = np.linspace(bounds[0, 0], bounds[0, 1], steps)
+        y_values = np.linspace(bounds[1, 0], bounds[1, 1], steps)
+        vals = [self.params[param].current_value for param in self._additional_params]
+
+        # Create a mesh and append fixed parameters to generate coords.
+        x_mesh, y_mesh = np.meshgrid(x_values, y_values, indexing="ij")
+        vals = [np.ones(x_mesh.size) * val for val in vals]
+        coordinates = np.stack([x_mesh.ravel(), y_mesh.ravel(), *vals], axis=1)
+
+        return x_values, y_values, coordinates
+
+    def _evaluate_cost_function(
+        self, coordinates: np.ndarray, compute_gradients: bool
+    ) -> tuple[np.ndarray, list[np.ndarray] | None]:
+        """Evaluate the cost function over the parameter grid."""
+
+        # Todo: transform gradient with corresponding parameter transformations
+        if compute_gradients:
+            costs, grad = self.problem.run_with_sensitivities(coordinates)
+            return costs, grad
+        else:
+            costs = self.problem.run(coordinates)
+            return costs, None
+
+    def _interpolate_with_optimisation_log(
+        self, x_values: np.ndarray, y_values: np.ndarray, costs: np.ndarray, steps: int
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Interpolate cost surface using optimisation log data."""
+        if self.result is None:
+            return x_values, y_values, costs
+
+        # Pre-allocate arrays
+        param_log = np.asarray(self.result.x_model)
+
+        # Create a meshgrid
+        x_indices, y_indices = np.meshgrid(
+            np.arange(steps), np.arange(steps), indexing="ij"
+        )
+        flat_x = x_values[x_indices.ravel()]
+        flat_y = y_values[y_indices.ravel()]
+        flat_costs = costs.ravel()
+
+        # Concatenate with the optimisation log
+        combined_x = np.concatenate([flat_x, param_log[:, 0]])
+        combined_y = np.concatenate([flat_y, param_log[:, 1]])
+        combined_costs = np.concatenate([flat_costs, self.result.cost])
+
+        # Create a mesh for interpolating costs
+        unique_x = np.unique(combined_x)
+        unique_y = np.unique(combined_y)
+        mesh_x, mesh_y = np.meshgrid(unique_x, unique_y, indexing="ij")
+
+        interpolated_costs = griddata(
+            (combined_x, combined_y), combined_costs, (mesh_x, mesh_y), method="linear"
         )
 
-        # Plot the initial guess
-        if optim.log.x0 is not None:
-            x0 = optim.log.x0
+        return unique_x, unique_y, interpolated_costs
+
+    def _get_parameter_objects(self) -> tuple:
+        """Get parameter objects with caching."""
+        if self._parameter_objects_cache is None:
+            self._parameter_objects_cache = (
+                self.params[self.parameter_names[0]],
+                self.params[self.parameter_names[1]],
+            )
+        return self._parameter_objects_cache
+
+    def _apply_parameter_transformation_vectorised(
+        self, values: np.ndarray, parameter_index: int, apply_transform: bool
+    ) -> np.ndarray:
+        """Apply parameter transformation using vectorised operations."""
+        if not apply_transform:
+            return values
+
+        param_obj = self._get_parameter_objects()[parameter_index]
+
+        # List comprehension for common dimension
+        if len(values) == 1:
+            return np.array([param_obj.transformation.to_search(values[0])])
+
+        # Alternative vectorized implementation
+        vectorised_transform = np.vectorize(param_obj.transformation.to_search)
+        return vectorised_transform(values)
+
+    def _prepare_plot_data(self, config: ContourConfig) -> PlotData:
+        """Prepare all data needed for plotting."""
+        # Convert bounds to tuple for caching if provided
+        bounds_tuple = None
+        if config.bounds is not None:
+            bounds_tuple = tuple(tuple(row) for row in config.bounds)
+
+        bounds = self._get_bounds(bounds_tuple)
+
+        # Create parameter grid
+        x_values, y_values, coordinates = self._create_parameter_grid(
+            bounds, config.steps
+        )
+
+        # Evaluate cost function and reshape
+        costs, gradients = self._evaluate_cost_function(coordinates, config.gradient)
+        costs = costs.reshape(
+            config.steps, config.steps, order="F"
+        )  # Column-major reshape
+
+        # Apply optimisation log interpolation if requested
+        if config.use_optim_log and self.result is not None:
+            x_values, y_values, costs = self._interpolate_with_optimisation_log(
+                x_values, y_values, costs, config.steps
+            )
+
+        x_transformed = self._apply_parameter_transformation_vectorised(
+            x_values, 0, config.apply_transform
+        )
+        y_transformed = self._apply_parameter_transformation_vectorised(
+            y_values, 1, config.apply_transform
+        )
+
+        # Transform bounds
+        bounds_transformed = bounds.copy()
+        if config.apply_transform:
+            bounds_transformed[0] = self._apply_parameter_transformation_vectorised(
+                bounds[0], 0, True
+            )
+            bounds_transformed[1] = self._apply_parameter_transformation_vectorised(
+                bounds[1], 1, True
+            )
+
+        # Process gradients
+        processed_gradients = None
+        if gradients is not None:
+            target_shape = (config.steps, config.steps)
+            processed_gradients = [
+                grad.reshape(target_shape)
+                for grad in np.hsplit(gradients, len(self.params))
+            ]
+
+        return PlotData(
+            x=x_transformed,
+            y=y_transformed,
+            costs=costs,
+            bounds=bounds_transformed,
+            parameter_names=self.parameter_names,
+            gradients=processed_gradients,
+        )
+
+    def _create_base_layout(
+        self, plot_data: PlotData, config: ContourConfig
+    ) -> dict[str, Any]:
+        """Create the base layout configuration for plots."""
+        names = plot_data.parameter_names
+        x_label = f"Transformed {names[0]}" if config.apply_transform else names[0]
+        y_label = f"Transformed {names[1]}" if config.apply_transform else names[1]
+
+        return {
+            "title": "Cost Landscape",
+            "title_x": 0.5,
+            "title_y": 0.905,
+            "width": 600,
+            "height": 600,
+            "xaxis": {
+                "title": x_label,
+                "range": plot_data.bounds[
+                    0
+                ].tolist(),  # Convert to list for JSON serialisation
+                "showexponent": "last",
+                "exponentformat": "e",
+            },
+            "yaxis": {
+                "title": y_label,
+                "range": plot_data.bounds[1].tolist(),
+                "showexponent": "last",
+                "exponentformat": "e",
+            },
+            "legend": {
+                "orientation": "h",
+                "yanchor": "bottom",
+                "y": 1,
+                "xanchor": "right",
+                "x": 1,
+            },
+        }
+
+    def _extract_optimisation_data(self) -> tuple:
+        """Extract optimisation data once for reuse."""
+        if self.result is None:
+            return None, None, None
+
+        # Extract trace data
+        trace_array = np.asarray([item[:2] for item in self.result.x_model])
+        trace_data = trace_array.reshape(-1, 2)
+
+        # Extract initial guess
+        initial_guess = np.array(self.result.x0[:2])
+
+        # Extract final values
+        final_values = np.array(self.result.x[:2])
+
+        return trace_data, initial_guess, final_values
+
+    def _add_optimisation_traces(self, fig, config: ContourConfig) -> None:
+        """Add optimisation traces to the figure."""
+        trace_data, initial_guess, final_values = self._extract_optimisation_data()
+
+        if trace_data is None and initial_guess is None and final_values is None:
+            return
+
+        go = PlotlyManager().go
+
+        # Add optimisation path
+        if trace_data is not None:
+            x_trace = self._apply_parameter_transformation_vectorised(
+                trace_data[:, 0], 0, config.apply_transform
+            )
+            y_trace = self._apply_parameter_transformation_vectorised(
+                trace_data[:, 1], 1, config.apply_transform
+            )
+
+            # Pre-compute color scale
+            n_points = len(trace_data)
+            colors = np.linspace(0, 1, n_points)
+
             fig.add_trace(
                 go.Scatter(
-                    x=transform_array_of_values([x0[0]], parameters[names[0]]),
-                    y=transform_array_of_values([x0[1]], parameters[names[1]]),
+                    x=x_trace,
+                    y=y_trace,
+                    mode="markers",
+                    marker=dict(
+                        color=colors,
+                        colorscale="Greys",
+                        size=8,
+                        showscale=False,
+                    ),
+                    showlegend=False,
+                )
+            )
+
+        # Add initial guess marker
+        if initial_guess is not None:
+            x0_transformed = self._apply_parameter_transformation_vectorised(
+                initial_guess[0:1], 0, config.apply_transform
+            )
+            y0_transformed = self._apply_parameter_transformation_vectorised(
+                initial_guess[1:2], 1, config.apply_transform
+            )
+
+            fig.add_trace(
+                go.Scatter(
+                    x=x0_transformed,
+                    y=y0_transformed,
                     mode="markers",
                     marker_symbol="x",
                     marker=dict(
@@ -225,16 +350,19 @@ def contour(
                 )
             )
 
-        # Plot optimised value
-        if optim.log.last_x_model_best is not None:
+        # Add final optimised value marker
+        if final_values is not None:
+            final_x_transformed = self._apply_parameter_transformation_vectorised(
+                final_values[0:1], 0, config.apply_transform
+            )
+            final_y_transformed = self._apply_parameter_transformation_vectorised(
+                final_values[1:2], 1, config.apply_transform
+            )
+
             fig.add_trace(
                 go.Scatter(
-                    x=transform_array_of_values(
-                        [optim.log.last_x_model_best[0]], parameters[names[0]]
-                    ),
-                    y=transform_array_of_values(
-                        [optim.log.last_x_model_best[1]], parameters[names[1]]
-                    ),
+                    x=final_x_transformed,
+                    y=final_y_transformed,
                     mode="markers",
                     marker_symbol="cross",
                     marker=dict(
@@ -248,33 +376,163 @@ def contour(
                 )
             )
 
-    # Update the layout and display the figure
-    fig.update_layout(**layout_kwargs)
-    if show:
-        fig.show()
+    def _create_gradient_figures(
+        self,
+        plot_data: PlotData,
+        base_layout: dict[str, Any],
+        **layout_kwargs,
+    ) -> list[Any]:
+        """Create gradient figures if gradients are available."""
+        if plot_data.gradients is None:
+            return []
 
-    if gradient:
-        grad_figs = []
-        for i, grad_costs in enumerate(grad_parameter_costs):
-            # Update title for gradient plots
-            updated_layout_options = layout_options.copy()
-            updated_layout_options["title"] = f"Gradient for Parameter: {i + 1}"
+        go = PlotlyManager().go
+        gradient_figures = []
 
-            # Create contour plot with updated layout options
-            grad_layout = go.Layout(updated_layout_options)
+        # Pre-create layout copies
+        for i, gradient_data in enumerate(plot_data.gradients):
+            layout = base_layout.copy()
+            layout["title"] = f"Gradient for Parameter: {i + 1}"
 
-            # Create fig
-            grad_fig = go.Figure(
-                data=[go.Contour(x=x, y=y, z=grad_costs)], layout=grad_layout
+            fig = go.Figure(
+                data=[
+                    go.Contour(
+                        x=plot_data.x,
+                        y=plot_data.y,
+                        z=gradient_data,
+                        colorscale="Viridis",
+                        connectgaps=True,
+                    )
+                ],
+                layout=go.Layout(layout),
             )
-            grad_fig.update_layout(**layout_kwargs)
 
-            if show:
-                grad_fig.show()
+            fig.update_layout(**layout_kwargs)
+            gradient_figures.append(fig)
 
-            # append grad_fig to list
-            grad_figs.append(grad_fig)
+        return gradient_figures
 
-        return fig, grad_figs
+    def create_contour_plot(
+        self, config: ContourConfig, **layout_kwargs
+    ) -> Any | tuple[Any, list[Any]]:
+        """Create contour plot with the given configuration."""
+        plot_data = self._prepare_plot_data(config)
+        go = PlotlyManager().go
 
-    return fig
+        # Create base layout
+        base_layout = self._create_base_layout(plot_data, config)
+
+        # Create base contour figure
+        fig = go.Figure(
+            data=[
+                go.Contour(
+                    x=plot_data.x,
+                    y=plot_data.y,
+                    z=plot_data.costs,
+                    colorscale="Viridis",
+                    connectgaps=False,
+                )
+            ],
+            layout=go.Layout(base_layout),
+        )
+
+        # Add optimisation traces if available
+        self._add_optimisation_traces(fig, config)
+
+        # Apply custom layout options, show fig
+        fig.update_layout(**layout_kwargs)
+
+        if config.show:
+            fig.show()
+
+        # Create gradient figures if requested
+        if config.gradient:
+            gradient_figures = self._create_gradient_figures(
+                plot_data, base_layout, **layout_kwargs
+            )
+
+            if config.show:
+                for grad_fig in gradient_figures:
+                    grad_fig.show()
+
+            return fig, gradient_figures
+
+        return fig
+
+
+def contour(
+    call_object: "Problem | OptimisationResult",
+    gradient: bool = False,
+    bounds: np.ndarray | None = None,
+    apply_transform: bool = False,
+    steps: int = 10,
+    show: bool = True,
+    use_optim_log: bool = False,
+    **layout_kwargs,
+) -> Any | tuple[Any, list[Any]]:
+    """
+    Plot a 2D visualisation of a cost landscape using Plotly.
+
+    This function generates a contour plot representing the cost landscape for a provided
+    callable cost function over a grid of parameter values within the specified bounds.
+
+    Parameters
+    ----------
+    call_object : Problem | OptimisationResult
+        Either a pybop.Problem or a pybop.OptimisationResult result containing the cost function and
+        optimisation log which provides a specific optimisation trace overlaid on the cost landscape.
+    gradient : bool, optional
+        If True, gradient plots are also generated (default: False).
+    bounds : np.ndarray, optional
+        A 2x2 array specifying the [min, max] bounds for each parameter. If None, uses
+        the parameter bounds from the problem.
+    apply_transform : bool, optional
+        Uses the transformed parameter values (as seen by the optimiser) for plotting. (Default: False)
+    steps : int, optional
+        The number of grid points to divide the parameter space into along each dimension (default: 10).
+    show : bool, optional
+        If True, the figure is shown upon creation (default: True).
+    use_optim_log : bool, optional
+        If True, the optimisation log is used to overlay the optimiser convergence trace (default: False).
+    **layout_kwargs : optional
+        Valid Plotly layout keys and their values.
+
+    Returns
+    -------
+    plotly.graph_objs.Figure | tuple[plotly.graph_objs.Figure, list[plotly.graph_objs.Figure]]]
+        The Plotly figure object containing the cost landscape plot.
+        If gradient=True, returns a tuple of (main_figure, gradient_figures).
+
+    Raises
+    ------
+    TypeError
+        If call_object is not a Problem or BaseOptimiser instance.
+    ValueError
+        If the problem has fewer than 2 parameters or if steps <= 0.
+    """
+    # Extract problem and optimiser from call_object
+    if isinstance(call_object, Problem):
+        problem = call_object
+        result = None
+    else:
+        try:
+            problem = call_object.problem
+            result = call_object
+        except AttributeError:
+            raise TypeError(
+                "call_object must be a pybop.Problem or pybop.OptimisationResult instance."
+            ) from None
+
+    # Create configuration
+    config = ContourConfig(
+        gradient=gradient,
+        bounds=bounds,
+        apply_transform=apply_transform,
+        steps=steps,
+        show=show,
+        use_optim_log=use_optim_log,
+    )
+
+    # Create plotter and generate plot
+    plotter = ContourPlotter(problem=problem, result=result)
+    return plotter.create_contour_plot(config, **layout_kwargs)

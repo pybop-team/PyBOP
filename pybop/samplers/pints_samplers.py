@@ -20,6 +20,27 @@ from pints import SliceStepoutMCMC as PintsSliceStepoutMCMC
 from pybop import BasePintsSampler, PintsSamplerOptions
 from pybop.problems.base_problem import Problem
 
+__all__: list[str] = [
+    "NUTS",
+    "DREAM",
+    "AdaptiveCovarianceMCMC",
+    "DifferentialEvolutionMCMC",
+    "DramACMC",
+    "EmceeHammerMCMC",
+    "HaarioACMC",
+    "HaarioBardenetACMC",
+    "HamiltonianMCMC",
+    "MALAMCMC",
+    "MetropolisRandomWalkMCMC",
+    "MonomialGammaHamiltonianMCMC",
+    "PopulationMCMC",
+    "RaoBlackwellACMC",
+    "RelativisticMCMC",
+    "SliceDoublingMCMC",
+    "SliceRankShrinkingMCMC",
+    "SliceStepoutMCMC",
+]
+
 
 class NUTS(BasePintsSampler):
     """

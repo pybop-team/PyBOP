@@ -34,23 +34,22 @@ class TestClassifier:
         builder.add_parameter(
             pybop.Parameter(
                 "R0 [Ohm]",
-                prior=pybop.Uniform(0.001, 0.1),
-                bounds=[1e-4, 0.1],
+                prior=pybop.Uniform(1e-4, 1e-3),
+                bounds=[1e-4, 1e-3],
             )
         )
-        builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
-        )
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
         return builder.build()
 
     def test_classify_using_hessian_invalid(self, problem):
         options = pybop.GradientDescent.default_options()
         options.max_iterations = 1
-        results = pybop.GradientDescent(problem, options).run()
+        options.sigma = 1e-2
+        results = pybop.GradientDescent(problem, options=options).run()
 
         with pytest.raises(
             ValueError,
             match="The function classify_using_hessian currently only works"
             " in the case of 2 parameters, and dx must have the same length as x.",
         ):
-            pybop.classify_using_hessian(problem, results, dx=[0.01])
+            pybop.classify_using_hessian(results, dx=[0.01])

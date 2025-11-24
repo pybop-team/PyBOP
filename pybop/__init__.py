@@ -9,25 +9,6 @@ import sys
 from os import path
 
 #
-# Multiprocessing
-#
-try:
-    import multiprocessing as mp
-
-    if sys.platform == "win32":
-        mp.set_start_method("spawn")
-    else:
-        mp.set_start_method("fork")
-except Exception as e:  # pragma: no cover
-    error_message = (
-        "Multiprocessing context could not be set. "
-        "Continuing import without setting context.\n"
-        f"Error: {e}"
-    )  # pragma: no cover
-    print(error_message)  # pragma: no cover
-    pass  # pragma: no cover
-
-#
 # Version info
 #
 from pybop._version import __version__
@@ -44,8 +25,7 @@ script_path = path.dirname(__file__)
 #
 # Utilities
 #
-from ._utils import is_numeric, SymbolReplacer
-
+from ._utils import add_spaces, FailedVariable, FailedSolution, SymbolReplacer, RecommendedSolver
 
 #
 # Dataset class
@@ -115,24 +95,18 @@ from .builders.multi_fitting import MultiFitting
 #
 # Evaluation
 #
-from ._evaluation import SciPyEvaluator
+from ._evaluation import ScalarEvaluator, PopulationEvaluator, SequentialEvaluator
+
+#
+# Optimisation logging and result
+#
+from ._logging import Logger
+from ._result import OptimisationResult
 
 #
 # Optimiser classes
 #
-
-from .optimisers._cuckoo import CuckooSearchImpl
-from .optimisers._random_search import RandomSearchImpl
-from .optimisers._adamw import AdamWImpl
-from .optimisers._gradient_descent import GradientDescentImpl
-from .optimisers._simulated_annealing import SimulatedAnnealingImpl
-from .optimisers._irprop_plus import IRPropPlusImpl
-from .optimisers._result import OptimisationResult
-from .optimisers.base_optimiser import (
-    BaseOptimiser,
-    OptimisationLogger,
-    OptimiserOptions,
-)
+from .optimisers.base_optimiser import BaseOptimiser, OptimiserOptions
 from .optimisers.base_pints_optimiser import BasePintsOptimiser, PintsOptions
 from .optimisers.scipy_optimisers import (
     BaseSciPyOptimiser,
@@ -188,9 +162,16 @@ from .samplers.pints_samplers import (
 )
 
 #
-# Classification classes
+# Analysis
 #
-from ._classification import classify_using_hessian
+from .analysis.classification import classify_using_hessian
+
+#
+# Applications
+#
+from .applications.base_method import BaseApplication, Interpolant, InverseOCV
+from .applications.ocp_methods import OCPMerge, OCPAverage, OCPCapacityToStoichiometry
+from .applications.gitt_methods import GITTPulseFit, GITTFit
 
 #
 # Plotting classes

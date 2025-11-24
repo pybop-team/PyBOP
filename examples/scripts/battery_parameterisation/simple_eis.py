@@ -1,81 +1,75 @@
+import matplotlib.pyplot as plt
 import numpy as np
+import pybamm
+import pybammeis
 
 import pybop
 
-# Define model
-parameter_set = pybop.ParameterSet("Chen2020")
-parameter_set["Contact resistance [Ohm]"] = 0.0
-initial_state = {"Initial SoC": 0.5}
-n_frequency = 20
-sigma0 = 1e-4
-f_eval = np.logspace(-4, 5, n_frequency)
-model = pybop.lithium_ion.SPM(
-    parameter_set=parameter_set,
-    eis=True,
-    options={"surface form": "differential", "contact resistance": "true"},
-)
+"""
+Example demonstrating parameter estimation in the frequency domain using PyBaMM-EIS.
+"""
 
-# Create synthetic data for parameter inference
-sim = model.simulateEIS(
-    inputs={
-        "Negative electrode active material volume fraction": 0.531,
-        "Positive electrode active material volume fraction": 0.732,
-    },
-    f_eval=f_eval,
-    initial_state=initial_state,
-)
+# Define model and parameter values
+options = {"surface form": "differential", "contact resistance": "true"}
+dfn_model = pybamm.lithium_ion.DFN(options=options)
+parameter_values = pybamm.ParameterValues("Chen2020")
 
-# Fitting parameters
-parameters = pybop.Parameters(
-    pybop.Parameter(
-        "Negative electrode active material volume fraction",
-        prior=pybop.Uniform(0.4, 0.75),
-        bounds=[0.375, 0.75],
-    ),
-    pybop.Parameter(
-        "Positive electrode active material volume fraction",
-        prior=pybop.Uniform(0.4, 0.75),
-        bounds=[0.375, 0.75],
-    ),
-)
+# Using Pybamm-EIS to generate synthetic data
+eis_sim = pybammeis.EISSimulation(dfn_model, parameter_values=parameter_values)
+frequencies = np.logspace(-4, 4, 60)
+sol = eis_sim.solve(frequencies)
 
-
-def noisy(data, sigma):
-    # Generate real part noise
-    real_noise = np.random.normal(0, sigma, len(data))
-
-    # Generate imaginary part noise
-    imag_noise = np.random.normal(0, sigma, len(data))
-
-    # Combine them into a complex noise
-    return data + real_noise + 1j * imag_noise
-
-
-# Form dataset
 dataset = pybop.Dataset(
     {
-        "Frequency [Hz]": f_eval,
-        "Current function [A]": np.ones(n_frequency) * 0.0,
-        "Impedance": noisy(sim["Impedance"], sigma0),
+        "Frequency [Hz]": frequencies,
+        "Current function [A]": np.ones(frequencies.size) * 0.0,
+        "Impedance": sol,
     }
 )
 
-signal = ["Impedance"]
-# Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
-cost = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=sigma0)
-optim = pybop.CMAES(cost, max_iterations=100, sigma0=0.25, max_unchanged_iterations=30)
+parameters = [
+    pybop.Parameter(
+        "Negative electrode active material volume fraction",
+        prior=pybop.Uniform(0.3, 0.9),
+        bounds=[0.375, 0.775],
+    ),
+    pybop.Parameter(
+        "Positive electrode active material volume fraction",
+        prior=pybop.Uniform(0.3, 0.9),
+        bounds=[0.375, 0.775],
+    ),
+]
 
+# Construct the problem builder using an SPMe
+spme_model = pybamm.lithium_ion.SPMe(options=options)
+builder = pybop.builders.PybammEIS()
+builder.set_dataset(dataset)
+builder.set_simulation(spme_model, parameter_values=parameter_values)
+builder.add_cost(pybop.costs.MeanAbsoluteError())
+for param in parameters:
+    builder.add_parameter(param)
+problem = builder.build()
+
+# Set optimiser and options
+options = pybop.PintsOptions(max_iterations=250)
+optim = pybop.XNES(problem, options=options)
+
+# Run optimisation
 results = optim.run()
+print(results)
 
-# Plot the nyquist
-pybop.plot.nyquist(problem, problem_inputs=results.x, title="Optimised Comparison")
+# Compare to known values
+print("True parameters:", [parameter_values[p.name] for p in parameters])
+print(f"Idenitified Parameters: {results.x}")
 
-# Plot convergence
-pybop.plot.convergence(optim)
+# Using the identified pybamm.ParameterValues object, we can plot the impedance fit
+identified_parameter_values = results.parameter_values
+identified_sim = pybammeis.EISSimulation(dfn_model, parameter_values=parameter_values)
+identified_sol = identified_sim.solve(frequencies)
 
-# Plot the parameter traces
-pybop.plot.parameters(optim)
-
-# Plot 2d landscape
-pybop.plot.surface(optim)
+# Plot comparison
+fig, ax = plt.subplots()
+ax = pybammeis.nyquist_plot(sol, ax=ax, label="Target", alpha=0.7)
+ax = pybammeis.nyquist_plot(identified_sol, ax=ax, label="Fit", marker="x", alpha=0.7)
+ax.legend()
+plt.show()

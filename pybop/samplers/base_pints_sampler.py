@@ -8,21 +8,38 @@ import pints
 from pybop import (
     BaseSampler,
     MultiChainProcessor,
+    PopulationEvaluator,
     SingleChainProcessor,
 )
+from pybop._logging import Logger
 from pybop.problems.base_problem import Problem
 from pybop.samplers.base_sampler import SamplerOptions
 
 
 @dataclass
 class PintsSamplerOptions(SamplerOptions):
+    """
+    Pints sampler options.
+
+    Attributes:
+        n_chains (int): The number of chains to concurrently sample from. (Default: 1)
+        x0 (float | np.ndarray): Initial guess for the parameter values. (Default: None)
+        cov (float | np.ndarray): Covariance matrix. (Default: 0.05)
+        max_iterations (int): Maximum number of iterations to run. (Default: 500)
+        verbose (bool): If `True`, additional information will be printed. (Default: False)
+        warm_up_iterations (int): Number of iterations to warm up the sampler. (Default: 250)
+        chains_in_memory (bool): Whether to store the chains in memory. (Default: True)
+        log_to_screen (bool): If `True` (default), the sampler will print information during the sampling
+        log_filename (str): The name of the file to save the sampler log to. (Default: None)
+        chain_files (list): The name of the file to save the chains in. (Default: None)
+        evaluation_files (list): The name of the file to save the evaluations in. (Default: None)
+    """
+
     max_iterations: int = 500
-    n_workers: int = 1
     chains_in_memory: bool = True
     log_to_screen: bool = True
     log_filename: str | None = None
     initial_phase_iterations: int = 250
-    parallel: bool = False
     verbose: bool = False
     warm_up_iterations: int = 0
     chain_files: list[str] | None = None
@@ -44,8 +61,6 @@ class PintsSamplerOptions(SamplerOptions):
             raise ValueError("Number of warm-up steps must be non-negative.")
         if self.max_iterations < 1:
             raise ValueError("Maximum number of iterations must be greater than 0.")
-        if self.n_workers < 1:
-            raise ValueError("Number of workers must be greater than 0.")
         if self.initial_phase_iterations < 1:
             raise ValueError(
                 "Number of initial phase iterations must be greater than 0."
@@ -76,7 +91,7 @@ class BasePintsSampler(BaseSampler):
         sampler: type[pints.SingleChainMCMC | pints.MultiChainMCMC],
         options: PintsSamplerOptions | None = None,
     ):
-        options = options or PintsSamplerOptions()
+        options = options or self.default_options()
         super().__init__(problem, options=options)
         self._sampler = sampler
         self._max_iterations = options.max_iterations
@@ -90,7 +105,6 @@ class BasePintsSampler(BaseSampler):
         self._chain_files = options.chain_files
         self._evaluation_files = options.evaluation_files
         self._loop_iters = 0
-        self._iteration = 0
         self.iter_time = 0.0
 
         # Single chain vs multiple chain samplers
@@ -114,6 +128,7 @@ class BasePintsSampler(BaseSampler):
 
     @staticmethod
     def default_options() -> PintsSamplerOptions:
+        """Get the default options for the sampler."""
         return PintsSamplerOptions()
 
     def _initialise_chain_processor(self):
@@ -160,51 +175,54 @@ class BasePintsSampler(BaseSampler):
             - Finalises and returns the collected samples, or None if
             chains are not stored in memory.
         """
-
+        self._start_time = time.time()
         self._initialise_logging()
         self._check_stopping_criteria()
         self._initialise_chain_processor()
 
-        # Initialise iterations and evaluations
-        self._iteration = 0
+        self._logger = Logger(verbose=False)  # print sampler logging instead
+        evaluator = PopulationEvaluator(
+            problem=self.problem,
+            minimise=False,
+            with_sensitivities=self._needs_sensitivities,
+            logger=self._logger,
+        )
+        self.iteration = 0
 
-        evaluator = self._create_evaluator()
         self._check_initial_phase()
         self._initialise_storage()
 
         running = True
         while running:
-            if (
-                self._initial_phase
-                and self._iteration == self._initial_phase_iterations
-            ):
+            if self._initial_phase and self.iteration == self._initial_phase_iterations:
                 self._end_initial_phase()
 
             xs = self._ask_for_samples()
+
             self.fxs = evaluator.evaluate(xs)
             self._process_chains()
 
             if self._single_chain:
-                self._intermediate_step = min(self._n_samples) <= self._iteration
+                self._intermediate_step = min(self._n_samples) <= self.iteration
 
             # Skip the remaining loop logic
             if self._intermediate_step:
                 continue
 
-            self._iteration += 1
+            self.iteration += 1
             if self._log_to_screen and self._verbose:
-                if self._iteration <= 10 or self._iteration % 50 == 0:
-                    timing_iterations = self._iteration - self._loop_iters
+                if self.iteration <= 10 or self.iteration % 50 == 0:
+                    timing_iterations = self.iteration - self._loop_iters
                     elapsed_time = time.time() - self.iter_time
                     iterations_per_second = (
                         timing_iterations / elapsed_time if elapsed_time > 0 else 0
                     )
                     logging.info(
-                        f"| Iteration: {self._iteration} | Iter/s: {iterations_per_second: .2f} |"
+                        f"| Iteration: {self.iteration} | Iter/s: {iterations_per_second: .2f} |"
                     )
                     self.iter_time = time.time()
-                    self._loop_iters = self._iteration
-            if self._max_iterations and self._iteration >= self._max_iterations:
+                    self._loop_iters = self.iteration
+            if self._max_iterations and self.iteration >= self._max_iterations:
                 running = False
 
         self._finalise_logging()
@@ -250,29 +268,6 @@ class BasePintsSampler(BaseSampler):
         if self._max_iterations is None:
             raise ValueError("At least one stopping criterion must be set.")
 
-    def _create_evaluator(self):
-        """
-        Create appropriate evaluator based on configuration settings.
-        """
-        # Construct function for evaluation
-        if self._needs_sensitivities:
-
-            def fun(x):
-                self.problem.set_params(x)
-                return self.problem.run_with_sensitivities()
-
-        else:
-
-            def fun(x):
-                self.problem.set_params(x)
-                return -self.problem.run()
-
-        # Handle parallel case
-        if self.options.parallel:
-            return pints.ParallelEvaluator(fun, n_workers=self.options.n_workers)
-
-        return pints.SequentialEvaluator(fun)
-
     def _initialise_storage(self):
         # Storage of the received samples
         n_chains = self.options.n_chains
@@ -286,7 +281,6 @@ class BasePintsSampler(BaseSampler):
             else (n_chains, self._n_parameters)
         )
         self._samples = np.zeros(storage_shape)
-
         self._evaluations = np.zeros((n_chains, self._max_iterations))
 
         # From PINTS:
@@ -305,12 +299,6 @@ class BasePintsSampler(BaseSampler):
         if self._log_to_screen:
             logging.info("Using " + str(self._samplers[0].name()))
             logging.info("Generating " + str(self.options.n_chains) + " chains.")
-            if self.options.parallel:
-                logging.info(
-                    f"Running in parallel with {self.options.n_workers} worker processes."
-                )
-            else:
-                logging.info("Running in sequential mode.")
             if self._chain_files:
                 logging.info("Writing chains to " + self._chain_files[0] + " etc.")
             if self._evaluation_files:
@@ -321,8 +309,10 @@ class BasePintsSampler(BaseSampler):
     def _finalise_logging(self):
         if self._log_to_screen:
             logging.info(
-                f"Halting: Maximum number of iterations ({self._iteration}) reached."
+                f"Halting: Maximum number of iterations ({self.iteration}) reached."
             )
+            logging.info(f"Total time: {time.time() - self._start_time} seconds.")
+            logging.info(f"Total number of evaluations: ({self._logger.evaluations}).")
 
     @property
     def samplers(self):
@@ -346,7 +336,11 @@ class BasePintsSampler(BaseSampler):
 
     @property
     def iteration(self):
-        return self._iteration
+        return self._logger.iteration
+
+    @iteration.setter
+    def iteration(self, value):
+        self._logger.iteration = value
 
     @property
     def needs_sensitivities(self):

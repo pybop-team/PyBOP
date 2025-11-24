@@ -1,5 +1,3 @@
-import warnings
-
 import numpy as np
 import pybamm
 from pybamm import (
@@ -27,45 +25,18 @@ class GroupedSPMe(pybamm_lithium_ion.BaseModel):
     ----------
     name : str, optional
         The name of the model.
-    eis : bool, optional
-        A flag to build the forward model for EIS predictions. Defaults to False.
     **model_kwargs : optional
         Valid PyBaMM model option keys and their values, for example:
-        parameter_set : pybamm.ParameterValues or dict, optional
-            The parameters for the model. If None, default parameters provided by PyBaMM are used.
-        geometry : dict, optional
-            The geometry definitions for the model. If None, default geometry from PyBaMM is used.
-        submesh_types : dict, optional
-            The types of submeshes to use. If None, default submesh types from PyBaMM are used.
-        var_pts : dict, optional
-            The discretization points for each variable in the model. If None, default points from PyBaMM are used.
-        spatial_methods : dict, optional
-            The spatial methods used for discretization. If None, default spatial methods from PyBaMM are used.
-        solver : pybamm.Solver, optional
-            The solver to use for simulating the model. If None, the default solver from PyBaMM is used.
-        build : bool, optional
-            If True, the model is built upon creation (default: False).
         options : dict, optional
             A dictionary of options to customise the behaviour of the PyBaMM model.
+        build : bool, optional
+            If True, the model is built upon creation (default: False).
     """
 
     def __init__(
-        self,
-        options: dict = None,
-        name="Grouped Single Particle Model with Electrolyte",
+        self, name="Grouped Single Particle Model with Electrolyte", **model_kwargs
     ):
-        unused_keys = []
-        if options is not None:
-            for key, value in options.items():
-                if key in ["surface form", "contact resistance"]:
-                    options[key] = value
-                else:
-                    unused_keys.append("options[" + key + "]")
-        if any(unused_keys):
-            unused_kwargs_warning = f"The input model_kwargs {unused_keys} are not currently used by the GroupedSPMe."
-            warnings.warn(unused_kwargs_warning, UserWarning, stacklevel=2)
-
-        super().__init__(options=options, name=name, build=True)
+        super().__init__(name=name, **model_kwargs)
 
         # Unpack model options
         include_double_layer = self.options["surface form"] == "differential"
@@ -73,8 +44,16 @@ class GroupedSPMe(pybamm_lithium_ion.BaseModel):
         pybamm.citations.register("Chen2020")  # for the OCPs
         pybamm.citations.register(
             """
-            @article{HallemansPreprint,
-            title={{Hallemans Preprint}},
+            @article{Hallemans2025,
+            title     = {{Physics-Based Battery Model Parametrisation from Impedance Data}},
+            author    = {Hallemans, Noël and Courtier, Nicola E. and Please, Colin P. and Planden, Brady and Dhoot, Rishit and Timms, Robert and Chapman, S. Jon and Howey, David and Duncan, Stephen R.},
+            journal   = {Journal of the Electrochemical Society},
+            volume    = {172},
+            number    = {6},
+            pages     = {060507},
+            year      = {2025},
+            publisher = {The Electrochemical Society},
+            doi       = {10.1149/1945-7111/add41b}
             }
         """
         )
@@ -432,41 +411,17 @@ class GroupedSPMe(pybamm_lithium_ion.BaseModel):
         pybamm.logger.info(f"Finish building {self.name}")
 
     @property
-    def default_parameter_values(self):
-        default_parameter_values = ParameterValues("Chen2020")
-        default_parameter_values.update(
-            {
-                "Nominal cell capacity [A.h]": 3,
-                "Current function [A]": 3,
-                "Initial temperature [K]": 298.15,
-                "Initial SoC": 0.5,
-                "Minimum negative stoichiometry": 0.026,
-                "Maximum negative stoichiometry": 0.911,
-                "Minimum positive stoichiometry": 0.264,
-                "Maximum positive stoichiometry": 0.854,
-                "Lower voltage cut-off [V]": 2.5,
-                "Upper voltage cut-off [V]": 4.2,
-                "Measured cell capacity [A.s]": 3000,
-                "Reference electrolyte capacity [A.s]": 1000,
-                "Positive electrode relative porosity": 1,
-                "Negative electrode relative porosity": 1,
-                "Positive particle diffusion time scale [s]": 2000,
-                "Negative particle diffusion time scale [s]": 2000,
-                "Positive electrode electrolyte diffusion time scale [s]": 300,
-                "Negative electrode electrolyte diffusion time scale [s]": 300,
-                "Separator electrolyte diffusion time scale [s]": 300,
-                "Positive electrode charge transfer time scale [s]": 500,
-                "Negative electrode charge transfer time scale [s]": 500,
-                "Positive electrode capacitance [F]": 1,
-                "Negative electrode capacitance [F]": 1,
-                "Cation transference number": 0.25,
-                "Positive electrode relative thickness": 0.47,
-                "Negative electrode relative thickness": 0.47,
-                "Series resistance [Ohm]": 0.01,
-            },
-            check_already_exists=False,
-        )
-        return default_parameter_values
+    def default_parameter_values(self) -> ParameterValues:
+        param = ParameterValues("Chen2020")
+        ce0 = param["Initial concentration in electrolyte [mol.m-3]"]
+        T = param["Ambient temperature [K]"]
+        param["Electrolyte conductivity [S.m-1]"] = param[
+            "Electrolyte conductivity [S.m-1]"
+        ](ce0, T)
+        param["Electrolyte diffusivity [m2.s-1]"] = param[
+            "Electrolyte diffusivity [m2.s-1]"
+        ](ce0, T)
+        return self.create_grouped_parameters(param)
 
     @property
     def default_quick_plot_variables(self):
@@ -555,65 +510,63 @@ class GroupedSPMe(pybamm_lithium_ion.BaseModel):
         }
 
     @staticmethod
-    def create_grouped_parameters(
-        parameter_values: pybamm.ParameterValues,
-    ) -> pybamm.ParameterValues:
+    def create_grouped_parameters(parameter_values: ParameterValues) -> ParameterValues:
         """
-        A function to create a grouped SPMe parameter set from a standard
-        PyBaMM ParameterValues object.
+        Create a parameter set for the Grouped Single Particle Model with Electrolyte from a
+        PyBaMM lithium-ion ParameterValues object.
 
         Parameters
         ----------
         parameter_values : pybamm.ParameterValues
-            A pybamm ParameterValues object containing the parameter values.
+            Parameters and their corresponding values.
 
         Returns
         -------
         parameter_values : pybamm.ParameterValues
-            A new parameter values object.
+            A new set of parameters and their values.
         """
-        params = parameter_values
+        param = parameter_values
 
         # Unpack physical parameters
-        F = params["Faraday constant [C.mol-1]"]
-        alpha_p = params["Positive electrode active material volume fraction"]
-        alpha_n = params["Negative electrode active material volume fraction"]
-        c_max_p = params["Maximum concentration in positive electrode [mol.m-3]"]
-        c_max_n = params["Maximum concentration in negative electrode [mol.m-3]"]
-        L_p = params["Positive electrode thickness [m]"]
-        L_n = params["Negative electrode thickness [m]"]
-        epsilon_p = params["Positive electrode porosity"]
-        epsilon_n = params["Negative electrode porosity"]
-        R_p = params["Positive particle radius [m]"]
-        R_n = params["Negative particle radius [m]"]
-        D_p = params["Positive particle diffusivity [m2.s-1]"]
-        D_n = params["Negative particle diffusivity [m2.s-1]"]
-        b_p = params["Positive electrode Bruggeman coefficient (electrolyte)"]
-        b_n = params["Negative electrode Bruggeman coefficient (electrolyte)"]
-        Cdl_p = params["Positive electrode double-layer capacity [F.m-2]"]
-        Cdl_n = params["Negative electrode double-layer capacity [F.m-2]"]
+        F = param["Faraday constant [C.mol-1]"]
+        alpha_p = param["Positive electrode active material volume fraction"]
+        alpha_n = param["Negative electrode active material volume fraction"]
+        c_max_p = param["Maximum concentration in positive electrode [mol.m-3]"]
+        c_max_n = param["Maximum concentration in negative electrode [mol.m-3]"]
+        L_p = param["Positive electrode thickness [m]"]
+        L_n = param["Negative electrode thickness [m]"]
+        epsilon_p = param["Positive electrode porosity"]
+        epsilon_n = param["Negative electrode porosity"]
+        R_p = param["Positive particle radius [m]"]
+        R_n = param["Negative particle radius [m]"]
+        D_p = param["Positive particle diffusivity [m2.s-1]"]
+        D_n = param["Negative particle diffusivity [m2.s-1]"]
+        b_p = param["Positive electrode Bruggeman coefficient (electrolyte)"]
+        b_n = param["Negative electrode Bruggeman coefficient (electrolyte)"]
+        Cdl_p = param["Positive electrode double-layer capacity [F.m-2]"]
+        Cdl_n = param["Negative electrode double-layer capacity [F.m-2]"]
         m_p = 3.42e-6  # (A/m2)(m3/mol)**1.5
         m_n = 6.48e-7  # (A/m2)(m3/mol)**1.5
         sigma_p = (
-            params["Positive electrode conductivity [S.m-1]"]
-            * alpha_p ** params["Positive electrode Bruggeman coefficient (electrode)"]
+            param["Positive electrode conductivity [S.m-1]"]
+            * alpha_p ** param["Positive electrode Bruggeman coefficient (electrode)"]
         )
         sigma_n = (
-            params["Negative electrode conductivity [S.m-1]"]
-            * alpha_n ** params["Negative electrode Bruggeman coefficient (electrode)"]
+            param["Negative electrode conductivity [S.m-1]"]
+            * alpha_n ** param["Negative electrode Bruggeman coefficient (electrode)"]
         )
 
         # Separator and electrolyte properties
-        ce0 = params["Initial concentration in electrolyte [mol.m-3]"]
-        De = params["Electrolyte diffusivity [m2.s-1]"]  # (ce0, T)
-        L_s = params["Separator thickness [m]"]
-        epsilon_sep = params["Separator porosity"]
-        b_sep = params["Separator Bruggeman coefficient (electrolyte)"]
-        t_plus = params["Cation transference number"]
-        sigma_e = params["Electrolyte conductivity [S.m-1]"]  # (ce0, T)
+        ce0 = param["Initial concentration in electrolyte [mol.m-3]"]
+        De = param["Electrolyte diffusivity [m2.s-1]"]  # (ce0, T)
+        L_s = param["Separator thickness [m]"]
+        epsilon_sep = param["Separator porosity"]
+        b_sep = param["Separator Bruggeman coefficient (electrolyte)"]
+        t_plus = param["Cation transference number"]
+        sigma_e = param["Electrolyte conductivity [S.m-1]"]  # (ce0, T)
 
         # Compute the cell area and thickness
-        A = params["Electrode height [m]"] * params["Electrode width [m]"]
+        A = param["Electrode height [m]"] * param["Electrode width [m]"]
         L = L_p + L_n + L_s
 
         # Compute the series resistance
@@ -623,12 +576,12 @@ class GroupedSPMe(pybamm_lithium_ion.BaseModel):
             + L_n / (3 * epsilon_n**b_n)
         ) / (sigma_e * A)
         Rs = (L_p / sigma_p + L_n / sigma_n) / (3 * A)
-        R0 = Re + Rs + params["Contact resistance [Ohm]"]
+        R0 = Re + Rs + param["Contact resistance [Ohm]"]
 
         # Compute the stoichiometry limits and initial SOC
-        x_0, x_100, y_100, y_0 = get_min_max_stoichiometries(params)
+        x_0, x_100, y_100, y_0 = get_min_max_stoichiometries(param)
         sto_p_init = (
-            params["Initial concentration in positive electrode [mol.m-3]"] / c_max_p
+            param["Initial concentration in positive electrode [mol.m-3]"] / c_max_p
         )
         soc_init = (sto_p_init - y_0) / (y_100 - y_0)
 
@@ -665,36 +618,35 @@ class GroupedSPMe(pybamm_lithium_ion.BaseModel):
         l_p = L_p / L
         l_n = L_n / L
 
-        return pybamm.ParameterValues(
-            {
-                "Nominal cell capacity [A.h]": params["Nominal cell capacity [A.h]"],
-                "Current function [A]": params["Current function [A]"],
-                "Initial temperature [K]": params["Ambient temperature [K]"],
-                "Initial SoC": soc_init,
-                "Minimum negative stoichiometry": x_0,
-                "Maximum negative stoichiometry": x_100,
-                "Minimum positive stoichiometry": y_100,
-                "Maximum positive stoichiometry": y_0,
-                "Lower voltage cut-off [V]": params["Lower voltage cut-off [V]"],
-                "Upper voltage cut-off [V]": params["Upper voltage cut-off [V]"],
-                "Positive electrode OCP [V]": params["Positive electrode OCP [V]"],
-                "Negative electrode OCP [V]": params["Negative electrode OCP [V]"],
-                "Measured cell capacity [A.s]": Q_meas,
-                "Reference electrolyte capacity [A.s]": Q_e,
-                "Positive electrode relative porosity": zeta_p,
-                "Negative electrode relative porosity": zeta_n,
-                "Positive particle diffusion time scale [s]": tau_d_p,
-                "Negative particle diffusion time scale [s]": tau_d_n,
-                "Positive electrode electrolyte diffusion time scale [s]": tau_e_p,
-                "Negative electrode electrolyte diffusion time scale [s]": tau_e_n,
-                "Separator electrolyte diffusion time scale [s]": tau_e_sep,
-                "Positive electrode charge transfer time scale [s]": tau_ct_p,
-                "Negative electrode charge transfer time scale [s]": tau_ct_n,
-                "Positive electrode capacitance [F]": C_p,
-                "Negative electrode capacitance [F]": C_n,
-                "Cation transference number": t_plus,
-                "Positive electrode relative thickness": l_p,
-                "Negative electrode relative thickness": l_n,
-                "Series resistance [Ohm]": R0,
-            }
-        )
+        parameter_dictionary = {
+            "Nominal cell capacity [A.h]": param["Nominal cell capacity [A.h]"],
+            "Current function [A]": param["Current function [A]"],
+            "Initial temperature [K]": param["Ambient temperature [K]"],
+            "Initial SoC": soc_init,
+            "Minimum negative stoichiometry": x_0,
+            "Maximum negative stoichiometry": x_100,
+            "Minimum positive stoichiometry": y_100,
+            "Maximum positive stoichiometry": y_0,
+            "Lower voltage cut-off [V]": param["Lower voltage cut-off [V]"],
+            "Upper voltage cut-off [V]": param["Upper voltage cut-off [V]"],
+            "Positive electrode OCP [V]": param["Positive electrode OCP [V]"],
+            "Negative electrode OCP [V]": param["Negative electrode OCP [V]"],
+            "Measured cell capacity [A.s]": Q_meas,
+            "Reference electrolyte capacity [A.s]": Q_e,
+            "Positive electrode relative porosity": zeta_p,
+            "Negative electrode relative porosity": zeta_n,
+            "Positive particle diffusion time scale [s]": tau_d_p,
+            "Negative particle diffusion time scale [s]": tau_d_n,
+            "Positive electrode electrolyte diffusion time scale [s]": tau_e_p,
+            "Negative electrode electrolyte diffusion time scale [s]": tau_e_n,
+            "Separator electrolyte diffusion time scale [s]": tau_e_sep,
+            "Positive electrode charge transfer time scale [s]": tau_ct_p,
+            "Negative electrode charge transfer time scale [s]": tau_ct_n,
+            "Positive electrode capacitance [F]": C_p,
+            "Negative electrode capacitance [F]": C_n,
+            "Cation transference number": t_plus,
+            "Positive electrode relative thickness": l_p,
+            "Negative electrode relative thickness": l_n,
+            "Series resistance [Ohm]": R0,
+        }
+        return ParameterValues(values=parameter_dictionary)

@@ -1,14 +1,15 @@
 import numpy as np
 from pybamm import Solution
 
-from pybop import JointLogPrior, Parameters
-from pybop._pybamm_pipeline import PybammPipeline
+from pybop import JointLogPrior
+from pybop.parameters.parameter import Inputs, Parameters
+from pybop.pipelines._pybamm_pipeline import PybammPipeline
 from pybop.problems.base_problem import Problem
 
 
 class PybammProblem(Problem):
     """
-    Defines a problem that uses a PyBaMM model as the simulation + cost function to evaluate
+    Defines a problem that uses a PyBaMM model as the simulation + cost function to evaluate.
     """
 
     def __init__(
@@ -17,10 +18,9 @@ class PybammProblem(Problem):
         pybop_params: Parameters = None,
         cost_names: list[str] = None,
         cost_weights: list | np.ndarray = None,
-        use_posterior: bool = False,
-        use_last_cost_index: list[bool] = None,
+        is_posterior: bool = False,
     ):
-        super().__init__(pybop_params=pybop_params)
+        super().__init__(pybop_params=pybop_params, is_posterior=is_posterior)
         self._pipeline = pybamm_pipeline
         self._cost_names = cost_names or []
         self._cost_weights = (
@@ -29,111 +29,88 @@ class PybammProblem(Problem):
             else np.ones(len(self._cost_names))
         )
         self._domain = "Time [s]"
-        self._use_posterior = use_posterior
-        self._use_last_cost_index = use_last_cost_index
 
         # Set up priors if we're using the posterior
-        if self._use_posterior and pybop_params is not None:
+        if self.is_posterior and pybop_params is not None:
             self._priors = JointLogPrior(*pybop_params.priors())
         else:
             self._priors = None
-        self._compute_initial_cost_and_resample()
 
-    def set_params(self, p: np.ndarray) -> None:
+    def _compute_costs(self, inputs: list[Inputs]) -> np.ndarray:
         """
-        Sets the parameters for the simulation and cost function.
+        Evaluates the underlying simulation and cost function.
+
+        The parameters can be set as singular proposals: np.array(N,)
+        Or as an array of multiple proposals: np.array(M, N), where
+        M is the number of proposals to solve.
+
+        Returns
+        -------
+        cost : np.ndarray
+            Weighted sum of cost variables for each proposal.
+            The dimensionality is np.ndarray(M,) to match the number of proposals.
         """
-        self.check_and_store_params(p)
+        sols = self._pipeline.solve(inputs=inputs)
 
-        # rebuild the pipeline (if needed)
-        self._pipeline.rebuild(self._params.to_dict())
+        return self._get_pybamm_cost(sols)
 
-    def _compute_cost(self, solution: Solution) -> float:
+    def _compute_costs_and_sensitivities(
+        self, inputs: list[Inputs]
+    ) -> tuple[np.ndarray | np.ndarray]:
         """
-        Compute the cost function value from a solution.
+        Evaluates the simulation and cost function with parameter sensitivities.
+
+        The parameters can be set as singular proposals: np.array(N,)
+        Or as an array of multiple proposals: np.array(M,N), where
+        M is the number of proposals to solve.
+
+        Returns
+        -------
+        tuple[np.ndarray, np.ndarray]
+            A tuple containing the cost and parameter sensitivities:
+
+            - cost ( np.ndarray(M,) ): Weighted sum of cost values for each proposal.
+            - sensitivities ( np.ndarray(M, n_params) ): Weighted sum of parameter gradients for each proposal.
         """
+        sols = self._pipeline.solve(inputs=inputs, calculate_sensitivities=True)
 
-        costs = [
-            solution[name].data[-1] if use_last else solution[name].data[0]
-            for use_last, name in zip(
-                self._use_last_cost_index, self._cost_names, strict=False
-            )
-        ]
-        return np.dot(self._cost_weights, costs)
+        return self._get_pybamm_cost(sols), self._get_pybamm_sensitivities(sols)
 
-    def _add_prior_contribution(self, cost: float) -> float:
-        """
-        Add the prior contribution to the cost if using posterior.
-        """
-        if not self._use_posterior:
-            return cost
+    def _get_pybamm_cost(self, solution: list[Solution]) -> np.ndarray:
+        """Compute the cost function value from a list of solutions."""
+        cost_matrix = np.empty((len(self._cost_names), len(solution)))
 
-        # Likelihoods and priors are negative by convention
-        return cost - self._priors.logpdf(self._params.get_values())
+        # Extract each cost
+        for i, name in enumerate(self._cost_names):
+            cost_matrix[i, :] = [sol[name].data[0] for sol in solution]
 
-    def _compute_cost_with_prior(self, solution: Solution) -> float:
-        """
-        Compute the cost function with optional prior contribution.
-        """
-        cost = self._compute_cost(solution)
-        return self._add_prior_contribution(cost)
+        # Apply the weighting
+        return self._cost_weights @ cost_matrix
 
-    def run(self) -> float:
-        """
-        Evaluates the underlying simulation and cost function using the
-        parameters set in the previous call to `set_params`.
+    def _get_pybamm_sensitivities(self, solution: list[Solution]) -> np.ndarray:
+        """Compute the cost function value and sensitivities from a list of solutions."""
+        sens_matrix = np.empty((len(solution), self._n_params))
 
-        Returns:
-            The computed cost value
-        """
-        self.check_set_params_called()
+        # Extract each sensitivity and apply the weighting
+        for i, s in enumerate(solution):
+            weighted_sens = np.zeros(self._n_params)
+            for n in self._cost_names:
+                sens = np.asarray(s[n].sensitivities["all"])  # Shape: (1, n_params)
+                weighted_sens += np.sum(
+                    sens * self._cost_weights, axis=0
+                )  # Shape: (n_params,)
+            sens_matrix[i, :] = weighted_sens
 
-        # Run simulation
-        sol = self._pipeline.solve()
-
-        # Compute cost with optional prior contribution
-        return self._compute_cost_with_prior(sol)
-
-    def run_with_sensitivities(self) -> tuple[float, np.ndarray]:
-        """
-        Evaluates the simulation and cost function with parameter sensitivities
-        using the parameters set in the previous call to `set_params`.
-
-        Returns:
-            Tuple of (cost_value, sensitivities)
-        """
-        self.check_set_params_called()
-        prior_derivatives = np.zeros(len(self._params))
-
-        # Compute prior contribution and derivatives if using posterior
-        if self._use_posterior:
-            log_prior, prior_derivatives = self._priors.logpdfS1(
-                self._params.get_values()
-            )
-
-        # Solve with sensitivities, calculate cost
-        sol = self._pipeline.solve(calculate_sensitivities=True)
-        cost = self._compute_cost_with_prior(sol)
-
-        try:
-            aggregated_sens = np.asarray(
-                [sol[n].sensitivities["all"] for n in self._cost_names]
-            ).squeeze(axis=1)
-        except KeyError as e:
-            raise KeyError(
-                "Sensitivities not available, ensure problem is formulated to enable sensitivities"
-            ) from e
-        weighted_sensitivity = np.sum(
-            aggregated_sens * self._cost_weights[:, None], axis=0
-        )
-
-        # Add prior derivative contribution if using posterior
-        if self._use_posterior:
-            for param_idx, _param_name in enumerate(self._params.keys()):
-                weighted_sensitivity[param_idx] -= prior_derivatives[param_idx]
-
-        return cost, weighted_sensitivity
+        return sens_matrix
 
     @property
     def pipeline(self):
         return self._pipeline
+
+    @property
+    def cost_names(self):
+        return self._cost_names
+
+    @property
+    def has_sensitivities(self):
+        return False if self._pipeline.initial_state is not None else True

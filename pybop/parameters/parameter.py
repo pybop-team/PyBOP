@@ -9,6 +9,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from pybop import (
+    BasePrior,
     ComposedTransformation,
     IdentityTransformation,
     LogTransformation,
@@ -20,7 +21,6 @@ NumericValue = float | int | np.number
 ArrayLike = Sequence[NumericValue] | NDArray[np.floating]
 ParameterValue = NumericValue | ArrayLike | None
 BoundsPair = list[float]
-ParameterDict = dict[str, Any]
 Inputs = dict[str, float]
 
 
@@ -59,14 +59,6 @@ class Bounds:
     upper: float
 
     def __post_init__(self) -> None:
-        if not isinstance(self.lower, int | float | np.number):
-            raise ParameterValidationError(
-                f"Lower bound must be numeric, got {type(self.lower)}"
-            )
-        if not isinstance(self.upper, int | float | np.number):
-            raise ParameterValidationError(
-                f"Upper bound must be numeric, got {type(self.upper)}"
-            )
         if self.lower >= self.upper:
             raise ParameterValidationError(
                 f"Lower bound ({self.lower}) must be less than upper bound ({self.upper})"
@@ -174,9 +166,8 @@ class Parameter:
         *,
         initial_value: ParameterValue = None,
         current_value: ParameterValue = None,
-        true_value: ParameterValue = None,
         bounds: BoundsPair | None = None,
-        prior: Any | None = None,
+        prior: BasePrior | None = None,
         transformation: Transformation | None = None,
         margin: float = 1e-4,
     ) -> None:
@@ -191,8 +182,6 @@ class Parameter:
             Initial parameter value
         current_value : ParameterValue, optional
             Current parameter value (defaults to initial_value)
-        true_value : ParameterValue, optional
-            True parameter value (for testing/validation)
         bounds : tuple[float, float], optional
             Parameter bounds as (lower, upper)
         prior : Any, optional
@@ -220,7 +209,6 @@ class Parameter:
         self._current_value = self._validator.validate_and_convert(
             current_value or initial_value, name
         )
-        self._true_value = self._validator.validate_and_convert(true_value, name)
 
         # Validate initial values are within bounds
         self._validate_values_within_bounds()
@@ -236,10 +224,6 @@ class Parameter:
     @property
     def current_value(self) -> ParameterValue:
         return self._copy_value(self._current_value)
-
-    @property
-    def true_value(self) -> ParameterValue:
-        return self._copy_value(self._true_value)
 
     @property
     def bounds(self) -> BoundsPair | None:
@@ -469,8 +453,8 @@ class Parameters:
     def update(
         self,
         *,
-        values: ArrayLike | ParameterDict | None = None,
-        initial_values: ArrayLike | ParameterDict | None = None,
+        values: ArrayLike | Inputs | None = None,
+        initial_values: ArrayLike | Inputs | None = None,
         bounds: Sequence[BoundsPair] | dict[str, BoundsPair] | None = None,
         **individual_updates: dict[str, Any],
     ) -> None:
@@ -510,7 +494,7 @@ class Parameters:
         if bounds is not None:
             self._bulk_update_bounds(bounds)
 
-    def _bulk_update_values(self, values: ArrayLike | ParameterDict) -> None:
+    def _bulk_update_values(self, values: ArrayLike | Inputs) -> None:
         """Update current values in bulk."""
         if isinstance(values, dict):
             for name, value in values.items():
@@ -519,10 +503,10 @@ class Parameters:
             values_array = np.atleast_1d(values)
             param_list = list(self._parameters.values())
 
-            for param, value in zip(param_list, values_array, strict=False):
+            for param, value in zip(param_list, values_array.T, strict=False):
                 param.update_value(value)
 
-    def _bulk_update_initial_values(self, values: ArrayLike | ParameterDict) -> None:
+    def _bulk_update_initial_values(self, values: ArrayLike | Inputs) -> None:
         """Update initial values in bulk."""
         if isinstance(values, dict):
             for name, value in values.items():
@@ -679,6 +663,36 @@ class Parameters:
         bounds = self.get_bounds(transformed=apply_transform)
         return np.column_stack([bounds["lower"], bounds["upper"]])
 
+    def get_sigma0(self, transformed: bool = False) -> list:
+        """
+        Get the standard deviation, for either all or no parameters.
+
+        Parameters
+        ----------
+        transformed : bool
+            If True, the transformation is applied to the output (default: False).
+        """
+        sigma0 = []
+
+        for param in self._parameters.values():
+            sig = None
+            if hasattr(param.prior, "sigma"):
+                sig = param.prior.sigma
+            elif param.bounds is not None:
+                lower, upper = param.bounds
+                if np.isfinite(upper - lower):
+                    sig = 0.05 * (upper - lower)
+
+            if transformed and sig is not None and param.transformation is not None:
+                sig = np.ndarray.item(
+                    param.transformation.convert_standard_deviation(
+                        sig, param.transformation.to_search(param.initial_value)[0]
+                    )
+                )
+
+            sigma0.extend([sig or 0.05])
+        return sigma0
+
     def _construct_transformation(self) -> Transformation:
         """
         Create a ComposedTransformation object from the individual parameter transformations.
@@ -717,27 +731,29 @@ class Parameters:
 
         return np.column_stack(all_samples)
 
-    def to_dict(self, values: str | ArrayLike | None = None) -> ParameterDict:
+    def to_dict(self, values: str | ArrayLike | None = None) -> Inputs:
         """
         Convert to parameter dictionary.
 
         Parameters
         ----------
         values : str or array-like, optional
-            Which values to use ('current', 'initial', 'true') or custom array
+            Which values to use ('current', 'initial') or custom array. Default is "current".
 
         Returns
         -------
-        ParameterDict
+        Inputs
             Dictionary mapping parameter names to values
         """
+        if values is None:
+            values = "current"
         params = self._parameters.items()
-        if values is None or values == "current":
-            return {name: param.current_value for name, param in params}
-        elif values == "initial":
-            return {name: param.initial_value for name, param in params}
-        elif values == "true":
-            return {name: param.true_value for name, param in params}
+
+        if isinstance(values, str):
+            if values == "current":
+                return {name: param.current_value for name, param in params}
+            elif values == "initial":
+                return {name: param.initial_value for name, param in params}
         else:
             # Custom values array
             values_array = np.atleast_1d(values)
@@ -746,6 +762,19 @@ class Parameters:
                     "Values array length doesn't match parameter count"
                 )
             return dict(zip(self._parameters.keys(), values_array, strict=False))
+
+    def to_inputs(self, values: np.ndarray | list[np.ndarray]) -> list[Inputs]:
+        """
+        Return parameter values as a list of dictionaries, as required for multiprocessing.
+        """
+        values = np.asarray(values)
+        if values.ndim == 1:
+            return [self.to_dict(values=values)]
+
+        inputs_list = []
+        for val in values:
+            inputs_list.append(self.to_dict(values=val))
+        return inputs_list
 
     def reset_to_initial(self, names: Sequence[str] | None = None) -> None:
         """Reset parameters to initial values."""
@@ -766,6 +795,7 @@ class Parameters:
             if param.prior is not None
         ]
 
+    @property
     def transformation(self) -> Transformation:
         """
         Get the transformation for the parameters.

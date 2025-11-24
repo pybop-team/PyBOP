@@ -83,9 +83,7 @@ class TestPlots:
         builder.set_dataset(dataset)
         for p in parameters:
             builder.add_parameter(p)
-        builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
-        )
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
         return builder.build()
 
     @pytest.fixture
@@ -96,9 +94,7 @@ class TestPlots:
         for p in parameters:
             builder.add_parameter(p)
         builder.add_cost(
-            pybop.costs.pybamm.NegativeGaussianLogLikelihood(
-                "Voltage [V]", "Voltage [V]", sigma=1e-3
-            )
+            pybop.costs.pybamm.NegativeGaussianLogLikelihood("Voltage [V]", sigma=1e-3)
         )
         return builder.build()
 
@@ -111,47 +107,44 @@ class TestPlots:
         pybop.plot.contour(problem, bounds=np.array([[0.5, 0.8], [0.4, 0.7]]), steps=5)
 
     @pytest.fixture
-    def optim(self, problem):
+    def result(self, problem):
         # Define and run an example optimisation
         options = pybop.XNES.default_options()
         options.max_iterations = 20
         optim = pybop.XNES(problem, options)
-        optim.run()
-        return optim
+        return optim.run()
 
-    def test_optim_plots(self, optim):
+    def test_optim_plots(self, result):
         bounds = np.asarray([[0.5, 0.8], [0.4, 0.7]])
 
         # Plot convergence
-        pybop.plot.convergence(optim)
-        optim.invert_cost = True
-        pybop.plot.convergence(optim)
+        result.plot_convergence()
 
         # Plot the parameter traces
-        pybop.plot.parameters(optim)
+        result.plot_parameters()
 
         # Plot the cost landscape with optimisation path
-        pybop.plot.contour(optim, steps=3)
+        result.plot_contour(steps=3)
 
-        # Plot the cost landscape w/ optim & bounds
-        pybop.plot.contour(optim, steps=3, bounds=bounds)
+        # Plot the cost landscape with optim trace and bounds
+        result.plot_contour(steps=3, bounds=bounds)
 
         # Plot the cost landscape using optimisation path
-        pybop.plot.contour(optim, steps=3, use_optim_log=True)
+        result.plot_contour(steps=3, use_optim_log=True)
 
         # Plot gradient cost landscape
-        pybop.plot.contour(optim, gradient=True, steps=5)
+        result.plot_contour(gradient=True, steps=5)
 
         # Plot voronoi
-        pybop.plot.surface(optim, normalise=False)
+        result.plot_surface(normalise=False)
 
         # Plot voronoi w/ bounds
-        pybop.plot.surface(optim, bounds=bounds)
+        result.plot_surface(bounds=bounds)
 
         with pytest.raises(
             ValueError, match="Lower bounds must be strictly less than upper bounds."
         ):
-            pybop.plot.surface(optim, bounds=[[0.5, 0.8], [0.7, 0.4]])
+            result.plot_surface(bounds=[[0.5, 0.8], [0.7, 0.4]])
 
     @pytest.fixture
     def posterior_summary(self, likelihood_problem):
@@ -175,24 +168,24 @@ class TestPlots:
         # Plot summary table
         posterior_summary.summary_table()
 
-    def test_with_ipykernel(self, dataset, problem, optim):
+    def test_with_ipykernel(self, dataset, problem, result):
         import ipykernel
 
         assert version.parse(ipykernel.__version__) >= version.parse("0.6")
         pybop.plot.dataset(dataset, signal=["Voltage [V]"])
         pybop.plot.contour(problem, gradient=True, steps=5)
-        pybop.plot.convergence(optim)
-        pybop.plot.parameters(optim)
-        pybop.plot.contour(optim, steps=5)
+        pybop.plot.convergence(result)
+        pybop.plot.parameters(result)
+        pybop.plot.contour(result, steps=5)
 
     def test_gaussianloglikelihood_plots(self, likelihood_problem):
         options = pybop.CMAES.default_options()
         options.max_iterations = 5
         optim = pybop.CMAES(likelihood_problem, options)
-        optim.run()
+        result = optim.run()
 
         # Plot parameters
-        pybop.plot.parameters(optim)
+        pybop.plot.parameters(result)
 
     def test_contour_incorrect_number_of_parameters(self, model, dataset):
         builder = pybop.Pybamm()
@@ -205,9 +198,7 @@ class TestPlots:
                 bounds=[0.5, 0.8],
             )
         )
-        builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
-        )
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
         fitting_problem = builder.build()
         with pytest.raises(
             ValueError, match="This problem takes fewer than 2 parameters."
@@ -267,3 +258,8 @@ class TestPlots:
 
         # Without inputs
         pybop.plot.nyquist(problem, title="Optimised Comparison")
+
+    def test_validation_plot(self, problem, dataset):
+        pybop.plot.validation(
+            problem.params.get_values(), problem=problem, dataset=dataset
+        )

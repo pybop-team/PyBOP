@@ -1,11 +1,19 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import pybamm
 
 import pybop
 
+"""
+In this example we will introduce PyBOP's problem builder class. This builder allows
+for flexible building of PyBOP's key class, the `Problem`. Builders can be reused and
+modified to generate multiple problem objects.
+"""
+
+# Define model and parameter values
 model = pybamm.lithium_ion.SPM()
 parameter_values = pybamm.ParameterValues("Chen2020")
+
+# Generate a synthetic dataset
 experiment = pybamm.Experiment(
     [
         "Rest for 1 seconds",
@@ -13,9 +21,7 @@ experiment = pybamm.Experiment(
         "Charge at 0.1C for 1 minutes",
     ]
 )
-sim = pybamm.Simulation(
-    model=model, parameter_values=parameter_values, experiment=experiment
-)
+sim = pybamm.Simulation(model, parameter_values=parameter_values, experiment=experiment)
 sol = sim.solve()
 
 dataset = pybop.Dataset(
@@ -26,13 +32,10 @@ dataset = pybop.Dataset(
     }
 )
 
-# Create the builder
+# Create the problem builder
 builder = pybop.builders.Pybamm()
 builder.set_dataset(dataset)
-builder.set_simulation(
-    model,
-    parameter_values=parameter_values,
-)
+builder.set_simulation(model, parameter_values=parameter_values)
 builder.add_parameter(
     pybop.Parameter(
         "Negative electrode active material volume fraction",
@@ -45,18 +48,15 @@ builder.add_parameter(
         initial_value=0.6,
     )
 )
-builder.add_cost(
-    pybop.costs.pybamm.NegativeGaussianLogLikelihood("Voltage [V]", "Voltage [V]")
-)
+builder.add_cost(pybop.costs.pybamm.NegativeGaussianLogLikelihood("Voltage [V]"))
 
 # Build the problem
 problem = builder.build()
 
-# Solve
-problem.set_params(np.array([0.6, 0.6, 1e-3]))
-sol = problem.pipeline.solve()
+# Run
+cost = problem.run(np.array([0.6, 0.6, 1e-3]))
+print(f"The likelihood value is: {cost[0]}")
 
-# Plot
-fig, ax = plt.subplots()
-ax.scatter(sol["Time [s]"].data, sol["Voltage [V]"].data)
-plt.show()
+# Run with sensitivities
+cost, grad = problem.run_with_sensitivities(np.array([0.6, 0.6, 1e-3]))
+print(f"The gradient is: {grad}")

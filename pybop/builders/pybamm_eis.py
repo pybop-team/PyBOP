@@ -1,12 +1,11 @@
 from collections.abc import Callable
 
-import numpy as np
 import pybamm
 
 import pybop
 from pybop import PybammEISProblem, builders
-from pybop._pybamm_eis_pipeline import PybammEISPipeline
 from pybop.costs.base_cost import CallableCost
+from pybop.pipelines._pybamm_eis_pipeline import PybammEISPipeline
 
 
 class PybammEIS(builders.BaseBuilder):
@@ -21,7 +20,12 @@ class PybammEIS(builders.BaseBuilder):
         model: pybamm.BaseModel,
         parameter_values: pybamm.ParameterValues | None = None,
         initial_state: float | str | None = None,
-        build_on_eval: bool | None = None,
+        geometry: pybamm.Geometry | None = None,
+        submesh_types: dict | None = None,
+        var_pts: dict | None = None,
+        spatial_methods: dict | None = None,
+        discretisation_kwargs: dict | None = None,
+        build_on_eval: bool = False,
     ) -> None:
         """
         Adds a simulation for the optimisation problem.
@@ -32,32 +36,43 @@ class PybammEIS(builders.BaseBuilder):
             The PyBaMM model to be used.
         parameter_values : pybamm.ParameterValues
             The parameters to be used in the model.
-        solver : pybamm.BaseSolver
-            The solver to be used. If None, the idaklu solver will be used.
-        initial_state: float | str
+        initial_state : float | str
             The initial state of charge or voltage for the battery model. If float, it will be represented
             as SoC and must be in range 0 to 1. If str, it will be represented as voltage and needs to be in
             the format: "3.4 V".
-        build_on_eval : bool
-            Boolean to determine if the model will be rebuilt every evaluation. If `initial_state` is provided,
-            the model will be rebuilt every evaluation unless `build_on_eval` is `False`, in which case the model
-            is built with the parameter values from construction only.
+        geometry : pybamm.Geometry, optional
+            The geometry upon which to solve the model.
+        submesh_types : dict, optional
+            A dictionary of the types of submesh to use on each subdomain.
+        var_pts : dict, optional
+            A dictionary of the number of points used by each spatial variable.
+        spatial_methods : dict, optional
+            A dictionary of the types of spatial method to use on each domain (e.g. pybamm.FiniteVolume).
+        discretisation_kwargs : dict, optional
+            Any keyword arguments to pass to the Discretisation class.
+            See :class:`pybamm.Discretisation` for details.
+        build_on_eval : bool, optional
+            If True, the model will be rebuilt every evaluation. Otherwise, the need to rebuild will be
+            determined automatically.
         """
         self._model = model.new_copy()
+        self._parameter_values = (
+            parameter_values.copy()
+            if parameter_values
+            else model.default_parameter_values
+        )
         self._initial_state = initial_state
-        self._build_on_eval = build_on_eval
-        if parameter_values is None:
-            parameter_values = model.default_parameter_values
-        elif isinstance(parameter_values, pybamm.ParameterValues):
-            parameter_values = parameter_values.copy()
-        else:
-            raise TypeError(
-                "parameter_values must be a pybamm.ParameterValues instance or None"
-            )
-        self._parameter_values = parameter_values
         self._solver = pybamm.CasadiSolver()
+        self._geometry = geometry
+        self._submesh_types = submesh_types
+        self._var_pts = var_pts
+        self._spatial_methods = spatial_methods
+        self._discretisation_kwargs = discretisation_kwargs
+        self._build_on_eval = build_on_eval
 
-    def add_cost(self, cost: Callable | CallableCost, weight: float = 1.0) -> None:
+    def add_cost(
+        self, cost: Callable | CallableCost, weight: float = 1.0
+    ) -> "PybammEIS":
         """Adds a cost to the problem."""
         if not isinstance(cost, CallableCost):
             if not isinstance(cost, Callable):
@@ -65,33 +80,16 @@ class PybammEIS(builders.BaseBuilder):
                     "cost must be a callable or an instance of CallableCost"
                 )
             cost = pybop.costs.CallableError(cost)
-        if cost.weighting is None or cost.weighting == "equal":
-            cost.weighting = np.array(1.0)
-        elif cost.weighting == "domain":
-            self._set_cost_domain_weighting(cost)
-        else:
-            raise ValueError(
-                "cost.weighting must be 'equal', 'domain', or a custom numpy array"
-                f", got {cost.weighting}"
-            )
+
+        # Set the time-series weighting
+        cost.weighting = builders.create_weighting(
+            cost.weighting, self._dataset, self.domain
+        )
 
         self._costs.append(cost)
         self._cost_weights.append(weight)
 
-    def _set_cost_domain_weighting(self, cost):
-        """Calculate domain-based weighting."""
-        domain_data = self._dataset[self.domain]
-        domain_spacing = domain_data[1:] - domain_data[:-1]
-        mean_spacing = np.mean(domain_spacing)
-
-        # Create a domain weighting array in one operation
-        cost.weighting = np.concatenate(
-            (
-                [(mean_spacing + domain_spacing[0]) / 2],
-                (domain_spacing[1:] + domain_spacing[:-1]) / 2,
-                [(domain_spacing[-1] + mean_spacing) / 2],
-            )
-        ) * ((len(domain_data) - 1) / (domain_data[-1] - domain_data[0]))
+        return self
 
     def build(self) -> PybammEISProblem:
         """
@@ -118,7 +116,7 @@ class PybammEIS(builders.BaseBuilder):
         if self._model is None:
             raise ValueError("A Pybamm model needs to be provided before building.")
 
-        if self._costs is None:
+        if not self._costs:
             raise ValueError("A cost must be provided before building.")
 
         if self._dataset is None:
@@ -136,16 +134,18 @@ class PybammEIS(builders.BaseBuilder):
         # Construct the pipeline
         pipeline = PybammEISPipeline(
             model,
-            self._dataset[self.domain],
-            param,
-            pybop_parameters,
-            self._solver,
+            f_eval=self._dataset[self.domain],
+            input_parameter_names=[p.name for p in pybop_parameters],
+            parameter_values=param,
             initial_state=self._initial_state,
+            solver=self._solver,
+            geometry=self._geometry,
+            submesh_types=self._submesh_types,
+            var_pts=self._var_pts,
+            spatial_methods=self._spatial_methods,
+            discretisation_kwargs=self._discretisation_kwargs,
             build_on_eval=self._build_on_eval,
         )
-
-        # Build and initialise the pipeline
-        pipeline.pybamm_pipeline.build()
 
         return PybammEISProblem(
             eis_pipeline=pipeline,

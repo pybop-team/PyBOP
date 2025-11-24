@@ -1,10 +1,12 @@
+import pybamm
 from pybamm import Parameter
 
 import pybop
 
-# Define parameter set and additional parameters needed for the cost function
-parameter_set = pybop.ParameterSet("Chen2020", formation_concentrations=True)
-parameter_set.update(
+# Define model, parameter values and additional parameters needed for the cost function
+model = pybamm.lithium_ion.SPM()
+parameter_values = pybamm.ParameterValues("Marquis2019")
+parameter_values.update(
     {
         "Electrolyte density [kg.m-3]": Parameter("Separator density [kg.m-3]"),
         "Negative electrode active material density [kg.m-3]": Parameter(
@@ -23,63 +25,75 @@ parameter_set.update(
     check_already_exists=False,
 )
 
-# Define model
-model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
-
-# Define useful quantities
-nominal_capacity = parameter_set["Nominal cell capacity [A.h]"]
-target_c_rate = 2
-discharge_rate = target_c_rate * nominal_capacity
-
-# Fitting parameters
-parameters = pybop.Parameters(
+# Target parameters
+parameters = [
     pybop.Parameter(
         "Positive electrode thickness [m]",
-        prior=pybop.Gaussian(7.56e-05, 0.5e-05),
-        bounds=[65e-06, 10e-05],
+        initial_value=9e-05,
+        bounds=[6.5e-05, 12e-05],
     ),
     pybop.Parameter(
-        "Nominal cell capacity [A.h]",  # controls the C-rate in the experiment
-        prior=pybop.Gaussian(discharge_rate, 0.2),
-        bounds=[0.8 * discharge_rate, 1.2 * discharge_rate],
+        "Negative electrode thickness [m]",
+        initial_value=9e-05,
+        bounds=[5e-05, 12e-05],
     ),
-)
+]
 
 # Define test protocol
-experiment = pybop.Experiment(
-    ["Discharge at 1C for 30 minutes or until 2.5 V (5 seconds period)"],
-)
-signal = ["Voltage [V]", "Current [A]"]
-
-# Generate problem
-problem = pybop.DesignProblem(
-    model,
-    parameters,
-    experiment,
-    signal=signal,
-    initial_state={"Initial SoC": 1.0},
+experiment = pybamm.Experiment(
+    [
+        "Discharge at 3C until 3.0 V (2 minute period)",
+    ],
 )
 
-# Generate multiple cost functions and combine them
-cost1 = pybop.GravimetricPowerDensity(problem, target_time=3600 / target_c_rate)
-cost2 = pybop.VolumetricPowerDensity(problem, target_time=3600 / target_c_rate)
-cost = pybop.WeightedCost(cost1, cost2, weights=[1, 1e-3])
+# Construct the problem builder
+builder = (
+    pybop.builders.Pybamm()
+    .set_simulation(
+        model,
+        parameter_values=parameter_values,
+        experiment=experiment,
+        initial_state=1.0,
+    )
+    .add_cost(pybop.costs.pybamm.VolumetricPowerDensity())
+)
+for param in parameters:
+    builder.add_parameter(param)
+
+problem = builder.build()
+
+# Set optimiser and options. Restrict the maximum number of iterations for speed
+options = pybop.SciPyDifferentialEvolutionOptions(
+    maxiter=5,
+    polish=False,
+)
+optim = pybop.SciPyDifferentialEvolution(problem, options=options)
 
 # Run optimisation
-optim = pybop.XNES(
-    cost, verbose=True, allow_infeasible_solutions=False, max_iterations=10
-)
 results = optim.run()
-print(f"Initial gravimetric power density: {cost1(optim.x0):.2f} W.kg-1")
-print(f"Optimised gravimetric power density: {cost1(results.x):.2f} W.kg-1")
-print(f"Initial volumetric power density: {cost2(optim.x0):.2f} W.m-3")
-print(f"Optimised volumetric power density: {cost2(results.x):.2f} W.m-3")
-print(
-    f"Optimised discharge rate: {results.x[-1]:.2f} A = {results.x[-1] / nominal_capacity:.2f} C"
-)
-
-# Plot the timeseries output
-pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
+print(results)
+print(f"Initial volumetric power density: {-results.initial_cost:.2f} W.m-3")
+print(f"Optimised volumetric power density: {-results.best_cost:.2f} W.m-3")
 
 # Plot the cost landscape with optimisation path
-pybop.plot.surface(optim)
+results.plot_surface()
+
+# Obtain the optimised pybamm.ParameterValues object for use with PyBaMM classes
+optimised_values = results.parameter_values
+
+# Plot comparison
+sim_original = pybamm.Simulation(
+    model, parameter_values=parameter_values, experiment=experiment
+)
+sol_original = sim_original.solve(initial_soc=1.0)
+sim_optimised = pybamm.Simulation(
+    model, parameter_values=optimised_values, experiment=experiment
+)
+sol_optimised = sim_optimised.solve(initial_soc=1.0)
+pybop.plot.trajectories(
+    x=[sol_original.t, sol_optimised.t],
+    y=[sol_original["Voltage [V]"].data, sol_optimised["Voltage [V]"].data],
+    trace_names=["Original", "Optimised"],
+    xaxis_title="Time / s",
+    yaxis_title="Voltage / V",
+)

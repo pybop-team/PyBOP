@@ -34,10 +34,11 @@ jobs:
   integration_tests:
     needs: style
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-14]
         python-version: ["3.12"]
 
     name: Integration tests (${{ matrix.os }} / Python ${{ matrix.python-version }})
@@ -59,6 +60,7 @@ jobs:
   unit_tests:
     needs: style
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -87,6 +89,7 @@ jobs:
   example_tests:
     needs: style
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -109,10 +112,34 @@ jobs:
         run: |
           nox -s examples
 
+  # Notebooks on macos-14
+  example_notebooks:
+    needs: style
+    runs-on: macos-14
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+    name: Test notebooks (macos-14 / Python 3.12)
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip nox[uv] openpyxl ipywidgets
+
+      - name: Run notebooks
+        run: |
+          nox -s notebooks
+
   # Quick benchmarks on macos-14
   benchmarks:
     needs: style
     runs-on: macos-14
+    timeout-minutes: 20
     strategy:
       fail-fast: false
     name: Benchmarks
@@ -144,6 +171,7 @@ jobs:
   check_coverage:
     needs: style
     runs-on: macos-14
+    timeout-minutes: 20
     strategy:
       fail-fast: false
     name: Coverage tests (macos-14 / Python 3.12)

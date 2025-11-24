@@ -62,6 +62,33 @@ class TestCosts:
             ),
         ]
 
+    def test_pybamm_custom_cost(self, model, dataset, one_parameter):
+        builder = pybop.Pybamm()
+        builder.set_simulation(model)
+        builder.set_dataset(dataset)
+        builder.add_parameter(one_parameter)
+
+        # Create a custom cost
+        data = pybamm.DiscreteTimeData(
+            dataset["Time [s]"], dataset["Voltage [V]"], "my_data"
+        )
+        custom_cost = pybop.costs.pybamm.custom(
+            "MySumSquaredError",
+            pybamm.DiscreteTimeSum((model.variables["Voltage [V]"] - data) ** 2),
+            {},
+        )
+        builder.add_cost(custom_cost)
+        problem_custom = builder.build()
+
+        builder = pybop.Pybamm()
+        builder.set_simulation(model)
+        builder.set_dataset(dataset)
+        builder.add_parameter(one_parameter)
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
+        problem = builder.build()
+
+        assert problem_custom.run(np.array([0.55])) == problem.run(np.array([0.55]))
+
     @pytest.mark.parametrize(
         "pybamm_costs",
         [
@@ -77,13 +104,11 @@ class TestCosts:
         builder.set_simulation(model)
         builder.set_dataset(dataset)
         builder.add_parameter(one_parameter)
-        builder.add_cost(pybamm_costs("Voltage [V]", "Voltage [V]"))
+        builder.add_cost(pybamm_costs("Voltage [V]"))
         problem = builder.build()
 
-        problem.set_params(np.array([0.55]))
-        higher_cost = problem.run()
-        problem.set_params(np.array([0.52]))
-        lower_cost = problem.run()
+        higher_cost = problem.run(np.array([0.55]))
+        lower_cost = problem.run(np.array([0.52]))
 
         assert higher_cost > lower_cost
 
@@ -118,19 +143,23 @@ class TestCosts:
             },
             check_already_exists=False,
         )
+        experiment = pybamm.Experiment(
+            ["Discharge at 1C for 2 minutes (10 second period)"]
+        )
         builder = pybop.Pybamm()
-        builder.set_simulation(model, parameter_values=parameter_values)
-        builder.set_dataset(dataset)
+        builder.set_simulation(
+            model,
+            parameter_values=parameter_values,
+            experiment=experiment,
+        )
         builder.add_parameter(one_parameter)
         builder.add_cost(pybamm_costs())
         problem = builder.build()
 
-        problem.set_params(np.array([0.55]))
-        higher_cost = problem.run()
-        problem.set_params(np.array([0.52]))
-        lower_cost = problem.run()
+        lower_cost = problem.run(np.array([0.55]))
+        higher_cost = problem.run(np.array([0.52]))
 
-        assert higher_cost > lower_cost
+        assert higher_cost > lower_cost  # Optimising negative cost
 
     @pytest.mark.parametrize(
         "pybamm_costs",
@@ -143,13 +172,11 @@ class TestCosts:
         builder.set_simulation(model)
         builder.set_dataset(dataset)
         builder.add_parameter(one_parameter)
-        builder.add_cost(pybamm_costs("Voltage [V]", "Voltage [V]"))
+        builder.add_cost(pybamm_costs("Voltage [V]"))
         problem = builder.build()
 
-        problem.set_params(np.array([0.55, 0.01]))
-        higher_cost = problem.run()
-        problem.set_params(np.array([0.52, 0.01]))
-        lower_cost = problem.run()
+        higher_cost = problem.run(np.array([0.55, 0.01]))
+        lower_cost = problem.run(np.array([0.52, 0.01]))
 
         assert higher_cost > lower_cost
 
@@ -158,40 +185,37 @@ class TestCosts:
         builder.set_simulation(model)
         builder.set_dataset(dataset)
         builder.add_parameter(one_parameter)
-        cost = pybop.costs.pybamm.SumOfPower("Voltage [V]", "Voltage [V]")
+        cost = pybop.costs.pybamm.SumOfPower("Voltage [V]")
         builder.add_cost(pybop.costs.pybamm.ScaledCost(cost))
         problem = builder.build()
 
-        problem.set_params(np.array([0.55]))
-        higher_cost = problem.run()
-        problem.set_params(np.array([0.52]))
-        lower_cost = problem.run()
+        higher_cost = problem.run(np.array([0.55]))
+        lower_cost = problem.run(np.array([0.52]))
 
         assert higher_cost > lower_cost
 
     def test_multi_cost_weighting(self, model, dataset, one_parameter):
+        builder = pybop.builders.Pybamm()
+        builder.set_simulation(model)
+        builder.set_dataset(dataset)
+        builder.add_parameter(one_parameter)
+
         def problem(weights):
-            builder = pybop.builders.Pybamm()
-            builder.set_simulation(model)
-            builder.set_dataset(dataset)
-            builder.add_parameter(one_parameter)
+            builder.remove_costs()
             builder.add_cost(
-                pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]", "Voltage [V]"),
+                pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]"),
                 weight=weights[0],
             )
-            builder.add_cost(
-                pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]", "Voltage [V]"),
-                weight=weights[1],
-            )
+            duplicate_cost = pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]")
+            duplicate_cost.name = lambda: "Duplicate RMSE in the voltage [V]"
+            builder.add_cost(duplicate_cost, weight=weights[1])
             return builder.build()
 
         problem1 = problem([1, 1])
         problem2 = problem([1, 10])
 
-        problem2.set_params(np.array([0.55]))
-        val1 = problem1.run()
-        problem2.set_params(np.array([0.55]))
-        val2 = problem2.run()
+        val1 = problem1.run(np.array([0.55]))
+        val2 = problem2.run(np.array([0.55]))
 
         np.testing.assert_allclose(val2 / val1, 5.5)
 
@@ -231,12 +255,12 @@ class TestCosts:
     def test_minkowski(self):
         # Incorrect order
         with pytest.raises(ValueError, match="The order of the Minkowski distance"):
-            pybop.costs.pybamm.Minkowski("Voltage [V]", "Voltage [V]", p=-1)
+            pybop.costs.pybamm.Minkowski("Voltage [V]", p=-1)
         with pytest.raises(
             ValueError,
             match="For p = infinity, an implementation of the Chebyshev distance is required.",
         ):
-            pybop.costs.pybamm.Minkowski("Voltage [V]", "Voltage [V]", p=np.inf)
+            pybop.costs.pybamm.Minkowski("Voltage [V]", p=np.inf)
 
     def test_sumofpower(self):
         # Incorrect order
@@ -244,10 +268,10 @@ class TestCosts:
             ValueError,
             match="The order of the Minkowski distance must be greater than 0.",
         ):
-            pybop.costs.pybamm.Minkowski("Voltage [V]", "Voltage [V]", p=-1)
+            pybop.costs.pybamm.Minkowski("Voltage [V]", p=-1)
 
         with pytest.raises(
             ValueError,
             match="For p = infinity, an implementation of the Chebyshev distance is required.",
         ):
-            pybop.costs.pybamm.Minkowski("Voltage [V]", "Voltage [V]", p=np.inf)
+            pybop.costs.pybamm.Minkowski("Voltage [V]", p=np.inf)
