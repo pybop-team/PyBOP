@@ -204,9 +204,21 @@ class TestClassification:
         _, info = pybop.classify_using_hessian(result)
         # info must be a dict; check types and shapes
         assert isinstance(info, dict)
-        for k in ("hessian_fd", "eigenvalues", "eigenvectors", "x", "dx", "names",
-                      "best_cost", "span0", "span1", "param0", "param1", "Z"):
-                assert k in info
+        for k in (
+            "hessian_fd",
+            "eigenvalues",
+            "eigenvectors",
+            "x",
+            "dx",
+            "names",
+            "best_cost",
+            "span0",
+            "span1",
+            "param0",
+            "param1",
+            "Z",
+        ):
+            assert k in info
         assert info["hessian_fd"].shape == (2, 2)
         assert info["eigenvalues"].shape == (2,)
         assert info["eigenvectors"].shape == (2, 2)

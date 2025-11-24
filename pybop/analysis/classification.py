@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import numpy as np
 
 from pybop import OptimisationResult
@@ -193,4 +192,4 @@ def classify_using_hessian(
         "Z": Z,
     }
 
-    return message,info
+    return message, info
