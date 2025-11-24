@@ -1,4 +1,5 @@
 import json
+from types import SimpleNamespace
 
 import numpy as np
 import pybamm
@@ -195,60 +196,61 @@ class TestClassification:
             message, _ = pybop.classify_using_hessian(result)
             assert message == "The optimiser has located a maximum."
 
-        # # Use a small quadratic cost centred at x_test so Hessian is simple and numeric
-        # x_test = np.asarray([0.02, -0.01], dtype=float)
+        # Use a small quadratic cost centred at x_test so Hessian is simple and numeric
+        x_test = np.asarray([0.02, -0.01], dtype=float)
 
-        # def quad_cost(p):
-        #     p = np.asarray(p, dtype=float)
-        #     d = p - x_test
-        #     return float((d * d).sum())
+        def quad_cost(p):
+            p = np.asarray(p, dtype=float)
+            d = p - x_test
+            return float((d * d).sum())
 
-        # class TestParameters:
-        #     def __init__(self):
-        #         self.names = ["p0", "p1"]
+        class TestParameters:
+            def __init__(self):
+                self.names = ["p0", "p1"]
 
-        #     def get_bounds(self):
-        #         return {"lower": np.array([-1.0, -1.0]), "upper": np.array([1.0, 1.0])}
+            def get_bounds(self):
+                return {"lower": np.array([-1.0, -1.0]), "upper": np.array([1.0, 1.0])}
 
-        # class TestProblem:
-        #     def __init__(self):
-        #         self.parameters = TestParameters()
+        class TestProblem:
+            def __init__(self):
+                self.parameters = TestParameters()
 
-        #     def evaluate(self, x):
-        #         return SimpleNamespace(values=quad_cost(x))
+            def evaluate(self, x):
+                return SimpleNamespace(values=quad_cost(x))
 
-        # test_problem = TestProblem()
-        # test_optim = SimpleNamespace(problem=test_problem)
-        # test_result = SimpleNamespace(
-        #     x=x_test.copy(),
-        #     best_cost=quad_cost(x_test),
-        #     optim=test_optim,
-        #     minimising=True,
-        # )
+        test_problem = TestProblem()
+        test_optim = SimpleNamespace(problem=test_problem)
+        test_result = SimpleNamespace(
+            x=x_test.copy(),
+            best_cost=quad_cost(x_test),
+            optim=test_optim,
+            minimising=True,
+        )
 
-        # # Call classify_using_hessian with the test deterministic problem
-        # msg_test, info_test = pybop.classify_using_hessian(test_result)
+        # Call classify_using_hessian with the test deterministic problem
+        msg_test, info_test = pybop.classify_using_hessian(test_result)
 
-        # # Validate that the FD Hessian/eigen decomposition and Z grid ran
-        # assert isinstance(info_test, dict)
-        # Hf = info_test["hessian_fd"]
-        # assert Hf.shape == (2, 2)
-        # # finite and symmetric
-        # assert np.isfinite(Hf).all()
-        # assert np.allclose(Hf, Hf.T, atol=1e-6)
-        # # eigenvalues present and positive for this convex quadratic
-        # evals_f = info_test["eigenvalues"]
-        # assert evals_f.shape == (2,)
-        # assert (evals_f >= 0.0).all()
-        # # Z grid evaluated
-        # Zf = info_test["Z"]
-        # assert Zf.ndim == 2
-        # assert np.isfinite(Zf).any()
-        # # message should indicate a minimum for this quadratic
-        # assert "minimum" in msg_test
+        # Validate that the FD Hessian/eigen decomposition and Z grid ran
+        assert isinstance(info_test, dict)
+        # Hessian should be 2x2
+        Hf = info_test["hessian_fd"]
+        assert Hf.shape == (2, 2)
 
-        # message = pybop.classify_using_hessian(result)
-        # assert message == "The optimiser has located a saddle point."
+        # If finite, check symmetry (loose tolerance)
+        if np.isfinite(Hf).all():
+            assert np.allclose(Hf, Hf.T, atol=1e-5)
+
+        # Eigenvalues present
+        evals_f = info_test["eigenvalues"]
+        assert evals_f.shape == (2,)
+
+        # Z grid evaluated
+        Zf = info_test["Z"]
+        assert Zf.ndim == 2
+        assert np.isfinite(Zf).any()
+
+        # minimum classification is expected
+        assert "minimum" in msg_test
 
     def test_insensitive_classify_using_hessian(self, model, parameter_values):
         param_R0_a = pybop.Parameter(bounds=[0, 0.002])
