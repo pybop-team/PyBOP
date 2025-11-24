@@ -7,6 +7,7 @@
 ## Optimisations
 
 - [#837](https://github.com/pybop-team/PyBOP/pull/837) - Update the descriptons in the example scripts and notebooks.
+- [#833](https://github.com/pybop-team/PyBOP/pull/833) - Upgrade to Pints 0.5.1, PyBaMM 25.10.1 and NumPy 2, fix some deprecation warnings.
 - [#816](https://github.com/pybop-team/PyBOP/pull/816) - Enable simulator multi-processing via the evaluators.
 
 ## Bug Fixes
