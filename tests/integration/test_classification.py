@@ -1,5 +1,4 @@
 import json
-from types import SimpleNamespace
 
 import numpy as np
 import pybamm
@@ -274,9 +273,7 @@ class TestClassification:
         assert message == (
             "The cost variation is too small to classify with certainty."
             " The cost is insensitive to a change of 1e-42 in R0_b [Ohm]."
-        ) or message == (
-            "The cost variation is smaller than the cost tolerance: 0.01."
-        )
+        ) or message == ("The cost variation is smaller than the cost tolerance: 0.01.")
 
         message, _ = pybop.classify_using_hessian(result, dx=[0.0001, 0.0001])
         assert message == (
@@ -294,4 +291,3 @@ class TestClassification:
             "Classification cannot proceed due to infinite cost value(s)."
             " The result is near the upper bound of R0_a [Ohm]."
         )
-
