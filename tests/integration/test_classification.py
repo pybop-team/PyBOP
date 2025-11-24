@@ -4,6 +4,7 @@ import numpy as np
 import pybamm
 import pytest
 from pybamm import Parameter
+from types import SimpleNamespace
 
 import pybop
 
@@ -176,6 +177,58 @@ class TestClassification:
             message, _ = pybop.classify_using_hessian(result)
             assert message == "The optimiser has located a maximum."
 
+        # Use a small quadratic cost centred at x_test so Hessian is simple and numeric
+        x_test = np.asarray([0.02, -0.01], dtype=float)
+
+        def quad_cost(p):
+            p = np.asarray(p, dtype=float)
+            d = p - x_test
+            return float((d * d).sum())
+
+        class TestParameters:
+            def __init__(self):
+                self.names = ["p0", "p1"]
+
+            def get_bounds(self):
+                return {"lower": np.array([-1.0, -1.0]), "upper": np.array([1.0, 1.0])}
+
+        class TestProblem:
+            def __init__(self):
+                self.parameters = TestParameters()
+
+            def evaluate(self, x):
+                return SimpleNamespace(values=quad_cost(x))
+
+        test_problem = TestProblem()
+        test_optim = SimpleNamespace(problem=test_problem)
+        test_result = SimpleNamespace(
+            x=x_test.copy(),
+            best_cost=quad_cost(x_test),
+            optim=test_optim,
+            minimising=True,
+        )
+
+        # Call classify_using_hessian with the test deterministic problem
+        msg_test, info_test = pybop.classify_using_hessian(test_result)
+
+        # Validate that the FD Hessian/eigen decomposition and Z grid ran
+        assert isinstance(info_test, dict)
+        Hf = info_test["hessian_fd"]
+        assert Hf.shape == (2, 2)
+        # finite and symmetric
+        assert np.isfinite(Hf).all()
+        assert np.allclose(Hf, Hf.T, atol=1e-6)
+        # eigenvalues present and positive for this convex quadratic
+        evals_f = info_test["eigenvalues"]
+        assert evals_f.shape == (2,)
+        assert (evals_f >= 0.0).all()
+        # Z grid evaluated
+        Zf = info_test["Z"]
+        assert Zf.ndim == 2
+        assert np.isfinite(Zf).any()
+        # message should indicate a minimum for this quadratic
+        assert "minimum" in msg_test
+
         # message = pybop.classify_using_hessian(result)
         # assert message == "The optimiser has located a saddle point."
 
@@ -239,3 +292,74 @@ class TestClassification:
             "Classification cannot proceed due to infinite cost value(s)."
             " The result is near the upper bound of R0_a [Ohm]."
         )
+
+    def test_classify_using_hessian_with_fake_problem_executes_fd_and_grid():
+        """
+        Create a minimal fake Problem + OptimisationResult so we deterministically
+        exercise the fourth-order FD Hessian block, the eigen-decomposition,
+        and the grid evaluation that populates Z.
+        """
+        from types import SimpleNamespace
+
+        # centre point (optimum) used by the fake quadratic cost
+        x0 = np.asarray([0.12, 0.34], dtype=float)
+
+        # Quadratic cost with known Hessian = 2 * I (so minimum at x0)
+        def quad_cost(p):
+            p = np.asarray(p, dtype=float)
+            d = p - x0
+            return float((d * d).sum())
+
+        # Minimal fake Problem with .evaluate(x).values and .parameters
+        class FakeParameters:
+            def __init__(self):
+                self.names = ["p0", "p1"]
+
+            def get_bounds(self):
+                # provide finite bounds so check_proximity_to_bounds can run when needed
+                return {"lower": np.array([-1.0, -1.0]), "upper": np.array([1.0, 1.0])}
+
+        class FakeProblem:
+            def __init__(self, x0):
+                self._x0 = np.asarray(x0, dtype=float)
+                self.parameters = FakeParameters()
+
+            def evaluate(self, x):
+                # return an object with attribute `values`, matching real Problem API
+                return SimpleNamespace(values=quad_cost(x))
+
+        # Build fake OptimisationResult-like object with minimal attributes used
+        fake_problem = FakeProblem(x0)
+        fake_optim = SimpleNamespace(problem=fake_problem)
+        fake_result = SimpleNamespace(
+            x=x0.copy(),
+            best_cost=quad_cost(x0),
+            optim=fake_optim,
+            minimising=True,
+        )
+
+        # Call the function under test. It should execute the FD Hessian formulas,
+        # run np.linalg.eig on cfd_hessian, build the Z grid and return info.
+        message, info = pybop.classify_using_hessian(fake_result)
+
+        # Basic assertions to ensure the FD and packaging code ran
+        assert isinstance(info, dict)
+        assert "hessian_fd" in info and info["hessian_fd"].shape == (2, 2)
+        assert "eigenvalues" in info and info["eigenvalues"].shape == (2,)
+        assert "eigenvectors" in info and info["eigenvectors"].shape == (2, 2)
+        assert "Z" in info and info["Z"].ndim == 2
+
+        # Hessian from quadratic should be close to 2*I (within FD error tolerance)
+        H = info["hessian_fd"]
+        assert np.isfinite(H).all()
+        assert np.allclose(H, H.T, atol=1e-8)
+        # roughly expect positive eigenvalues for this convex quadratic
+        evals = info["eigenvalues"]
+        assert (evals > 0.0).all()
+
+        # grid contains finite entries
+        Z = info["Z"]
+        assert np.isfinite(Z).any()
+
+        # message should mention minimum
+        assert "minimum" in message
