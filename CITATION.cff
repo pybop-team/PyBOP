@@ -6,7 +6,7 @@ authors:
   - given-names: Brady
     family-names: Planden
     orcid: "https://orcid.org/0000-0002-1082-9125"
-  - given-names: Nicola
+  - given-names: Nicola E.
     family-names: Courtier
     orcid: "https://orcid.org/0000-0002-5714-1096"
   - given-names: Martin
@@ -18,7 +18,7 @@ authors:
   - given-names: Ferran
     family-names: Brosa Planella
     orcid: "https://orcid.org/0000-0001-6363-2812"
-  - given-names: David
+  - given-names: David A.
     family-names: Howey
     orcid: "https://orcid.org/0000-0002-0620-3955"
 
@@ -31,5 +31,5 @@ keywords:
 journal: "arXiv"
 date-released: 2024-12-20
 doi: 10.48550/arXiv.2412.15859
-version: "25.10" # Update this alongside new releases
+version: "25.11" # Update this alongside new releases
 repository-code: 'https://www.github.com/pybop-team/pybop'
