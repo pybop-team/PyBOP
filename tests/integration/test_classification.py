@@ -154,7 +154,6 @@ class TestClassification:
                 # Fallback: ensure the Z grid exists (this confirms classification ran)
                 assert isinstance(info.get("Z", None), np.ndarray)
 
-
         # Check the grid Z contains at least some finite values
         Z = info["Z"]
         assert np.isfinite(Z).any()
