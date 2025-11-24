@@ -96,16 +96,16 @@ class TestClassification:
         result = pybop.OptimisationResult(optim=optim, logger=logger, time=1.0)
 
         if np.all(x == np.asarray([0.05, 0.05])):
-            message = pybop.classify_using_hessian(result)
+            message, _ = pybop.classify_using_hessian(result)
             assert message == "The optimiser has located a minimum."
         elif np.all(x == np.asarray([0.1, 0.05])):
-            message = pybop.classify_using_hessian(result)
+            message, _ = pybop.classify_using_hessian(result)
             assert message == (
                 "The optimiser has not converged to a stationary point."
                 " The result is near the upper bound of R0 [Ohm]."
             )
         elif np.all(x == np.asarray([0.05, 0.01])):
-            message = pybop.classify_using_hessian(result)
+            message, _ = pybop.classify_using_hessian(result)
             assert message == (
                 "The optimiser has not converged to a stationary point."
                 " The result is near the lower bound of R1 [Ohm]."
@@ -122,7 +122,7 @@ class TestClassification:
             logger.extend_log(x_search=[x], x_model=[x], cost=[problem(x)])
             result = pybop.OptimisationResult(optim=optim, logger=logger, time=1.0)
 
-            message = pybop.classify_using_hessian(result)
+            message, _ = pybop.classify_using_hessian(result)
             assert message == "The optimiser has located a maximum."
 
         # message = pybop.classify_using_hessian(result)
@@ -166,25 +166,50 @@ class TestClassification:
         logger.extend_log(x_search=[x], x_model=[x], cost=[problem(x)])
         result = pybop.OptimisationResult(optim=optim, logger=logger, time=1.0)
 
-        message = pybop.classify_using_hessian(result)
+        message, _ = pybop.classify_using_hessian(result)
         assert message == (
             "The cost variation is too small to classify with certainty."
             " The cost is insensitive to a change of 1e-42 in R0_b [Ohm]."
         )
 
-        message = pybop.classify_using_hessian(result, dx=[0.0001, 0.0001])
+        message, _ = pybop.classify_using_hessian(result, dx=[0.0001, 0.0001])
         assert message == (
             "The optimiser has located a minimum."
             " There may be a correlation between these parameters."
         )
 
-        message = pybop.classify_using_hessian(result, cost_tolerance=1e-2)
+        message, _ = pybop.classify_using_hessian(result, cost_tolerance=1e-2)
         assert message == (
             "The cost variation is smaller than the cost tolerance: 0.01."
         )
 
-        message = pybop.classify_using_hessian(result, dx=[1, 1])
+        message, _ = pybop.classify_using_hessian(result, dx=[1, 1])
         assert message == (
             "Classification cannot proceed due to infinite cost value(s)."
             " The result is near the upper bound of R0_a [Ohm]."
         )
+
+    def test_return_info_keys_and_shapes(self, simulator, dataset):
+        cost = pybop.RootMeanSquaredError(dataset)
+        problem = pybop.Problem(simulator, cost)
+        x = np.asarray([0.05, 0.05])
+        bounds = problem.parameters.get_bounds()
+        x0 = np.clip(x, bounds["lower"], bounds["upper"])
+        optim = pybop.XNES(problem)
+        logger = pybop.Logger(minimising=problem.minimising)
+        logger.iteration = 1
+        logger.extend_log(x_search=[x0], x_model=[x0], cost=[problem(x0)])
+        result = pybop.OptimisationResult(optim=optim, logger=logger, time=1.0)
+
+        _, info = pybop.classify_using_hessian(result)
+        # info must be a dict; check types and shapes
+        assert isinstance(info, dict)
+        for k in ("hessian_fd", "eigenvalues", "eigenvectors", "x", "dx", "names",
+                      "best_cost", "span0", "span1", "param0", "param1", "Z"):
+                assert k in info
+        assert info["hessian_fd"].shape == (2, 2)
+        assert info["eigenvalues"].shape == (2,)
+        assert info["eigenvectors"].shape == (2, 2)
+        assert info["x"].shape == (2,)
+        assert info["Z"].ndim == 2
+        assert info["Z"].shape[0] == info["Z"].shape[1]  # grid is square
