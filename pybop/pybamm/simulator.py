@@ -206,7 +206,7 @@ class Simulator(BaseSimulator):
         try:
             self.build_model()
             requires_model_rebuild = False
-        except (ValueError, TypeError):
+        except (ValueError, TypeError, IndexError):
             self._built_model = None
             requires_model_rebuild = True
 

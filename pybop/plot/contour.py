@@ -129,7 +129,7 @@ def contour(
             else:
                 costs[j, i] = problem.evaluate(
                     np.asarray([xi, yj] + additional_values),
-                ).get_values()
+                ).get_values()[0]
 
     # Append the arrays to the grad_parameter_costs list
     if gradient:
