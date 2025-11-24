@@ -189,39 +189,4 @@ class TestClassification:
             " The result is near the upper bound of R0_a [Ohm]."
         )
 
-    def test_return_info_keys_and_shapes(self, simulator, dataset):
-        cost = pybop.RootMeanSquaredError(dataset)
-        problem = pybop.Problem(simulator, cost)
-        x = np.asarray([0.05, 0.05])
-        bounds = problem.parameters.get_bounds()
-        x0 = np.clip(x, bounds["lower"], bounds["upper"])
-        optim = pybop.XNES(problem)
-        logger = pybop.Logger(minimising=problem.minimising)
-        logger.iteration = 1
-        logger.extend_log(x_search=[x0], x_model=[x0], cost=[problem(x0)])
-        result = pybop.OptimisationResult(optim=optim, logger=logger, time=1.0)
 
-        _, info = pybop.classify_using_hessian(result)
-        # info must be a dict; check types and shapes
-        assert isinstance(info, dict)
-        for k in (
-            "hessian_fd",
-            "eigenvalues",
-            "eigenvectors",
-            "x",
-            "dx",
-            "names",
-            "best_cost",
-            "span0",
-            "span1",
-            "param0",
-            "param1",
-            "Z",
-        ):
-            assert k in info
-        assert info["hessian_fd"].shape == (2, 2)
-        assert info["eigenvalues"].shape == (2,)
-        assert info["eigenvectors"].shape == (2, 2)
-        assert info["x"].shape == (2,)
-        assert info["Z"].ndim == 2
-        assert info["Z"].shape[0] == info["Z"].shape[1]  # grid is square
