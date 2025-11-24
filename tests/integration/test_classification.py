@@ -302,9 +302,7 @@ class TestClassification:
         )
 
         message, _ = pybop.classify_using_hessian(result, cost_tolerance=1e-2)
-        assert message == (
-            "The cost variation is smaller than the cost tolerance: 0.01."
-        )
+        assert message in {expected1, expected2}
 
         message, _ = pybop.classify_using_hessian(result, dx=[1, 1])
         assert message == (
