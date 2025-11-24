@@ -1,10 +1,10 @@
 import json
+from types import SimpleNamespace
 
 import numpy as np
 import pybamm
 import pytest
 from pybamm import Parameter
-from types import SimpleNamespace
 
 import pybop
 
