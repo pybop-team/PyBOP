@@ -30,7 +30,7 @@ class SeparableParaboloidProblem:
         if x.ndim > 1:
             x = x[0]
         val = float(((x - self.centre) ** 2).sum() + self.c)
-        return type("Evaluation", (), {"values": val})
+        return type("Evaluation", (), {"values": np.array([val])})
 
 
 class OptimContainer:
