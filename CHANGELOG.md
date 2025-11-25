@@ -2,6 +2,16 @@
 
 ## Features
 
+## Optimisations
+
+## Bug Fixes
+
+## Breaking Changes
+
+# [v25.11](https://github.com/pybop-team/PyBOP/tree/v25.11) - 2025-11-24
+
+## Features
+
 - [#815](https://github.com/pybop-team/PyBOP/pull/815) - Adds function import_pyprobe_result to import a pyprobe.result into a pybop.dataset. Allows for creating a dataset directly from a pybamm.solution object.
 
 ## Optimisations
