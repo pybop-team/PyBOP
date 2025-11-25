@@ -48,7 +48,7 @@ from ._utils import add_spaces, is_numeric, FailedVariable, FailedSolution, Symb
 #
 # Dataset class
 #
-from ._dataset import Dataset
+from ._dataset import Dataset, import_pyprobe_result
 
 #
 # Transformation classes
@@ -89,6 +89,7 @@ from .problems.meta_problem import MetaProblem
 # Simulator classes
 #
 from .simulators.base_simulator import BaseSimulator
+from .simulators.solution import Solution
 
 #
 # Cost classes

@@ -3,6 +3,10 @@ import pybamm
 
 import pybop
 
+"""
+Example demonstrating parameter estimation in the frequency domain using PyBaMM-EIS.
+"""
+
 # Define model and parameter values
 model = pybamm.lithium_ion.SPM(
     options={"surface form": "differential", "contact resistance": "true"},
@@ -23,7 +27,7 @@ f_eval = np.logspace(-4, 5, n_frequency)
 # Create synthetic data for parameter inference
 solution = pybop.pybamm.EISSimulator(
     model, parameter_values=parameter_values, f_eval=f_eval
-).simulate()
+).solve()
 
 
 def noisy(data, sigma):
@@ -37,15 +41,23 @@ def noisy(data, sigma):
     return data + real_noise + 1j * imag_noise
 
 
-# Form dataset
 dataset = pybop.Dataset(
     {
         "Frequency [Hz]": f_eval,
         "Current function [A]": np.zeros_like(f_eval),
-        "Impedance": noisy(solution["Impedance"], sigma0),
+        "Impedance": noisy(solution["Impedance"].data, sigma0),
     },
     domain="Frequency [Hz]",
 )
+
+# Save the true values
+true_values = [
+    parameter_values[p]
+    for p in [
+        "Negative electrode active material volume fraction",
+        "Positive electrode active material volume fraction",
+    ]
+]
 
 # Fitting parameters
 parameter_values.update(
@@ -69,17 +81,19 @@ cost = pybop.GaussianLogLikelihoodKnownSigma(dataset, target="Impedance", sigma0
 problem = pybop.Problem(simulator, cost)
 
 # Set up the optimiser
-options = pybop.PintsOptions(
-    max_iterations=100, sigma=0.25, max_unchanged_iterations=30
-)
+options = pybop.PintsOptions(max_iterations=100, max_unchanged_iterations=30)
 optim = pybop.CMAES(problem, options=options)
 
 # Run the optimisation
 result = optim.run()
 print(result)
 
+# Compare identified to true parameter values
+print("True parameters:", true_values)
+print("Identified parameters:", result.x)
+
 # Plot the nyquist
-pybop.plot.nyquist(problem, problem_inputs=result.x, title="Optimised Comparison")
+pybop.plot.nyquist(problem, inputs=result.best_inputs, title="Optimised Comparison")
 
 # Plot the optimisation result
 result.plot_convergence()

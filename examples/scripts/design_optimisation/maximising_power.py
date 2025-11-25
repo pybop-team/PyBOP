@@ -79,6 +79,8 @@ options = pybop.PintsOptions(max_iterations=10)
 optim = pybop.XNES(problem, options=options)
 result = optim.run()
 print(result)
+
+# Compare the designs
 print(f"Initial gravimetric power density: {problem_1(result.x0):.2f} W.kg-1")
 print(f"Optimised gravimetric power density: {problem_1(result.x):.2f} W.kg-1")
 print(f"Initial volumetric power density: {problem_2(result.x0):.2f} W.m-3")
@@ -89,4 +91,4 @@ result.plot_surface()
 
 # Plot the timeseries output
 problem_1.target = "Voltage [V]"
-pybop.plot.problem(problem_1, problem_inputs=result.x, title="Optimised Comparison")
+pybop.plot.problem(problem_1, inputs=result.best_inputs, title="Optimised Comparison")

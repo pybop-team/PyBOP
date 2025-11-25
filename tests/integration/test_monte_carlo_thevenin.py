@@ -13,7 +13,6 @@ from pybop import (
     RaoBlackwellACMC,
     RelativisticMCMC,
     SliceDoublingMCMC,
-    SliceRankShrinkingMCMC,
     SliceStepoutMCMC,
 )
 
@@ -108,13 +107,12 @@ class TestSamplingThevenin:
     def map_estimate(self, posterior):
         options = pybop.PintsOptions(
             max_iterations=80,
-            sigma=[3e-4, 3e-4],
             verbose=True,
         )
         optim = pybop.CMAES(posterior, options=options)
-        results = optim.run()
+        result = optim.run()
 
-        return results.x
+        return result.x
 
     # Parameterize the samplers
     @pytest.mark.parametrize(
@@ -138,27 +136,26 @@ class TestSamplingThevenin:
             n_chains=2,
             warm_up_iterations=50,
             cov=[6e-3, 6e-3],
-            max_iterations=500 if sampler is SliceRankShrinkingMCMC else 350,
+            max_iterations=350,
         )
 
         # construct and run
         sampler = sampler(log_pdf=posterior, options=options)
-        if isinstance(sampler, SliceRankShrinkingMCMC):
-            for i, _j in enumerate(sampler._samplers):
-                sampler._samplers[i].set_hyper_parameters([1e-3])
-        chains = sampler.run()
+        result = sampler.run()
 
         # Test PosteriorSummary
-        summary = pybop.PosteriorSummary(chains)
+        summary = pybop.PosteriorSummary(result.chains)
         ess = summary.effective_sample_size()
         np.testing.assert_array_less(0, ess)
         np.testing.assert_array_less(0, summary.rhat())
 
         # Assert both final sample and posterior mean
-        x = np.mean(chains, axis=1)
+        x = np.mean(result.chains, axis=1)
         for i in range(len(x)):
             np.testing.assert_allclose(x[i], self.ground_truth, atol=5e-3)
-            np.testing.assert_allclose(chains[i][-1], self.ground_truth, atol=1e-2)
+            np.testing.assert_allclose(
+                result.chains[i][-1], self.ground_truth, atol=1e-2
+            )
 
     def get_data(self, model, parameter_values):
         experiment = pybamm.Experiment(

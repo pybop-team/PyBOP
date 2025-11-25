@@ -13,7 +13,7 @@ def classify_using_hessian(
     of the Hessian matrix at the optimal point using central finite differences.
 
     Parameters
-    ---------
+    ----------
     result : OptimisationResult
         The optimisation result.
     dx : array-like, optional
@@ -30,7 +30,7 @@ def classify_using_hessian(
     minimising = result.minimising
 
     def cost(x):
-        return problem.__call__(x)
+        return problem.evaluate(x).values
 
     n = len(x)
     if n != 2 or len(dx) != n:
@@ -50,8 +50,8 @@ def classify_using_hessian(
                 costs[1, 1, 0] = best_cost
                 costs[1, 1, 1] = best_cost
             else:
-                costs[i, j, 0] = cost(x + np.multiply([i - 1, j - 1], dx))
-                costs[i, j, 1] = cost(x + np.multiply([i - 1, j - 1], 2 * dx))
+                costs[i, j, 0] = cost(x + np.multiply([i - 1, j - 1], dx))[0]
+                costs[i, j, 1] = cost(x + np.multiply([i - 1, j - 1], 2 * dx))[0]
 
     def check_proximity_to_bounds(parameters, x, dx, names) -> str:
         bounds = parameters.get_bounds()

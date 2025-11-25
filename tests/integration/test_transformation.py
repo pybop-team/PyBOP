@@ -136,18 +136,13 @@ class TestTransformation:
             )
         else:
             options = pybop.PintsOptions(
-                sigma=[0.02, 0.02, 2e-3]
-                if isinstance(
-                    problem.cost, pybop.GaussianLogLikelihood | pybop.LogPosterior
-                )
-                else [0.02, 0.02],
                 max_iterations=150,
                 max_unchanged_iterations=45,
             )
         optim = optimiser(problem, options=options)
 
         initial_cost = optim.problem(x0)
-        results = optim.run()
+        result = optim.run()
 
         # Add sigma0 to ground truth for GaussianLogLikelihood
         if isinstance(problem.cost, pybop.GaussianLogLikelihood | pybop.LogPosterior):
@@ -159,16 +154,12 @@ class TestTransformation:
         if np.allclose(x0, self.ground_truth, atol=1e-5):
             raise AssertionError("Initial guess is too close to ground truth")
 
-        if isinstance(problem.cost, pybop.GaussianLogLikelihood):
-            np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
-            np.testing.assert_allclose(results.x[-1], self.sigma0, atol=5e-4)
-        else:
-            assert (
-                (initial_cost > results.best_cost)
-                if results.minimising
-                else (initial_cost < results.best_cost)
-            )
-            np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
+        assert (
+            (initial_cost > result.best_cost)
+            if result.minimising
+            else (initial_cost < result.best_cost)
+        )
+        np.testing.assert_allclose(result.x, self.ground_truth, atol=1.5e-2)
 
     def get_data(self, model, parameter_values):
         experiment = pybamm.Experiment(

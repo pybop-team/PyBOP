@@ -37,10 +37,10 @@ def parameters(result: "OptimisationResult", show=True, **layout_kwargs):
     axis_titles = []
     trace_names = parameters.names
     for name in trace_names:
-        axis_titles.append(("Function Call", name))
+        axis_titles.append(("Evaluation", name))
 
     if isinstance(result.optim.problem, GaussianLogLikelihood):
-        axis_titles.append(("Function Call", "Sigma"))
+        axis_titles.append(("Evaluation", "Sigma"))
         trace_names.append("Sigma")
 
     # Set subplot layout options

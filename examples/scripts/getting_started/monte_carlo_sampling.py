@@ -1,31 +1,26 @@
-import sys
-
 import numpy as np
 import pybamm
 
 import pybop
 
-# Set parallelization if on macOS / Unix
-parallel = True if sys.platform != "win32" else False
+"""
+In this example, we present a PyBOP's Monte Carlo Sampler framework. Monte Carlo
+sampling provides a method to resolve intractable integration problems. In PyBOP,
+we use this to integrate Bayes formula providing uncertainty insights via the
+sampled posterior.
+"""
 
-# Define model and parameter values
-synth_model = pybamm.lithium_ion.SPMe()
+# Set the model and parameter values
+model = pybamm.lithium_ion.SPM()
 parameter_values = pybamm.ParameterValues("Chen2020")
-parameter_values.update(
-    {
-        "Negative electrode active material volume fraction": 0.63,
-        "Positive electrode active material volume fraction": 0.71,
-    }
-)
 parameter_values.set_initial_state(0.5)
 
 # Generate a synthetic dataset
 sigma = 0.005
 experiment = pybamm.Experiment(["Discharge at 0.5C for 3 minutes (5 second period)"])
-sim = pybamm.Simulation(
-    synth_model, parameter_values=parameter_values, experiment=experiment
-)
-sol = sim.solve()
+solution = pybamm.Simulation(
+    model, parameter_values=parameter_values, experiment=experiment
+).solve()
 
 
 def noisy(data, sigma):
@@ -34,9 +29,9 @@ def noisy(data, sigma):
 
 dataset = pybop.Dataset(
     {
-        "Time [s]": sol.t,
-        "Current function [A]": sol["Current [A]"].data,
-        "Voltage [V]": noisy(sol["Voltage [V]"].data, sigma),
+        "Time [s]": solution.t,
+        "Current function [A]": solution["Current [A]"].data,
+        "Voltage [V]": noisy(solution["Voltage [V]"].data, sigma),
     }
 )
 
@@ -68,15 +63,15 @@ problem = pybop.Problem(simulator, posterior)
 # Create and run the sampler
 options = pybop.PintsSamplerOptions(
     n_chains=3,
-    max_iterations=250,  # Reduced for CI, increase for improved posteriors
+    max_iterations=250,  # Extend this for accurate posteriors
     warm_up_iterations=100,
     verbose=True,
 )
 sampler = pybop.DifferentialEvolutionMCMC(problem, options=options)
-chains = sampler.run()
+result = sampler.run()
 
 # Summary statistics
-posterior_summary = pybop.PosteriorSummary(chains)
+posterior_summary = pybop.PosteriorSummary(result.chains)
 print(posterior_summary.get_summary_statistics())
 posterior_summary.plot_trace()
 posterior_summary.summary_table()

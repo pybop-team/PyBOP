@@ -66,7 +66,6 @@ class BaseOptimiser:
         if not isinstance(problem, Problem):
             raise TypeError(f"Expected a pybop.Problem instance, got {type(problem)}")
         self._problem = problem
-        self._problem.parameters.reset_to_initial()
         self._logger = None
         options = options or self.default_options()
         options.validate()
@@ -153,8 +152,6 @@ class BaseOptimiser:
             results.append(self._run())
 
         result = OptimisationResult.combine(results)
-
-        self.problem.parameters.update(values=result.x)
 
         if self.options.verbose:
             print(result)

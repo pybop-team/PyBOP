@@ -26,7 +26,7 @@ class TestHalfCellModel:
     def model(self):
         model = pybamm.lithium_ion.SPM(options={"working electrode": "positive"})
         pybop.pybamm.add_variable_to_model(
-            model, "Gravimetric energy density [Wh.kg-1]"
+            model, "Gravimetric energy density [W.h.kg-1]"
         )
         return model
 
@@ -92,21 +92,20 @@ class TestHalfCellModel:
     def test_fitting_costs(self, fitting_problem):
         x0 = fitting_problem.parameters.get_initial_values()
         options = pybop.PintsOptions(
-            sigma=0.03,
             max_iterations=250,
             max_unchanged_iterations=35,
         )
         optim = pybop.CuckooSearch(fitting_problem, options=options)
-        results = optim.run()
+        result = optim.run()
 
         # Assertions
         initial_cost = optim.problem(x0)
         if not np.allclose(x0, self.ground_truth, atol=1e-5):
-            if results.minimising:
-                assert initial_cost > results.best_cost
+            if result.minimising:
+                assert initial_cost > result.best_cost
             else:
-                assert initial_cost < results.best_cost
-        np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
+                assert initial_cost < result.best_cost
+        np.testing.assert_allclose(result.x, self.ground_truth, atol=1.5e-2)
 
     @pytest.fixture
     def design_problem(self, model, parameter_values):
@@ -129,7 +128,7 @@ class TestHalfCellModel:
             protocol=experiment,
             initial_state=initial_state,
         )
-        cost = pybop.DesignCost(target="Gravimetric energy density [Wh.kg-1]")
+        cost = pybop.DesignCost(target="Gravimetric energy density [W.h.kg-1]")
         return pybop.Problem(simulator, cost)
 
     def test_design_costs(self, design_problem):
@@ -137,10 +136,10 @@ class TestHalfCellModel:
         optim = pybop.CuckooSearch(design_problem, options=options)
         initial_values = optim.problem.parameters.get_initial_values()
         initial_cost = optim.problem(initial_values)
-        results = optim.run()
+        result = optim.run()
 
         # Assertions
-        assert initial_cost < results.best_cost
+        assert initial_cost < result.best_cost
 
     def get_data(self, model, parameter_values):
         experiment = pybamm.Experiment(

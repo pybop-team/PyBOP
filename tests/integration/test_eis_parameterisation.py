@@ -139,11 +139,6 @@ class TestEISParameterisation:
                 max_iterations=100,
                 absolute_tolerance=1e-6,
                 max_unchanged_iterations=35,
-                sigma=(
-                    [0.05, 0.05, 1e-3]
-                    if isinstance(cost, pybop.GaussianLogLikelihood)
-                    else 0.02
-                ),
             )
 
         # Create optimiser
@@ -159,7 +154,7 @@ class TestEISParameterisation:
             )
 
         initial_cost = optim.problem(x0)
-        results = optim.run()
+        result = optim.run()
 
         # Assertions
         if np.allclose(x0, self.ground_truth, atol=1e-5):
@@ -168,11 +163,11 @@ class TestEISParameterisation:
         # Assert on identified values, without sigma for GaussianLogLikelihood
         # as the sigma values are small (5e-4), this is a difficult identification process
         # and requires a high number of iterations, and parameter dependent step sizes.
-        if results.minimising:
-            assert initial_cost > results.best_cost
+        if result.minimising:
+            assert initial_cost > result.best_cost
         else:
-            assert initial_cost < results.best_cost
-        np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
+            assert initial_cost < result.best_cost
+        np.testing.assert_allclose(result.x, self.ground_truth, atol=1.5e-2)
 
     def get_data(self, model, parameter_values, f_eval):
         parameter_values.update(
@@ -185,15 +180,14 @@ class TestEISParameterisation:
                 ],
             }
         )
-        simulator = pybop.pybamm.EISSimulator(
+        solution = pybop.pybamm.EISSimulator(
             model, parameter_values=parameter_values, f_eval=f_eval
-        )
-        solution = simulator.simulate()
+        ).solve()
         return pybop.Dataset(
             {
                 "Frequency [Hz]": f_eval,
                 "Current function [A]": np.zeros_like(f_eval),
-                "Impedance": self.noisy(solution["Impedance"], self.sigma0),
+                "Impedance": self.noisy(solution["Impedance"].data, self.sigma0),
             },
             domain="Frequency [Hz]",
         )

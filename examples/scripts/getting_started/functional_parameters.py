@@ -3,12 +3,13 @@ import pybamm
 
 import pybop
 
-# This example demonstrates how to use a pybamm.FunctionalParameter to
-# optimise functional parameters using PyBOP.
+"""
+This example demonstrates how to use a pybamm.FunctionParameter to optimise
+functional parameters using PyBOP.
 
-# Method: Define a new scalar parameter for use in a functional parameter
-# that already exists in the model, for example an exchange current density.
-
+Method: Define a new scalar parameter for use in a functional parameter
+that already exists in the model, for example an exchange current density.
+"""
 
 # Define model and parameter values
 model = pybamm.lithium_ion.SPM(options={"contact resistance": "true"})
@@ -28,7 +29,8 @@ def positive_electrode_exchange_current_density(c_e, c_s_surf, c_s_max, T):
 
     return (
         j0_ref
-        * ((c_e / c_e_init) * (c_s_surf / c_s_max) * (1 - c_s_surf / c_s_max)) ** alpha
+        * (c_s_surf / c_s_max) ** alpha
+        * ((c_e / c_e_init) * (1 - c_s_surf / c_s_max)) ** (1 - alpha)
     )
 
 
@@ -47,12 +49,16 @@ parameter_values["Positive electrode exchange-current density [A.m-2]"] = (
 # Generate a synthetic dataset
 sigma = 0.001
 t_eval = np.arange(0, 900, 3)
-sol = pybamm.Simulation(model, parameter_values=parameter_values).solve(t_eval=t_eval)
-corrupt_values = sol["Voltage [V]"](t_eval) + np.random.normal(0, sigma, len(t_eval))
+solution = pybamm.Simulation(model, parameter_values=parameter_values).solve(
+    t_eval=t_eval
+)
+corrupt_values = solution["Voltage [V]"](t_eval) + np.random.normal(
+    0, sigma, len(t_eval)
+)
 dataset = pybop.Dataset(
     {
         "Time [s]": t_eval,
-        "Current function [A]": sol["Current [A]"](t_eval),
+        "Current function [A]": solution["Current [A]"](t_eval),
         "Voltage [V]": corrupt_values,
     }
 )
@@ -84,7 +90,7 @@ optim = pybop.SciPyMinimize(problem, options=options)
 result = optim.run()
 
 # Plot the timeseries output
-pybop.plot.problem(problem, problem_inputs=result.x, title="Optimised Comparison")
+pybop.plot.problem(problem, inputs=result.best_inputs, title="Optimised Comparison")
 
 # Plot the optimisation result
 result.plot_convergence()

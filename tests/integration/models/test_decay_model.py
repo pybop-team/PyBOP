@@ -56,8 +56,8 @@ class TestDecayModel:
         self, problem, initial_inputs, example_inputs, tolerance=RELATIVE_TOLERANCE
     ):
         """Reusable assertion for parameter sensitivity."""
-        value1 = problem(initial_inputs)
-        value2 = problem(example_inputs)
+        value1 = problem.evaluate(initial_inputs).values
+        value2 = problem.evaluate(example_inputs).values
 
         relative_change = abs((value1 - value2) / value1)
         assert relative_change > tolerance, (
@@ -66,7 +66,7 @@ class TestDecayModel:
 
         return value1, value2
 
-    def test_decay_builder(self, dataset, model_config, parameters):
+    def test_decay_model(self, dataset, model_config, parameters):
         """Test decay model with voltage-based cost functions."""
         parameter_values = model_config["parameter_values"]
         parameter_values.update(parameters)
@@ -90,16 +90,22 @@ class TestDecayModel:
         )
 
         # Test sensitivity computation consistency
-        value1_sens, grad1 = problem.single_call(initial_inputs, calculate_grad=True)
-        value2_sens, grad2 = problem.single_call(example_inputs, calculate_grad=True)
+        value1_sens, grad1 = problem.evaluate(
+            initial_inputs, calculate_sensitivities=True
+        ).get_values()
+        value2_sens, grad2 = problem.evaluate(
+            example_inputs, calculate_sensitivities=True
+        ).get_values()
 
         # Validate gradient shape and value consistency
-        assert grad1.shape == (len(problem.parameters),), (
-            f"Gradient shape mismatch: {grad1.shape}"
-        )
-        assert grad2.shape == (len(problem.parameters),), (
-            f"Gradient shape mismatch: {grad2.shape}"
-        )
+        assert grad1.shape == (
+            1,
+            len(problem.parameters),
+        ), f"Gradient shape mismatch: {grad1.shape}"
+        assert grad2.shape == (
+            1,
+            len(problem.parameters),
+        ), f"Gradient shape mismatch: {grad2.shape}"
 
         np.testing.assert_allclose(
             value1_sens, value1, atol=ABSOLUTE_TOLERANCE, rtol=RELATIVE_TOLERANCE

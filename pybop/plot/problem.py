@@ -6,11 +6,12 @@ from pybop.parameters.parameter import Inputs
 from pybop.plot.standard_plots import StandardPlot
 from pybop.problems.meta_problem import MetaProblem
 from pybop.problems.problem import Problem
+from pybop.simulators.solution import Solution
 
 
 def problem(
     problem: Problem,
-    problem_inputs: Inputs = None,
+    inputs: Inputs = None,
     show: bool = True,
     **layout_kwargs,
 ):
@@ -24,7 +25,7 @@ def problem(
     ----------
     problem : pybop.Problem
         Problem object with dataset and targets attributes.
-    problem_inputs : Inputs
+    inputs : Inputs
         Optimised (or example) parameter values.
     show : bool, optional
         If True, the figure is shown upon creation (default: True).
@@ -38,10 +39,10 @@ def problem(
     plotly.graph_objs.Figure
         The Plotly figure object for the scatter plot.
     """
-    if isinstance(problem_inputs, dict):
-        problem_inputs = list(problem_inputs.values())
-    problem.parameters.update(values=problem_inputs)
-    problem_inputs = problem.simulator.parameters.to_dict()
+    if inputs is None:
+        inputs = problem.parameters.to_dict()
+    elif not isinstance(inputs, dict):
+        raise TypeError(f"Expecting a dictionary, received {type(inputs)}")
 
     domain = problem.domain
     if problem.domain_data is None:
@@ -50,20 +51,20 @@ def problem(
         problem.target = target + [domain]
         initial_inputs = problem.simulator.parameters.to_dict("initial")
         target_output = problem.simulate(initial_inputs)
-        target_domain = target_output[domain]
-        model_output = problem.simulate(problem_inputs)
-        model_domain = model_output[domain]
+        target_domain = target_output[domain].data
+        model_output = problem.simulate(inputs)
+        model_domain = model_output[domain].data
         problem.target = target
     else:
         # Extract the time data and simulate the model for the given inputs
-        target_output = problem.target_data
+        target_output = Solution()
+        for target in problem.target:
+            target_output.set_solution_variable(
+                target, data=problem.target_data[target]
+            )
         target_domain = problem.domain_data
-        model_output = problem.simulate(problem_inputs)
-        model_domain = (
-            model_output[domain]
-            if domain in model_output.keys()
-            else target_domain[: len(model_output[problem.target[0]])]
-        )
+        model_output = problem.simulate(inputs)
+        model_domain = target_domain[: len(model_output[target].data)]
 
     # Create a plot for each output
     figure_list = []
@@ -79,7 +80,7 @@ def problem(
 
         model_trace = plot_dict.create_trace(
             x=model_domain,
-            y=model_output[var],
+            y=model_output[var].data,
             name="Optimised" if isinstance(problem.cost, DesignCost) else "Model",
             mode="markers" if isinstance(problem, MetaProblem) else "lines",
             showlegend=True,
@@ -88,23 +89,23 @@ def problem(
 
         target_trace = plot_dict.create_trace(
             x=target_domain,
-            y=target_output[var],
+            y=target_output[var].data,
             name="Reference",
             mode="markers",
             showlegend=True,
         )
         plot_dict.traces.append(target_trace)
 
-        if isinstance(problem.cost, ErrorMeasure) and len(model_output[var]) == len(
-            target_output[var]
-        ):
+        if isinstance(problem.cost, ErrorMeasure) and len(
+            model_output[var].data
+        ) == len(target_output[var].data):
             # Compute the standard deviation as proxy for uncertainty
-            plot_dict.sigma = np.std(model_output[var] - target_output[var])
+            plot_dict.sigma = np.std(model_output[var].data - target_output[var].data)
 
             # Convert x and upper and lower limits into lists to create a filled trace
             x = target_domain.tolist()
-            y_upper = (model_output[var] + plot_dict.sigma).tolist()
-            y_lower = (model_output[var] - plot_dict.sigma).tolist()
+            y_upper = (model_output[var].data + plot_dict.sigma).tolist()
+            y_lower = (model_output[var].data - plot_dict.sigma).tolist()
 
             fill_trace = plot_dict.create_trace(
                 x=x + x[::-1],

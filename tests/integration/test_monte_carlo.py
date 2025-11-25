@@ -91,9 +91,9 @@ class Test_Sampling_SPM:
             max_unchanged_iterations=35,
         )
         optim = pybop.CMAES(log_posterior, options=options)
-        results = optim.run()
+        result = optim.run()
 
-        return results.x
+        return result.x
 
     @pytest.mark.parametrize(
         "quick_sampler",
@@ -121,10 +121,10 @@ class Test_Sampling_SPM:
 
         # construct and run
         sampler = quick_sampler(log_pdf=log_posterior, options=options)
-        chains = sampler.run()
+        result = sampler.run()
 
         # Assert both final sample and posterior mean
-        x = np.mean(chains, axis=1)
+        x = np.mean(result.chains, axis=1)
         for i in range(len(x)):
             np.testing.assert_allclose(x[i], self.ground_truth, atol=1.6e-2)
 

@@ -8,6 +8,24 @@
 
 ## Breaking Changes
 
+# [v25.11](https://github.com/pybop-team/PyBOP/tree/v25.11) - 2025-11-24
+
+## Features
+
+- [#815](https://github.com/pybop-team/PyBOP/pull/815) - Adds function import_pyprobe_result to import a pyprobe.result into a pybop.dataset. Allows for creating a dataset directly from a pybamm.solution object.
+
+## Optimisations
+
+- [#837](https://github.com/pybop-team/PyBOP/pull/837) - Update the descriptons in the example scripts and notebooks.
+- [#833](https://github.com/pybop-team/PyBOP/pull/833) - Upgrade to Pints 0.5.1, PyBaMM 25.10.1 and NumPy 2, fix some deprecation warnings.
+- [#816](https://github.com/pybop-team/PyBOP/pull/816) - Enable simulator multi-processing via the evaluators.
+
+## Bug Fixes
+
+## Breaking Changes
+
+- [#829](https://github.com/pybop-team/PyBOP/pull/829) - Create `SamplingResult` and best inputs property for results.
+
 # [v25.10](https://github.com/pybop-team/PyBOP/tree/v25.10) - 2025-10-31
 
 This release presents a major restructure of PyBOP's base classes. We move from setting up a model, problem, cost,
@@ -70,7 +88,7 @@ To understand how to update your use of PyBOP, please take a look at the example
 
 ## Features
 
-- [#649](https://github.com/pybop-team/PyBOP/pull/649) - Adds verbose outputs to Pints-based optimisers
+- [#649](https://github.com/pybop-team/PyBOP/issues/649) - Adds verbose outputs to Pints-based optimisers.
 - [#659](https://github.com/pybop-team/PyBOP/pull/659) - Enables user-defined weightings of the error measures.
 - [#674](https://github.com/pybop-team/PyBOP/issues/674) - Adds the reason for stopping to the `OptimisationResult`.
 - [#663](https://github.com/pybop-team/PyBOP/pull/663) - Adds DFN fitting examples alongside synthetic data generation methods.
@@ -104,7 +122,7 @@ To understand how to update your use of PyBOP, please take a look at the example
 ## Optimisations
 
 - [#638](https://github.com/pybop-team/PyBOP/pull/638) - Allows the problem class to accept any domain name.
-- [#618](https://github.com/pybop-team/PyBOP/pull/618) - Adds Mean Absolute Error (MAE) and Mean Squared Error (MSE) costs.
+- [#618](https://github.com/pybop-team/PyBOP/issues/618) - Adds Mean Absolute Error (MAE) and Mean Squared Error (MSE) costs.
 - [#601](https://github.com/pybop-team/PyBOP/pull/601) - Deprecates `MultiOptimisationResult` by merging with `OptimisationResult`.
 - [#600](https://github.com/pybop-team/PyBOP/pull/600) - Removes repetitious functionality within the cost classes.
 
@@ -144,7 +162,7 @@ To understand how to update your use of PyBOP, please take a look at the example
 
 - [#580](https://github.com/pybop-team/PyBOP/pull/580) - Random Search optimiser is implimented.
 - [#588](https://github.com/pybop-team/PyBOP/pull/588) - Makes `minimising` a property of `BaseOptimiser` set by the cost class.
-- [#512](https://github.com/pybop-team/PyBOP/pull/513) - Refactors `LogPosterior` with attributes pointing to composed likelihood object.
+- [#512](https://github.com/pybop-team/PyBOP/issues/513) - Refactors `LogPosterior` with attributes pointing to composed likelihood object.
 - [#551](https://github.com/pybop-team/PyBOP/pull/551) - Refactors Optimiser arguments, `population_size` and `max_iterations` as default args, improves optimiser docstrings
 
 ## Bug Fixes
@@ -158,7 +176,7 @@ To understand how to update your use of PyBOP, please take a look at the example
 - [#481](https://github.com/pybop-team/PyBOP/pull/481) - `problem.model` is now a copied instance of `model`
 - [#598](https://github.com/pybop-team/PyBOP/pull/598) - Depreciated `Adam` optimiser has been removed, see `AdamW` for replacement.
 - [#531](https://github.com/pybop-team/PyBOP/pull/531) - Plot methods moved to `pybop.plot` with mostly minimal renaming. For example, `pybop.plot_parameters` is now `pybop.plot.parameters`. Other breaking changes include: `pybop.plot2d` to `pybop.plot.contour`.
-- [#526](https://github.com/pybop-team/PyBOP/pull/526) - Refactor `OptimisationResults` classes, with `optim.run()` now return the full object. Adds finite cost value check for optimised parameters.
+- [#526](https://github.com/pybop-team/PyBOP/issues/526) - Refactor `OptimisationResults` classes, with `optim.run()` now return the full object. Adds finite cost value check for optimised parameters.
 
 # [v24.9.1](https://github.com/pybop-team/PyBOP/tree/v24.9.1) - 2024-09-16
 
@@ -196,17 +214,17 @@ To understand how to update your use of PyBOP, please take a look at the example
 
 ## Bug Fixes
 
-- [#473](https://github.com/pybop-team/PyBOP/pull/473) - Bugfixes for transformation class, adds optional `apply_transform` arg to `BaseCost.__call__()`, adds `log_update()` method to `BaseOptimiser`
+- [#473](https://github.com/pybop-team/PyBOP/issues/473) - Bugfixes for transformation class, adds optional `apply_transform` arg to `BaseCost.__call__()`, adds `log_update()` method to `BaseOptimiser`.
 - [#464](https://github.com/pybop-team/PyBOP/issues/464) - Fix order of design `parameter_set` updates and refactor `update_capacity`.
-- [#468](https://github.com/pybop-team/PyBOP/issue/468) - Renames `quick_plot.py` to `standard_plots.py`.
-- [#454](https://github.com/pybop-team/PyBOP/issue/454) - Fixes benchmarking suite.
+- [#468](https://github.com/pybop-team/PyBOP/issues/468) - Renames `quick_plot.py` to `standard_plots.py`.
+- [#454](https://github.com/pybop-team/PyBOP/issues/454) - Fixes benchmarking suite.
 - [#421](https://github.com/pybop-team/PyBOP/issues/421) - Adds a default value for the initial SOC for design problems.
 
 ## Breaking Changes
 
 - [#499](https://github.com/pybop-team/PyBOP/pull/499) - BPX is added as an optional dependency.
 - [#483](https://github.com/pybop-team/PyBOP/pull/483) - Replaces `pybop.MAP` with `pybop.LogPosterior` with an updated call args and bugfixes.
-- [#436](https://github.com/pybop-team/PyBOP/pull/436) - **API Change:** The functionality from `BaseCost.evaluate/S1` & `BaseCost._evaluate/S1` is represented in `BaseCost.__call__` & `BaseCost.compute`. `BaseCost.compute` directly acts on the predictions, while `BaseCost.__call__` calls `BaseProblem.evaluate/S1` before `BaseCost.compute`. `compute` has optional args for gradient cost calculations.
+- [#436](https://github.com/pybop-team/PyBOP/issues/436) - **API Change:** The functionality from `BaseCost.evaluate/S1` & `BaseCost._evaluate/S1` is represented in `BaseCost.__call__` & `BaseCost.compute`. `BaseCost.compute` directly acts on the predictions, while `BaseCost.__call__` calls `BaseProblem.evaluate/S1` before `BaseCost.compute`. `compute` has optional args for gradient cost calculations.
 - [#424](https://github.com/pybop-team/PyBOP/issues/424) - Replaces the `init_soc` input to `FittingProblem` with the option to pass an initial OCV value, updates `BaseModel` and fixes `multi_model_identification.ipynb` and `spm_electrode_design.ipynb`.
 
 # [v24.6.1](https://github.com/pybop-team/PyBOP/tree/v24.6.1) - 2024-07-31
@@ -236,7 +254,7 @@ To understand how to update your use of PyBOP, please take a look at the example
 - [#249](https://github.com/pybop-team/PyBOP/pull/249) - Add WeppnerHuggins model and GITT example.
 - [#304](https://github.com/pybop-team/PyBOP/pull/304) - Decreases the testing suite completion time.
 - [#301](https://github.com/pybop-team/PyBOP/pull/301) - Updates default echem solver to "fast with events" mode.
-- [#251](https://github.com/pybop-team/PyBOP/pull/251) - Increment PyBaMM > v23.5, remove redundant tests within integration tests, increment citation version, fix examples with incorrect model definitions.
+- [#251](https://github.com/pybop-team/PyBOP/issues/251) - Increment PyBaMM > v23.5, remove redundant tests within integration tests, increment citation version, fix examples with incorrect model definitions.
 - [#285](https://github.com/pybop-team/PyBOP/pull/285) - Drop support for Python 3.8.
 - [#275](https://github.com/pybop-team/PyBOP/pull/275) - Adds Maximum a Posteriori (MAP) cost function with corresponding tests.
 - [#273](https://github.com/pybop-team/PyBOP/pull/273) - Adds notebooks to nox examples session and updates CI workflows for change.
@@ -253,12 +271,12 @@ To understand how to update your use of PyBOP, please take a look at the example
 - [#338](https://github.com/pybop-team/PyBOP/pull/338) - Fixes GaussianLogLikelihood class, adds integration tests, updates non-bounded parameter implementation by applying bounds from priors and `boundary_multiplier` argument. Bugfixes to CMAES construction.
 - [#339](https://github.com/pybop-team/PyBOP/issues/339) - Updates the calculation of the cyclable lithium capacity in the spme_max_energy example.
 - [#387](https://github.com/pybop-team/PyBOP/issues/387) - Adds keys to ParameterSet and updates ECM OCV check.
-- [#380](https://github.com/pybop-team/PyBOP/pull/380) - Restore self._boundaries construction for `pybop.PSO`
+- [#380](https://github.com/pybop-team/PyBOP/issues/380) - Restore self._boundaries construction for `pybop.PSO`.
 - [#372](https://github.com/pybop-team/PyBOP/pull/372) - Converts `np.array` to `np.asarray` for Numpy v2.0 support.
 - [#165](https://github.com/pybop-team/PyBOP/issues/165) - Stores the attempted and best parameter values and the best cost for each iteration in the log attribute of the optimiser and updates the associated plots.
 - [#354](https://github.com/pybop-team/PyBOP/issues/354) - Fixes the calculation of the gradient in the `RootMeanSquaredError` cost.
 - [#347](https://github.com/pybop-team/PyBOP/issues/347) - Resets options between MSMR tests to cope with a bug in PyBaMM v23.9 which is fixed in PyBaMM v24.1.
-- [#337](https://github.com/pybop-team/PyBOP/issues/337) - Restores benchmarks, relaxes CI schedule for benchmarks and scheduled tests.
+- [#337](https://github.com/pybop-team/PyBOP/pull/337) - Restores benchmarks, relaxes CI schedule for benchmarks and scheduled tests.
 - [#231](https://github.com/pybop-team/PyBOP/issues/231) - Allows passing of keyword arguments to PyBaMM models and disables build on initialisation.
 - [#321](https://github.com/pybop-team/PyBOP/pull/321) - Improves `integration/test_spm_parameterisation.py` stability, adds flakly pytest plugin, and `test_thevenin_parameterisation.py` integration test.
 - [#330](https://github.com/pybop-team/PyBOP/issues/330) - Fixes implementation of default plotting options.
@@ -272,7 +290,7 @@ To understand how to update your use of PyBOP, please take a look at the example
 
 - [#322](https://github.com/pybop-team/PyBOP/pull/322) - Add `Parameters` class to store and access multiple parameters in one object (API change).
 - [#285](https://github.com/pybop-team/PyBOP/pull/285) - Drop support for Python 3.8.
-- [#251](https://github.com/pybop-team/PyBOP/pull/251) - Drop support for PyBaMM v23.5
+- [#251](https://github.com/pybop-team/PyBOP/issues/251) - Drop support for PyBaMM v23.5
 - [#236](https://github.com/pybop-team/PyBOP/issues/236) - Restructures the optimiser classes (API change).
 
 # [v24.3.1](https://github.com/pybop-team/PyBOP/tree/v24.3.1) - 2024-06-17
@@ -293,11 +311,11 @@ To understand how to update your use of PyBOP, please take a look at the example
 - [#224](https://github.com/pybop-team/PyBOP/pull/224) - Updated prediction objects to dictionaries, cost class calculations, added `additional_variables` argument to problem class, updated scipy.minimize defualt method to Nelder-Mead, added gradient cost landscape plots with optional argument.
 - [#179](https://github.com/pybop-team/PyBOP/pull/203) - Adds `asv` configuration for benchmarking and initial benchmark suite.
 - [#218](https://github.com/pybop-team/PyBOP/pull/218) - Adds likelihood base class, `GaussianLogLikelihoodKnownSigma`, `GaussianLogLikelihood`, and `ProbabilityBased` cost function. As well as addition of a maximum likelihood estimation (MLE) example.
-- [#185](https://github.com/pybop-team/PyBOP/pull/185) - Adds a pull request template, additional nox sessions `quick` for standard tests + docs, `pre-commit` for pre-commit, `test` to run all standard tests, `doctest` for docs.
+- [#185](https://github.com/pybop-team/PyBOP/issues/185) - Adds a pull request template, additional nox sessions `quick` for standard tests + docs, `pre-commit` for pre-commit, `test` to run all standard tests, `doctest` for docs.
 - [#215](https://github.com/pybop-team/PyBOP/pull/215) - Adds `release_workflow.md` and updates `release_action.yaml`
 - [#204](https://github.com/pybop-team/PyBOP/pull/204) - Splits integration, unit, examples, plots tests, update workflows. Adds pytest `--examples`, `--integration`, `--plots` args. Adds tests for coverage after removal of examples. Adds examples and integrations nox sessions. Adds `pybop.RMSE._evaluateS1()` method
-- [#206](https://github.com/pybop-team/PyBOP/pull/206) - Adds Python 3.12 support with corresponding github actions changes.
-- [#18](https://github.com/pybop-team/PyBOP/pull/18) - Adds geometric parameter fitting capability, via `model.rebuild()` with `model.rebuild_parameters`.
+- [#206](https://github.com/pybop-team/PyBOP/issues/206) - Adds Python 3.12 support with corresponding github actions changes.
+- [#18](https://github.com/pybop-team/PyBOP/issues/18) - Adds geometric parameter fitting capability, via `model.rebuild()` with `model.rebuild_parameters`.
 - [#203](https://github.com/pybop-team/PyBOP/pull/203) - Adds support for modern Python packaging via a `pyproject.toml` file and configures the `pytest` test runner and `ruff` linter to use their configurations stored as declarative metadata.
 - [#123](https://github.com/pybop-team/PyBOP/issues/123) - Configures scheduled tests to run against the last three PyPI releases of PyBaMM via dynamic GitHub Actions matrix generation.
 - [#187](https://github.com/pybop-team/PyBOP/issues/187) - Adds M1 Github runner to `test_on_push` workflow, updt. self-hosted supported python versions in scheduled tests.
@@ -308,8 +326,8 @@ To understand how to update your use of PyBOP, please take a look at the example
 
 ## Bug Fixes
 
-- [#259](https://github.com/pybop-team/PyBOP/pull/259) - Fix gradient calculation from `model.simulateS1` to remove cross-polution and refactor cost._evaluateS1 for fitting costs.
-- [#233](https://github.com/pybop-team/PyBOP/pull/233) - Enforces model rebuild on initialisation of a Problem to allow a change of experiment, fixes if statement triggering current function update, updates `predictions` to `simulation` to keep distinction between `predict` and `simulate` and adds `test_changes`.
+- [#259](https://github.com/pybop-team/PyBOP/issues/259) - Fix gradient calculation from `model.simulateS1` to remove cross-polution and refactor cost._evaluateS1 for fitting costs.
+- [#233](https://github.com/pybop-team/PyBOP/issues/233) - Enforces model rebuild on initialisation of a Problem to allow a change of experiment, fixes if statement triggering current function update, updates `predictions` to `simulation` to keep distinction between `predict` and `simulate` and adds `test_changes`.
 - [#123](https://github.com/pybop-team/PyBOP/issues/123) - Reinstates check for availability of parameter sets via PyBaMM upon retrieval by `pybop.ParameterSet.pybamm()`.
 - [#196](https://github.com/pybop-team/PyBOP/issues/196) - Fixes failing observer cost tests.
 - [#63](https://github.com/pybop-team/PyBOP/issues/63) - Removes NLOpt Optimiser from future releases. This is to support deployment to the Apple M-Series platform.

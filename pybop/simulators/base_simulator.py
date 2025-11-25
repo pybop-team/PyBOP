@@ -1,8 +1,8 @@
 from copy import copy
 
-import numpy as np
-
+from pybop._utils import FailedSolution
 from pybop.parameters.parameter import Inputs, Parameter, Parameters
+from pybop.simulators.solution import Solution
 
 
 class BaseSimulator:
@@ -35,18 +35,46 @@ class BaseSimulator:
     def set_output_variables(self, target: list[str]):
         return NotImplementedError
 
-    def simulate(
+    def solve(
         self,
-        inputs: "Inputs | None" = None,
+        inputs: "Inputs | list[Inputs] | None" = None,
         calculate_sensitivities: bool = False,
-    ) -> (
-        dict[str, np.ndarray]
-        | tuple[dict[str, np.ndarray], dict[str, dict[str, np.ndarray]]]
-    ):
+    ) -> Solution | list[Solution]:
         """
-        Returns the output of a simulation for the given inputs as a dictionary, along
-        with the sensitivities of the output with respect to the input parameters if
+        Returns the output of a simulation for one or more sets of inputs as a dictionary,
+        along with the sensitivities of the output with respect to the input parameters if
         calculate_sensitivities=True.
+        """
+        if not isinstance(inputs, list):
+            return self.batch_solve(
+                inputs=[inputs], calculate_sensitivities=calculate_sensitivities
+            )[0]
+
+        return self.batch_solve(
+            inputs=inputs, calculate_sensitivities=calculate_sensitivities
+        )
+
+    def batch_solve(
+        self,
+        inputs: "list[Inputs]",
+        calculate_sensitivities: bool = False,
+    ) -> list[Solution | FailedSolution]:
+        """
+        Run the simulation for each set of inputs and return dict-like simulation results
+        and (optionally) the sensitivities with respect to each input parameter.
+
+        Parameters
+        ----------
+        inputs : list[Inputs]
+            A list of input parameters.
+        calculate_sensitivities : bool
+            Whether to also return the sensitivities (default: False).
+
+        Returns
+        -------
+        list[Solution]
+            A list of len(inputs) containing the simulation result(s) and (optionally)
+            the sensitivities with respect to each input parameter.
         """
         return NotImplementedError
 

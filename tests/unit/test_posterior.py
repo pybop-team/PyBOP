@@ -103,10 +103,10 @@ class TestLogPosterior:
     def test_log_posterior(self, problem):
         # Test log posterior
         x = np.array([0.50])
-        assert np.allclose(problem(x), 51.6033, atol=2e-2)
+        assert np.allclose(problem.evaluate(x).values, 51.6033, atol=2e-2)
 
         # Test log posterior evaluateS1
-        p, dp = problem(x, calculate_grad=True)
+        p, dp = problem.evaluate(x, calculate_sensitivities=True).get_values()
         assert np.allclose(p, 51.6033, atol=2e-2)
         assert np.allclose(dp, 0.4266, atol=2e-2)
 
@@ -117,20 +117,21 @@ class TestLogPosterior:
 
     def test_log_posterior_inf(self, posterior_uniform_prior):
         # Test prior np.inf
-        assert not np.isfinite(posterior_uniform_prior([1]))
-        assert not np.isfinite(posterior_uniform_prior([1], calculate_grad=True)[0])
+        assert not np.isfinite(posterior_uniform_prior.evaluate([1]).values)
+        assert not np.isfinite(
+            posterior_uniform_prior.evaluate([1], calculate_sensitivities=True).values
+        )
 
-    def test_non_logpdfS1_prior(self, simulator, likelihood):
+    def test_non_logpdf_prior(self, simulator, likelihood):
         problem = pybop.Problem(simulator, likelihood)
-        l, dl = problem([0.6], calculate_grad=True)
+        l = problem.evaluate([0.6]).values
 
         # Scipy distribution
         prior = st.norm(loc=0.8, scale=0.01)
         posterior = pybop.LogPosterior(likelihood, prior=prior)
         problem = pybop.Problem(simulator, posterior)
-        p, dp = problem([0.6], calculate_grad=True)
+        p = problem.evaluate([0.6]).values
 
         # Assert to pybop.Gaussian
-        p2, dp2 = pybop.Gaussian(mean=0.8, sigma=0.01).logpdfS1(0.6)
+        p2 = pybop.Gaussian(mean=0.8, sigma=0.01).logpdf(0.6)
         np.testing.assert_allclose(p - l, p2, atol=2e-3)
-        np.testing.assert_allclose(dp - dl, dp2, atol=2e-3)

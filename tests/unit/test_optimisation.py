@@ -87,7 +87,7 @@ class TestOptimisation:
                 False,
             ),
             (pybop.CuckooSearch, "Cuckoo Search", False),
-            (pybop.SNES, "Seperable Natural Evolution Strategy (SNES)", False),
+            (pybop.SNES, "Separable Natural Evolution Strategy (SNES)", False),
             (pybop.XNES, "Exponential Natural Evolution Strategy (xNES)", False),
             (pybop.PSO, "Particle Swarm Optimisation (PSO)", False),
             (pybop.IRPropMin, "iRprop-", True),
@@ -137,11 +137,11 @@ class TestOptimisation:
     )
     def test_optimiser_kwargs(self, problem, optimiser):
         def check_multistart(optim, n_iters, multistarts):
-            results = optim.run()
+            result = optim.run()
             if isinstance(optim, pybop.BasePintsOptimiser):
-                assert results.total_iterations() == n_iters * multistarts
-                assert results.total_evaluations() >= n_iters * multistarts
-                assert results.total_runtime() >= results._time[0]
+                assert result.total_iterations() == n_iters * multistarts
+                assert result.total_evaluations() >= n_iters * multistarts
+                assert result.total_runtime() >= result._time[0]
 
         if issubclass(optimiser, pybop.BasePintsOptimiser):
             options = pybop.PintsOptions(max_iterations=3)
@@ -152,8 +152,8 @@ class TestOptimisation:
         optim = optimiser(problem, options=options)
 
         # Check maximum iterations applied
-        results = optim.run()
-        assert results.n_iterations <= 3
+        result = optim.run()
+        assert result.n_iterations <= 3
 
         # Test multistart
         if issubclass(optimiser, pybop.BasePintsOptimiser):
@@ -364,8 +364,8 @@ class TestOptimisation:
         # Check a method that uses gradient information
         options = pybop.SciPyMinimizeOptions(method="L-BFGS-B", jac=True, maxiter=1)
         optim = pybop.SciPyMinimize(problem, options=options)
-        results = optim.run()
-        assert results.scipy_result is not None
+        result = optim.run()
+        assert result.scipy_result is not None
 
     def test_single_parameter(self, problem):
         # Test catch for optimisers that can only run with multiple parameters
@@ -402,27 +402,25 @@ class TestOptimisation:
         # Test max evalutions
         options = pybop.PintsOptions(max_evaluations=1, verbose=True)
         optim = pybop.GradientDescent(problem, options=options)
-        results = optim.run()
-        assert (
-            results.n_iterations == 1
-        )  # some iterations take more than one evaluation
+        result = optim.run()
+        assert result.n_iterations == 1  # some iterations take more than one evaluation
 
         # Test max unchanged iterations
         options = pybop.PintsOptions(max_unchanged_iterations=1, min_iterations=1)
         optim = pybop.XNES(problem, options=options)
-        results = optim.run()
-        assert results.n_iterations == 2
+        result = optim.run()
+        assert result.n_iterations == 2
 
         assert (
-            str(results) == f"OptimisationResult:\n"
-            f"  Best result from {results.n_runs} run(s).\n"
-            f"  Initial parameters: {results.x0}\n"
-            f"  Optimised parameters: {results.x}\n"
-            f"  Best cost: {results.best_cost}\n"
-            f"  Optimisation time: {results.time} seconds\n"
-            f"  Number of iterations: {results.n_iterations}\n"
-            f"  Number of evaluations: {results.n_evaluations}\n"
-            f"  Reason for stopping: {results.message}"
+            str(result) == f"OptimisationResult:\n"
+            f"  Best result from {result.n_runs} run(s).\n"
+            f"  Initial parameters: {result.x0}\n"
+            f"  Optimised parameters: {result.x}\n"
+            f"  Best cost: {result.best_cost}\n"
+            f"  Optimisation time: {result.time} seconds\n"
+            f"  Number of iterations: {result.n_iterations}\n"
+            f"  Number of evaluations: {result.n_evaluations}\n"
+            f"  Reason for stopping: {result.message}"
         )
 
         # Test guessed values
@@ -456,7 +454,7 @@ class TestOptimisation:
         captured_output = io.StringIO()
         sys.stdout = captured_output
         optim.set_threshold(np.inf)
-        results = optim.run()
+        result = optim.run()
         assert (
             "Objective function crossed threshold: inf." in captured_output.getvalue()
         )
@@ -490,7 +488,7 @@ class TestOptimisation:
             optim._threshold = None
             optim.run()
 
-    def test_optimisation_results(self, problem):
+    def test_optimisation_result(self, problem):
         logger = pybop.Logger(minimising=True)
         logger.iteration = 1
         logger.extend_log(
@@ -498,7 +496,7 @@ class TestOptimisation:
         )
 
         # Construct OptimisationResult
-        results = pybop.OptimisationResult(
+        result = pybop.OptimisationResult(
             optim=pybop.XNES(problem),
             optim_name="Test name",
             logger=logger,
@@ -507,18 +505,18 @@ class TestOptimisation:
         )
 
         # Asserts
-        assert results.optim_name == "Test name"
-        assert results.x[0] == 1e-3
-        assert results.n_iterations == 1
-        assert results.message == "Test message"
+        assert result.optim_name == "Test name"
+        assert result.x[0] == 1e-3
+        assert result.n_iterations == 1
+        assert result.message == "Test message"
 
         # Test list-like functionality with "best" properties
         options = pybop.PintsOptions(max_iterations=1, multistart=3)
         optim = pybop.XNES(problem, options=options)
-        results = optim.run()
+        result = optim.run()
 
-        assert results.x in results._x
-        assert results.time == np.sum(results._time)
-        assert results.n_iterations in results._n_iterations
-        assert results.n_evaluations in results._n_evaluations
-        assert results.x0 in results._x0
+        assert result.x in result._x
+        assert result.time == np.sum(result._time)
+        assert result.n_iterations in result._n_iterations
+        assert result.n_evaluations in result._n_evaluations
+        assert result.x0 in result._x0

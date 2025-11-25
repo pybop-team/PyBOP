@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from pybop._result import SamplingResult
 from pybop.problems.problem import Problem
 
 
@@ -87,7 +88,7 @@ class BaseSampler:
     def options(self) -> SamplerOptions:
         return self._options
 
-    def run(self) -> np.ndarray:
+    def run(self) -> SamplingResult:
         """
         Sample from the posterior distribution.
 
