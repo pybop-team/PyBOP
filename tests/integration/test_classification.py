@@ -202,7 +202,6 @@ class TestClassification:
             message, _ = pybop.classify_using_hessian(result)
             assert message == "The optimiser has located a maximum."
 
-
     def test_insensitive_classify_using_hessian(self, model, parameter_values):
         param_R0_a = pybop.Parameter(bounds=[0, 0.002])
         param_R0_b = pybop.Parameter(bounds=[-0.001, 0.001])
