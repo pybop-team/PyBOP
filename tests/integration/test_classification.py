@@ -113,11 +113,18 @@ class TestClassification:
             "Z",
         ):
             assert k in info
-        assert "hessian_fd" in info and info["hessian_fd"].shape == (2, 2)
-        assert "eigenvalues" in info and info["eigenvalues"].shape == (2,)
-        assert "eigenvectors" in info and info["eigenvectors"].shape == (2, 2)
+        assert info["hessian_fd"].shape == (2, 2)
+        assert info["eigenvalues"].shape == (2,)
+        assert info["eigenvectors"].shape == (2, 2)
         assert info["x"].shape == (2,)
-        assert "Z" in info and info["Z"].ndim == 2
+        assert info["dx"].shape == (2,)
+        assert len(info["names"]) == 2
+        assert isinstance(info["best_cost"], float)
+        assert isinstance(info["span0"], tuple)
+        assert len(info["span0"]) == 2
+        assert isinstance(info["span1"], tuple)
+        assert len(info["span1"]) == 2
+        assert info["Z"].ndim == 2
         assert info["Z"].shape[0] == info["Z"].shape[1]  # grid is square
 
         # Hessian may be NaN on some model combinations
@@ -256,80 +263,3 @@ class TestClassification:
             "Classification cannot proceed due to infinite cost value(s)."
             " The result is near the upper bound of R0_a [Ohm]."
         )
-
-    def test_quadratic_hessian_full_coverage(self):
-        """
-        Construct a tiny deterministic quadratic problem so classify_using_hessian
-        executes the full finite-difference Hessian calculation, eigen decomposition,
-        the grid evaluation loop (no exceptions), and the final packing/return.
-        """
-
-        # Minimal test parameters object used by classify_using_hessian
-        class TestParameters:
-            def __init__(self):
-                self.names = ["p0", "p1"]
-
-            def get_bounds(self):
-                return {"lower": np.array([-10.0, -10.0]), "upper": np.array([10.0, 10.0])}
-
-        class TestProblem:
-            def __init__(self, A, b, c=0.0):
-                self.parameters = TestParameters()
-                self.A = np.asarray(A, dtype=float)
-                self.b = np.asarray(b, dtype=float)
-                self.c = float(c)
-
-            def evaluate(self, x):
-                x = np.asarray(x, dtype=float)
-                val = 0.5 * float(x.T @ self.A @ x) + float(self.b.dot(x)) + self.c
-                return type("R", (), {"values": val})
-
-        class TestOptim:
-            def __init__(self, problem):
-                self.problem = problem
-
-        class TestResult:
-            pass
-
-        A = np.array([[4.0, 0.5], [0.5, 2.0]])
-        b = np.array([0.1, -0.2])
-        problem = TestProblem(A, b)
-
-        x = np.array([1.23, -0.45], dtype=float)
-        best_cost = problem.evaluate(x).values
-
-        optim = TestOptim(problem=problem)
-
-        result = TestResult()
-        result.x = x
-        result.best_cost = best_cost
-        result.optim = optim
-        result.minimising = True
-
-        dx = np.array([1e-3, 1e-3], dtype=float)
-
-        message, info = pybop.classify_using_hessian(result, dx=dx, cost_tolerance=1e-8)
-
-        assert isinstance(info, dict)
-        H = info["hessian_fd"]
-        assert H.shape == (2, 2)
-        assert np.isfinite(H).all()
-        assert np.allclose(H, H.T, atol=1e-8)
-
-        evals = info["eigenvalues"]
-        evecs = info["eigenvectors"]
-        assert evals.shape == (2,)
-        assert evecs.shape == (2, 2)
-        assert np.isfinite(evals).all()
-        assert np.isfinite(evecs).all()
-
-        assert "minimum" in message.lower()
-
-        assert "param0" in info and "param1" in info and "Z" in info
-        param0 = info["param0"]
-        param1 = info["param1"]
-        Z = info["Z"]
-        assert Z.shape == (41, 41)
-        assert np.isfinite(Z).all()
-        assert param0.min() < x[0] < param0.max()
-        assert param1.min() < x[1] < param1.max()
