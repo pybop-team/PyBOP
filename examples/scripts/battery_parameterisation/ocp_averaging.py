@@ -1,5 +1,6 @@
 import numpy as np
 import pybamm
+from pybamm import CasadiSolver
 
 import pybop
 
@@ -7,67 +8,73 @@ import pybop
 An example to demonstrate the functionality of `pybop.OCPAverage`.
 """
 
-# Define model and parameter values
+# Generate some synthetic data for testing
 model = pybamm.lithium_ion.SPMe()
 parameter_values = pybamm.ParameterValues("Chen2020")
 
 # Create representative charge and discharge datasets
-discharge_sim = pybamm.Simulation(
+parameter_values.set_initial_state(1.0)
+discharge_solution = pybamm.Simulation(
     model,
     parameter_values=parameter_values,
     experiment=pybamm.Experiment(["Discharge at C/10 until 2.5 V"]),
-)
-discharge_sol = discharge_sim.solve(initial_soc=1.0)
+    solver=CasadiSolver(),
+).solve()
 discharge_dataset_fullcell = pybop.Dataset(
     {
-        "Stoichiometry": discharge_sol["Negative electrode stoichiometry"].data,
-        "Voltage [V]": discharge_sol["Voltage [V]"].data,
+        "Stoichiometry": discharge_solution["Negative electrode stoichiometry"].data,
+        "Voltage [V]": discharge_solution["Voltage [V]"].data,
     }
 )
 discharge_dataset_positive = pybop.Dataset(
     {
-        "Stoichiometry": discharge_sol["Positive electrode stoichiometry"].data,
+        "Stoichiometry": discharge_solution["Positive electrode stoichiometry"].data,
         "Voltage [V]": np.mean(
-            discharge_sol["Positive electrode surface potential difference [V]"].data,
+            discharge_solution[
+                "Positive electrode surface potential difference [V]"
+            ].data,
             axis=0,
         ),
     }
 )
 charge_dataset_negative = pybop.Dataset(
     {
-        "Stoichiometry": discharge_sol["Negative electrode stoichiometry"].data,
+        "Stoichiometry": discharge_solution["Negative electrode stoichiometry"].data,
         "Voltage [V]": np.mean(
-            discharge_sol["Negative electrode surface potential difference [V]"].data,
+            discharge_solution[
+                "Negative electrode surface potential difference [V]"
+            ].data,
             axis=0,
         ),
     }
 )
-charge_sim = pybamm.Simulation(
+parameter_values.set_initial_state(0.0)
+charge_solution = pybamm.Simulation(
     model,
     parameter_values=parameter_values,
     experiment=pybamm.Experiment(["Charge at C/10 until 4.2 V"]),
-)
-charge_sol = charge_sim.solve(initial_soc=0.0)
+    solver=CasadiSolver(),
+).solve()
 charge_dataset_fullcell = pybop.Dataset(
     {
-        "Stoichiometry": charge_sol["Negative electrode stoichiometry"].data,
-        "Voltage [V]": charge_sol["Voltage [V]"].data,
+        "Stoichiometry": charge_solution["Negative electrode stoichiometry"].data,
+        "Voltage [V]": charge_solution["Voltage [V]"].data,
     }
 )
 charge_dataset_positive = pybop.Dataset(
     {
-        "Stoichiometry": charge_sol["Positive electrode stoichiometry"].data,
+        "Stoichiometry": charge_solution["Positive electrode stoichiometry"].data,
         "Voltage [V]": np.mean(
-            charge_sol["Positive electrode surface potential difference [V]"].data,
+            charge_solution["Positive electrode surface potential difference [V]"].data,
             axis=0,
         ),
     }
 )
 discharge_dataset_negative = pybop.Dataset(
     {
-        "Stoichiometry": charge_sol["Negative electrode stoichiometry"].data,
+        "Stoichiometry": charge_solution["Negative electrode stoichiometry"].data,
         "Voltage [V]": np.mean(
-            charge_sol["Negative electrode surface potential difference [V]"].data,
+            charge_solution["Negative electrode surface potential difference [V]"].data,
             axis=0,
         ),
     }

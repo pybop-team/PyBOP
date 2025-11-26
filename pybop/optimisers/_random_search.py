@@ -15,7 +15,7 @@ class RandomSearchImpl(PopulationBasedOptimiser):
     4. Replace the best position with improved position if found.
 
     Parameters:
-        population_size (optional): Number of solutions to evaluate per iteration.
+        population_size, optional: Number of solutions to evaluate per iteration.
 
     References:
     The Random Search algorithm implemented in this work is based on principles outlined

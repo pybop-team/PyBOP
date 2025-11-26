@@ -35,10 +35,10 @@ class GradientDescentImpl(PintsOptimiser):
         Initial learning rate or rates for each dimension. If a scalar is
         provided, the same learning rate is applied across all dimensions.
         If an array is provided, each dimension will have its own learning
-        rate. Defaults to 0.02.
+        rate (default: 0.02).
     boundaries : pybop.Boundaries, optional
         Boundaries for the parameters. This optimiser ignores boundaries and
-        operates as an unbounded method. Defaults to None.
+        operates as an unbounded method (default: None).
 
     Attributes
     ----------

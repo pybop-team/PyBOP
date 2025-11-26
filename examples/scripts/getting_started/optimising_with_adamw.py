@@ -13,63 +13,64 @@ step-size determination.
 model = pybamm.lithium_ion.SPM()
 parameter_values = pybamm.ParameterValues("Chen2020")
 
-# Fitting parameters
-parameters = [
-    pybop.Parameter(
-        "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.68, 0.05),
-    ),
-    pybop.Parameter(
-        "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.58, 0.05),
-    ),
-]
-
 # Generate a synthetic dataset
-sim = pybamm.Simulation(model, parameter_values=parameter_values)
-t_eval = np.linspace(0, 500, 240)
-sol = sim.solve(t_eval=t_eval)
-
 sigma = 5e-3
+t_eval = np.linspace(0, 500, 240)
+solution = pybamm.Simulation(model, parameter_values=parameter_values).solve(
+    t_eval=t_eval
+)
 dataset = pybop.Dataset(
     {
         "Time [s]": t_eval,
-        "Voltage [V]": sol["Voltage [V]"](t_eval)
+        "Voltage [V]": solution["Voltage [V]"](t_eval)
         + np.random.normal(0, sigma, len(t_eval)),
-        "Current function [A]": sol["Current [A]"](t_eval),
+        "Current function [A]": solution["Current [A]"](t_eval),
     }
 )
 
-# Construct the problem builder
-builder = (
-    pybop.builders.Pybamm()
-    .set_dataset(dataset)
-    .set_simulation(model, parameter_values=parameter_values)
-    .add_cost(pybop.costs.pybamm.MeanSquaredError("Voltage [V]"))
+# Fitting parameters
+parameter_values.update(
+    {
+        "Negative electrode active material volume fraction": pybop.Parameter(
+            prior=pybop.Gaussian(0.68, 0.05),
+            initial_value=0.45,
+            bounds=[0.4, 0.9],
+        ),
+        "Positive electrode active material volume fraction": pybop.Parameter(
+            prior=pybop.Gaussian(0.58, 0.05),
+            initial_value=0.45,
+            bounds=[0.4, 0.9],
+        ),
+    }
 )
-for param in parameters:
-    builder.add_parameter(param)
-problem = builder.build()
 
-# Set optimiser and options
+# Build the problem
+simulator = pybop.pybamm.Simulator(
+    model, parameter_values=parameter_values, protocol=dataset
+)
+cost = pybop.SumOfPower(dataset, p=2.5)
+problem = pybop.Problem(simulator, cost)
+
+# Set up the optimiser
 options = pybop.PintsOptions(
-    sigma=0.01, verbose=True, max_iterations=200, max_unchanged_iterations=100
+    verbose=True,
+    verbose_print_rate=20,
+    max_iterations=150,
+    max_unchanged_iterations=40,
 )
 optim = pybop.AdamW(problem, options=options)
 
 # Reduce the momentum influence for the reduced number of optimiser iterations
-optim.optimiser.b1 = 0.925
-optim.optimiser.b2 = 0.925
+optim.optimiser.b1 = 0.75
+optim.optimiser.b2 = 0.75
 
-# Run optimisation
-results = optim.run()
+# Run the optimisation
+result = optim.run()
 
-# Plot convergence
-results.plot_convergence()
+# Plot the timeseries output
+pybop.plot.problem(problem, inputs=result.best_inputs, title="Optimised Comparison")
 
-# Plot the parameter traces
-results.plot_parameters()
-
-# Plot the cost landscape with optimisation path
-bounds = np.asarray([[0.6, 0.9], [0.5, 0.8]])
-results.plot_surface(bounds=bounds)
+# Plot the optimisation result
+result.plot_convergence()
+result.plot_parameters()
+result.plot_surface()

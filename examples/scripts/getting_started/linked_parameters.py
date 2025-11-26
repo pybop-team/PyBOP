@@ -1,21 +1,50 @@
-import numpy as np
 import pybamm
 from pybamm import Parameter
 
 import pybop
 
 """
-In this example, we introduce the functionality to link optimisation parameters for the
-underlying PyBaMM model. Linking parameters can ensure correlated parameters are correctly
-updated, which ensures physical definitions are maintained. For this example, we link the
-electrode porosity, active material volume fraction and binder fraction.
+In this example, we introduce the functionality to link parameters in the underlying
+PyBaMM model. Linking parameters can ensure correlated parameters are consistently
+updated, ensuring that physical definitions are maintained. For this example, we link
+the electrode porosity, active material volume fraction and binder fraction.
 """
 
-# Define model and parameter values
-model = pybamm.lithium_ion.SPM()
-parameter_values = pybamm.ParameterValues("Chen2020")
+# Define model
+model = pybamm.lithium_ion.SPMe()
+pybop.pybamm.add_variable_to_model(model, "Gravimetric energy density [W.h.kg-1]")
 
-# Link the porosity in both electrodes
+# Define parameter set and additional parameters needed for the cost function
+parameter_values = pybamm.ParameterValues("Chen2020")
+pybop.pybamm.set_formation_concentrations(parameter_values)
+parameter_values.update(
+    {
+        "Electrolyte density [kg.m-3]": Parameter("Separator density [kg.m-3]"),
+        "Negative electrode active material density [kg.m-3]": Parameter(
+            "Negative electrode density [kg.m-3]"
+        ),
+        "Negative electrode carbon-binder density [kg.m-3]": Parameter(
+            "Negative electrode density [kg.m-3]"
+        ),
+        "Positive electrode active material density [kg.m-3]": Parameter(
+            "Positive electrode density [kg.m-3]"
+        ),
+        "Positive electrode carbon-binder density [kg.m-3]": Parameter(
+            "Positive electrode density [kg.m-3]"
+        ),
+        "Cell mass [kg]": pybop.pybamm.cell_mass(),
+    },
+    check_already_exists=False,
+)
+
+# Add and link parameters
+parameter_values.update(
+    {
+        "Positive electrode binder fraction": 0.02,
+        "Negative electrode binder fraction": 0.02,
+    },
+    check_already_exists=False,
+)
 parameter_values.update(
     {
         "Positive electrode porosity": (
@@ -30,73 +59,51 @@ parameter_values.update(
         ),
     }
 )
-parameter_values.update(
-    {
-        "Positive electrode binder fraction": 0.02,
-        "Negative electrode binder fraction": 0.02,
-    },
-    check_already_exists=False,
-)
 
 # Fitting parameters
-parameters = [
-    pybop.Parameter(
-        "Negative electrode active material volume fraction",
-        initial_value=0.65,
-        bounds=[0.4, 0.9],
-    ),
-    pybop.Parameter(
-        "Positive electrode active material volume fraction",
-        initial_value=0.65,
-        bounds=[0.4, 0.9],
-    ),
-]
-
-# Generate a synthetic dataset
-sim = pybamm.Simulation(model, parameter_values=parameter_values)
-t_eval = np.linspace(0, 500, 240)
-sol = sim.solve(t_eval=t_eval)
-
-sigma = 5e-3
-dataset = pybop.Dataset(
+parameter_values.update(
     {
-        "Time [s]": t_eval,
-        "Voltage [V]": sol["Voltage [V]"](t_eval)
-        + np.random.normal(0, sigma, len(t_eval)),
-        "Current function [A]": sol["Current [A]"](t_eval),
+        "Positive electrode thickness [m]": pybop.Parameter(
+            prior=pybop.Gaussian(7.56e-05, 0.1e-05),
+            bounds=[65e-06, 10e-05],
+        ),
+        "Positive electrode active material volume fraction": pybop.Parameter(
+            prior=pybop.Gaussian(0.6, 0.15),
+            bounds=[0.1, 0.9],
+        ),
     }
 )
 
-# Construct the problem builder
-builder = (
-    pybop.builders.Pybamm()
-    .set_dataset(dataset)
-    .set_simulation(model, parameter_values=parameter_values)
-    .add_cost(pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]"))
+# Define test protocol
+experiment = pybamm.Experiment(
+    [
+        "Discharge at 1C until 2.5 V (10 seconds period)",
+        "Hold at 2.5 V for 30 minutes or until 10 mA (10 seconds period)",
+    ],
 )
-for param in parameters:
-    builder.add_parameter(param)
-problem = builder.build()
 
-# Set optimiser and options. We use the Improved Backpropagation Plus implementation
-# This is a gradient-based optimiser, with a step-size which is decoupled from the
-# gradient magnitude
-options = pybop.PintsOptions(
-    sigma=0.1, verbose=True, max_iterations=60, max_unchanged_iterations=15
+# Build the problem
+simulator = pybop.pybamm.Simulator(
+    model,
+    parameter_values=parameter_values,
+    protocol=experiment,
+    initial_state={"Initial SoC": 1.0},
 )
-optim = pybop.CMAES(problem, options=options)
+cost = pybop.DesignCost(target="Gravimetric energy density [W.h.kg-1]")
+problem = pybop.Problem(simulator, cost)
 
-# Run optimisation
-results = optim.run()
+# Set up the optimiser
+options = pybop.PintsOptions(verbose=True, max_iterations=10)
+optim = pybop.XNES(problem, options=options)
 
-# Plot convergence
-results.plot_convergence()
+# Run the optimisation
+result = optim.run()
+print(f"Initial gravimetric energy density: {problem(result.x0):.2f} W.h.kg-1")
+print(f"Optimised gravimetric energy density: {problem(result.x):.2f} W.h.kg-1")
 
-# Plot the parameter traces
-results.plot_parameters()
+# Plot the optimisation result
+result.plot_surface()
 
-# Plot the cost landscape with optimisation path
-results.plot_surface()
-
-# Compare the fit to the data
-pybop.plot.validation(results.x, problem=problem, dataset=dataset)
+# Plot the timeseries output
+problem.target = "Voltage [V]"
+pybop.plot.problem(problem, inputs=result.best_inputs, title="Optimised Comparison")

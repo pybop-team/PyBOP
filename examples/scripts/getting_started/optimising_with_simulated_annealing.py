@@ -15,63 +15,63 @@ focus on local optimisation as the temperature decreases.
 model = pybamm.lithium_ion.SPM()
 parameter_values = pybamm.ParameterValues("Chen2020")
 
-# Fitting parameters
-parameters = [
-    pybop.Parameter(
-        "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.68, 0.05),
-        bounds=[0.4, 0.9],
-    ),
-    pybop.Parameter(
-        "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.58, 0.05),
-        bounds=[0.4, 0.9],
-    ),
-]
-
 # Generate a synthetic dataset
-sim = pybamm.Simulation(model, parameter_values=parameter_values)
-t_eval = np.linspace(0, 500, 240)
-sol = sim.solve(t_eval=t_eval)
-
-sigma = 2e-3
+sigma = 0.001
+t_eval = np.arange(0, 900, 3)
+solution = pybamm.Simulation(model, parameter_values=parameter_values).solve(
+    t_eval=t_eval
+)
+corrupt_values = solution["Voltage [V]"](t_eval) + np.random.normal(
+    0, sigma, len(t_eval)
+)
 dataset = pybop.Dataset(
     {
         "Time [s]": t_eval,
-        "Voltage [V]": sol["Voltage [V]"](t_eval)
-        + np.random.normal(0, sigma, len(t_eval)),
-        "Current function [A]": sol["Current [A]"](t_eval),
+        "Current function [A]": solution["Current [A]"](t_eval),
+        "Voltage [V]": corrupt_values,
     }
 )
 
-# Construct the problem builder
-builder = (
-    pybop.builders.Pybamm()
-    .set_dataset(dataset)
-    .set_simulation(model, parameter_values=parameter_values)
-    .add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
+# Fitting parameters
+parameter_values.update(
+    {
+        "Negative electrode active material volume fraction": pybop.Parameter(
+            prior=pybop.Gaussian(0.6, 0.1),
+            bounds=[0.4, 0.85],
+        ),
+        "Positive electrode active material volume fraction": pybop.Parameter(
+            prior=pybop.Gaussian(0.6, 0.1),
+            bounds=[0.4, 0.85],
+        ),
+    }
 )
-for param in parameters:
-    builder.add_parameter(param)
-problem = builder.build()
 
-# Set optimiser and options
+# Build the problem
+simulator = pybop.pybamm.Simulator(
+    model, parameter_values=parameter_values, protocol=dataset
+)
+cost = pybop.RootMeanSquaredError(dataset)
+problem = pybop.Problem(simulator, cost)
+
+# Set up the optimiser
 options = pybop.PintsOptions(
-    sigma=5e-2, verbose=True, max_iterations=120, max_unchanged_iterations=60
+    verbose=True,
+    max_iterations=150,
+    max_unchanged_iterations=40,
 )
 optim = pybop.SimulatedAnnealing(problem, options=options)
 
-# Update the cooling rate to bias towards better solutions (lower exploration)
-optim.optimiser.cooling_rate = 0.85
+# Update initial temperature and cooling rate to bias towards better solutions (lower exploration)
+optim.optimiser.temperature = 0.01
+optim.optimiser.cooling_rate = 0.9
 
-# Run optimisation
-results = optim.run()
+# Run the optimisation
+result = optim.run()
 
-# Plot convergence
-results.plot_convergence()
+# Plot the timeseries output
+pybop.plot.problem(problem, inputs=result.best_inputs, title="Optimised Comparison")
 
-# Plot the parameter traces
-results.plot_parameters()
-
-# Plot the cost landscape with optimisation path
-results.plot_surface()
+# Plot the optimisation result
+result.plot_convergence()
+result.plot_parameters()
+result.plot_surface(bounds=[[0.5, 0.8], [0.4, 0.7]])

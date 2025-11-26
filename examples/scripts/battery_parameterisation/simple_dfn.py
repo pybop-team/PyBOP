@@ -10,70 +10,78 @@ single particle models as it is more computationally expensive and has a high nu
 parameters which are not individually identifiable.
 """
 
+
 # Define model and parameter values
 model = pybamm.lithium_ion.DFN()
 parameter_values = pybamm.ParameterValues("Chen2020")
 
-# Fitting parameters
-parameters = [
-    pybop.Parameter(
-        "Negative electrode active material volume fraction",
-        initial_value=0.65,
-        bounds=[0.4, 0.9],
-    ),
-    pybop.Parameter(
-        "Positive electrode active material volume fraction",
-        initial_value=0.65,
-        bounds=[0.4, 0.9],
-    ),
-]
-
 # Generate a synthetic dataset
 sim = pybamm.Simulation(model, parameter_values=parameter_values)
 t_eval = np.linspace(0, 500, 240)
-sol = sim.solve(t_eval=t_eval)
-
+solution = sim.solve(t_eval=t_eval)
 sigma = 5e-3
 dataset = pybop.Dataset(
     {
         "Time [s]": t_eval,
-        "Voltage [V]": sol["Voltage [V]"](t_eval)
+        "Voltage [V]": solution["Voltage [V]"](t_eval)
         + np.random.normal(0, sigma, len(t_eval)),
-        "Current function [A]": sol["Current [A]"](t_eval),
-        "Bulk open-circuit voltage [V]": sol["Bulk open-circuit voltage [V]"](t_eval),
+        "Current function [A]": solution["Current [A]"](t_eval),
+        "Bulk open-circuit voltage [V]": solution["Bulk open-circuit voltage [V]"](
+            t_eval
+        ),
     }
 )
 
-# Construct the problem builder
-builder = (
-    pybop.builders.Pybamm()
-    .set_dataset(dataset)
-    .set_simulation(model, parameter_values=parameter_values)
-    .add_cost(pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]"))
-    .add_cost(pybop.costs.pybamm.RootMeanSquaredError("Bulk open-circuit voltage [V]"))
-)
-for param in parameters:
-    builder.add_parameter(param)
-problem = builder.build()
+# Save the true values
+true_values = [
+    parameter_values[p]
+    for p in [
+        "Negative electrode active material volume fraction",
+        "Positive electrode active material volume fraction",
+    ]
+]
 
-# Set optimiser and options. We'll use the Nelder-Mead simplex based optimiser and increase the
-# step-size value (sigma) to 0.1 to search further across the landscape per iteration
+# Fitting parameters
+parameter_values.update(
+    {
+        "Negative electrode active material volume fraction": pybop.Parameter(
+            prior=pybop.Gaussian(0.68, 0.05),
+            initial_value=0.65,
+            bounds=[0.4, 0.9],
+        ),
+        "Positive electrode active material volume fraction": pybop.Parameter(
+            prior=pybop.Gaussian(0.58, 0.05),
+            initial_value=0.65,
+            bounds=[0.4, 0.9],
+        ),
+    }
+)
+
+# Build the problem
+simulator = pybop.pybamm.Simulator(model, parameter_values, protocol=dataset)
+target = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
+cost = pybop.RootMeanSquaredError(dataset, target=target)
+problem = pybop.Problem(simulator, cost)
+
+# Set up the optimiser
 options = pybop.PintsOptions(
-    sigma=0.02, max_iterations=250, max_unchanged_iterations=15
+    max_iterations=60,
+    max_unchanged_iterations=15,
 )
-optim = pybop.NelderMead(problem, options=options)
-results = optim.run()
-print(results)
+optim = pybop.IRPropPlus(problem, options=options)
 
-# Compare to known values
-print("True parameters:", [parameter_values[p.name] for p in parameters])
-print(f"Idenitified Parameters: {results.x}")
+# Run the optimisation
+result = optim.run()
+print(result)
 
-# Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
-identified_parameter_values = results.parameter_values
+# Compare identified to true parameter values
+print("True parameters:", true_values)
+print("Identified parameters:", result.x)
 
-# Plot the cost landscape with optimisation path
-results.plot_surface()
+# Plot the timeseries output
+pybop.plot.problem(problem, inputs=result.best_inputs, title="Optimised Comparison")
 
-# Compare the fit to the data
-pybop.plot.validation(results.x, problem=problem, dataset=dataset)
+# Plot the optimisation result
+result.plot_convergence()
+result.plot_parameters()
+result.plot_surface()

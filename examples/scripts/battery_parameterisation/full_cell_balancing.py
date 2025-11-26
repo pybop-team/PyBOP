@@ -12,8 +12,8 @@ using low-rate discharge observations.
 # Define model and parameter values
 model = pybamm.lithium_ion.SPM()
 parameter_values = pybamm.ParameterValues("Chen2020")
-parameter_values["Upper voltage cut-off [V]"] = 4.4
 parameter_values["Lower voltage cut-off [V]"] = 2.3
+parameter_values["Upper voltage cut-off [V]"] = 4.4
 
 # Set initial state and unpack true values
 parameter_values.set_initial_state(1.0)
@@ -22,85 +22,89 @@ cs_p_max = parameter_values["Maximum concentration in positive electrode [mol.m-
 cs_n_init = parameter_values["Initial concentration in negative electrode [mol.m-3]"]
 cs_p_init = parameter_values["Initial concentration in positive electrode [mol.m-3]"]
 
-# Define fitting parameters for OCP balancing
-parameters = [
-    pybop.Parameter(
-        "Maximum concentration in negative electrode [mol.m-3]",
-        initial_value=cs_n_max * 0.8,
-        bounds=[cs_n_max * 0.75, cs_n_max * 1.25],
-    ),
-    pybop.Parameter(
-        "Maximum concentration in positive electrode [mol.m-3]",
-        initial_value=cs_p_max * 0.8,
-        bounds=[cs_p_max * 0.75, cs_p_max * 1.25],
-    ),
-    pybop.Parameter(
-        "Initial concentration in negative electrode [mol.m-3]",
-        initial_value=cs_n_max * 0.8,
-        bounds=[cs_n_max * 0.75, cs_n_max * 1.25],
-    ),
-    pybop.Parameter(
-        "Initial concentration in positive electrode [mol.m-3]",
-        initial_value=cs_p_max * 0.2,
-        bounds=[0, cs_p_max * 0.5],
-    ),
-]
-
-# Generate a synthetic dataset
-sigma = 1e-3
-experiment = pybamm.Experiment(["Discharge at C/20 until 2.5V (5 minute period)"])
-sim = pybamm.Simulation(
-    model=model, parameter_values=parameter_values, experiment=experiment
+# Generate a synthetic data
+sigma = 5e-4
+experiment = pybamm.Experiment(
+    [
+        "Discharge at 0.1C until 2.5V (3 min period)",
+        "Charge at 0.1C until 4.2V (3 min period)",
+    ]
 )
-sol = sim.solve()
+solution = pybamm.Simulation(
+    model, parameter_values=parameter_values, experiment=experiment
+).solve()
+
+
+def noisy(data, sigma):
+    return data + np.random.normal(0, sigma, len(data))
+
 
 dataset = pybop.Dataset(
     {
-        "Time [s]": sol.t,
-        "Voltage [V]": sol["Voltage [V]"].data + np.random.normal(0, sigma, len(sol.t)),
-        "Current function [A]": sol["Current [A]"].data,
+        "Time [s]": solution.t,
+        "Current function [A]": solution["Current [A]"].data,
+        "Voltage [V]": noisy(solution["Voltage [V]"].data, sigma),
     }
 )
 
-# Construct the problem builder
-builder = (
-    pybop.builders.Pybamm()
-    .set_dataset(dataset)
-    .set_simulation(model, parameter_values=parameter_values)
-    .add_cost(pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]"))
+# Save the true values
+true_values = [
+    parameter_values[p]
+    for p in [
+        "Maximum concentration in negative electrode [mol.m-3]",
+        "Maximum concentration in positive electrode [mol.m-3]",
+        "Initial concentration in negative electrode [mol.m-3]",
+        "Initial concentration in positive electrode [mol.m-3]",
+    ]
+]
+
+# Define fitting parameters for OCP balancing
+parameter_values.update(
+    {
+        "Maximum concentration in negative electrode [mol.m-3]": pybop.Parameter(
+            prior=pybop.Gaussian(cs_n_max, 6e3),
+            bounds=[cs_n_max * 0.75, cs_n_max * 1.25],
+            initial_value=cs_n_max * 0.8,
+        ),
+        "Maximum concentration in positive electrode [mol.m-3]": pybop.Parameter(
+            prior=pybop.Gaussian(cs_p_max, 6e3),
+            bounds=[cs_p_max * 0.75, cs_p_max * 1.25],
+            initial_value=cs_p_max * 0.8,
+        ),
+        "Initial concentration in negative electrode [mol.m-3]": pybop.Parameter(
+            prior=pybop.Gaussian(cs_n_init, 6e3),
+            bounds=[cs_n_max * 0.75, cs_n_max * 1.25],
+            initial_value=cs_n_max * 0.8,
+        ),
+        "Initial concentration in positive electrode [mol.m-3]": pybop.Parameter(
+            prior=pybop.Gaussian(cs_p_init, 6e3),
+            bounds=[0, cs_p_max * 0.5],
+            initial_value=cs_p_max * 0.2,
+        ),
+    }
 )
-for param in parameters:
-    builder.add_parameter(param)
-problem = builder.build()
 
-# Set optimiser and options. As the scale of the parameters is large, a large sigma value
-# is used to efficiently explore the parameter space
-options = pybop.PintsOptions(sigma=20, max_iterations=250, max_unchanged_iterations=25)
-optim = pybop.NelderMead(problem, options=options)
+# Build the problem
+simulator = pybop.pybamm.Simulator(model, parameter_values, protocol=dataset)
+cost = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=sigma)
+problem = pybop.Problem(simulator, cost)
 
-# Run optimisation
-results = optim.run()
-print(results)
+# Set up the optimiser
+options = pybop.SciPyMinimizeOptions(maxiter=125, method="Nelder-Mead")
+optim = pybop.SciPyMinimize(problem, options=options)
 
-# Plot the parameter traces
-results.plot_parameters()
+# Run the optimisation
+result = optim.run()
+print(result)
 
-# Compare to known values
-print("True parameters:", [parameter_values[p.name] for p in parameters])
-print(f"Idenitified Parameters: {results.x}")
+# Compare identified to true parameter values
+print("True parameters:", true_values)
+print("Identified parameters:", result.x)
 
-# Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
-identified_values = results.parameter_values
+# Plot the timeseries output
+pybop.plot.problem(problem, inputs=result.best_inputs, title="Optimised Comparison")
 
-# Plot comparison
-sim = pybamm.Simulation(
-    model, parameter_values=identified_values, experiment=experiment
-)
-prediction = sim.solve()
-pybop.plot.trajectories(
-    x=[dataset["Time [s]"] / 3600, prediction.t / 3600],
-    y=[dataset["Voltage [V]"], prediction["Voltage [V]"].data],
-    trace_names=["Ground truth", "Identified model"],
-    xaxis_title="Time / h",
-    yaxis_title="Voltage / V",
-)
+# Plot the optimisation result
+result.plot_convergence()
+result.plot_parameters()
+result.plot_contour(steps=5)

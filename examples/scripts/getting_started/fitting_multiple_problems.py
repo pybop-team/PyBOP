@@ -19,82 +19,71 @@ In this example, we will identify parameters on the same model for two different
 model = pybamm.lithium_ion.SPM()
 parameter_values = pybamm.ParameterValues("Chen2020")
 
-# Create list of initial SOC and experiment
-init_soc = [0.8, 0.6]
-experiment = [
-    pybamm.Experiment([("Discharge at 0.5C for 2 minutes (6 second period)")]),
-    pybamm.Experiment([("Discharge at 1C for 1 minutes (6 second period)")]),
+# Create initial SOC and experiment objects
+init_socs = [0.8, 0.6]
+experiments = [
+    pybamm.Experiment(["Discharge at 0.5C for 2 minutes (4 second period)"]),
+    pybamm.Experiment(["Discharge at 1C for 1 minutes (4 second period)"]),
 ]
 
-# Fitting parameters
-parameters = [
-    pybop.Parameter(
-        "Negative electrode active material volume fraction",
-        initial_value=0.65,
-        bounds=[0.5, 0.8],
-    ),
-    pybop.Parameter(
-        "Positive electrode active material volume fraction",
-        initial_value=0.58,
-        bounds=[0.5, 0.8],
-    ),
-]
-
-# Generate the first dataset
+# Generate two fitting problems using synthetic data
 sigma = 0.002
-datasets = []
-for i in [0, 1]:
-    sim = pybamm.Simulation(
-        model, experiment=experiment[i], parameter_values=parameter_values
-    )
-    sol = sim.solve(initial_soc=init_soc[i])
-    dataset_i = pybop.Dataset(
+problems = []
+for init_soc, experiment in zip(init_socs, experiments, strict=False):
+    parameter_values.set_initial_state(init_soc)
+    solution = pybamm.Simulation(
+        model, parameter_values=parameter_values, experiment=experiment
+    ).solve()
+    dataset = pybop.Dataset(
         {
-            "Time [s]": sol.t,
-            "Current function [A]": sol["Current [A]"].data,
-            "Voltage [V]": sol["Voltage [V]"].data
-            + np.random.normal(0, sigma, len(sol.t)),
+            "Time [s]": solution.t,
+            "Current function [A]": solution["Current [A]"].data,
+            "Voltage [V]": solution["Voltage [V]"].data
+            + np.random.normal(0, sigma, len(solution.t)),
         }
     )
-    datasets.append(dataset_i)
 
-# Construct the problem class
-builder = (
-    pybop.builders.Pybamm()
-    .set_dataset(datasets[0])
-    .set_simulation(model, parameter_values=parameter_values)
-    .add_cost(pybop.costs.pybamm.MeanSquaredError("Voltage [V]"))
-)
-for param in parameters:
-    builder.add_parameter(param)
-problem1 = builder.build()
+    # Fitting parameters
+    param_copy = parameter_values.copy()
+    param_copy.update(
+        {
+            "Negative electrode active material volume fraction": pybop.Parameter(
+                prior=pybop.Gaussian(0.68, 0.05),
+            ),
+            "Positive electrode active material volume fraction": pybop.Parameter(
+                prior=pybop.Gaussian(0.58, 0.05),
+            ),
+        }
+    )
+    simulator = pybop.pybamm.Simulator(
+        model, parameter_values=param_copy, protocol=dataset
+    )
+    cost = pybop.SumSquaredError(dataset)
+    problems.append(pybop.Problem(simulator, cost))
 
-# Update builder and build the second problem
-builder.set_dataset(datasets[1])
-problem2 = builder.build()
+# Combine the problems into one
+problem = pybop.MetaProblem(*problems)
 
-# Create a multifitting builder, with weighting applied to the first model
-multi_builder = (
-    pybop.builders.MultiFitting()
-    .add_problem(problem1, weight=0.75)
-    .add_problem(problem2)
-)
-multi_problem = multi_builder.build()
-
-# Construct the optimiser with additional options
+# Generate the cost function and optimisation class
 options = pybop.PintsOptions(
-    verbose=True, sigma=0.05, max_unchanged_iterations=20, max_iterations=100
+    verbose=True,
+    max_unchanged_iterations=20,
+    max_iterations=100,
 )
-optim = pybop.CMAES(multi_problem, options=options)
+optim = pybop.CuckooSearch(problem, options=options)
 
-# Run optimisation
-results = optim.run()
+# Run the optimisation
+result = optim.run()
 
-# Plot convergence
-results.plot_convergence()
+# Compare identified to true parameter values
+print("True parameters:", [parameter_values[p] for p in problem.parameters.keys()])
+print("Identified parameters:", result.x)
 
-# Plot the parameter traces
-results.plot_parameters()
+# Plot the timeseries output
+pybop.plot.problem(problems[0], inputs=result.best_inputs, title="Optimised Comparison")
+pybop.plot.problem(problems[1], inputs=result.best_inputs, title="Optimised Comparison")
 
-# Plot the cost landscape with optimisation path
-results.plot_surface()
+# Plot the optimisation result
+result.plot_convergence()
+result.plot_parameters()
+result.plot_surface(bounds=[[0.5, 0.8], [0.4, 0.7]])

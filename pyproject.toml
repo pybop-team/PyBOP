@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pybop"
-version = "25.6"
+version = "25.11"
 authors = [
   {name = "The PyBOP Team"},
 ]
@@ -25,17 +25,15 @@ classifiers = [
 ]
 requires-python = ">=3.10, <3.13"
 dependencies = [
-    #    "pybamm >=25.1.0",
-    "pybamm @ git+https://github.com/pybamm-team/PyBaMM@develop",
-    "numpy>=1.16, <2.0",
+    "pybamm>=25.10.1",
+    "numpy",
     "scipy>=1.3",
-    "pints>=0.5",
+    "pints>=0.5.1",
     "SALib>=1.5",
-    "pybammeis>=0.1.5",
 ]
 
 [project.optional-dependencies]
-plot = ["plotly<6.1"]
+plot = ["plotly>=5.0"]
 docs = [
     "pydata-sphinx-theme",
     "sphinx>=6",
@@ -63,7 +61,12 @@ scifem = [
 bpx = [
     "bpx>=0.5, <0.6",
 ]
-all = ["pybop[plot,scifem,bpx]"]
+
+pyprobe = [
+  "PyProBE-Data;python_version>='3.11'"
+]
+
+all = ["pybop[plot,scifem,bpx,pyprobe]"]
 
 [tool.setuptools.packages.find]
 include = ["pybop", "pybop.*"]

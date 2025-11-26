@@ -15,68 +15,53 @@ model = pybamm.lithium_ion.SPM()
 parameter_values = pybamm.ParameterValues("Chen2020")
 
 # Generate a synthetic dataset
-sim = pybamm.Simulation(model, parameter_values=parameter_values)
-t_eval = np.arange(0, 900, 3)
-sol = sim.solve(t_eval=t_eval)
-
 sigma = 0.001
-corrupt_values = sol["Voltage [V]"](t_eval) + np.random.normal(0, sigma, len(t_eval))
+t_eval = np.arange(0, 900, 3)
+solution = pybamm.Simulation(model, parameter_values=parameter_values).solve(
+    t_eval=t_eval
+)
+corrupt_values = solution["Voltage [V]"](t_eval) + np.random.normal(
+    0, sigma, len(t_eval)
+)
 dataset = pybop.Dataset(
     {
         "Time [s]": t_eval,
-        "Current function [A]": sol["Current [A]"](t_eval),
+        "Current function [A]": solution["Current [A]"](t_eval),
         "Voltage [V]": corrupt_values,
     }
 )
 
 # Fitting parameters
-parameters = [
-    pybop.Parameter(
-        "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.6, 0.1),
-        # bounds=[0.5, 0.8]
-    ),
-    pybop.Parameter(
-        "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.6, 0.1),
-    ),
-]
-
-# Generate the problem class
-builder = (
-    pybop.builders.Pybamm()
-    .set_dataset(dataset)
-    .set_simulation(model, parameter_values=parameter_values)
-    .add_cost(pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]"))
+parameter_values.update(
+    {
+        "Negative electrode active material volume fraction": pybop.Parameter(
+            prior=pybop.Gaussian(0.65, 0.1),
+        ),
+        "Positive electrode active material volume fraction": pybop.Parameter(
+            prior=pybop.Gaussian(0.55, 0.1),
+        ),
+    }
 )
-for param in parameters:
-    builder.add_parameter(param)
-problem = builder.build()
 
-# Construct the optimiser with 10 multistart runs. Each of these runs has a random
+# Build the problem
+simulator = pybop.pybamm.Simulator(model, parameter_values, protocol=dataset)
+cost = pybop.RootMeanSquaredError(dataset)
+problem = pybop.Problem(simulator, cost)
+
+# Construct the optimiser with multistart. Each of these runs has a random
 # starting position sampled from the parameter priors
-options = pybop.PintsOptions(
-    sigma=np.asarray([0.6, 0.02]), max_iterations=50, multistart=10
-)
+options = pybop.PintsOptions(max_iterations=150, multistart=5)
 optim = pybop.GradientDescent(problem, options=options)
+optim.optimiser.set_learning_rate(eta=0.02)
 
-# Run optimisation
-results = optim.run()
-print(results)
+# Run the optimisation
+result = optim.run()
+print(result)
 
-# We can display more metrics, most of which are also included in the `verbose` option
-# within the PINTS optimisers
-print(f"The best starting position: {results.x0}")
-print(f"The best cost: {results.best_cost}")
-print(f"The best identified parameter values: {results.x}")
-print(f"The total optimisation time:{results.time} seconds")
+# Plot the timeseries output
+pybop.plot.problem(problem, inputs=result.best_inputs, title="Optimised Comparison")
 
-# Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
-identified_parameter_values = results.parameter_values
-
-# Plot the parameter traces
-results.plot_parameters()
-
-# Plot the cost landscape with optimisation path
-bounds = np.asarray([[0.5, 0.8], [0.4, 0.7]])
-results.plot_surface(bounds=bounds)
+# Plot the optimisation result
+result.plot_convergence()
+result.plot_parameters()
+result.plot_surface(bounds=[[0.5, 0.8], [0.4, 0.7]])

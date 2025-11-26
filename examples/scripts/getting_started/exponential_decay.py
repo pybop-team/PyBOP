@@ -4,56 +4,59 @@ import pybamm
 import pybop
 
 # Define model and parameter values
-model = pybop.ExponentialDecayModel()
-parameter_values = pybamm.ParameterValues({"k": 0.3, "y0": 1.5})
-
-# Fitting parameters
-parameters = [
-    pybop.Parameter("k", prior=pybop.Gaussian(0.5, 0.05), bounds=[0, 2]),
-    pybop.Parameter("y0", prior=pybop.Gaussian(1.0, 0.05), bounds=[0, 2]),
-]
+model = pybop.ExponentialDecayModel(n_states=2)
+parameter_values = pybamm.ParameterValues({"k": 1, "y0": 0.5})
 
 # Generate a synthetic dataset
-sim = pybamm.Simulation(model, parameter_values=parameter_values)
-t_eval = np.linspace(0, 10, 50)
-sol = sim.solve(t_eval=t_eval)
+sigma = 0.003
+t_eval = np.linspace(0, 10, 100)
+solution = pybamm.Simulation(model, parameter_values=parameter_values).solve(
+    t_eval=t_eval
+)
+
+
+def noisy(data, sigma):
+    return data + np.random.normal(0, sigma, len(data))
+
 
 dataset = pybop.Dataset(
     {
         "Time [s]": t_eval,
-        "y_0": sol["y_0"](t_eval),
+        "y_0": noisy(solution["y_0"](t_eval), sigma),
+        "y_1": noisy(solution["y_1"](t_eval), sigma),
     }
 )
 
-# Construct the problem builder
-builder = (
-    pybop.builders.Pybamm()
-    .set_dataset(dataset)
-    .set_simulation(model, parameter_values=parameter_values)
-    .add_cost(pybop.costs.pybamm.MeanSquaredError("y_0"))
+# Fitting parameters
+parameter_values.update(
+    {
+        "k": pybop.Parameter(prior=pybop.Gaussian(0.5, 0.05)),
+        "y0": pybop.Parameter(prior=pybop.Gaussian(0.2, 0.05)),
+    }
 )
-for param in parameters:
-    builder.add_parameter(param)
-problem = builder.build()
 
-# Set optimiser and options
-options = pybop.PintsOptions(sigma=0.2, verbose=True, max_iterations=100)
-optim = pybop.CMAES(problem, options=options)
-# optim.set_population_size(200)
-# optim = pybop.SciPyMinimize(problem)
-# optim = pybop.IRPropPlus(problem)
+# Build the problem
+simulator = pybop.pybamm.Simulator(
+    model, parameter_values=parameter_values, protocol=dataset
+)
+cost = pybop.Minkowski(dataset, target=["y_0", "y_1"], p=2)
+problem = pybop.Problem(simulator, cost)
 
-# Run optimisation
-results = optim.run()
+# Set up the optimiser
+options = pybop.PintsOptions(
+    verbose=True,
+    max_iterations=100,
+    max_unchanged_iterations=20,
+)
+optim = pybop.AdamW(problem, options=options)
 
-# Plot convergence
-results.plot_convergence()
+# Run the optimisation
+result = optim.run()
 
-# Plot the parameter traces
-results.plot_parameters()
+# Plot the timeseries output
+pybop.plot.problem(problem, inputs=result.best_inputs, title="Optimised Comparison")
 
-# Plot the cost landscape with optimisation path
-results.plot_surface()
-
-# Compare the fit to the data
-pybop.plot.validation(results.x, problem=problem, signal="y_0", dataset=dataset)
+# Plot the optimisation result
+result.plot_convergence()
+result.plot_parameters()
+result.plot_surface(bounds=[[0, 2], [0, 1]])

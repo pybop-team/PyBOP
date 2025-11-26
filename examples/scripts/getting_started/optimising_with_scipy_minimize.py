@@ -14,58 +14,68 @@ the optimiser.
 model = pybamm.lithium_ion.SPM()
 parameter_values = pybamm.ParameterValues("Chen2020")
 
-# Fitting parameters
-parameters = [
-    pybop.Parameter(
-        "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.68, 0.05),
-        bounds=[0.4, 0.9],
-    ),
-    pybop.Parameter(
-        "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.58, 0.05),
-        bounds=[0.4, 0.9],
-    ),
-]
-
 # Generate a synthetic dataset
-sim = pybamm.Simulation(model, parameter_values=parameter_values)
-t_eval = np.linspace(0, 500, 240)
-sol = sim.solve(t_eval=t_eval)
-
 sigma = 2e-3
+t_eval = np.linspace(0, 500, 240)
+solution = pybamm.Simulation(model, parameter_values=parameter_values).solve(
+    t_eval=t_eval
+)
 dataset = pybop.Dataset(
     {
         "Time [s]": t_eval,
-        "Voltage [V]": sol["Voltage [V]"](t_eval)
+        "Voltage [V]": solution["Voltage [V]"](t_eval)
         + np.random.normal(0, sigma, len(t_eval)),
-        "Current function [A]": sol["Current [A]"](t_eval),
+        "Current function [A]": solution["Current [A]"](t_eval),
     }
 )
 
-# Construct the problem builder
-builder = (
-    pybop.builders.Pybamm()
-    .set_dataset(dataset)
-    .set_simulation(model, parameter_values=parameter_values)
-    .add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
-)
-for param in parameters:
-    builder.add_parameter(param)
-problem = builder.build()
+# Save the true values
+true_values = [
+    parameter_values[p]
+    for p in [
+        "Negative electrode active material volume fraction",
+        "Positive electrode active material volume fraction",
+    ]
+]
 
-# Set optimiser and options
-options = pybop.ScipyMinimizeOptions(method="Nelder-Mead", verbose=True, maxiter=80)
+# Fitting parameters
+parameter_values.update(
+    {
+        "Negative electrode active material volume fraction": pybop.Parameter(
+            prior=pybop.Gaussian(0.6, 0.05),
+            bounds=[0.5, 0.8],
+        ),
+        "Positive electrode active material volume fraction": pybop.Parameter(
+            prior=pybop.Gaussian(0.48, 0.05),
+            bounds=[0.4, 0.7],
+        ),
+    }
+)
+
+# Build the problem
+simulator = pybop.pybamm.Simulator(
+    model, parameter_values=parameter_values, protocol=dataset
+)
+cost = pybop.SumSquaredError(dataset)
+problem = pybop.Problem(simulator, cost)
+
+# Set up the optimiser
+options = pybop.SciPyMinimizeOptions(
+    verbose=True, maxiter=100, method="L-BFGS-B", jac=True
+)
 optim = pybop.SciPyMinimize(problem, options=options)
 
-# Run optimisation
-results = optim.run()
+# Run the optimisation
+result = optim.run()
 
-# Plot convergence
-results.plot_convergence()
+# Compare identified to true parameter values
+print("True parameters:", true_values)
+print("Identified parameters:", result.x)
 
-# Plot the parameter traces
-results.plot_parameters()
+# Plot the timeseries output
+pybop.plot.problem(problem, inputs=result.best_inputs, title="Optimised Comparison")
 
-# Plot the cost landscape with optimisation path
-results.plot_surface()
+# Plot the optimisation result
+result.plot_convergence()
+result.plot_parameters()
+result.plot_surface()

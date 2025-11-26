@@ -6,14 +6,9 @@ from benchmarks.benchmark_utils import set_random_seed
 
 
 class BenchmarkTrackParameterisation:
-    """
-    Note: the names of the below variables are
-     required for the benchmarking to work.
-    """
-
-    param_names = ["model", "parameter_values", "optimiser"]
+    param_names = ["model", "parameter_set", "optimiser"]
     params = [
-        [pybamm.lithium_ion.SPM, pybamm.lithium_ion.SPMe],
+        [pybamm.lithium_ion.SPM(), pybamm.lithium_ion.SPMe()],
         ["Chen2020"],
         [
             pybop.SciPyMinimize,
@@ -28,34 +23,34 @@ class BenchmarkTrackParameterisation:
         ],
     ]
 
-    def setup(self, model, parameter_values, optimiser):
+    def setup(self, model, parameter_set, optimiser):
         """
-        Set up the parameterisation problem for benchmarking.
+        Set up the parameterization problem for benchmarking.
 
         Args:
-            model (pybamm.BaseModel): The model class.
-            parameter_values (str): The name of the parameter set.
-            optimiser (pybop.Optimiser): The optimiser class.
+            model (pybop.Model): The model class to be benchmarked.
+            parameter_set (str): The name of the parameter set to be used.
+            optimiser (pybop.Optimiser): The optimiser class to be used.
         """
         # Set random seed
         set_random_seed()
 
-        # Create model instance
-        param = pybamm.ParameterValues(parameter_values)
-        param.update(
+        # Create parameter values
+        parameter_values = pybamm.ParameterValues(parameter_set)
+        parameter_values.update(
             {
                 "Negative electrode active material volume fraction": 0.63,
                 "Positive electrode active material volume fraction": 0.51,
             }
         )
-        model_instance = model()
 
         # Generate synthetic data
         sigma = 0.003
         t_eval = np.arange(0, 900, 2)
-        sim = pybamm.Simulation(model=model_instance, parameter_values=param)
-        values = sim.solve(t_eval=[t_eval[0], t_eval[-1]], t_interp=t_eval)
-        corrupt_values = values["Voltage [V]"].data + np.random.normal(
+        solution = pybamm.Simulation(model, parameter_values=parameter_values).solve(
+            t_eval=t_eval
+        )
+        corrupt_values = solution["Voltage [V]"](t_eval) + np.random.normal(
             0, sigma, len(t_eval)
         )
 
@@ -63,39 +58,37 @@ class BenchmarkTrackParameterisation:
         dataset = pybop.Dataset(
             {
                 "Time [s]": t_eval,
-                "Current function [A]": values["Current [A]"].data,
+                "Current function [A]": solution["Current [A]"](t_eval),
                 "Voltage [V]": corrupt_values,
             }
         )
 
-        # Create the builder
-        builder = pybop.builders.Pybamm()
-        builder.set_dataset(dataset)
-        builder.set_simulation(model_instance, parameter_values=param)
-        builder.add_parameter(
-            pybop.Parameter(
-                "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.55, 0.03),
-                bounds=[0.375, 0.7],
-            )
+        # Define fitting parameters
+        parameter_values.update(
+            {
+                "Negative electrode active material volume fraction": pybop.Parameter(
+                    prior=pybop.Gaussian(0.55, 0.03),
+                    bounds=[0.375, 0.7],
+                ),
+                "Positive electrode active material volume fraction": pybop.Parameter(
+                    prior=pybop.Gaussian(0.55, 0.03),
+                    bounds=[0.375, 0.7],
+                ),
+            }
         )
-        builder.add_parameter(
-            pybop.Parameter(
-                "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.55, 0.03),
-                bounds=[0.375, 0.7],
-            )
+
+        # Create fitting problem
+        simulator = pybop.pybamm.Simulator(
+            model, parameter_values=parameter_values, protocol=dataset
         )
-        builder.add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]"))
+        cost = pybop.SumSquaredError(dataset)
+        problem = pybop.Problem(simulator, cost)
 
-        # Build the problem
-        problem = builder.build()
-
-        # Create optimiser instance and set options for consistent benchmarking
-        if issubclass(optimiser, pybop.SciPyMinimize):
-            options = pybop.ScipyMinimizeOptions(maxiter=250)
-        elif issubclass(optimiser, pybop.SciPyDifferentialEvolution):
-            options = pybop.SciPyDifferentialEvolutionOptions(maxiter=250, polish=False)
+        # Create optimization instance and set options for consistent benchmarking
+        if optimiser is pybop.SciPyDifferentialEvolution:
+            options = pybop.SciPyDifferentialEvolutionOptions(maxiter=50)
+        elif optimiser is pybop.SciPyMinimize:
+            options = pybop.SciPyMinimizeOptions(maxiter=250)
         else:
             options = pybop.PintsOptions(
                 max_iterations=250,
@@ -103,28 +96,28 @@ class BenchmarkTrackParameterisation:
                 threshold=1e-5,
                 min_iterations=2,
             )
-        self.optim = optimiser(problem, options)
+        self.optim = optimiser(problem, options=options)
 
         # Track output results
-        self.x = self.results_tracking(model, parameter_values, optimiser)
+        self.x = self.results_tracking(model, parameter_set, optimiser)
 
-    def track_x1(self, model, parameter_values, optimiser):
+    def track_x1(self, model, parameter_set, optimiser):
         return self.x[0]
 
-    def track_x2(self, model, parameter_values, optimiser):
+    def track_x2(self, model, parameter_set, optimiser):
         return self.x[1]
 
-    def results_tracking(self, model, parameter_values, optimiser):
+    def results_tracking(self, model, parameter_set, optimiser):
         """
-        Track the results of the optimisation.
+        Track the results of the optimization.
         Note: These results will be different than the time_parameterisation
-        as they are ran separately. These results should be used to verify the
+        as they are ran seperately. These results should be used to verify the
         optimisation algorithm typically converges.
 
         Args:
-            model (pybamm.BaseModel): The model class (unused).
-            parameter_values (str): The name of the parameter set (unused).
-            optimiser (pybop.Optimiser): The optimiser class (unused).
+            model (pybop.Model): The model class being benchmarked (unused).
+            parameter_set (str): The name of the parameter set being used (unused).
+            optimiser (pybop.Optimiser): The optimiser class being used (unused).
         """
         results = self.optim.run()
         return results.x

@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import pybamm
 
@@ -14,58 +13,53 @@ model = pybamm.lithium_ion.SPM()
 parameter_values = pybamm.ParameterValues("Chen2020")
 
 # Generate a synthetic dataset
-sim = pybamm.Simulation(model, parameter_values=parameter_values)
-sol = sim.solve(t_eval=np.linspace(0, 100, 100))
+solution = pybamm.Simulation(model, parameter_values=parameter_values).solve(
+    t_eval=np.linspace(0, 100, 100)
+)
 dataset = pybop.Dataset(
     {
-        "Time [s]": sol.t,
-        "Current function [A]": sol["Current [A]"].data,
-        "Voltage [V]": sol["Voltage [V]"].data,
-        "Bulk open-circuit voltage [V]": sol["Bulk open-circuit voltage [V]"].data,
+        "Time [s]": solution.t,
+        "Current function [A]": solution["Current [A]"].data,
+        "Voltage [V]": solution["Voltage [V]"].data,
+        "Bulk open-circuit voltage [V]": solution["Bulk open-circuit voltage [V]"].data,
     }
 )
 
 # Fitting parameters
-parameters = [
-    pybop.Parameter(
-        "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.55, 0.05),
-    ),
-    pybop.Parameter(
-        "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.55, 0.05),
-    ),
-]
-
-# Construct the problem class
-builder = (
-    pybop.builders.Pybamm()
-    .set_dataset(dataset)
-    .set_simulation(model, parameter_values=parameter_values)
-    .add_cost(pybop.costs.pybamm.Minkowski("Voltage [V]"))
-    .add_cost(
-        pybop.costs.pybamm.Minkowski("Bulk open-circuit voltage [V]", p=2),
-        weight=0.5,
-    )
+parameter_values.update(
+    {
+        "Negative electrode active material volume fraction": pybop.Parameter(
+            prior=pybop.Gaussian(0.55, 0.05),
+        ),
+        "Positive electrode active material volume fraction": pybop.Parameter(
+            prior=pybop.Gaussian(0.55, 0.05),
+        ),
+    }
 )
-for param in parameters:
-    builder.add_parameter(param)
-problem = builder.build()
+
+# Build the problem
+simulator = pybop.pybamm.Simulator(
+    model, parameter_values=parameter_values, protocol=dataset
+)
+cost = pybop.Minkowski(
+    dataset, target=["Voltage [V]", "Bulk open-circuit voltage [V]"], p=2
+)
+problem = pybop.Problem(simulator, cost)
 
 # We construct the optimiser class the same as normal but will be using the `optimiser`
 # attribute directly for this example. This interface works for all PINTS-based
 # optimisers. Warning: not all arguments are supported via this interface.
-options = pybop.PintsOptions(sigma=1e-2)
+options = pybop.PintsOptions(verbose=True)
 optim = pybop.AdamW(problem, options=options)
 
 # Create storage vars
 x_best = []
 f_best = []
 
-# Run optimisation
-for i in range(70):
+# Run the optimisation
+for i in range(50):
     x = optim.optimiser.ask()
-    f = optim._evaluator.evaluate(x)  # noqa: SLF001
+    f = [problem.evaluate(x[0], calculate_sensitivities=True).get_values()]
     optim.optimiser.tell(f)
 
     # Store best solution so far
@@ -77,18 +71,9 @@ for i in range(70):
             f"Iteration: {i} | Cost: {optim.optimiser.f_best()} | Parameters: {optim.optimiser.x_best()}"
         )
 
-# Manually apply the optimal parameters to the ParameterValues object
-# Next, we solve the forward model with the PyBaMM Simulation class
-for i, param in enumerate(problem.params):
-    parameter_values.update({param.name: x_best[-1][i]})
-sim = pybamm.Simulation(model, parameter_values=parameter_values)
-sol = sim.solve(t_eval=[dataset["Time [s]"][0], dataset["Time [s]"][-1]])
-
 # Plot the timeseries output
-fig, ax = plt.subplots()
-ax.plot(dataset["Time [s]"], dataset["Voltage [V]"], label="Targe")
-ax.plot(sol.t, sol["Voltage [V]"].data, label="Fit")
-ax.set(xlabel="Time (s)", ylabel="Voltage [V]")
-ax.legend()
-ax.grid()
-plt.show()
+pybop.plot.problem(
+    problem,
+    inputs=problem.parameters.to_dict(optim.optimiser.x_best()[0]),
+    title="Optimised Comparison",
+)
