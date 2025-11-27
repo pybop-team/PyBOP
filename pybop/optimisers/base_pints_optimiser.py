@@ -21,23 +21,31 @@ class PintsOptions(OptimiserOptions):
     """
     A class to hold PINTS options for the optimisation process.
 
-    Attributes:
-        default_max_iterations (int): Default maximum number of iterations (1000).
-        max_iterations (int): Maximum number of iterations for the optimisation. (Default: None)
-        min_iterations (int): Minimum number of iterations required. (Default: 2)
-        sigma (float | np.ndarray | list): Standard deviation or step-size parameter for the optimiser. (Default: 5e-2)
-        max_unchanged_iterations (int): Maximum iterations without improvement before stopping. (Default: 15)
-        use_f_guessed (bool): Whether to use guessed function values. (Default: False)
-        absolute_tolerance (float): Absolute tolerance for convergence. (Default: 1e-5)
-        relative_tolerance (float): Relative tolerance for convergence. (Default: 1e-2)
-        max_evaluations (int | None): Maximum number of function evaluations. (Default: None)
-        threshold (float | None): Threshold value for optimisation stopping criteria. (Default: None)
+    Attributes
+    ----------
+    default_max_iterations : int
+        Default maximum number of iterations (default: 1000).
+    max_iterations : int
+        Maximum number of iterations for the optimisation (default: None).
+    min_iterations : int
+        Minimum number of iterations required (default: 2).
+    max_unchanged_iterations : int
+        Maximum iterations without improvement before stopping (default: 15).
+    use_f_guessed : bool
+        Whether to use guessed function values (default: False).
+    absolute_tolerance : float
+        Absolute tolerance for convergence (default: 1e-5).
+    relative_tolerance : float
+        Relative tolerance for convergence (default: 1e-2).
+    max_evaluations : int | None
+        Maximum number of function evaluations (default: None).
+    threshold : float | None
+        Threshold value for optimisation stopping criteria (default: None).
     """
 
     default_max_iterations = 1000
     max_iterations: int = default_max_iterations
     min_iterations: int = 2
-    sigma: float | np.ndarray | list | None = None
     max_unchanged_iterations: int = 15
     use_f_guessed: bool = False
     absolute_tolerance: float = 1e-5
@@ -58,11 +66,6 @@ class PintsOptions(OptimiserOptions):
             raise ValueError(
                 "Maximum number of unchanged iterations cannot be negative."
             )
-        if isinstance(self.sigma, np.ndarray) and any(self.sigma <= 0):
-            raise ValueError("Sigma must be positive.")
-        elif np.isscalar(self.sigma):
-            if self.sigma <= 0:
-                raise ValueError("Sigma must be positive.")
         if self.absolute_tolerance < 0:
             raise ValueError("Absolute tolerance cannot be negative.")
         if self.relative_tolerance < 0:
@@ -85,10 +88,10 @@ class BasePintsOptimiser(BaseOptimiser):
     Parameters
     ----------
     problem: pybop.Problem
-        The problem to be minimised.
+        The problem to minimise.
     pints_optimiser : pints.Optimiser
         The PINTS optimiser class to be used.
-    options: PintsOptions (optional)
+    options: PintsOptions, optional
         Options for the PINTS optimiser. If None, default options are used.
     """
 
@@ -152,39 +155,36 @@ class BasePintsOptimiser(BaseOptimiser):
         self._use_f_guessed = options.use_f_guessed
         self._max_evaluations = options.max_evaluations
         self._threshold = options.threshold
+        self._boundaries = None
 
         # Convert bounds to PINTS boundaries
         ignored_optimisers = (GradientDescentImpl, AdamWImpl, NelderMead)
         if issubclass(self._pints_optimiser, ignored_optimisers):
             print(f"NOTE: Boundaries ignored by {self._pints_optimiser}")
-            self._boundaries = None
         else:
-            bounds = self.problem.params.get_bounds(transformed=True)
-            if issubclass(self._pints_optimiser, PSO):
-                if not all(
-                    np.isfinite(value)
-                    for sublist in bounds.values()
-                    for value in sublist
-                ):
-                    raise ValueError(
-                        f"Either all bounds or no bounds must be set for {self._pints_optimiser.__name__}."
-                    )
-            self._boundaries = PintsRectangularBoundaries(
-                bounds["lower"], bounds["upper"]
-            )
+            bounds = self.problem.parameters.get_bounds(transformed=True)
+            if bounds is not None:
+                if issubclass(self._pints_optimiser, PSO):
+                    if not all(
+                        np.isfinite(value)
+                        for sublist in bounds.values()
+                        for value in sublist
+                    ):
+                        raise ValueError(
+                            f"Either all bounds or no bounds must be set for {self._pints_optimiser.__name__}."
+                        )
+                self._boundaries = PintsRectangularBoundaries(
+                    bounds["lower"], bounds["upper"]
+                )
 
         # Set the covariance / step size parameter
-        self._sigma0 = (
-            options.sigma
-            if options.sigma is not None
-            else self.problem.params.get_sigma0(transformed=True)
-        )
+        self._sigma0 = self.problem.parameters.get_sigma0(transformed=True)
 
         # Create an instance of the PINTS optimiser class
         if issubclass(self._pints_optimiser, PintsOptimiser):
-            x0 = self.problem.params.get_initial_values(transformed=True)
+            x0 = self.problem.parameters.get_initial_values(transformed=True)
             if np.isscalar(self._sigma0):
-                param_dims = len(self.problem.params)
+                param_dims = len(self.problem.parameters)
                 self._sigma0 = np.ones(param_dims) * self._sigma0
 
             self._optimiser = self._pints_optimiser(
@@ -200,18 +200,20 @@ class BasePintsOptimiser(BaseOptimiser):
 
         # Create logger and evaluator objects
         self._logger = Logger(
-            verbose=self.verbose, verbose_print_rate=self.verbose_print_rate
+            minimising=self.problem.minimising,
+            verbose=self.verbose,
+            verbose_print_rate=self.verbose_print_rate,
         )
         if self._parallel:
             self._evaluator = PopulationEvaluator(
-                problem=self.problem,
+                problem=self._problem,
                 minimise=True,
                 with_sensitivities=self._needs_sensitivities,
                 logger=self._logger,
             )
         else:
             self._evaluator = SequentialEvaluator(
-                problem=self.problem,
+                problem=self._problem,
                 minimise=True,
                 with_sensitivities=self._needs_sensitivities,
                 logger=self._logger,
@@ -371,7 +373,7 @@ class BasePintsOptimiser(BaseOptimiser):
         self._evaluator.evaluate([x])
 
         return OptimisationResult(
-            problem=self._problem,
+            optim=self,
             logger=self._logger,
             time=total_time,
             optim_name=self.name,

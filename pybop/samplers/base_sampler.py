@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from pybop._result import SamplingResult
 from pybop.problems.base_problem import Problem
 
 
@@ -10,14 +11,15 @@ class SamplerOptions:
     """
     Base options for the sampler.
 
-    Attributes:
-        n_chains (int): The number of chains to concurrently sample from.
-        x0 (float | np.ndarray): Initial guess for the parameter values.
-        cov (float | np.ndarray): Covariance matrix.
+    Attributes
+    ----------
+    n_chains : int
+        The number of chains to concurrently sample from.
+    cov : float | np.ndarray
+        Covariance matrix.
     """
 
     n_chains: int = 1
-    x0: float | np.ndarray | None = None
     cov: float | np.ndarray = 0.05
 
     def validate(self):
@@ -39,27 +41,27 @@ class BaseSampler:
 
     Parameters
     ----------
-    problem : pybop.Problem
-        The problem representing the negative unnormalised posterior distribution.
+    log_pdf : pybop.Problem
+        The negative unnormalised posterior distribution.
     options : SamplerOptions, optional
-        Options for the sampler, by default SamplerOptions().
+        Options for the sampler. If None, default options are used.
     """
 
     def __init__(
         self,
-        problem: Problem,
+        log_pdf: Problem,
         options: SamplerOptions | None = None,
     ):
-        self._problem = problem
+        self._log_pdf = log_pdf
         self._options = options or self.default_options()
         self._options.validate()
 
         # Get initial conditions
-        self._x0 = self.problem.params.get_initial_values(transformed=True) * np.ones(
-            [self._options.n_chains, 1]
-        )
+        self._x0 = self._log_pdf.parameters.get_initial_values(
+            transformed=True
+        ) * np.ones([self._options.n_chains, 1])
 
-        param_dims = len(self.problem.params)
+        param_dims = len(self._log_pdf.parameters)
         if np.isscalar(self._options.cov):
             self._cov0 = np.eye(param_dims) * self._options.cov
         else:
@@ -79,14 +81,14 @@ class BaseSampler:
         return self._cov0
 
     @property
-    def problem(self) -> Problem:
-        return self._problem
+    def log_pdf(self) -> Problem:
+        return self._log_pdf
 
     @property
     def options(self) -> SamplerOptions:
         return self._options
 
-    def run(self) -> np.ndarray:
+    def run(self) -> SamplingResult:
         """
         Sample from the posterior distribution.
 
@@ -95,32 +97,22 @@ class BaseSampler:
         """
         raise NotImplementedError
 
-    def set_initial_phase_iterations(self, iterations=250):
-        """
-        Set the number of iterations for the initial phase of the sampler.
-
-        Args:
-            iterations (int): Number of iterations for the initial phase.
-        """
+    def set_initial_phase_iterations(self, iterations: int = 250):
+        """Set the number of iterations for the initial phase of the sampler."""
         self._initial_phase_iterations = iterations
 
-    def set_max_iterations(self, iterations=500):
-        """
-        Set the maximum number of iterations for the sampler.
-
-        Args:
-            iterations (int): Maximum number of iterations.
-        """
+    def set_max_iterations(self, iterations: int = 500):
+        """Set the maximum number of iterations for the sampler."""
         iterations = int(iterations)
         if iterations < 1:
-            raise ValueError("Number of iterations must be greater than 0")
+            raise ValueError("Number of iterations must be greater than 0.")
 
         self._max_iterations = iterations
 
-    def set_warm_up_iterations(self, iterations=250):
+    def set_warm_up_iterations(self, iterations: int = 250):
         """Set the number of warm up iterations for the sampler."""
         iterations = int(iterations)
         if iterations < 1:
-            raise ValueError("Number of iterations must be greater than 0")
+            raise ValueError("Number of iterations must be greater than 0.")
 
         self._warm_up = iterations

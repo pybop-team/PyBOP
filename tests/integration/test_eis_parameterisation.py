@@ -136,8 +136,8 @@ class TestEISParameterisation:
         return optimiser(problem, options=options)
 
     def test_eis_optimisers(self, optim, dataset):
-        x0 = optim.problem.params.get_initial_values()
-        results = optim.run()
+        x0 = optim.problem.parameters.get_initial_values()
+        result = optim.run()
 
         # Assertions
         if np.allclose(x0, self.ground_truth, atol=1e-5):
@@ -146,5 +146,5 @@ class TestEISParameterisation:
         # Assert on identified values, without sigma for GaussianLogLikelihood
         # as the sigma values are small (5e-4), this is a difficult identification process
         # and requires a high number of iterations, and parameter dependent step sizes.
-        assert results.initial_cost > results.best_cost
-        np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
+        assert result.initial_cost > result.best_cost
+        np.testing.assert_allclose(result.x, self.ground_truth, atol=1.5e-2)

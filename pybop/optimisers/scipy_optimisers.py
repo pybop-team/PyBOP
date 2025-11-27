@@ -41,7 +41,7 @@ class BaseSciPyOptimiser(BaseOptimiser):
         super().__init__(problem, options=options)
 
     def scipy_bounds(self) -> Bounds:
-        bounds = self.problem.params.get_bounds(transformed=True)
+        bounds = self.problem.parameters.get_bounds(transformed=True)
         # Convert bounds to SciPy format
         if isinstance(bounds, dict):
             return Bounds(bounds["lower"], bounds["upper"], True)
@@ -80,22 +80,22 @@ class BaseSciPyOptimiser(BaseOptimiser):
 
 
 @dataclass
-class ScipyMinimizeOptions(pybop.OptimiserOptions):
+class SciPyMinimizeOptions(pybop.OptimiserOptions):
     """
     Options for the SciPy minimize method.
 
     Attributes
     ----------
     method : str, optional
-        The optimisation method to use. Default is None.
+        The optimisation method to use (default: None).
     jac : bool, optional
-        Method for computing the gradient vector. Default is None.
+        Method for computing the gradient vector (default: None).
     tol : float, optional
-        Tolerance for termination. Default is None.
+        Tolerance for termination (default: None).
     maxiter : int, optional
-        Maximum number of iterations. Default is 1000.
+        Maximum number of iterations (default: 1000).
     disp : bool, optional
-        Set to True to print convergence messages. Default is False.
+        Set to True to print convergence messages (default: False).
     constraints : scipy constraint or list of scipy constraints, optional
         Constraints definition. Only for COBYLA, COBYQA, SLSQP and trust-constr.
     solver_options : dict, optional
@@ -119,14 +119,7 @@ class ScipyMinimizeOptions(pybop.OptimiserOptions):
             raise ValueError("tol must be a positive float.")
 
     def to_dict(self) -> dict:
-        """
-        Convert the options to a dictionary format.
-
-        Returns
-        -------
-        dict
-            Dictionary representation of the options.
-        """
+        """Convert the options to a dictionary format."""
         if self.solver_options is not None:
             solver_options = self.solver_options.copy()
         else:
@@ -150,9 +143,9 @@ class SciPyMinimize(BaseSciPyOptimiser):
     Parameters
     ----------
     problem : pybop.Problem
-        The problem to be optimised.
+        The problem to optimise.
     options: ScipyMinizeOptions, optional
-        Options for the SciPy minimize method. Default is None.
+        Options for the SciPy minimize method (default: None).
 
     See Also
     --------
@@ -167,15 +160,15 @@ class SciPyMinimize(BaseSciPyOptimiser):
     def __init__(
         self,
         problem: Problem,
-        options: ScipyMinimizeOptions | None = None,
+        options: SciPyMinimizeOptions | None = None,
     ):
         options = options or self.default_options()
         super().__init__(problem=problem, options=options)
 
     @staticmethod
-    def default_options() -> ScipyMinimizeOptions:
+    def default_options() -> SciPyMinimizeOptions:
         """Returns the default options for the optimiser."""
-        return ScipyMinimizeOptions()
+        return SciPyMinimizeOptions()
 
     def _set_up_optimiser(self):
         """
@@ -183,8 +176,8 @@ class SciPyMinimize(BaseSciPyOptimiser):
         """
         self._options_dict = self._options.to_dict()
 
-        self._cost0 = self.problem.get_finite_initial_cost()
-        self._x0 = self.problem.params.get_initial_values(transformed=True)
+        self._cost0 = np.abs(self.problem.get_finite_initial_cost())
+        self._x0 = self.problem.parameters.get_initial_values(transformed=True)
         self._options_dict["x0"] = self._x0
         self._options_dict["bounds"] = self.scipy_bounds()
 
@@ -195,10 +188,12 @@ class SciPyMinimize(BaseSciPyOptimiser):
 
         # Create logger and evaluator objects
         self._logger = Logger(
-            verbose=self.verbose, verbose_print_rate=self.verbose_print_rate
+            minimising=self.problem.minimising,
+            verbose=self.verbose,
+            verbose_print_rate=self.verbose_print_rate,
         )
         self._evaluator = ScalarEvaluator(
-            problem=self.problem,
+            problem=self._problem,
             minimise=True,
             with_sensitivities=self._needs_sensitivities,
             logger=self._logger,
@@ -238,7 +233,9 @@ class SciPyMinimize(BaseSciPyOptimiser):
         self._logger.iteration = 1
 
         result: OptimizeResult = minimize(fun=self.cost_wrapper, **self._options_dict)
-        self._logger.iteration = result.nit  # undo final callback depending on method
+        if hasattr(result, "nit"):
+            # Subtract final callback depending on method
+            self._logger.iteration = result.nit
 
         total_time = time() - start_time
 
@@ -246,7 +243,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         self._evaluator.evaluate(result.x)
 
         return OptimisationResult(
-            problem=self._problem,
+            optim=self,
             logger=self._logger,
             time=total_time,
             optim_name=self.name,
@@ -265,55 +262,56 @@ class SciPyDifferentialEvolutionOptions(pybop.OptimiserOptions):
     """
     Options for the SciPy differential evolution method.
 
-    Attributes:
-        strategy : str, optional
-            The differential evolution strategy to use. Should be one of:
-            - 'best1bin'
-            - 'best1exp'
-            - 'rand1exp'
-            - 'randtobest1exp'
-            - 'currenttobest1exp'
-            - 'best2exp'
-            - 'rand2exp'
-            - 'randtobest1bin'
-            - 'currenttobest1bin'
-            - 'best2bin'
-            - 'rand2bin'
-            - 'rand1bin'
-            Default is 'best1bin'.
-        maxiter : int, optional
-            Maximum number of generations. Default is 1000.
-        popsize : int, optional
-            Multiplier for setting the total population size. The population has
-            popsize * len(x) individuals. Default is 15.
-        tol : float, optional
-            Relative tolerance for convergence. Default is 0.01.
-        mutation : float or tuple(float, float), optional
-            The mutation constant. If specified as a float, should be in [0, 2].
-            If specified as a tuple (min, max), dithering is used. Default is (0.5, 1.0).
-        recombination : float, optional
-            The recombination constant, should be in [0, 1]. Default is 0.7.
-        seed : int, optional
-            Random seed for reproducibility.
-        disp : bool, optional
-            Display status messages. Default is False.
-        callback : Callable, optional
-            Called after each iteration with the current result as argument.
-        polish : bool, optional
-            If True, performs a local optimisation on the solution. Default is True.
-        init : str or array-like, optional
-            Specify initial population. Can be 'latinhypercube', 'random',
-            or an array of shape (M, len(x)).
-        atol : float, optional
-            Absolute tolerance for convergence. Default is 0.
-        updating : {'immediate', 'deferred'}, optional
-            If 'immediate', best solution vector is continuously updated within
-            a single generation. Default is 'immediate'.
-        workers : int or map-like Callable, optional
-            If workers is an int the population is subdivided into workers
-            sections and evaluated in parallel. Default is 1.
-        constraints : {NonlinearConstraint, LinearConstraint, Bounds}, optional
-            Constraints on the solver.
+    Parameters
+    ----------
+    strategy : str, optional
+        The differential evolution strategy to use. Should be one of:
+        - 'best1bin'
+        - 'best1exp'
+        - 'rand1exp'
+        - 'randtobest1exp'
+        - 'currenttobest1exp'
+        - 'best2exp'
+        - 'rand2exp'
+        - 'randtobest1bin'
+        - 'currenttobest1bin'
+        - 'best2bin'
+        - 'rand2bin'
+        - 'rand1bin'
+        Default is 'best1bin'.
+    maxiter : int, optional
+        Maximum number of generations (default: 1000).
+    popsize : int, optional
+        Multiplier for setting the total population size. The population has
+        popsize * len(x) individuals (default: 15).
+    tol : float, optional
+        Relative tolerance for convergence (default: 0.01).
+    mutation : float or tuple(float, float), optional
+        The mutation constant. If specified as a float, should be in [0, 2].
+        If specified as a tuple (min, max), dithering is used (default: (0.5, 1.0)).
+    recombination : float, optional
+        The recombination constant, should be in [0, 1] (default: 0.7).
+    seed : int, optional
+        Random seed for reproducibility.
+    disp : bool, optional
+        Display status messages (default: False).
+    callback : Callable, optional
+        Called after each iteration with the current result as argument.
+    polish : bool, optional
+        If True, performs a local optimisation on the solution (default: True).
+    init : str or array-like, optional
+        Specify initial population. Can be 'latinhypercube', 'random',
+        or an array of shape (M, len(x)).
+    atol : float, optional
+        Absolute tolerance for convergence (default: 0).
+    updating : {'immediate', 'deferred'}, optional
+        If 'immediate', best solution vector is continuously updated within
+        a single generation (default: 'immediate').
+    workers : int or map-like Callable, optional
+        If workers is an int the population is subdivided into workers
+        sections and evaluated in parallel (default: 1).
+    constraints : {NonlinearConstraint, LinearConstraint, Bounds}, optional
+        Constraints on the solver.
     """
 
     strategy: str = "best1bin"
@@ -330,14 +328,7 @@ class SciPyDifferentialEvolutionOptions(pybop.OptimiserOptions):
     atol: float | None = None
 
     def to_dict(self) -> dict:
-        """
-        Convert the options to a dictionary format.
-
-        Returns
-        -------
-        dict
-            Dictionary representation of the options.
-        """
+        """Convert the options to a dictionary format."""
         ret = {
             "strategy": self.strategy,
             "maxiter": self.maxiter,
@@ -368,9 +359,9 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
     Parameters
     ----------
     problem : pybop.Problem
-        The problem to be optimised.
+        The problem to optimise.
     options: SciPyDifferentialEvolutionOptions, optional
-        Options for the SciPy differential evolution method. Default is None.
+        Options for the SciPy differential evolution method (default: None).
 
     See Also
     --------
@@ -417,10 +408,12 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
 
         # Create logger and evaluator objects
         self._logger = Logger(
-            verbose=self.verbose, verbose_print_rate=self.verbose_print_rate
+            minimising=self.problem.minimising,
+            verbose=self.verbose,
+            verbose_print_rate=self.verbose_print_rate,
         )
         self._evaluator = ScalarEvaluator(
-            problem=self.problem,
+            problem=self._problem,
             minimise=True,
             with_sensitivities=self._needs_sensitivities,
             logger=self._logger,
@@ -431,7 +424,7 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
         # array of size (N, S) amd expects to receive a set of costs of size (S,)
         self._options_dict["updating"] = "deferred"
         pop_evaluator = PopulationEvaluator(
-            problem=self.problem,
+            problem=self._problem,
             minimise=True,
             with_sensitivities=self._needs_sensitivities,
             logger=self._logger,
@@ -468,7 +461,7 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
         self._evaluator.evaluate(result.x)
 
         return OptimisationResult(
-            problem=self._problem,
+            optim=self,
             logger=self._logger,
             time=total_time,
             optim_name=self.name,

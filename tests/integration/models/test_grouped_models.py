@@ -140,7 +140,7 @@ class TestGroupedModels:
         fitting_problem = builder.build()
 
         # Test parameter sensitivity
-        initial_params = fitting_problem.params.get_initial_values()
+        initial_params = fitting_problem.parameters.get_initial_values()
 
         value1, value2 = self.assert_parameter_sensitivity(
             fitting_problem, initial_params, TEST_PARAM_VALUES
@@ -174,7 +174,7 @@ class TestGroupedModels:
         assert eis_problem is not None, "EIS problem build failed"
 
         # Test parameter sensitivity with different values
-        initial_params = eis_problem.params.get_initial_values()
+        initial_params = eis_problem.parameters.get_initial_values()
 
         self.assert_parameter_sensitivity(
             eis_problem, TEST_PARAM_VALUES, initial_params

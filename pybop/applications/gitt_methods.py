@@ -1,5 +1,3 @@
-from copy import copy
-
 import numpy as np
 import pybamm
 
@@ -24,11 +22,9 @@ class GITTPulseFit(BaseApplication):
     cost : pybop.CallableCost, optional
         The cost function to quantify the error (default: pybop.RootMeanSquaredError).
     optimiser : pybop.BaseOptimiser, optional
-        The optimisation algorithm to use (default: pybop.CMAES).
+        The optimisation algorithm to use (default: pybop.SciPyMinimize).
     optimiser_options : pybop.OptimiserOptions, optional
         Options for the optimiser.
-    verbose : bool, optional
-        If True, progress messages are printed (default: True).
     """
 
     def __init__(
@@ -37,26 +33,18 @@ class GITTPulseFit(BaseApplication):
         cost: pybop.CallableCost | None = None,
         optimiser: pybop.BaseOptimiser | None = None,
         optimiser_options: pybop.OptimiserOptions | None = None,
-        verbose: bool = True,
     ):
         self.parameter_values = parameter_values
         self.cost = cost or pybop.costs.pybamm.RootMeanSquaredError
-        self.optimiser = optimiser or pybop.CMAES
-        self.optimiser_options = optimiser_options
-        self.verbose = verbose
+        self.optimiser = optimiser or pybop.SciPyMinimize
+        self.optimiser_options = optimiser_options or self.optimiser.default_options()
 
         # Create model
         self.model = pybop.lithium_ion.SPDiffusion(build=True)
-        self.parameters = self._create_parameters()
-        self.inverse_ocp = pybop.InverseOCV(
-            self.parameter_values["Electrode OCP [V]"],
-            optimiser=pybop.NelderMead,
-            optimiser_options=pybop.PintsOptions(max_unchanged_iterations=50),
-        )
 
         # Create state variables
         self.optim = None
-        self.results = None
+        self.result = None
 
     def _create_parameters(self) -> list[pybop.Parameter]:
         """Create optimisation parameters."""
@@ -75,42 +63,24 @@ class GITTPulseFit(BaseApplication):
             ),
         ]
 
-    def _set_initial_state(self, initial_voltage: float) -> None:
-        """Set initial stoichiometry from initial voltage using inverse OCP."""
-        initial_state = self.inverse_ocp(initial_voltage)
-        self.parameter_values["Initial stoichiometry"] = initial_state
-
-    def _build_problem(self, gitt_pulse: pybop.Dataset) -> pybop.Problem:
-        """Build the optimisation problem."""
+    def __call__(self, gitt_pulse: pybop.Dataset) -> pybop.OptimisationResult:
+        # Build problem
         builder = pybop.builders.Pybamm()
         builder.set_dataset(gitt_pulse)
         builder.set_simulation(self.model, parameter_values=self.parameter_values)
 
+        self.parameters = self._create_parameters()
         for parameter in self.parameters:
             builder.add_parameter(parameter)
 
         builder.add_cost(self.cost("Voltage [V]"))
-        return builder.build()
-
-    def __call__(self, gitt_pulse: pybop.Dataset) -> pybop.OptimisationResult:
-        # Set initial-state
-        self._set_initial_state(gitt_pulse["Voltage [V]"][0])
-
-        # Build problem
-        problem = self._build_problem(gitt_pulse)
-
-        # Set default optimiser options if not provided
-        if self.optimiser_options is None:
-            self.optimiser_options = pybop.PintsOptions(
-                max_iterations=100, max_unchanged_iterations=30, verbose=self.verbose
-            )
+        problem = builder.build()
 
         # Run optimisation
         self.optim = self.optimiser(problem, options=self.optimiser_options)
-        self.optim.set_population_size(200)
-        self.results = self.optim.run()
+        self.result = self.optim.run()
 
-        return self.results
+        return self.result
 
 
 class GITTFit(BaseApplication):
@@ -130,11 +100,9 @@ class GITTFit(BaseApplication):
     cost : pybop.CallableCost, optional
         The cost function to quantify the error (default: pybop.RootMeanSquaredError).
     optimiser : pybop.BaseOptimiser, optional
-        The optimisation algorithm to use (default: pybop.CMAES).
+        The optimisation algorithm to use (default: pybop.SciPyMinimize).
     optimiser_options : pybop.OptimiserOptions, optional
         Options for the optimiser.
-    verbose : bool, optional
-        If True, progress messages are printed (default: False).
     """
 
     def __init__(
@@ -145,108 +113,93 @@ class GITTFit(BaseApplication):
         cost: pybop.CallableCost | None = None,
         optimiser: pybop.BaseOptimiser | None = None,
         optimiser_options: pybop.OptimiserOptions | None = None,
-        verbose: bool = False,
     ):
         self.gitt_dataset = gitt_dataset
         self.pulse_index = pulse_index
         self.parameter_values = parameter_values.copy()
         self.cost = cost or pybop.costs.pybamm.RootMeanSquaredError
-        self.verbose = verbose
+        self.optimiser = optimiser or pybop.SciPyMinimize
+        self.optimiser_options = optimiser_options or self.optimiser.default_options()
+
+        self.inverse_ocp = pybop.InverseOCV(self.parameter_values["Electrode OCP [V]"])
 
         # Initialise single pulse fitter
         self.gitt_pulse = GITTPulseFit(
-            parameter_values=self.parameter_values,
+            parameter_values=self.parameter_values.copy(),
             cost=self.cost,
-            optimiser=optimiser or pybop.CMAES,
-            optimiser_options=optimiser_options,
-            verbose=self.verbose,
-        )
-
-    def _validate_pulse_data(self, index: np.ndarray) -> None:
-        """Validate that the pulse starts with zero current."""
-        if self.gitt_dataset["Current function [A]"][index[0]] != 0:
-            raise ValueError("The initial current in the pulse dataset must be zero.")
-
-    def _extract_results(self, gitt_results: pybop.OptimisationResult) -> dict:
-        """Extract parameter values from optimisation results."""
-        return {
-            "diffusion_time": gitt_results.parameter_values[
-                "Particle diffusion time scale [s]"
-            ],
-            "series_resistance": gitt_results.parameter_values[
-                "Series resistance [Ohm]"
-            ],
-            "stoichiometry": gitt_results.parameter_values["Initial stoichiometry"],
-            "cost": gitt_results.best_cost,
-        }
-
-    def _process_single_pulse(self, index: np.ndarray) -> dict:
-        """Process a single pulse and return extracted results."""
-        self._validate_pulse_data(index)
-        gitt_results = self.gitt_pulse(gitt_pulse=self.gitt_dataset.get_subset(index))
-        return self._extract_results(gitt_results)
-
-    def _create_parameter_dataset(self, results_data: dict) -> pybop.Dataset:
-        """Create dataset from collected results with proper ordering."""
-        arrays = {key: np.array(values) for key, values in results_data.items()}
-
-        # Determine if data needs flipping for ascending stoichiometry
-        stoich = arrays["stoichiometry"]
-        needs_flip = len(stoich) > 1 and stoich[-1] < stoich[0]
-
-        if needs_flip:
-            arrays = {key: np.flipud(arr) for key, arr in arrays.items()}
-
-        cost_name = add_spaces(self.cost.__name__) + " [V]"
-
-        return pybop.Dataset(
-            {
-                "Stoichiometry": arrays["stoichiometry"],
-                "Particle diffusion time scale [s]": arrays["diffusion_time"],
-                "Series resistance [Ohm]": arrays["series_resistance"],
-                cost_name: arrays["cost"],
-            },
-            domain="Stoichiometry",
+            optimiser=self.optimiser,
+            optimiser_options=self.optimiser_options,
         )
 
     def __call__(self) -> pybop.Dataset:
         # Collect results for all pulses
         self.pulses = []
-        results_data = {
-            "stoichiometry": [],
-            "diffusion_time": [],
-            "series_resistance": [],
-            "cost": [],
-        }
+        stoichiometry = []
+        diffusion_time = []
+        series_resistance = []
+        best_cost = []
 
         for index in self.pulse_index:
             try:
-                pulse_results = self._process_single_pulse(index)
-                self.pulses.append(copy(self.gitt_pulse.optim))
+                if self.gitt_dataset["Current function [A]"][index[0]] != 0:
+                    raise ValueError(
+                        "The initial current in the pulse dataset must be zero."
+                    )
 
-                # Accumulate results
-                for key, value in pulse_results.items():
-                    results_data[key].append(value)
+                gitt_pulse_data = self.gitt_dataset.get_subset(index)
+                initial_state = self.inverse_ocp(gitt_pulse_data["Voltage [V]"][0])
+                self.gitt_pulse.parameter_values["Initial stoichiometry"] = (
+                    initial_state
+                )
+
+                result = self.gitt_pulse(gitt_pulse=gitt_pulse_data)
+                self.pulses.append(result)
+
+                diffusion_time.append(
+                    result.best_inputs["Particle diffusion time scale [s]"]
+                )
+                series_resistance.append(result.best_inputs["Series resistance [Ohm]"])
+                stoichiometry.append(initial_state)
+                best_cost.append(result.best_cost)
+
+                self.gitt_pulse.parameter_values.update(result.best_inputs)
 
             except (SystemExit, KeyboardInterrupt) as e:
-                if self.verbose:
+                if self.optimiser_options.verbose:
                     print(f"Failed to process pulse at index {index}: {e}")
                 self.pulses.append(None)
 
-        # Create parameter dataset
-        self.parameter_data = self._create_parameter_dataset(results_data)
+        # Save parameters versus stoichiometry (ascending)
+        cost_name = add_spaces(self.cost.__name__) + " [V]"
+        self.parameter_data = pybop.Dataset(
+            {
+                "Stoichiometry": np.asarray(stoichiometry),
+                "Particle diffusion time scale [s]": np.asarray(diffusion_time),
+                "Series resistance [Ohm]": np.asarray(series_resistance),
+                cost_name: np.asarray(best_cost),
+            }
+            if len(stoichiometry) > 1 and stoichiometry[-1] > stoichiometry[0]
+            else {
+                "Stoichiometry": np.flipud(np.asarray(stoichiometry)),
+                "Particle diffusion time scale [s]": np.flipud(
+                    np.asarray(diffusion_time)
+                ),
+                "Series resistance [Ohm]": np.flipud(np.asarray(series_resistance)),
+                cost_name: np.flipud(np.asarray(best_cost)),
+            },
+            domain="Stoichiometry",
+        )
 
         # Update parameter values with mean values Todo: consider removing this mutation
-        if len(results_data["diffusion_time"]) > 0:
-            self.parameter_values.update(
-                {
-                    "Particle diffusion time scale [s]": np.mean(
-                        results_data["diffusion_time"]
-                    ),
-                    "Series resistance [Ohm]": np.mean(
-                        results_data["series_resistance"]
-                    ),
-                }
-            )
+        self.parameter_values.update(
+            {
+                "Particle diffusion time scale [s]": np.mean(
+                    self.parameter_data["Particle diffusion time scale [s]"],
+                ),
+                "Series resistance [Ohm]": np.mean(
+                    self.parameter_data["Series resistance [Ohm]"],
+                ),
+            }
+        )
 
         return self.parameter_data

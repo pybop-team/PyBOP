@@ -12,6 +12,7 @@ from pybop import (
     SingleChainProcessor,
 )
 from pybop._logging import Logger
+from pybop._result import SamplingResult
 from pybop.problems.base_problem import Problem
 from pybop.samplers.base_sampler import SamplerOptions
 
@@ -21,18 +22,28 @@ class PintsSamplerOptions(SamplerOptions):
     """
     Pints sampler options.
 
-    Attributes:
-        n_chains (int): The number of chains to concurrently sample from. (Default: 1)
-        x0 (float | np.ndarray): Initial guess for the parameter values. (Default: None)
-        cov (float | np.ndarray): Covariance matrix. (Default: 0.05)
-        max_iterations (int): Maximum number of iterations to run. (Default: 500)
-        verbose (bool): If `True`, additional information will be printed. (Default: False)
-        warm_up_iterations (int): Number of iterations to warm up the sampler. (Default: 250)
-        chains_in_memory (bool): Whether to store the chains in memory. (Default: True)
-        log_to_screen (bool): If `True` (default), the sampler will print information during the sampling
-        log_filename (str): The name of the file to save the sampler log to. (Default: None)
-        chain_files (list): The name of the file to save the chains in. (Default: None)
-        evaluation_files (list): The name of the file to save the evaluations in. (Default: None)
+    Attributes
+    ----------
+    n_chains : int
+        The number of chains to concurrently sample from (default: 1).
+    cov : float | np.ndarray
+        Covariance matrix (default: 0.05).
+    max_iterations : int
+        Maximum number of iterations to run (default: 500).
+    verbose : bool
+        If `True`, additional information will be printed (default: False).
+    warm_up_iterations : int
+        Number of iterations to warm up the sampler (default: 250).
+    chains_in_memory : bool
+        Whether to store the chains in memory (default: True).
+    log_to_screen : bool
+        If `True` (default), the sampler will print information during the sampling.
+    log_filename : str
+        The name of the file to save the sampler log to (default: None).
+    chain_files : list
+        The name of the file to save the chains in (default: None).
+    evaluation_files : list
+        The name of the file to save the evaluations in (default: None).
     """
 
     max_iterations: int = 500
@@ -55,8 +66,8 @@ class PintsSamplerOptions(SamplerOptions):
             If the options are invalid.
         """
         super().validate()
-        if self.cov is not None and self.cov <= 0:
-            raise ValueError("Sigma must be positive.")
+        if self.cov is not None and any(np.atleast_1d(self.cov) <= 0):
+            raise ValueError("Covariance values must be positive.")
         if self.warm_up_iterations < 0:
             raise ValueError("Number of warm-up steps must be non-negative.")
         if self.max_iterations < 1:
@@ -77,8 +88,8 @@ class BasePintsSampler(BaseSampler):
 
     Parameters
     ----------
-    problem: pybop.Problem
-        The problem representing the negative unnormalised posterior distribution.
+    log_pdf: pybop.Problem
+        The negative unnormalised posterior distribution.
     sampler: pints.MCMCSampler
         The PINTS sampler to be used for sampling.
     options: Optional[PintsSamplerOptions]
@@ -87,12 +98,12 @@ class BasePintsSampler(BaseSampler):
 
     def __init__(
         self,
-        problem: Problem,
+        log_pdf: Problem,
         sampler: type[pints.SingleChainMCMC | pints.MultiChainMCMC],
         options: PintsSamplerOptions | None = None,
     ):
         options = options or self.default_options()
-        super().__init__(problem, options=options)
+        super().__init__(log_pdf, options=options)
         self._sampler = sampler
         self._max_iterations = options.max_iterations
         self._chains_in_memory = options.chains_in_memory
@@ -101,7 +112,7 @@ class BasePintsSampler(BaseSampler):
         self._initial_phase_iterations = options.initial_phase_iterations
         self._verbose = options.verbose
         self._warm_up = options.warm_up_iterations
-        self._n_parameters = len(self.problem.params)
+        self._n_parameters = len(self._log_pdf.parameters)
         self._chain_files = options.chain_files
         self._evaluation_files = options.evaluation_files
         self._loop_iters = 0
@@ -148,24 +159,25 @@ class BasePintsSampler(BaseSampler):
         This method orchestrates the entire sampling process, managing
         iterations, evaluations, logging, and stopping criteria. It
         initialises the necessary structures, handles both single and
-        multi-chain scenarios, and manages parallel or sequential
-        evaluation based on the configuration.
+        multi-chain scenarios, and manages parallel evaluation based on
+        the configuration.
 
-        Returns:
-            np.ndarray: A numpy array containing the samples from the
-            posterior distribution if chains are stored in memory,
-            otherwise returns None.
+        Returns
+        -------
+        SamplingResult
+            The results including a numpy array containing the samples from the posterior
+            distribution if chains are stored in memory, otherwise None.
 
-        Raises:
-            ValueError: If no stopping criterion is set (i.e.,
-            _max_iterations is None).
+        Raises
+        ------
+        ValueError
+            If no stopping criterion is set (i.e., _max_iterations is None).
 
         Details:
             - Checks and ensures at least one stopping criterion is set.
             - Initialises iterations, evaluations, and other required
             structures.
-            - Sets up the evaluator (parallel or sequential) based on the
-            configuration.
+            - Sets up the parallel evaluator based on the configuration.
             - Handles the initial phase, if applicable, and manages
             intermediate steps in the sampling process.
             - Logs progress and relevant information based on the logging
@@ -180,9 +192,11 @@ class BasePintsSampler(BaseSampler):
         self._check_stopping_criteria()
         self._initialise_chain_processor()
 
-        self._logger = Logger(verbose=False)  # print sampler logging instead
+        self._logger = Logger(
+            minimising=self.log_pdf.minimising, verbose=False
+        )  # print sampler logging instead
         evaluator = PopulationEvaluator(
-            problem=self.problem,
+            problem=self._log_pdf,
             minimise=False,
             with_sensitivities=self._needs_sensitivities,
             logger=self._logger,
@@ -225,6 +239,9 @@ class BasePintsSampler(BaseSampler):
             if self._max_iterations and self.iteration >= self._max_iterations:
                 running = False
 
+        halt_message = (
+            "Maximum number of iterations (" + str(self._max_iterations) + ") reached."
+        )
         self._finalise_logging()
 
         if not self._chains_in_memory:
@@ -233,7 +250,14 @@ class BasePintsSampler(BaseSampler):
         if self._warm_up > 0:
             self._samples = self._samples[:, self._warm_up :, :]
 
-        return self._samples
+        return SamplingResult(
+            sampler=self,
+            logger=self._logger,
+            time=self._total_time,
+            chains=self._samples,
+            sampler_name=self._samplers[0].name(),
+            message=halt_message,
+        )
 
     def _process_chains(self):
         """
@@ -307,11 +331,12 @@ class BasePintsSampler(BaseSampler):
                 )
 
     def _finalise_logging(self):
+        self._total_time = time.time() - self._start_time
         if self._log_to_screen:
             logging.info(
                 f"Halting: Maximum number of iterations ({self.iteration}) reached."
             )
-            logging.info(f"Total time: {time.time() - self._start_time} seconds.")
+            logging.info(f"Total time: {self._total_time} seconds.")
             logging.info(f"Total number of evaluations: ({self._logger.evaluations}).")
 
     @property

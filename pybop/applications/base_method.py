@@ -111,8 +111,6 @@ class InverseOCV:
         The optimisation algorithm to use (default: pybop.SciPyMinimize).
     optimiser_options : pybop.OptimiserOptions, optional
         Options for the optimiser.
-    verbose : bool, optional
-        If True, progress messages are printed (default: False).
     """
 
     def __init__(
@@ -120,12 +118,10 @@ class InverseOCV:
         ocv_function: Callable,
         optimiser: pybop.BaseOptimiser | None = None,
         optimiser_options: pybop.OptimiserOptions | None = None,
-        verbose: bool = False,
     ):
         self.ocv_function = ocv_function
         self.optimiser = optimiser or pybop.SciPyMinimize
-        self.optimiser_options = optimiser_options
-        self.verbose = verbose
+        self.optimiser_options = optimiser_options or self.optimiser.default_options()
 
     def _create_root_function(self, ocv_value: float) -> Callable:
         """
@@ -184,12 +180,8 @@ class InverseOCV:
         ocv_root_func = self._create_root_function(ocv_value)
         problem = self._build_problem(ocv_root_func)
 
-        # Set default optimiser options if not provided
-        if self.optimiser_options is None:
-            self.optimiser_options = pybop.ScipyMinimizeOptions(verbose=self.verbose)
-
         # Run optimisation
         optim = self.optimiser(problem, options=self.optimiser_options)
-        results = optim.run()
+        result = optim.run()
 
-        return results.x[0]
+        return result.x[0]

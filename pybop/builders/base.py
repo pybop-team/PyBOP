@@ -28,7 +28,7 @@ class BaseBuilder(ABC):
 
     def __init__(self):
         self._dataset: Dataset | None = None
-        self._params = []
+        self._parameters = []
         self._params_keys = []
 
     def set_dataset(self, dataset: Dataset) -> "BaseBuilder":
@@ -59,7 +59,7 @@ class BaseBuilder(ABC):
                     f"There is already a parameter with the name {parameter.name} "
                     "in the Parameters object. Please remove the duplicate entry."
                 )
-            self._params.append(parameter)
+            self._parameters.append(parameter)
         elif isinstance(parameter, list):
             if not isinstance(parameter[0], pybop.Parameter):
                 raise TypeError(
@@ -70,7 +70,7 @@ class BaseBuilder(ABC):
                     f"There is already a parameter with the name {parameter[0].name} "
                     "in the Parameters object. Please remove the duplicate entry."
                 )
-            self._params.append(parameter[0])
+            self._parameters.append(parameter[0])
         else:
             raise TypeError(
                 "Each parameter input must be of type pybop.Parameter or list(pybop.Parameter)."
@@ -84,9 +84,9 @@ class BaseBuilder(ABC):
         """
         Builds the parameters for the problem.
         """
-        if not self._params:
+        if not self._parameters:
             raise ValueError("No parameters have been added to the builder.")
-        return pybop.Parameters(self._params)
+        return pybop.Parameters(self._parameters)
 
     @abstractmethod
     def build(self) -> Problem:

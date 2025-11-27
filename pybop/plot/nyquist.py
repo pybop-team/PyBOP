@@ -51,10 +51,10 @@ def nyquist(
             "e.g. pybop.EISProblem or pybop.PybammEISProblem."
         )
     if problem_inputs is None:
-        problem_inputs = problem.params.to_dict()
+        problem_inputs = problem.parameters.to_dict()
     else:
-        problem.params.update(values=problem_inputs)
-        problem_inputs = problem.params.to_dict()
+        problem.parameters.update(values=problem_inputs)
+        problem_inputs = problem.parameters.to_dict()
 
     model_output = problem.simulate(problem_inputs)
     domain_data = model_output.real

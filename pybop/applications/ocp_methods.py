@@ -99,11 +99,11 @@ class OCPAverage(BaseApplication):
         If True, the OCPs are allowed to stretch as well as shift with respect to
         the stoichiometry (default: True)
     cost : pybop.CallableCost, optional
-        The cost function to quantify the error (default: pybop.MeanAbsoluteError).
+        The cost function to quantify the error (default: pybop.RootMeanSquaredError).
     optimiser : pybop.BaseOptimiser, optional
         The optimisation algorithm to use (default: pybop.SciPyMinimize).
-    verbose : bool, optional
-        If True, progress messages are printed (default: True).
+    optimiser_options : pybop.OptimiserOptions, optional
+        Options for the optimiser.
     """
 
     def __init__(
@@ -114,15 +114,15 @@ class OCPAverage(BaseApplication):
         allow_stretching: bool = True,
         cost: pybop.CallableCost | None = None,
         optimiser: pybop.BaseOptimiser | None = None,
-        verbose: bool = True,
+        optimiser_options: pybop.OptimiserOptions | None = None,
     ):
         self.ocp_discharge = ocp_discharge
         self.ocp_charge = ocp_charge
         self.n_sto_points = n_sto_points
         self.allow_stretching = allow_stretching
-        self.cost = cost or pybop.MeanAbsoluteError
+        self.cost = cost or pybop.RootMeanSquaredError
         self.optimiser = optimiser or pybop.SciPyMinimize
-        self.verbose = verbose
+        self.optimiser_options = optimiser_options or self.optimiser.default_options()
 
     def _create_interpolants(self) -> tuple:
         """Create voltage and differential capacity interpolants."""
@@ -238,15 +238,14 @@ class OCPAverage(BaseApplication):
         problem = builder.build()
 
         # Optimise
-        options = pybop.ScipyMinimizeOptions(verbose=self.verbose)
-        self.optim = self.optimiser(problem, options=options)
-        self.results = self.optim.run()
+        self.optim = self.optimiser(problem, options=self.optimiser_options)
+        self.result = self.optim.run()
 
         # Extract results
-        self.stretch = np.sqrt(self.results.x[1]) if self.allow_stretching else 1.0
-        self.shift = self.results.x[0] / (self.stretch + 1.0)
+        self.stretch = np.sqrt(self.result.x[1]) if self.allow_stretching else 1.0
+        self.shift = self.result.x[0] / (self.stretch + 1.0)
 
-        if self.verbose:
+        if self.optimiser_options.verbose:
             print(
                 f"The stoichiometry stretch and shift values are ({self.stretch}, {self.shift})."
             )
@@ -302,8 +301,6 @@ class OCPCapacityToStoichiometry(BaseApplication):
         The optimisation algorithm to use (default: pybop.NelderMead).
     optimiser_options : pybop.OptimiserOptions, optional
         Options for the optimiser.
-    verbose : bool, optional
-        If True, progress messages are printed (default: True).
     """
 
     def __init__(
@@ -313,14 +310,12 @@ class OCPCapacityToStoichiometry(BaseApplication):
         cost: pybop.CallableCost | None = None,
         optimiser: pybop.BaseOptimiser | None = None,
         optimiser_options: pybop.OptimiserOptions | None = None,
-        verbose: bool = True,
     ):
         self.ocv_dataset = ocv_dataset
         self.ocv_function = ocv_function
         self.cost = cost or pybop.RootMeanSquaredError
         self.optimiser = optimiser or pybop.NelderMead
-        self.optimiser_options = optimiser_options
-        self.verbose = verbose
+        self.optimiser_options = optimiser_options or self.optimiser.default_options()
 
     def __call__(self) -> pybop.Dataset:
         # Set up cost-function
@@ -353,18 +348,13 @@ class OCPCapacityToStoichiometry(BaseApplication):
             builder.add_parameter(parameter)
         problem = builder.build()
 
-        # Set default optimiser options if not provided
-        if self.optimiser_options is None:
-            self.optimiser_options = pybop.PintsOptions(
-                max_iterations=100, max_unchanged_iterations=60, verbose=self.verbose
-            )
-
         # Optimise
         self.optim = self.optimiser(problem, options=self.optimiser_options)
-        self.results = self.optim.run()
-        self.shift, self.stretch = self.results.x
+        self.result = self.optim.run()
+        self.stretch = self.result.best_inputs["stretch"]
+        self.shift = self.result.best_inputs["shift"]
 
-        if self.verbose:
+        if self.optimiser_options.verbose:
             print(
                 f"The capacity stretch and shift values are ({self.stretch} A.h, {self.shift} A.h)."
             )

@@ -13,7 +13,7 @@ def classify_using_hessian(
     of the Hessian matrix at the optimal point using central finite differences.
 
     Parameters
-    ---------
+    ----------
     result : OptimisationResult
         The optimisation result.
     dx : array-like, optional
@@ -25,12 +25,11 @@ def classify_using_hessian(
     x = result.x
     dx = np.asarray(dx) if dx is not None else np.maximum(x, 1e-40) * 1e-2
     best_cost = result.best_cost
-    problem = result.problem
+    problem = result.optim.problem
+    parameters = problem.parameters
 
     def cost(x):
         return problem.run(x)
-
-    parameters = problem.params
 
     n = len(x)
     if n != 2 or len(dx) != n:
@@ -40,7 +39,7 @@ def classify_using_hessian(
         )
 
     # Get a list of parameter names for use in the output message
-    names = list(parameters.keys())
+    names = parameters.names
 
     # Evaluate the cost for a grid of surrounding points
     costs = np.zeros((3, 3, 2))

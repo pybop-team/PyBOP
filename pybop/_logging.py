@@ -29,7 +29,10 @@ class Logger:
         The current best cost value.
     """
 
-    def __init__(self, verbose: bool = False, verbose_print_rate: int = 50):
+    def __init__(
+        self, minimising: bool, verbose: bool = False, verbose_print_rate: int = 50
+    ):
+        self._minimising = minimising
         self.verbose = verbose
         self.verbose_print_rate = verbose_print_rate
         self.iteration = None
@@ -52,7 +55,9 @@ class Logger:
     @property
     def cost_convergence(self):
         """Get the convergence of the cost during the optimisation."""
-        return np.minimum.accumulate(self.cost)
+        if self._minimising:
+            return np.minimum.accumulate(self.cost)
+        return np.maximum.accumulate(self.cost)
 
     def extend_log(
         self, x_model: list[np.ndarray], x_search: list[np.ndarray], cost: list[float]
@@ -80,7 +85,10 @@ class Logger:
         self.evaluations += evals
 
         # Update best values
-        i = np.argmin(self.cost)
+        if self._minimising:
+            i = np.nanargmin(self.cost)
+        else:
+            i = np.nanargmax(self.cost)
         self.x_model_best = self.x_model[i]
         self.x_search_best = self.x_search[i]
         self.cost_best = self.cost[i]

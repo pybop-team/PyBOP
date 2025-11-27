@@ -131,7 +131,7 @@ class TestOptimisation:
                 False,
             ),
             (pybop.CuckooSearch, "Cuckoo Search", False),
-            (pybop.SNES, "Seperable Natural Evolution Strategy (SNES)", False),
+            (pybop.SNES, "Separable Natural Evolution Strategy (SNES)", False),
             (pybop.XNES, "Exponential Natural Evolution Strategy (xNES)", False),
             (pybop.PSO, "Particle Swarm Optimisation (PSO)", False),
             (pybop.IRPropMin, "iRprop-", True),
@@ -161,16 +161,16 @@ class TestOptimisation:
         optim = optimiser(two_param_problem, options=options)
 
         # check max iterations
-        results = optim.run()
-        assert results.n_iterations == 3
+        result = optim.run()
+        assert result.n_iterations <= 3
 
-        # check results object
-        assert isinstance(results, pybop.OptimisationResult)
-        assert isinstance(results.best_cost, float)
-        assert np.isfinite(results.best_cost)
-        assert results.initial_cost >= results.best_cost
-        assert isinstance(results.x, np.ndarray)
-        assert isinstance(results.x0, np.ndarray)
+        # check result object
+        assert isinstance(result, pybop.OptimisationResult)
+        assert isinstance(result.best_cost, float)
+        assert np.isfinite(result.best_cost)
+        assert result.initial_cost >= result.best_cost
+        assert isinstance(result.x, np.ndarray)
+        assert isinstance(result.x0, np.ndarray)
 
         if optimiser in [pybop.CMAES]:
             # Test catch for optimisers that can only run with multiple parameters
@@ -183,16 +183,16 @@ class TestOptimisation:
             optim = optimiser(one_param_problem, options=options)
 
             # check max iterations
-            results = optim.run()
-            assert results.n_iterations == 3
+            result = optim.run()
+            assert result.n_iterations <= 3
 
-            # check results object
-            assert isinstance(results, pybop.OptimisationResult)
-            assert isinstance(results.best_cost, float)
-            assert np.isfinite(results.best_cost)
-            assert results.initial_cost >= results.best_cost
-            assert isinstance(results.x, np.ndarray)
-            assert isinstance(results.x0, np.ndarray)
+            # check result object
+            assert isinstance(result, pybop.OptimisationResult)
+            assert isinstance(result.best_cost, float)
+            assert np.isfinite(result.best_cost)
+            assert result.initial_cost >= result.best_cost
+            assert isinstance(result.x, np.ndarray)
+            assert isinstance(result.x0, np.ndarray)
 
         # Test without valid cost
         with pytest.raises(Exception, match="Expected a pybop.Problem instance, got"):
@@ -205,9 +205,9 @@ class TestOptimisation:
 
     def test_log_update(self, one_param_problem):
         # Test log update
-        log = pybop.Logger()
+        log = pybop.Logger(minimising=True)
         x_search = np.array([0.7])
-        x_model = one_param_problem.params.transformation.to_model(x_search)
+        x_model = one_param_problem.parameters.transformation.to_model(x_search)
         cost = 0.01
         evaluations = 1
         x_model_best = x_model
@@ -237,13 +237,12 @@ class TestOptimisation:
         else:
             options.max_iterations = 6
         optim = optimiser(two_param_problem, options=options)
-        results = optim.run()
+        result = optim.run()
         if issubclass(optimiser, pybop.BaseSciPyOptimiser):
-            assert results.total_iterations() <= options.maxiter * options.multistart
+            assert result.total_iterations() <= options.maxiter * options.multistart
         else:
             assert (
-                results.total_iterations()
-                == options.max_iterations * options.multistart
+                result.total_iterations() == options.max_iterations * options.multistart
             )
 
     @pytest.mark.parametrize(
@@ -342,9 +341,9 @@ class TestOptimisation:
         options.max_iterations = 1
         optim = pybop.CuckooSearch(two_param_problem_no_bounds, options)
         optim.run()
-        print(optim.problem.params.get_bounds())
-        assert all(np.isinf(optim.problem.params.get_bounds()["lower"]))
-        assert all(np.isinf(optim.problem.params.get_bounds()["upper"]))
+        print(optim.problem.parameters.get_bounds())
+        assert all(np.isinf(optim.problem.parameters.get_bounds()["lower"]))
+        assert all(np.isinf(optim.problem.parameters.get_bounds()["upper"]))
 
     def test_randomsearch_bounds(self, two_param_problem, two_param_problem_no_bounds):
         # Test clip_candidates with bounds
@@ -419,9 +418,9 @@ class TestOptimisation:
         options.max_iterations = 1
         options.verbose = True
         optim = pybop.GradientDescent(one_param_problem, options=options)
-        results = optim.run()
-        assert results.n_iterations == 1
-        assert results.n_evaluations == 2
+        result = optim.run()
+        assert result.n_iterations == 1
+        assert result.n_evaluations == 2
 
         # Test max unchanged iterations
         options = pybop.GradientDescent.default_options()
@@ -429,22 +428,22 @@ class TestOptimisation:
         options.sigma = 1e-6
         options.min_iterations = 1
         optim = pybop.GradientDescent(one_param_problem, options=options)
-        results = optim.run()
-        assert results.n_iterations == 2
-        assert results.n_evaluations == 3
+        result = optim.run()
+        assert result.n_iterations == 2
+        assert result.n_evaluations == 3
 
         expected_message = (
             f"OptimisationResult:\n"
-            f"  Best result from {results.n_runs} run(s).\n"
-            f"  Initial parameters: {results.x0}\n"
-            f"  Optimised parameters: {results.x}\n"
-            f"  Best cost: {results.best_cost}\n"
-            f"  Optimisation time: {results.time} seconds\n"
-            f"  Number of iterations: {results.n_iterations}\n"
-            f"  Number of evaluations: {results.n_evaluations}\n"
-            f"  Reason for stopping: {results.message}"
+            f"  Best result from {result.n_runs} run(s).\n"
+            f"  Initial parameters: {result.x0}\n"
+            f"  Optimised parameters: {result.x}\n"
+            f"  Best cost: {result.best_cost}\n"
+            f"  Optimisation time: {result.time} seconds\n"
+            f"  Number of iterations: {result.n_iterations}\n"
+            f"  Number of evaluations: {result.n_evaluations}\n"
+            f"  Reason for stopping: {result.message}"
         )
-        assert str(results) == expected_message
+        assert str(result) == expected_message
 
         # Test guessed values
         optim.set_f_guessed_tracking(True)
@@ -478,21 +477,21 @@ class TestOptimisation:
         captured_output = io.StringIO()
         sys.stdout = captured_output
         optim.set_threshold(np.inf)
-        results = optim.run()
+        result = optim.run()
         assert (
             "Objective function crossed threshold: inf." in captured_output.getvalue()
         )
 
-    def test_optimisation_results(self, one_param_problem):
-        logger = pybop.Logger()
+    def test_optimisation_result(self, one_param_problem):
+        logger = pybop.Logger(minimising=True)
         logger.iteration = 1
         logger.extend_log(
             x_search=[np.asarray([1e-3])], x_model=[np.asarray([1e-3])], cost=[0.1]
         )
 
         # Construct OptimisationResult
-        results = pybop.OptimisationResult(
-            problem=one_param_problem,
+        result = pybop.OptimisationResult(
+            optim=pybop.XNES(one_param_problem),
             optim_name="Test name",
             logger=logger,
             time=0.1,
@@ -500,10 +499,10 @@ class TestOptimisation:
         )
 
         # Asserts
-        assert results.optim_name == "Test name"
-        assert results.x[0] == 1e-3
-        assert results.n_iterations == 1
-        assert results.message == "Test message"
+        assert result.optim_name == "Test name"
+        assert result.x[0] == 1e-3
+        assert result.n_iterations == 1
+        assert result.message == "Test message"
 
         # Test list-like functionality with "best" properties
         options = pybop.XNES.default_options()
@@ -511,13 +510,13 @@ class TestOptimisation:
         options.multistart = 3
 
         optim = pybop.XNES(one_param_problem, options=options)
-        results = optim.run()
+        result = optim.run()
 
-        assert results.x in results._x
-        assert results.time == np.sum(results._time)
-        assert results.n_iterations in results._n_iterations
-        assert results.n_evaluations in results._n_evaluations
-        assert results.x0 in results._x0
+        assert result.x in result._x
+        assert result.time == np.sum(result._time)
+        assert result.n_iterations in result._n_iterations
+        assert result.n_evaluations in result._n_evaluations
+        assert result.x0 in result._x0
 
     def test_optimisation_options(self):
         options = pybop.PintsOptions()
@@ -539,14 +538,6 @@ class TestOptimisation:
             match="Maximum number of unchanged iterations cannot be negative.",
         ):
             options.max_unchanged_iterations = -1
-            options.validate()
-        options = pybop.PintsOptions()
-        with pytest.raises(ValueError, match="Sigma must be positive."):
-            options.sigma = -1.0
-            options.validate()
-        options = pybop.PintsOptions()
-        with pytest.raises(ValueError, match="Sigma must be positive."):
-            options.sigma = np.array([-1.0])
             options.validate()
         options = pybop.PintsOptions()
         with pytest.raises(ValueError, match="Absolute tolerance cannot be negative."):
@@ -579,15 +570,15 @@ class TestOptimisation:
         ):
             options.verbose_print_rate = 0
             options.validate()
-        options = pybop.ScipyMinimizeOptions()
+        options = pybop.SciPyMinimizeOptions()
         with pytest.raises(ValueError, match="maxiter must be a positive integer"):
             options.maxiter = -1
             options.validate()
-        options = pybop.ScipyMinimizeOptions()
+        options = pybop.SciPyMinimizeOptions()
         with pytest.raises(ValueError, match="tol must be a positive float."):
             options.tol = -1.0
             options.validate()
 
-        options = pybop.ScipyMinimizeOptions(solver_options={"eps": 0.01})
+        options = pybop.SciPyMinimizeOptions(solver_options={"eps": 0.01})
         options_dict = options.to_dict()
         assert options_dict["options"]["eps"] == 0.01

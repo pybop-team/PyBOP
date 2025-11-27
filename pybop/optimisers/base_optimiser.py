@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from pybop._logging import Logger
 from pybop._result import OptimisationResult
 from pybop.problems.base_problem import Problem
 
@@ -9,10 +10,14 @@ class OptimiserOptions:
     """
     A base class for optimiser options.
 
-    Attributes:
-        multistart (int): Number of times to multistart the optimiser
-        verbose (bool): The verbosity level
-        verbose_print_rate (int): The distance between iterations to print verbose output
+    Attributes
+    ----------
+    multistart : int
+        Number of times to multistart the optimiser.
+    verbose : bool
+        The verbosity level.
+    verbose_print_rate : int
+        The distance between iterations to print verbose output.
     """
 
     multistart: int = 1
@@ -46,8 +51,8 @@ class BaseOptimiser:
     Parameters
     ----------
     problem : pybop.Problem
-        An objective function to be optimised.
-    options: pybop.OptimiserOptions (optional)
+        The problem to optimise.
+    options: pybop.OptimiserOptions , optional
         Options for the optimiser, such as multistart.
     """
 
@@ -61,6 +66,7 @@ class BaseOptimiser:
         if not isinstance(problem, Problem):
             raise TypeError(f"Expected a pybop.Problem instance, got {type(problem)}")
         self._problem = problem
+        self._logger = None
         options = options or self.default_options()
         options.validate()
         self._options = options
@@ -138,18 +144,20 @@ class BaseOptimiser:
         results = []
         for i in range(self._multistart):
             if i >= 1:
-                if not self.problem.params.priors():
+                if not self.problem.parameters.priors():
                     raise RuntimeError("Priors must be provided for multi-start")
-                initial_values = self.problem.params.sample_from_priors(1)[0]
-                self.problem.params.update(initial_values=initial_values)
+                initial_values = self.problem.parameters.sample_from_priors(1)[0]
+                self.problem.parameters.update(initial_values=initial_values)
                 self._set_up_optimiser()
             results.append(self._run())
 
         result = OptimisationResult.combine(results)
 
-        self.problem.params.update(values=result.x)
-
         if self.options.verbose:
             print(result)
 
         return result
+
+    @property
+    def logger(self) -> Logger | None:
+        return self._logger

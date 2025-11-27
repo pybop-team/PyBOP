@@ -15,41 +15,43 @@ class Problem:
     ):
         if pybop_params is None:
             self._param_names = []
-        self._params = pybop_params
+        self._parameters = pybop_params
         self._param_names = pybop_params.keys()
-        self._n_params = len(pybop_params)
+        self.n_parameters = len(pybop_params)
         self.is_posterior = is_posterior
+
+        self.minimising = True  # workaround
 
     def get_finite_initial_cost(self):
         """
         Compute the absolute initial cost, resampling the initial parameters if needed.
         """
-        x0 = self._params.get_initial_values()
+        x0 = self._parameters.get_initial_values()
         cost0 = np.abs(self.run(x0))
         nsamples = 0
         while np.isinf(cost0) and nsamples < 10:
-            x0 = self._params.sample_from_priors()
+            x0 = self._parameters.sample_from_priors()
             if x0 is None:
                 break
 
             cost0 = np.abs(self.run(x0))
             nsamples += 1
         if nsamples > 0:
-            self._params.update(initial_values=x0)
+            self._parameters.update(initial_values=x0)
 
         if np.isinf(cost0):
             raise ValueError("The initial parameter values return an infinite cost.")
         return cost0
 
     @property
-    def params(self) -> Parameters:
+    def parameters(self) -> Parameters:
         """
         Returns the parameters set for the simulation and cost function.
         """
-        return self._params
+        return self._parameters
 
     @property
-    def param_names(self) -> list[str]:
+    def parameter_names(self) -> list[str]:
         """
         Returns the names of the parameters set for the simulation and cost function.
         """
@@ -87,7 +89,7 @@ class Problem:
         costs : np.ndarray
             A 1D array of either a single cost value or a set of cost values.
         """
-        inputs = self._params.to_inputs(values)
+        inputs = self._parameters.to_inputs(values)
 
         costs = self._compute_costs(inputs=inputs)
 
@@ -121,7 +123,7 @@ class Problem:
             Either a 1D array of the gradients of the cost with respect to each parameter, or a
             2D array of sets of gradients with shape (number of candidates, number of parameters).
         """
-        inputs = self._params.to_inputs(values)
+        inputs = self._parameters.to_inputs(values)
 
         costs, sens = self._compute_costs_and_sensitivities(inputs=inputs)
 

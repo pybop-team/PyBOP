@@ -277,7 +277,7 @@ class TestBuilder:
         value1 = problem.run(np.array([0.6, 0.6]))
         value2 = problem.run(np.array([0.7, 0.7]))
         assert abs((value1 - value2) / value1) > 1e-5
-        problem._params.update(values=np.array([0.6, 0.6]))
+        problem._parameters.update(values=np.array([0.6, 0.6]))
 
     def test_builder_with_experiment_rebuild_params(
         self, model_and_params, experiment, dataset
@@ -322,7 +322,7 @@ class TestBuilder:
         value1 = problem.run(np.array([6e-6, 6e-6]))
         value2 = problem.run(np.array([7e-6, 7e-6]))
         assert abs((value1 - value2) / value1) > 1e-5
-        problem._params.update(values=np.array([6e-6, 6e-6]))
+        problem._parameters.update(values=np.array([6e-6, 6e-6]))
 
     def test_builder_with_cost_hypers(self, model_and_params, dataset):
         model, parameter_values = model_and_params

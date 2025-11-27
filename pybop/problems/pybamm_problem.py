@@ -1,7 +1,7 @@
 import numpy as np
 from pybamm import Solution
 
-from pybop import JointLogPrior
+from pybop import JointPrior
 from pybop.parameters.parameter import Inputs, Parameters
 from pybop.pipelines._pybamm_pipeline import PybammPipeline
 from pybop.problems.base_problem import Problem
@@ -32,7 +32,7 @@ class PybammProblem(Problem):
 
         # Set up priors if we're using the posterior
         if self.is_posterior and pybop_params is not None:
-            self._priors = JointLogPrior(*pybop_params.priors())
+            self._priors = JointPrior(*pybop_params.priors())
         else:
             self._priors = None
 
@@ -89,11 +89,11 @@ class PybammProblem(Problem):
 
     def _get_pybamm_sensitivities(self, solution: list[Solution]) -> np.ndarray:
         """Compute the cost function value and sensitivities from a list of solutions."""
-        sens_matrix = np.empty((len(solution), self._n_params))
+        sens_matrix = np.empty((len(solution), self.n_parameters))
 
         # Extract each sensitivity and apply the weighting
         for i, s in enumerate(solution):
-            weighted_sens = np.zeros(self._n_params)
+            weighted_sens = np.zeros(self.n_parameters)
             for n in self._cost_names:
                 sens = np.asarray(s[n].sensitivities["all"])  # Shape: (1, n_params)
                 weighted_sens += np.sum(

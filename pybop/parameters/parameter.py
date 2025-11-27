@@ -412,6 +412,10 @@ class Parameters:
 
         self._transform = self._construct_transformation()
 
+    @property
+    def names(self) -> list[str]:
+        return list(self._parameters.keys())
+
     def _add(self, parameter: Parameter, update_transform: bool = True) -> None:
         """
         Internal method to add a parameter to the collection.

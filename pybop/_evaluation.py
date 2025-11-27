@@ -33,7 +33,7 @@ class BaseEvaluator(PintsEvaluator):
         with_sensitivities: bool,
         logger: Logger,
     ):
-        self.transformation = problem.params.transformation
+        self.transformation = problem.parameters.transformation
 
         # Choose which function to evaluate
         if minimise and with_sensitivities:
@@ -50,7 +50,9 @@ class BaseEvaluator(PintsEvaluator):
                     jac = self.transformation.jacobian(x)
                     grad[i] = np.matmul(grad[i], jac)
 
-                logger.extend_log(x_search=x_search, x_model=x_model, cost=cost)
+                logger.extend_log(
+                    x_search=x_search, x_model=x_model, cost=cost.tolist()
+                )
 
                 if len(cost) == 1:
                     return cost, grad.reshape(-1)
@@ -64,7 +66,9 @@ class BaseEvaluator(PintsEvaluator):
                     return np.empty(0)
 
                 cost = problem.run(x_model)
-                logger.extend_log(x_search=x_search, x_model=x_model, cost=cost)
+                logger.extend_log(
+                    x_search=x_search, x_model=x_model, cost=cost.tolist()
+                )
                 return cost
 
         # Otherwise, perform maximisation by minimising the negative of the cost
@@ -83,7 +87,9 @@ class BaseEvaluator(PintsEvaluator):
                     jac = self.transformation.jacobian(x)
                     grad[i] = np.matmul(grad[i], jac)
 
-                logger.extend_log(x_search=x_search, x_model=x_model, cost=cost)
+                logger.extend_log(
+                    x_search=x_search, x_model=x_model, cost=cost.tolist()
+                )
 
                 if len(cost) == 1:
                     return cost, grad.reshape(-1)
@@ -97,7 +103,9 @@ class BaseEvaluator(PintsEvaluator):
                     return np.empty(0), np.empty(0)
 
                 cost = -problem.run(x_model)
-                logger.extend_log(x_search=x_search, x_model=x_model, cost=cost)
+                logger.extend_log(
+                    x_search=x_search, x_model=x_model, cost=cost.tolist()
+                )
                 return cost
 
         # Pass function to PintsEvaluator

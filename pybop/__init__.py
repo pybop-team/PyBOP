@@ -25,12 +25,12 @@ script_path = path.dirname(__file__)
 #
 # Utilities
 #
-from ._utils import add_spaces, FailedVariable, FailedSolution, SymbolReplacer, RecommendedSolver
+from ._utils import add_spaces, is_numeric, FailedVariable, FailedSolution, SymbolReplacer, RecommendedSolver
 
 #
 # Dataset class
 #
-from ._dataset import Dataset
+from ._dataset import Dataset, import_pyprobe_result
 
 #
 # Transformation classes
@@ -47,9 +47,8 @@ from .transformation.transformations import (
 #
 # Parameter classes
 #
-from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential, JointLogPrior
+from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential, JointPrior
 from .parameters.parameter import Parameter, Parameters, Inputs, ParameterError, ParameterNotFoundError, ParameterValidationError, ParameterValueValidator
-from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential, JointLogPrior
 
 #
 # Model classes
@@ -57,10 +56,10 @@ from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential, JointL
 from .models import lithium_ion
 from .models._exponential_decay import ExponentialDecayModel
 
-# Cost classes
 #
-from . import costs
-from .costs.base_cost import CallableCost
+# PyBaMM utility classes
+#
+from . import pybamm
 
 #
 # Problem classes
@@ -71,8 +70,16 @@ from .problems.pybamm_eis_problem import PybammEISProblem
 from .problems.python_problem import PythonProblem
 
 #
+# Simulator classes
+#
+from .simulators.base_simulator import BaseSimulator
+from .simulators.solution import Solution
+
+#
 # Cost classes
 #
+from . import costs
+from .costs.base_cost import CallableCost
 from .costs.error_measures import (
     RootMeanSquaredError,
     MeanAbsoluteError,
@@ -111,7 +118,7 @@ from .optimisers.base_pints_optimiser import BasePintsOptimiser, PintsOptions
 from .optimisers.scipy_optimisers import (
     BaseSciPyOptimiser,
     SciPyMinimize,
-    ScipyMinimizeOptions,
+    SciPyMinimizeOptions,
     SciPyDifferentialEvolution,
     SciPyDifferentialEvolutionOptions,
 )

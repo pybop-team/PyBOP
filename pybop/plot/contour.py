@@ -44,7 +44,7 @@ class ContourPlotter:
     def __init__(self, problem: Problem, result: "OptimisationResult" = None):
         self.problem = problem
         self.result = result
-        self.params = self.problem.params
+        self.params = self.problem.parameters
         self.parameter_names = list(self.params.keys())
         self._additional_params = []
         self._parameter_objects_cache = None
@@ -516,7 +516,7 @@ def contour(
         result = None
     else:
         try:
-            problem = call_object.problem
+            problem = call_object.optim.problem
             result = call_object
         except AttributeError:
             raise TypeError(

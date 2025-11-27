@@ -47,8 +47,8 @@ class MultiFitting(BaseBuilder):
         if not isinstance(problem, Problem):
             raise TypeError("Problem must be an instance of pybop.Problem")
 
-        self._parameters = set(problem.params.keys())
-        if len(self._parameters) != len(problem.params):
+        self._parameters = set(problem.parameters.keys())
+        if len(self._parameters) != len(problem.parameters):
             raise TypeError("All problems must have the same parameters")
 
         self._problems.append(problem)
@@ -83,7 +83,7 @@ class MultiFitting(BaseBuilder):
         # TODO:
         # Check bounds and conform to the tighter bounds
         # Compare priors and initial conditions and select
-        self._params = self._problems[0].params.copy()
+        self._parameters = self._problems[0].parameters.copy()
 
         funs = []
         funs_with_sense = []

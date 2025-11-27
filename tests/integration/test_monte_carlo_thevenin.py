@@ -143,10 +143,10 @@ class TestSamplingThevenin:
         if isinstance(sampler, RaoBlackwellACMC):
             sampler.set_max_iterations(750)
             sampler.set_warm_up_iterations(250)
-        chains = sampler.run()
+        result = sampler.run()
 
         # Test convergence diagnostics
-        summary = pybop.PosteriorSummary(chains)
+        summary = pybop.PosteriorSummary(result.chains)
 
         # Test R-hat convergence (should be close to 1.0)
         rhat = summary.rhat()
@@ -157,9 +157,13 @@ class TestSamplingThevenin:
         np.testing.assert_array_less(50, ess)  # ESS should be at least 50 per chain
 
         # Test chain mixing - standard deviation between chain means should be reasonable
-        chain_means = np.mean(chains, axis=2)  # Mean across samples for each chain
+        chain_means = np.mean(
+            result.chains, axis=2
+        )  # Mean across samples for each chain
         between_chain_std = np.std(chain_means, axis=0)
-        within_chain_std = np.mean([np.std(chain, axis=1) for chain in chains], axis=0)
+        within_chain_std = np.mean(
+            [np.std(chain, axis=1) for chain in result.chains], axis=0
+        )
 
         # Between-chain variation shouldn't be much larger than within-chain variation
         np.testing.assert_array_less(between_chain_std, 3 * within_chain_std)
@@ -176,14 +180,14 @@ class TestSamplingThevenin:
 
         # Short chains
         short_sampler = sampler(problem, options=short_options)
-        short_chains = short_sampler.run()
-        short_summary = pybop.PosteriorSummary(short_chains)
+        result = short_sampler.run()
+        short_summary = pybop.PosteriorSummary(result.chains)
         short_rhat = short_summary.rhat()
 
         # Long chains
         long_sampler = sampler(problem, options=long_options)
-        long_chains = long_sampler.run()
-        long_summary = pybop.PosteriorSummary(long_chains)
+        result = long_sampler.run()
+        long_summary = pybop.PosteriorSummary(result.chains)
         long_rhat = long_summary.rhat()
 
         # Longer chains should have better (lower) R-hat values
@@ -200,14 +204,14 @@ class TestSamplingThevenin:
         results = []
         for _ in range(3):
             sampler = sampler_class(problem, options=options)
-            chains = sampler.run()
-            summary = pybop.PosteriorSummary(chains)
+            result = sampler.run()
+            summary = pybop.PosteriorSummary(result.chains)
             results.append(
                 {
                     "rhat": summary.rhat(),
                     "ess": summary.effective_sample_size(),
                     "mean": np.mean(
-                        chains, axis=(0, 2)
+                        result.chains, axis=(0, 2)
                     ),  # Mean across chains and samples
                 }
             )
@@ -233,8 +237,8 @@ class TestSamplingThevenin:
         )
         no_warmup_sampler = sampler_class(problem, options=no_warmup_options)
         np.random.seed(8)
-        no_warmup_chains = no_warmup_sampler.run()
-        no_warmup_summary = pybop.PosteriorSummary(no_warmup_chains)
+        result = no_warmup_sampler.run()
+        no_warmup_summary = pybop.PosteriorSummary(result.chains)
 
         # With warm-up
         warmup_options = pybop.PintsSamplerOptions(
@@ -242,8 +246,8 @@ class TestSamplingThevenin:
         )
         warmup_sampler = sampler_class(problem, options=warmup_options)
         np.random.seed(8)
-        warmup_chains = warmup_sampler.run()
-        warmup_summary = pybop.PosteriorSummary(warmup_chains)
+        result = warmup_sampler.run()
+        warmup_summary = pybop.PosteriorSummary(result.chains)
 
         # Warm-up should lead to better convergence (lower R-hat) or higher ESS
         warmup_rhat = warmup_summary.rhat()
@@ -266,8 +270,8 @@ class TestSamplingThevenin:
             n_chains=n_chains, cov=self.cov, warm_up_iterations=100, max_iterations=300
         )
         sampler = SliceStepoutMCMC(problem, options=options)
-        chains = sampler.run()
-        summary = pybop.PosteriorSummary(chains)
+        result = sampler.run()
+        summary = pybop.PosteriorSummary(result.chains)
 
         # More chains should still achieve good convergence
         rhat = summary.rhat()

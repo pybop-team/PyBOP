@@ -156,9 +156,9 @@ class TestArbitraryModels:
 
         # Optimise
         optim = pybop.SciPyMinimize(problem)
-        results = optim.run()
+        result = optim.run()
 
-        np.testing.assert_allclose(results.x, [0.05], rtol=5e-3)
+        np.testing.assert_allclose(result.x, [0.05], rtol=5e-3)
 
     def test_system_odes_exp(self):
         model = SystemODEs()
@@ -199,11 +199,11 @@ class TestArbitraryModels:
         problem = builder.build()
 
         # Optimise
-        options = pybop.PintsOptions(sigma=0.02)
+        options = pybop.PintsOptions()
         optim = pybop.IRPropPlus(problem, options=options)
-        results = optim.run()
+        result = optim.run()
 
-        np.testing.assert_allclose(results.x, [-1, -2], rtol=5e-3)
+        np.testing.assert_allclose(result.x, [-1, -2], rtol=5e-3)
 
     def test_system_odes_trig(self):
         model = SystemODEs()
@@ -257,6 +257,6 @@ class TestArbitraryModels:
 
         # Optimise
         optim = pybop.NelderMead(problem)
-        results = optim.run()
+        result = optim.run()
 
-        np.testing.assert_allclose(results.x, [2, -2], rtol=5e-3)
+        np.testing.assert_allclose(result.x, [2, -2], rtol=5e-3)

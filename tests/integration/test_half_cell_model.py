@@ -95,7 +95,9 @@ class TestHalfCell:
         builder.add_cost(pybop.costs.pybamm.MeanAbsoluteError("Voltage [V]"))
         fitting_problem = builder.build()
 
-        initial_cost = fitting_problem.run(fitting_problem.params.get_initial_values())
+        initial_cost = fitting_problem.run(
+            fitting_problem.parameters.get_initial_values()
+        )
         ground_truth_cost = fitting_problem.run(np.asarray(self.ground_truth))
         assert initial_cost > ground_truth_cost
 
@@ -122,6 +124,8 @@ class TestHalfCell:
         builder.add_cost(pybop.costs.pybamm.GravimetricEnergyDensity())
         design_problem = builder.build()
 
-        initial_cost = design_problem.run(design_problem.params.get_initial_values())
+        initial_cost = design_problem.run(
+            design_problem.parameters.get_initial_values()
+        )
         ground_truth_cost = design_problem.run(self.ground_truth)
         assert initial_cost < ground_truth_cost  # negative cost

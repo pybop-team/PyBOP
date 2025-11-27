@@ -112,5 +112,5 @@ class TestGITTModels:
         problem = builder.build()
 
         # Test parameter sensitivity
-        initial_params = problem.params.get_initial_values()
+        initial_params = problem.parameters.get_initial_values()
         self.assert_parameter_sensitivity(problem, initial_params, TEST_PARAM_VALUES)

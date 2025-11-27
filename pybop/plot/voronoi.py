@@ -271,7 +271,7 @@ def surface(
     xlim, ylim = (
         bounds
         if bounds is not None
-        else [param.bounds for param in result.problem.params]
+        else [param.bounds for param in result.optim.problem.parameters]
     )[:2]
 
     # Create a grid for plot
@@ -408,7 +408,7 @@ def surface(
                 )
             )
 
-    names = list(result.problem.params.keys())
+    names = list(result.optim.problem.parameters.keys())
     fig.update_layout(
         title="Voronoi Cost Landscape",
         title_x=0.5,

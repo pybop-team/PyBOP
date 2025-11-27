@@ -95,11 +95,11 @@ class TestEvaluation:
             grad1_wrt_model_parameters, numerical_grad1, rtol=5e-5
         )
 
-        jac = problem.params.transformation.jacobian(self.x_search)
+        jac = problem.parameters.transformation.jacobian(self.x_search)
         grad1_wrt_search_parameters = np.matmul(grad1_wrt_model_parameters, jac)
 
         # Test the transformed cost and sensitivities
-        logger = pybop.Logger()
+        logger = pybop.Logger(minimising=True)
         evaluator = pybop.ScalarEvaluator(
             problem=problem,
             minimise=True,

@@ -42,7 +42,7 @@ def validation(
 
     # Run a simulation with the parameter values provided
     problem.pipeline._solver = problem.pipeline.model.default_solver  # noqa: SLF001
-    sol = problem.pipeline.solve(problem.params.to_dict(values))[0]
+    sol = problem.pipeline.solve(problem.parameters.to_dict(values))[0]
 
     # Add the simulation to the plot
     go = PlotlyManager().go

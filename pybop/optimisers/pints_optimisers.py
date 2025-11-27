@@ -43,9 +43,9 @@ class GradientDescent(BasePintsOptimiser):
     Parameters
     ----------
     problem: pybop.Problem
-        The cost function to be minimised.
+        The problem to optimse.
     options: pybop.PintsOptions
-        optimisation options
+        Optimisation options.
 
     See Also
     --------
@@ -54,14 +54,10 @@ class GradientDescent(BasePintsOptimiser):
 
     def __init__(
         self,
-        problem: Problem,
+        problem: pybop.Problem,
         options: pybop.PintsOptions | None = None,
     ):
-        super().__init__(
-            problem,
-            GradientDescentImpl,
-            options,
-        )
+        super().__init__(problem, GradientDescentImpl, options)
 
 
 class AdamW(BasePintsOptimiser):
@@ -75,9 +71,9 @@ class AdamW(BasePintsOptimiser):
     Parameters
     ----------
     problem: pybop.Problem
-        The cost function to be minimised.
+        The problem to optimse.
     options: pybop.PintsOptions
-        optimisation options
+        Optimisation options.
 
     See Also
     --------
@@ -86,14 +82,10 @@ class AdamW(BasePintsOptimiser):
 
     def __init__(
         self,
-        problem: Problem,
+        problem: pybop.Problem,
         options: pybop.PintsOptions | None = None,
     ):
-        super().__init__(
-            problem,
-            AdamWImpl,
-            options,
-        )
+        super().__init__(problem, AdamWImpl, options)
 
 
 class IRPropMin(BasePintsOptimiser):
@@ -106,9 +98,9 @@ class IRPropMin(BasePintsOptimiser):
     Parameters
     ----------
     problem: pybop.Problem
-        The cost function to be minimised.
+        The problem to optimse.
     options: pybop.PintsOptions
-        optimisation options
+        Optimisation options.
 
     See Also
     --------
@@ -117,14 +109,10 @@ class IRPropMin(BasePintsOptimiser):
 
     def __init__(
         self,
-        problem: Problem,
+        problem: pybop.Problem,
         options: pybop.PintsOptions | None = None,
     ):
-        super().__init__(
-            problem,
-            PintsIRPropMin,
-            options,
-        )
+        super().__init__(problem, PintsIRPropMin, options)
 
 
 class IRPropPlus(BasePintsOptimiser):
@@ -135,9 +123,9 @@ class IRPropPlus(BasePintsOptimiser):
     Parameters
     ----------
     problem: pybop.Problem
-        The cost function to be minimised.
+        The problem to optimse.
     options: pybop.PintsOptions
-        optimisation options
+        Optimisation options.
 
     See Also
     --------
@@ -146,14 +134,10 @@ class IRPropPlus(BasePintsOptimiser):
 
     def __init__(
         self,
-        problem: Problem,
+        problem: pybop.Problem,
         options: pybop.PintsOptions | None = None,
     ):
-        super().__init__(
-            problem,
-            IRPropPlusImpl,
-            options,
-        )
+        super().__init__(problem, IRPropPlusImpl, options)
 
 
 class PSO(BasePintsOptimiser):
@@ -168,9 +152,9 @@ class PSO(BasePintsOptimiser):
     Parameters
     ----------
     problem: pybop.Problem
-        The cost function to be minimised.
+        The problem to optimse.
     options: pybop.PintsOptions
-        optimisation options
+        Optimisation options.
 
     See Also
     --------
@@ -179,14 +163,10 @@ class PSO(BasePintsOptimiser):
 
     def __init__(
         self,
-        problem: Problem,
+        problem: pybop.Problem,
         options: pybop.PintsOptions | None = None,
     ):
-        super().__init__(
-            problem,
-            PintsPSO,
-            options,
-        )
+        super().__init__(problem, PintsPSO, options)
 
 
 class SNES(BasePintsOptimiser):
@@ -198,9 +178,9 @@ class SNES(BasePintsOptimiser):
     Parameters
     ----------
     problem: pybop.Problem
-        The cost function to be minimised.
+        The problem to optimse.
     options: pybop.PintsOptions
-        optimisation options
+        Optimisation options.
 
     See Also
     --------
@@ -209,14 +189,15 @@ class SNES(BasePintsOptimiser):
 
     def __init__(
         self,
-        problem: Problem,
+        problem: pybop.Problem,
         options: pybop.PintsOptions | None = None,
     ):
-        super().__init__(
-            problem,
-            PintsSNES,
-            options,
-        )
+        super().__init__(problem, PintsSNES, options)
+
+    @property
+    def name(self) -> str:
+        """Overwrite misspelling of separable from Pints 0.5.1."""
+        return "Separable Natural Evolution Strategy (SNES)"
 
 
 class XNES(BasePintsOptimiser):
@@ -228,9 +209,9 @@ class XNES(BasePintsOptimiser):
     Parameters
     ----------
     problem: pybop.Problem
-        the cost function to be minimised.
+        The problem to optimse.
     options: pybop.PintsOptions
-        optimisation options
+        Optimisation options.
 
     See Also
     --------
@@ -239,14 +220,10 @@ class XNES(BasePintsOptimiser):
 
     def __init__(
         self,
-        problem: Problem,
+        problem: pybop.Problem,
         options: pybop.PintsOptions | None = None,
     ):
-        super().__init__(
-            problem,
-            PintsXNES,
-            options,
-        )
+        super().__init__(problem, PintsXNES, options)
 
 
 class NelderMead(BasePintsOptimiser):
@@ -260,9 +237,9 @@ class NelderMead(BasePintsOptimiser):
     Parameters
     ----------
     problem: pybop.Problem
-        the cost function to be minimised.
+        The problem to optimse.
     options: pybop.PintsOptions
-        optimisation options
+        Optimisation options.
 
     See Also
     --------
@@ -271,14 +248,10 @@ class NelderMead(BasePintsOptimiser):
 
     def __init__(
         self,
-        problem: Problem,
+        problem: pybop.Problem,
         options: pybop.PintsOptions | None = None,
     ):
-        super().__init__(
-            problem,
-            PintsNelderMead,
-            options,
-        )
+        super().__init__(problem, PintsNelderMead, options)
 
 
 class CMAES(BasePintsOptimiser):
@@ -292,9 +265,9 @@ class CMAES(BasePintsOptimiser):
     Parameters
     ----------
     problem: pybop.Problem
-        the cost function to be minimised.
+        The problem to optimse.
     options: pybop.PintsOptions
-        optimisation options
+        Optimisation options.
 
     See Also
     --------
@@ -303,19 +276,15 @@ class CMAES(BasePintsOptimiser):
 
     def __init__(
         self,
-        problem: Problem,
+        problem: pybop.Problem,
         options: pybop.PintsOptions | None = None,
     ):
-        if isinstance(problem, Problem) and len(problem.params) == 1:
+        if isinstance(problem, Problem) and len(problem.parameters) == 1:
             raise ValueError(
                 "CMAES requires optimisation of >= 2 parameters at once. "
                 "Please choose another optimiser."
             )
-        super().__init__(
-            problem,
-            PintsCMAES,
-            options,
-        )
+        super().__init__(problem, PintsCMAES, options)
 
 
 class CuckooSearch(BasePintsOptimiser):
@@ -330,9 +299,9 @@ class CuckooSearch(BasePintsOptimiser):
     Parameters
     ----------
     problem: pybop.Problem
-        the cost function to be minimised.
+        The problem to optimse.
     options: pybop.PintsOptions
-        optimisation options
+        Optimisation options.
 
     See Also
     --------
@@ -341,14 +310,10 @@ class CuckooSearch(BasePintsOptimiser):
 
     def __init__(
         self,
-        problem: Problem,
+        problem: pybop.Problem,
         options: pybop.PintsOptions | None = None,
     ):
-        super().__init__(
-            problem,
-            CuckooSearchImpl,
-            options,
-        )
+        super().__init__(problem, CuckooSearchImpl, options)
 
 
 class RandomSearch(BasePintsOptimiser):
@@ -362,9 +327,9 @@ class RandomSearch(BasePintsOptimiser):
     Parameters
     ----------
     problem: pybop.Problem
-        the cost function to be minimised.
+        The problem to optimse.
     options: pybop.PintsOptions
-        optimisation options
+        Optimisation options.
 
     See Also
     --------
@@ -373,14 +338,10 @@ class RandomSearch(BasePintsOptimiser):
 
     def __init__(
         self,
-        problem: Problem,
+        problem: pybop.Problem,
         options: pybop.PintsOptions | None = None,
     ):
-        super().__init__(
-            problem,
-            RandomSearchImpl,
-            options,
-        )
+        super().__init__(problem, RandomSearchImpl, options)
 
 
 class SimulatedAnnealing(BasePintsOptimiser):
@@ -395,9 +356,9 @@ class SimulatedAnnealing(BasePintsOptimiser):
     Parameters
     ----------
     problem: pybop.Problem
-        the cost function to be minimised.
+        The problem to optimse.
     options: pybop.PintsOptions
-        optimisation options
+        Optimisation options.
 
     See Also
     --------
@@ -406,11 +367,7 @@ class SimulatedAnnealing(BasePintsOptimiser):
 
     def __init__(
         self,
-        problem: Problem,
+        problem: pybop.Problem,
         options: pybop.PintsOptions | None = None,
     ):
-        super().__init__(
-            problem,
-            SimulatedAnnealingImpl,
-            options,
-        )
+        super().__init__(problem, SimulatedAnnealingImpl, options)

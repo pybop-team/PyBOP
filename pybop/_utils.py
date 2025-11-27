@@ -7,6 +7,13 @@ import numpy as np
 import pybamm
 
 
+def is_numeric(x):
+    """
+    Check if a variable is numeric.
+    """
+    return isinstance(x, int | float | np.number)
+
+
 @dataclass(frozen=True)
 class FailedVariable:
     """
@@ -85,11 +92,11 @@ class FailedSolution:
         inf_array = np.asarray([np.inf])
 
         for var_name in self._variable_names:
-            sensitivities = (
-                {"all": [inf_array.copy() for _ in self._parameter_names]}
-                if self._parameter_names
-                else {}
-            )
+            if self._parameter_names:
+                sensitivities = {p: inf_array.copy() for p in self._parameter_names}
+                sensitivities["all"] = [inf_array.copy() for _ in self._parameter_names]
+            else:
+                sensitivities = {}
 
             self._variables[var_name] = FailedVariable(
                 name=var_name, data=inf_array.copy(), sensitivities=sensitivities
@@ -186,7 +193,7 @@ class SymbolReplacer:
             Model class to assign parameter values to
         inplace: bool, optional
             If True, replace the parameters in the model in place. Otherwise, return a
-            new model with parameter values set. Default is True.
+            new model with parameter values set (default: True).
         """
 
         model = unprocessed_model if inplace else unprocessed_model.new_copy()

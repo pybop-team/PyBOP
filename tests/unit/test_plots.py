@@ -152,8 +152,8 @@ class TestPlots:
         options.max_iterations = 1
         options.n_chains = 1
         sampler = pybop.SliceStepoutMCMC(likelihood_problem, options)
-        results = sampler.run()
-        return pybop.PosteriorSummary(results)
+        result = sampler.run()
+        return pybop.PosteriorSummary(result.chains)
 
     def test_posterior_plots(self, posterior_summary):
         # Plot trace
@@ -261,5 +261,5 @@ class TestPlots:
 
     def test_validation_plot(self, problem, dataset):
         pybop.plot.validation(
-            problem.params.get_values(), problem=problem, dataset=dataset
+            problem.parameters.get_values(), problem=problem, dataset=dataset
         )

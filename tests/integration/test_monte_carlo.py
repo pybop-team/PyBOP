@@ -119,9 +119,9 @@ class Test_Sampling_SPM:
             n_chains=3, warm_up_iterations=150, max_iterations=750
         )
         sampler = quick_sampler(problem, options=options)
-        chains = sampler.run()
+        result = sampler.run()
 
         # Assert both final sample and posterior mean
-        x = np.mean(chains, axis=1)
+        x = np.mean(result.chains, axis=1)
         for i in range(len(x)):
             np.testing.assert_allclose(x[i], self.ground_truth, atol=3e-2)

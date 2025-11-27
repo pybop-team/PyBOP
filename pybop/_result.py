@@ -1,7 +1,10 @@
-import numpy as np
-from pybamm import ParameterValues
+from typing import TYPE_CHECKING
 
-from pybop import Logger, Problem, PybammEISProblem, PybammProblem, plot
+import numpy as np
+
+if TYPE_CHECKING:
+    from pybop import BaseOptimiser, BaseSampler
+from pybop import Logger, plot
 
 
 class OptimisationResult:
@@ -10,8 +13,8 @@ class OptimisationResult:
 
     Attributes
     ----------
-    problem : pybop.Problem
-        The optimisation problem.
+    optim : pybop.BaseOptimiser
+        The optimisation object used to generate the results.
     logger : pybop.Logger
         The log of the optimisation process.
     time : float
@@ -26,18 +29,18 @@ class OptimisationResult:
 
     def __init__(
         self,
-        problem: Problem,
+        optim: "BaseOptimiser",
         logger: Logger,
         time: float,
         optim_name: str | None = None,
         message: str | None = None,
         scipy_result=None,
     ):
-        self._problem = problem
+        self._optim = optim
+        self._minimising = optim.problem.minimising
         self.optim_name = optim_name
         self.n_runs = 0
         self._best_run = None
-        self._parameter_values = None
         self._x = [logger.x_model_best]
         self._x_model = [logger.x_model]
         self._x0 = [logger.x0]
@@ -48,6 +51,7 @@ class OptimisationResult:
         self._iteration_number = [logger.iteration_number]
         self._n_evaluations = [logger.evaluations]
         self._message = [message]
+        self._scipy_result = [scipy_result]
         self._time = [time]
 
         self._validate()
@@ -104,6 +108,11 @@ class OptimisationResult:
             for result in results
             for x in result._message  # noqa: SLF001
         ]
+        ret._scipy_result = [  # noqa: SLF001
+            x
+            for result in results
+            for x in result._scipy_result  # noqa: SLF001
+        ]
         ret._time = [x for result in results for x in result._time]  # noqa: SLF001
 
         ret._best_run = None  # noqa: SLF001
@@ -115,17 +124,10 @@ class OptimisationResult:
     def _validate(self):
         """Check that there is a finite cost and update best run."""
         self._check_for_finite_cost()
-        self._best_run = self._best_cost.index(min(self._best_cost))
-        self._parameter_values = self._set_optimal_parameter_values()
-
-    def _set_optimal_parameter_values(self) -> ParameterValues | dict:
-        if isinstance(self._problem, PybammProblem | PybammEISProblem):
-            pybamm_params = self._problem.pipeline.parameter_values
-            for i, param in enumerate(self._problem.params):
-                pybamm_params.update({param.name: self._x[0][i]})
-            return pybamm_params
-
-        return {}
+        if self._minimising:
+            self._best_run = self._best_cost.index(min(self._best_cost))
+        else:
+            self._best_run = self._best_cost.index(max(self._best_cost))
 
     def _check_for_finite_cost(self) -> None:
         """
@@ -136,7 +138,7 @@ class OptimisationResult:
         """
         if not any(np.isfinite(self._best_cost)):
             raise ValueError(
-                f"Optimised parameters {self._problem.params.to_dict()} do not produce a finite cost value"
+                f"Optimised parameters {self._optim.problem.parameters.to_dict(self._x[-1])} do not produce a finite cost value."
             )
 
     def __str__(self) -> str:
@@ -159,11 +161,11 @@ class OptimisationResult:
         )
 
     def total_iterations(self) -> np.floating | None:
-        """Calculates the average number of iterations across all runs."""
+        """Calculates the total number of iterations across all runs."""
         return np.sum(self._n_iterations) if len(self._n_iterations) > 0 else None
 
     def total_evaluations(self) -> np.floating | None:
-        """Calculates the average number of evaluations across all runs."""
+        """Calculates the total number of evaluations across all runs."""
         return np.sum(self._n_evaluations) if len(self._n_evaluations) > 0 else None
 
     def total_runtime(self) -> np.floating | None:
@@ -178,7 +180,7 @@ class OptimisationResult:
 
     @property
     def x(self) -> np.ndarray:
-        """The solution of the optimisation (in model space)."""
+        """The best parameter values (in model space)."""
         return self._get_single_or_all("_x")
 
     @property
@@ -190,6 +192,11 @@ class OptimisationResult:
     def x0(self) -> np.ndarray:
         """The initial parameter values."""
         return self._get_single_or_all("_x0")
+
+    @property
+    def best_inputs(self) -> dict[str, np.ndarray]:
+        """The best parameters as a dictionary."""
+        return self._optim.problem.parameters.to_dict(self.x)
 
     @property
     def best_cost(self) -> float:
@@ -222,19 +229,24 @@ class OptimisationResult:
         return self._get_single_or_all("_n_evaluations")
 
     @property
-    def problem(self) -> Problem:
+    def optim(self) -> "BaseOptimiser":
         """The optimisation problem."""
-        return self._problem
+        return self._optim
 
     @property
-    def parameter_values(self) -> ParameterValues | dict:
-        """The best parameter values from the optimisation."""
-        return self._parameter_values
+    def minimising(self) -> bool:
+        """Whether the cost was minimised (or maximised)."""
+        return self._minimising
 
     @property
     def message(self) -> str | None:
         """The optimisation termination message(s)."""
         return self._get_single_or_all("_message")
+
+    @property
+    def scipy_result(self):
+        """The SciPy result."""
+        return self._get_single_or_all("_scipy_result")
 
     @property
     def time(self) -> float | None:
@@ -295,18 +307,56 @@ class OptimisationResult:
         ----------
         gradient : bool, optional
             If True, gradient plots are also generated (default: False).
-        bounds : np.ndarray, optional
+        bounds : numpy.ndarray | list[list[float]], optional
             A 2x2 array specifying the [min, max] bounds for each parameter.
-        apply_transform : bool, optional
+        transformed : bool, optional
             Uses the transformed parameter values, as seen by the optimiser (default: False).
         steps : int, optional
             The number of grid points to divide the parameter space into along each dimension
             (default: 10).
         show : bool, optional
             If True, the figure is shown upon creation (default: True).
-        use_optim_log : bool, optional
-            If True, the optimisation log is used to inform the cost landscape (default: False).
         **layout_kwargs : optional
             Valid Plotly layout keys and their values.
         """
         return plot.contour(call_object=self, **kwargs)
+
+
+class SamplingResult(OptimisationResult):
+    """
+    Stores the result of the sampling.
+
+    Attributes
+    ----------
+    sampler : pybop.BaseSampler
+        The sampler used to generate the results.
+    logger : pybop.Logger
+        The log of the optimisation process.
+    time : float
+        The time taken.
+    chains : np.ndarray, optional
+        An array containing the samples from the posterior distribution, or None.
+    sampler_name : str
+        The name of the sampler.
+    message : str
+        The reason for stopping given by the sampler.
+    """
+
+    def __init__(
+        self,
+        sampler: "BaseSampler",
+        logger: Logger,
+        time: float,
+        chains: np.ndarray,
+        sampler_name: str | None = None,
+        message: str | None = None,
+    ):
+        sampler.problem = sampler.log_pdf
+        super().__init__(
+            optim=sampler,
+            logger=logger,
+            time=time,
+            optim_name=sampler_name,
+            message=message,
+        )
+        self.chains = chains

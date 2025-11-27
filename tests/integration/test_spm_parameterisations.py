@@ -154,7 +154,7 @@ class Test_SPM_Parameterisation:
         return optimiser(problem, options=options)
 
     def test_optimisers(self, optim, cost_cls):
-        x0 = optim.problem.params.get_initial_values()
+        x0 = optim.problem.parameters.get_initial_values()
 
         # Add sigma0 to ground truth for GaussianLogLikelihood
         if cost_cls in [pybop.costs.pybamm.NegativeGaussianLogLikelihood]:
@@ -162,15 +162,15 @@ class Test_SPM_Parameterisation:
                 (self.ground_truth, np.asarray([self.sigma0]))
             )
 
-        results = optim.run()
+        result = optim.run()
 
         # Assertions
         if np.allclose(x0, self.ground_truth, atol=1e-5):
             raise AssertionError("Initial guess is too close to ground truth")
 
-        assert results.initial_cost > results.best_cost
+        assert result.initial_cost > result.best_cost
 
-        np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
+        np.testing.assert_allclose(result.x, self.ground_truth, atol=1.5e-2)
 
     def test_with_init_soc(self, model_and_parameter_values, parameters, experiment):
         model, parameter_values = model_and_parameter_values
@@ -207,11 +207,11 @@ class Test_SPM_Parameterisation:
         )
         optim = pybop.NelderMead(problem, options)
 
-        x0 = optim.problem.params.get_initial_values()
-        results = optim.run()
+        x0 = optim.problem.parameters.get_initial_values()
+        result = optim.run()
         # Assertions
         if np.allclose(x0, self.ground_truth, atol=1e-5):
             raise AssertionError("Initial guess is too close to ground truth")
 
-        assert results.initial_cost > results.best_cost
-        np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
+        assert result.initial_cost > result.best_cost
+        np.testing.assert_allclose(result.x, self.ground_truth, atol=1.5e-2)

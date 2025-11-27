@@ -1,7 +1,23 @@
 import copy
+import warnings
+from typing import Protocol
 
 import numpy as np
-from pybamm import Solution
+from pybamm import solvers
+
+
+class PyprobeResult(Protocol):
+    """Protocol defining required PyProBE Result interface"""
+
+    def get(
+        self,
+        *column_names: str,
+    ) -> np.typing.NDArray[np.float64] | tuple[np.typing.NDArray[np.float64], ...]:
+        """Get result data as numpy ndarray"""
+
+    @property
+    def column_list(self) -> list[str]:
+        """List of column data"""
 
 
 class Dataset:
@@ -13,7 +29,7 @@ class Dataset:
 
     Parameters
     ----------
-    data_dictionary : dict[str, np.ndarray|list] or instance of pybamm.Solution
+    data_dictionary : dict[str, np.ndarray|list] or instance of pybamm.solvers.solution.Solution
         The experimental data to store within the dataset.
     domain : str, optional
         The domain of the dataset. Defaults to "Time [s]".
@@ -21,38 +37,22 @@ class Dataset:
 
     def __init__(
         self,
-        data_dictionary: dict[str, np.ndarray | list] | Solution,
+        data_dictionary,
         domain: str | None = None,
+        variables: str | None = ["Time [s]", "Current [A]", "Voltage [V]"],
         control_variable: str | None = None,
     ):
         """
         Initialise a Dataset instance with data and a set of names.
         """
 
-        if isinstance(data_dictionary, Solution):
-            data_dictionary = data_dictionary.get_data_dict()
+        if isinstance(data_dictionary, solvers.solution.Solution):
+            data_dictionary = data_dictionary.get_data_dict(variables=variables)
         if not isinstance(data_dictionary, dict):
-            raise TypeError("The input to pybop.Dataset must be a dictionary.")
-        # convert any lists to numpy arrays
-        data_ndarray: dict[str, np.ndarray] = {}
-        for key, value in data_dictionary.items():
-            if isinstance(value, list):
-                data_ndarray[key] = np.array(value)
-            elif isinstance(value, np.ndarray):
-                data_ndarray[key] = value
-            else:
-                raise TypeError(
-                    f"Data for key {key} must be a list or numpy array, "
-                    f"but got {type(value)}."
-                )
-        # make sure all data is the same length
-        lengths = {len(v) for v in data_ndarray.values()}
-        if len(lengths) != 1:
-            raise ValueError(
-                "All data series in the dataset must have the same length, "
-                f"but found lengths: {lengths}."
+            raise TypeError(
+                "The input to pybop.Dataset must be a dictionary or a pybamm.Solution object."
             )
-        self.data = data_ndarray
+        self.data = data_dictionary
         self.domain = domain or "Time [s]"
         self.control_variable = control_variable or "Current function [A]"
 
@@ -79,8 +79,6 @@ class Dataset:
         value : list or np.ndarray
             The data series to be stored in the dataset.
         """
-        if isinstance(value, list):
-            value = np.array(value)
         self.data[key] = value
 
     def __getitem__(self, key):
@@ -110,9 +108,7 @@ class Dataset:
     def __contains__(self, key):
         return key in self.data
 
-    def check(
-        self, domain: str | None = None, signal: str | list[str] | None = None
-    ) -> bool:
+    def check(self, domain: str = None, signal: str | list[str] = None) -> bool:
         """
         Check the consistency of a PyBOP Dataset against the expected format.
 
@@ -203,3 +199,72 @@ class Dataset:
             domain=self.domain,
             control_variable=self.control_variable,
         )
+
+
+def import_pyprobe_result(
+    result: PyprobeResult,
+    pybop_columns: list[str] | None = None,
+    pyprobe_columns: list[str] | None = None,
+) -> Dataset:
+    """
+    Import a pyprobe.Result into a dictionary
+
+    Parameters
+    ----------
+    result : str
+        A pyprobe.Result object.
+    pybop_columns : list[str]
+        List of pybop column names.
+    pyprobe_columns : list[str]
+        An list of pyprobe column names.
+    If only one list of column names is provided, they are assumed to be identical.
+    """
+    if pybop_columns is None and pyprobe_columns is None:
+        pybop_columns = [
+            "Time [s]",
+            "Current function [A]",
+            "Voltage [V]",
+            "Discharge capacity [A.h]",
+        ]
+        pyprobe_columns = [
+            "Time [s]",
+            "Current [A]",
+            "Voltage [V]",
+            "Capacity [Ah]",
+        ]
+    elif pybop_columns is None:
+        pybop_columns = pyprobe_columns
+    elif pyprobe_columns is None:
+        pyprobe_columns = pybop_columns
+
+    data_dict = {}
+    for i, col in enumerate(pybop_columns):
+        if (
+            pyprobe_columns[i] == "Cycle"
+            and "Cycle" not in result.column_list
+            and "Step" in result.column_list
+        ):
+            warnings.warn(
+                "No cycle information present. Cycles will be inferred from the step numbers.",
+                UserWarning,
+                stacklevel=2,
+            )
+            steps = result.get("Step")
+            cycle_ends = np.argwhere(steps - np.roll(steps, 1) < 0)
+            cycle_ends = np.append(cycle_ends, len(steps))
+            data_dict[col] = np.concatenate(
+                [
+                    (i - 1) * np.ones(cycle_ends[i] - cycle_ends[i - 1])
+                    for i in range(1, len(cycle_ends))
+                ]
+            )
+        elif pyprobe_columns[i] in [
+            "Current [A]",
+            "Capacity [Ah]",
+        ]:
+            # The sign convention in PyProBE is that positive current is charging,
+            # the convention in PyBaMM is that positive current means discharging
+            data_dict[col] = -1.0 * result.get(pyprobe_columns[i])
+        else:
+            data_dict[col] = result.get(pyprobe_columns[i])
+    return Dataset(data_dict)
