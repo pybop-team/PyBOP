@@ -4,8 +4,8 @@ import pybamm
 def add_variable_to_model(model, variable: str, target_time: float | None = None):
     """Supplement a lithium-ion model with a design variable."""
 
-    if variable == "Gravimetric energy density [Wh.kg-1]":
-        model.variables["Gravimetric energy density [Wh.kg-1]"] = (
+    if variable == "Gravimetric energy density [W.h.kg-1]":
+        model.variables["Gravimetric energy density [W.h.kg-1]"] = (
             pybamm.ExplicitTimeIntegral(
                 model.variables["Voltage [V]"]
                 * model.variables["Current [A]"]
@@ -14,8 +14,8 @@ def add_variable_to_model(model, variable: str, target_time: float | None = None
             )
         )
 
-    elif variable == "Volumetric energy density [Wh.m-3]":
-        model.variables["Volumetric energy density [Wh.m-3]"] = (
+    elif variable == "Volumetric energy density [W.h.m-3]":
+        model.variables["Volumetric energy density [W.h.m-3]"] = (
             pybamm.ExplicitTimeIntegral(
                 model.variables["Voltage [V]"]
                 * model.variables["Current [A]"]

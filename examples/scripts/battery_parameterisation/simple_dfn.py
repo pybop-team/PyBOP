@@ -1,31 +1,45 @@
-import os
-
 import numpy as np
 import pybamm
 
 import pybop
 
-# Get the current directory location and convert to absolute path
-current_dir = os.path.dirname(os.path.abspath(__file__))
-dataset_path = os.path.join(
-    current_dir, "../../data/synthetic/dfn_charge_discharge_75.csv"
-)
+"""
+In this example, we demonstrate identification using a Doyle-Fuller-Newman (DFN) model.
+The DFN is more challenging to parameterise than equivalent circuit and reduced-order,
+single particle models as it is more computationally expensive and has a high number of
+parameters which are not individually identifiable.
+"""
 
-# Import the synthetic dataset
-csv_data = np.loadtxt(dataset_path, delimiter=",", skiprows=1)
-dataset = pybop.Dataset(
-    {
-        "Time [s]": csv_data[:, 0],
-        "Current function [A]": csv_data[:, 1],
-        "Voltage [V]": csv_data[:, 2],
-        "Bulk open-circuit voltage [V]": csv_data[:, 3],
-    }
-)
 
 # Define model and parameter values
 model = pybamm.lithium_ion.DFN()
 parameter_values = pybamm.ParameterValues("Chen2020")
-parameter_values.set_initial_state(f"{csv_data[0, 2]} V")
+
+# Generate a synthetic dataset
+sim = pybamm.Simulation(model, parameter_values=parameter_values)
+t_eval = np.linspace(0, 500, 240)
+solution = sim.solve(t_eval=t_eval)
+sigma = 5e-3
+dataset = pybop.Dataset(
+    {
+        "Time [s]": t_eval,
+        "Voltage [V]": solution["Voltage [V]"](t_eval)
+        + np.random.normal(0, sigma, len(t_eval)),
+        "Current function [A]": solution["Current [A]"](t_eval),
+        "Bulk open-circuit voltage [V]": solution["Bulk open-circuit voltage [V]"](
+            t_eval
+        ),
+    }
+)
+
+# Save the true values
+true_values = [
+    parameter_values[p]
+    for p in [
+        "Negative electrode active material volume fraction",
+        "Positive electrode active material volume fraction",
+    ]
+]
 
 # Fitting parameters
 parameter_values.update(
@@ -65,6 +79,10 @@ optim = pybop.IRPropPlus(problem, options=options)
 # Run the optimisation
 result = optim.run()
 print(result)
+
+# Compare identified to true parameter values
+print("True parameters:", true_values)
+print("Identified parameters:", result.x)
 
 # Plot the timeseries output
 pybop.plot.problem(problem, inputs=result.best_inputs, title="Optimised Comparison")

@@ -246,9 +246,9 @@ class TestCosts:
         model = pybamm.lithium_ion.SPM()
         target_time = 600  # length of dis/charge in the experiment [s]
         pybop.pybamm.add_variable_to_model(
-            model, "Gravimetric energy density [Wh.kg-1]"
+            model, "Gravimetric energy density [W.h.kg-1]"
         )
-        pybop.pybamm.add_variable_to_model(model, "Volumetric energy density [Wh.m-3]")
+        pybop.pybamm.add_variable_to_model(model, "Volumetric energy density [W.h.m-3]")
         pybop.pybamm.add_variable_to_model(
             model, "Gravimetric power density [W.kg-1]", target_time=target_time
         )
@@ -291,8 +291,8 @@ class TestCosts:
     @pytest.mark.parametrize(
         "target",
         [
-            "Gravimetric energy density [Wh.kg-1]",
-            "Volumetric energy density [Wh.m-3]",
+            "Gravimetric energy density [W.h.kg-1]",
+            "Volumetric energy density [W.h.m-3]",
             "Gravimetric power density [W.kg-1]",
             "Volumetric power density [W.m-3]",
         ],
@@ -423,8 +423,8 @@ class TestCosts:
         )
 
     def test_weighted_design_cost(self, design_simulator):
-        cost_1 = pybop.DesignCost(target="Gravimetric energy density [Wh.kg-1]")
-        cost_2 = pybop.DesignCost(target="Volumetric energy density [Wh.m-3]")
+        cost_1 = pybop.DesignCost(target="Gravimetric energy density [W.h.kg-1]")
+        cost_2 = pybop.DesignCost(target="Volumetric energy density [W.h.m-3]")
         problem_1 = pybop.Problem(design_simulator, cost_1)
         problem_2 = pybop.Problem(design_simulator, cost_2)
 
@@ -439,7 +439,7 @@ class TestCosts:
 
     def test_mixed_problem_classes(self, dataset, design_simulator):
         cost1 = pybop.SumSquaredError(dataset)
-        cost2 = pybop.DesignCost(target="Gravimetric energy density [Wh.kg-1]")
+        cost2 = pybop.DesignCost(target="Gravimetric energy density [W.h.kg-1]")
         with pytest.raises(
             TypeError,
             match="Costs must be either all design costs or all error measures",

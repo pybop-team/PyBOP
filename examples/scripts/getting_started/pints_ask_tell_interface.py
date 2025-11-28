@@ -1,31 +1,29 @@
-import os
-
 import numpy as np
 import pybamm
 
 import pybop
 
-# Get the current directory location and convert to absolute path
-current_dir = os.path.dirname(os.path.abspath(__file__))
-dataset_path = os.path.join(
-    current_dir, "../../data/synthetic/spm_charge_discharge_75.csv"
-)
-
-# Import the synthetic dataset
-csv_data = np.loadtxt(dataset_path, delimiter=",", skiprows=1)
-dataset = pybop.Dataset(
-    {
-        "Time [s]": csv_data[:, 0],
-        "Current function [A]": csv_data[:, 1],
-        "Voltage [V]": csv_data[:, 2],
-        "Bulk open-circuit voltage [V]": csv_data[:, 3],
-    }
-)
+"""
+In this example, we will introduce the ask-tell optimiser interface for the PINTS-based
+optimisers. This interface provides a simple method for flexible optimisation workflows.
+"""
 
 # Define model and parameter values
 model = pybamm.lithium_ion.SPM()
 parameter_values = pybamm.ParameterValues("Chen2020")
-parameter_values.set_initial_state(f"{csv_data[0, 2]} V")
+
+# Generate a synthetic dataset
+solution = pybamm.Simulation(model, parameter_values=parameter_values).solve(
+    t_eval=np.linspace(0, 100, 100)
+)
+dataset = pybop.Dataset(
+    {
+        "Time [s]": solution.t,
+        "Current function [A]": solution["Current [A]"].data,
+        "Voltage [V]": solution["Voltage [V]"].data,
+        "Bulk open-circuit voltage [V]": solution["Bulk open-circuit voltage [V]"].data,
+    }
+)
 
 # Fitting parameters
 parameter_values.update(
@@ -48,10 +46,9 @@ cost = pybop.Minkowski(
 )
 problem = pybop.Problem(simulator, cost)
 
-# We construct the optimiser class the same as normal but will be using the
-# `optimiser` attribute directly for this example. This interface works for
-# all PINTS-based optimisers.
-# Warning: not all arguments are supported via this interface.
+# We construct the optimiser class the same as normal but will be using the `optimiser`
+# attribute directly for this example. This interface works for all PINTS-based
+# optimisers. Warning: not all arguments are supported via this interface.
 options = pybop.PintsOptions(verbose=True)
 optim = pybop.AdamW(problem, options=options)
 

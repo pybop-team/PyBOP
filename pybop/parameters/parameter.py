@@ -309,9 +309,7 @@ class ParameterDistribution(ParameterInfo):
     Subclass of ParameterInfo
 
     This class accepts a distribution but no bounds in its constructor. The bounds are
-    set based on the support of the distribution. If a bounded version of an unbounded
-    distribution is required, this can be achieved by applying the scipy.stats.truncate
-    to a scipy.stats.rv_continuous distribution.
+    set based on the support of the distribution.
 
     Parameters
     ----------
@@ -471,8 +469,8 @@ class Parameters:
                 if isinstance(param.transformation, LogTransformation) and lower == 0:
                     bound_one = -np.inf
                 else:
-                    bound_one = float(param.transformation.to_search(lower))
-                bound_two = float(param.transformation.to_search(upper))
+                    bound_one = float(param.transformation.to_search(lower)[0])
+                bound_two = float(param.transformation.to_search(upper)[0])
 
                 if np.isnan(bound_one) or np.isnan(bound_two):
                     raise ValueError("Transformed bounds resulted in NaN values.")

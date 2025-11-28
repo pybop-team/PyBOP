@@ -27,9 +27,9 @@ class TestWeightedCost:
     def model(self):
         model = pybamm.lithium_ion.SPM()
         pybop.pybamm.add_variable_to_model(
-            model, "Gravimetric energy density [Wh.kg-1]"
+            model, "Gravimetric energy density [W.h.kg-1]"
         )
-        pybop.pybamm.add_variable_to_model(model, "Volumetric energy density [Wh.m-3]")
+        pybop.pybamm.add_variable_to_model(model, "Volumetric energy density [W.h.m-3]")
         return model
 
     @pytest.fixture
@@ -133,8 +133,8 @@ class TestWeightedCost:
     @pytest.fixture
     def design_targets(self):
         return [
-            "Gravimetric energy density [Wh.kg-1]",
-            "Volumetric energy density [Wh.m-3]",
+            "Gravimetric energy density [W.h.kg-1]",
+            "Volumetric energy density [W.h.m-3]",
         ]
 
     @pytest.fixture

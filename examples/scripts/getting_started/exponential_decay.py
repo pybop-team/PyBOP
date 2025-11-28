@@ -11,7 +11,9 @@ parameter_values = pybamm.ParameterValues({"k": 1, "y0": 0.5})
 # Generate a synthetic dataset
 sigma = 0.003
 t_eval = np.linspace(0, 10, 100)
-sol = pybamm.Simulation(model, parameter_values=parameter_values).solve(t_eval=t_eval)
+solution = pybamm.Simulation(model, parameter_values=parameter_values).solve(
+    t_eval=t_eval
+)
 
 
 def noisy(data, sigma):
@@ -21,8 +23,8 @@ def noisy(data, sigma):
 dataset = pybop.Dataset(
     {
         "Time [s]": t_eval,
-        "y_0": noisy(sol["y_0"](t_eval), sigma),
-        "y_1": noisy(sol["y_1"](t_eval), sigma),
+        "y_0": noisy(solution["y_0"](t_eval), sigma),
+        "y_1": noisy(solution["y_1"](t_eval), sigma),
     }
 )
 

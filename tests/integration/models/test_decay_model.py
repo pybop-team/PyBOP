@@ -66,7 +66,7 @@ class TestDecayModel:
 
         return value1, value2
 
-    def test_decay_builder(self, dataset, model_config, parameters):
+    def test_decay_model(self, dataset, model_config, parameters):
         """Test decay model with voltage-based cost functions."""
         parameter_values = model_config["parameter_values"]
         parameter_values.update(parameters)

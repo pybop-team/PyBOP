@@ -3,6 +3,10 @@ import pybamm
 
 import pybop
 
+"""
+Example demonstrating parameter estimation in the frequency domain using PyBaMM-EIS.
+"""
+
 # Define model and parameter values
 model = pybamm.lithium_ion.SPM(
     options={"surface form": "differential", "contact resistance": "true"},
@@ -37,7 +41,6 @@ def noisy(data, sigma):
     return data + real_noise + 1j * imag_noise
 
 
-# Form dataset
 dataset = pybop.Dataset(
     {
         "Frequency [Hz]": f_eval,
@@ -46,6 +49,15 @@ dataset = pybop.Dataset(
     },
     domain="Frequency [Hz]",
 )
+
+# Save the true values
+true_values = [
+    parameter_values[p]
+    for p in [
+        "Negative electrode active material volume fraction",
+        "Positive electrode active material volume fraction",
+    ]
+]
 
 # Fitting parameters
 parameter_values.update(
@@ -73,6 +85,10 @@ optim = pybop.CMAES(problem, options=options)
 # Run the optimisation
 result = optim.run()
 print(result)
+
+# Compare identified to true parameter values
+print("True parameters:", true_values)
+print("Identified parameters:", result.x)
 
 # Plot the nyquist
 pybop.plot.nyquist(problem, inputs=result.best_inputs, title="Optimised Comparison")

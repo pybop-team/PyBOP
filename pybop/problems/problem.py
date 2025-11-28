@@ -184,7 +184,9 @@ class Problem:
                     inputs=valid_inputs[i],
                     calculate_sensitivities=calculate_sensitivities,
                 )
-                evaluation.insert_result(i=valid_indices[i], value=e, sensitivities=de)
+                evaluation.insert_result(
+                    i=valid_indices[i], value=np.asarray(e).item(), sensitivities=de
+                )
         else:
             for i, sol in enumerate(solutions):
                 e = self._cost.evaluate(
@@ -192,7 +194,7 @@ class Problem:
                     inputs=valid_inputs[i],
                     calculate_sensitivities=calculate_sensitivities,
                 )
-                evaluation.insert_result(i=valid_indices[i], value=e)
+                evaluation.insert_result(i=valid_indices[i], value=np.asarray(e).item())
 
         if False in validity:
             # Insert failure outputs for the invalid parameters into the lists of results

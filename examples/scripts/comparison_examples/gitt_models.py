@@ -19,15 +19,17 @@ experiment = pybamm.Experiment(
         "Rest for 20 minutes",
     ]
 )
-sol = pybamm.Simulation(
+solution = pybamm.Simulation(
     model, parameter_values=parameter_values, experiment=experiment
 ).solve()
-corrupt_values = sol["Voltage [V]"].data + np.random.normal(0, sigma, len(sol.t))
+corrupt_values = solution["Voltage [V]"].data + np.random.normal(
+    0, sigma, len(solution.t)
+)
 dataset = pybop.Dataset(
     {
-        "Time [s]": sol.t,
-        "Current function [A]": sol["Current [A]"].data,
-        "Discharge capacity [A.h]": sol["Discharge capacity [A.h]"].data,
+        "Time [s]": solution.t,
+        "Current function [A]": solution["Current [A]"].data,
+        "Discharge capacity [A.h]": solution["Discharge capacity [A.h]"].data,
         "Voltage [V]": corrupt_values,
     }
 )
@@ -86,7 +88,7 @@ for model in [pybop.lithium_ion.WeppnerHuggins(), pybop.lithium_ion.SPDiffusion(
             }
         )
 
-    # Define the model, problem and cost to optimise
+    # Build the problem
     gitt_dataset = (
         dataset.get_subset(pulse_index)
         if isinstance(model, pybop.lithium_ion.WeppnerHuggins)

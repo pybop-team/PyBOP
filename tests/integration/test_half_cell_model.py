@@ -27,7 +27,7 @@ class TestHalfCellModel:
     def model(self):
         model = pybamm.lithium_ion.SPM(options={"working electrode": "positive"})
         pybop.pybamm.add_variable_to_model(
-            model, "Gravimetric energy density [Wh.kg-1]"
+            model, "Gravimetric energy density [W.h.kg-1]"
         )
         return model
 
@@ -132,7 +132,7 @@ class TestHalfCellModel:
             protocol=experiment,
             initial_state=initial_state,
         )
-        cost = pybop.DesignCost(target="Gravimetric energy density [Wh.kg-1]")
+        cost = pybop.DesignCost(target="Gravimetric energy density [W.h.kg-1]")
         return pybop.Problem(simulator, cost)
 
     def test_design_costs(self, design_problem):

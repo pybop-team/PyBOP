@@ -3,19 +3,20 @@ from pybamm import Parameter
 
 import pybop
 
-# A design optimisation example loosely based on work by L.D. Couto
-# available at https://doi.org/10.1016/j.energy.2022.125966.
+"""
+A design optimisation example loosely based on work by L.D. Couto available at
+https://doi.org/10.1016/j.energy.2022.125966.
 
-# The target is to maximise the energy density over a range of
-# possible design parameter values, including for example:
-# cross-sectional area = height x width (only need change one)
-# electrode widths, particle radii, volume fractions and
-# separator width.
+The target is to maximise the energy density over a range of possible design parameter
+values, including for example:
+cross-sectional area = height x width (only need change one)
+electrode widths, particle radii, volume fractions and separator width.
+"""
 
 # Define model
 model = pybamm.lithium_ion.SPMe()
-pybop.pybamm.add_variable_to_model(model, "Gravimetric energy density [Wh.kg-1]")
-pybop.pybamm.add_variable_to_model(model, "Volumetric energy density [Wh.m-3]")
+pybop.pybamm.add_variable_to_model(model, "Gravimetric energy density [W.h.kg-1]")
+pybop.pybamm.add_variable_to_model(model, "Volumetric energy density [W.h.m-3]")
 
 # Define parameter set and additional parameters needed for the cost function
 parameter_values = pybamm.ParameterValues("Chen2020")
@@ -68,9 +69,9 @@ simulator = pybop.pybamm.Simulator(
     protocol=experiment,
     initial_state={"Initial SoC": 1.0},
 )
-cost_1 = pybop.DesignCost(target="Gravimetric energy density [Wh.kg-1]")
+cost_1 = pybop.DesignCost(target="Gravimetric energy density [W.h.kg-1]")
 problem_1 = pybop.Problem(simulator, cost_1)
-cost_2 = pybop.DesignCost(target="Volumetric energy density [Wh.m-3]")
+cost_2 = pybop.DesignCost(target="Volumetric energy density [W.h.m-3]")
 problem_2 = pybop.Problem(simulator, cost_2)
 problem = pybop.MetaProblem(problem_1, problem_2, weights=[1, 1e-3])
 
@@ -79,10 +80,12 @@ options = pybop.PintsOptions(max_iterations=10)
 optim = pybop.PSO(problem, options=options)
 result = optim.run()
 print(result)
-print(f"Initial gravimetric energy density: {problem_1(result.x0):.2f} Wh.kg-1")
-print(f"Optimised gravimetric energy density: {problem_1(result.x):.2f} Wh.kg-1")
-print(f"Initial volumetric energy density: {problem_2(result.x0):.2f} Wh.m-3")
-print(f"Optimised volumetric energy density: {problem_2(result.x):.2f} Wh.m-3")
+
+# Compare the designs
+print(f"Initial gravimetric energy density: {problem_1(result.x0):.2f} W.h.kg-1")
+print(f"Optimised gravimetric energy density: {problem_1(result.x):.2f} W.h.kg-1")
+print(f"Initial volumetric energy density: {problem_2(result.x0):.2f} W.h.m-3")
+print(f"Optimised volumetric energy density: {problem_2(result.x):.2f} W.h.m-3")
 
 # Plot the optimisation result
 result.plot_surface()

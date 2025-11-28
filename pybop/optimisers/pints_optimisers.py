@@ -194,6 +194,11 @@ class SNES(BasePintsOptimiser):
     ):
         super().__init__(problem, PintsSNES, options)
 
+    @property
+    def name(self) -> str:
+        """Overwrite misspelling of separable from Pints 0.5.1."""
+        return "Separable Natural Evolution Strategy (SNES)"
+
 
 class XNES(BasePintsOptimiser):
     """
