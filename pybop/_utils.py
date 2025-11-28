@@ -17,7 +17,6 @@ def is_numeric(x):
 @dataclass(frozen=True)
 class FailedVariable:
     """
-    Check if a variable is numeric.
     Container for a failed PyBaMM variable that returns np.inf.
 
     Args:
@@ -41,7 +40,6 @@ class FailedVariable:
 
 class FailedSolution:
     """
-    return isinstance(x, int | float | np.number)
     Container for a failed PyBaMM solution that returns [np.inf] for all processed variables.
 
     This class mimics the interface of a successful PyBaMM solution but returns

@@ -1,5 +1,6 @@
 import numpy as np
 
+from pybop._utils import add_spaces
 from pybop.parameters.parameter import Inputs, Parameters
 from pybop.simulators.solution import Solution
 
@@ -105,6 +106,10 @@ class BaseCost:
             )
         else:
             return np.inf if self.minimising else -np.inf
+
+    @property
+    def name(self):
+        return add_spaces(type(self).__name__)
 
     @property
     def n_parameters(self):

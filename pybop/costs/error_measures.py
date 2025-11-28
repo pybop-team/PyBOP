@@ -2,7 +2,7 @@ import numpy as np
 import pybamm
 
 from pybop._dataset import Dataset
-from pybop._utils import FailedSolution, add_spaces
+from pybop._utils import FailedSolution
 from pybop.costs.base_cost import BaseCost
 from pybop.parameters.parameter import Inputs
 from pybop.simulators.solution import Solution
@@ -183,10 +183,6 @@ class ErrorMeasure(BaseCost):
         raise NotImplementedError
 
     @property
-    def name(self):
-        return add_spaces(type(self).__name__)
-
-    @property
     def target_data(self):
         return self._target_data
 
@@ -365,6 +361,10 @@ class Minkowski(ErrorMeasure):
 
         return e
 
+    @property
+    def __name__(self):
+        return f"Minkowski distance (p = {self.p})"
+
 
 class SumOfPower(ErrorMeasure):
     """
@@ -427,3 +427,6 @@ class SumOfPower(ErrorMeasure):
             return e, de
 
         return e
+
+    def __name__(self):
+        return f"Sum of Power (p = {self.p})"
