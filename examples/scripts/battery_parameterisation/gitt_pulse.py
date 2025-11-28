@@ -1,54 +1,52 @@
 import numpy as np
+import pybamm
 
 import pybop
 
-# Define model
-parameter_set = pybop.ParameterSet("Xu2019")
-model = pybop.lithium_ion.SPMe(
-    parameter_set=parameter_set, options={"working electrode": "positive"}
-)
+# Define model and parameter values
+model_options = {"working electrode": "positive"}
+model = pybamm.lithium_ion.SPMe(options=model_options)
+parameter_values = pybamm.ParameterValues("Xu2019")
+parameter_values.set_initial_state(0.9, options=model_options)
 
-# Generate data
+# Generate a synthetic dataset
 sigma = 1e-3
-initial_state = {"Initial SoC": 0.9}
-experiment = pybop.Experiment(
+experiment = pybamm.Experiment(
     [
         "Rest for 1 second",
         "Discharge at 1C for 10 minutes (10 second period)",
         "Rest for 20 minutes",
     ]
 )
-values = model.predict(initial_state=initial_state, experiment=experiment)
-corrupt_values = values["Voltage [V]"].data + np.random.normal(
-    0, sigma, len(values["Voltage [V]"].data)
+solution = pybamm.Simulation(
+    model, parameter_values=parameter_values, experiment=experiment
+).solve()
+corrupt_values = solution["Voltage [V]"].data + np.random.normal(
+    0, sigma, len(solution["Voltage [V]"].data)
 )
-
-# Form dataset
 dataset = pybop.Dataset(
     {
-        "Time [s]": values["Time [s]"].data,
-        "Current function [A]": values["Current [A]"].data,
-        "Discharge capacity [A.h]": values["Discharge capacity [A.h]"].data,
+        "Time [s]": solution.t,
+        "Current function [A]": solution["Current [A]"].data,
+        "Discharge capacity [A.h]": solution["Discharge capacity [A.h]"].data,
         "Voltage [V]": corrupt_values,
     }
 )
 
-# Define parameter set
-parameter_set = pybop.lithium_ion.SPDiffusion.apply_parameter_grouping(
-    model.parameter_set, electrode="positive"
+# Group the parameters
+grouped_parameter_values = pybop.lithium_ion.SPDiffusion.create_grouped_parameters(
+    parameter_values
 )
 
 # Fit the GITT pulse using the single particle diffusion model
-gitt_fit = pybop.GITTPulseFit(parameter_set=parameter_set, electrode="positive")
-gitt_results = gitt_fit(gitt_pulse=dataset)
+gitt_fit = pybop.GITTPulseFit(parameter_values=grouped_parameter_values)
+gitt_result = gitt_fit(gitt_pulse=dataset)
 
 # Plot the timeseries output
 pybop.plot.problem(
-    gitt_fit.problem, problem_inputs=gitt_results.x, title="Optimised Comparison"
+    gitt_fit.problem, inputs=gitt_result.best_inputs, title="Optimised Comparison"
 )
 
-# Plot convergence
-pybop.plot.convergence(gitt_fit.optim)
-
-# Plot the parameter traces
-pybop.plot.parameters(gitt_fit.optim)
+# Plot the optimisation result
+gitt_result.plot_convergence()
+gitt_result.plot_parameters()

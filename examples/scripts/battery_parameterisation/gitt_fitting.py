@@ -1,34 +1,34 @@
 import numpy as np
+import pybamm
 
 import pybop
 
-# Define model
-parameter_set = pybop.ParameterSet("Xu2019")
-model = pybop.lithium_ion.SPMe(
-    parameter_set=parameter_set, options={"working electrode": "positive"}
-)
+# Define model and parameter values
+model_options = {"working electrode": "positive"}
+model = pybamm.lithium_ion.SPMe(options=model_options)
+parameter_values = pybamm.ParameterValues("Xu2019")
+parameter_values.set_initial_state(0.9, options=model_options)
 
-# Generate data
+# Generate a synthetic dataset
 sigma = 1e-3
-initial_state = {"Initial SoC": 0.9}
-experiment = pybop.Experiment(
+experiment = pybamm.Experiment(
     [
         "Rest for 1 second",
         ("Discharge at 1C for 10 minutes (10 second period)", "Rest for 20 minutes")
         * 8,
     ]
 )
-values = model.predict(initial_state=initial_state, experiment=experiment)
-corrupt_values = values["Voltage [V]"].data + np.random.normal(
-    0, sigma, len(values["Voltage [V]"].data)
+solution = pybamm.Simulation(
+    model, parameter_values=parameter_values, experiment=experiment
+).solve()
+corrupt_values = solution["Voltage [V]"].data + np.random.normal(
+    0, sigma, len(solution.t)
 )
-
-# Form dataset and locate the pulse
 dataset = pybop.Dataset(
     {
-        "Time [s]": values["Time [s]"].data,
-        "Current function [A]": values["Current [A]"].data,
-        "Discharge capacity [A.h]": values["Discharge capacity [A.h]"].data,
+        "Time [s]": solution.t,
+        "Current function [A]": solution["Current [A]"].data,
+        "Discharge capacity [A.h]": solution["Discharge capacity [A.h]"].data,
         "Voltage [V]": corrupt_values,
     }
 )
@@ -46,61 +46,57 @@ pulse_starts = np.extract(
     nonzero_index[1:],  # return the index at the start of the pulse
 )
 pulse_index = []
-for start, finish in zip(pulse_starts[:-1], pulse_starts[1:]):
+for start, finish in zip(pulse_starts[:-1], pulse_starts[1:], strict=False):
     pulse_index.append(
         np.concatenate(
             ([start - 1], [i for i in nonzero_index if i >= start and i < finish])
         )
     )
 
-# Define parameter set
-parameter_set = pybop.lithium_ion.SPDiffusion.apply_parameter_grouping(
-    model.parameter_set, "positive"
+# Group the parameters
+grouped_parameter_values = pybop.lithium_ion.SPDiffusion.create_grouped_parameters(
+    parameter_values
 )
 
 # Fit each pulse of the GITT measurement
 gitt_fit = pybop.GITTFit(
     gitt_dataset=dataset,
     pulse_index=pulse_index,
-    parameter_set=parameter_set,
-    electrode="positive",
+    parameter_values=grouped_parameter_values,
 )
 gitt_parameter_data = gitt_fit()
 
-# Plot the parameters
+# Plot the functional parameters
 pybop.plot.dataset(gitt_parameter_data, signal=["Particle diffusion time scale [s]"])
 pybop.plot.dataset(gitt_parameter_data, signal=["Series resistance [Ohm]"])
 
 # Run the identified model
-model = pybop.lithium_ion.SPDiffusion(
-    parameter_set=parameter_set,
-    electrode="positive",
-    build=True,
+identified_model = pybop.lithium_ion.SPDiffusion(build=True)
+grouped_parameter_values.update(gitt_fit.best_inputs)
+grouped_parameter_values["Current function [A]"] = pybamm.Interpolant(
+    dataset["Time [s]"], dataset["Current function [A]"], pybamm.t
 )
-model.set_current_function(dataset)
-fitted_values = model.predict(t_eval=dataset["Time [s]"])
+fitted_values = pybamm.Simulation(
+    identified_model, parameter_values=grouped_parameter_values
+).solve(t_eval=dataset["Time [s]"], t_interp=dataset["Time [s]"])
 
-# Return to the original model
-parameter_set = pybop.ParameterSet("Xu2019")
-
-# Update the diffusivity value
+# Return to the original model and update the diffusivity value
 diffusivity = np.mean(
-    parameter_set["Positive particle radius [m]"] ** 2
+    parameter_values["Positive particle radius [m]"] ** 2
     / gitt_parameter_data["Particle diffusion time scale [s]"]
 )
-parameter_set.update({"Positive particle diffusivity [m2.s-1]": diffusivity})
+parameter_values.update({"Positive particle diffusivity [m2.s-1]": diffusivity})
 
 # Compare the original, fitted and identified model predictions
-model = pybop.lithium_ion.SPMe(
-    parameter_set=parameter_set, options={"working electrode": "positive"}
-)
-values = model.predict(initial_state=initial_state, experiment=experiment)
+solution = pybamm.Simulation(
+    model, parameter_values=parameter_values, experiment=experiment
+).solve()
 pybop.plot.trajectories(
-    values["Time [s]"].data,
+    solution.t,
     [
         dataset["Voltage [V]"],
         fitted_values["Voltage [V]"].data,
-        values["Voltage [V]"].data,
+        solution["Voltage [V]"].data,
     ],
     trace_names=["Ground truth", "Fitted GITT Model", "Identified Model"],
     xaxis_title="Time / s",

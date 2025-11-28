@@ -1,13 +1,89 @@
-import warnings
+from __future__ import annotations
+
 from collections import OrderedDict
-from typing import Optional
+from collections.abc import Iterator, Sequence
+from copy import deepcopy
+from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
 
-from pybop import ComposedTransformation, IdentityTransformation, LogTransformation
-from pybop._utils import is_numeric
+from pybop.parameters.priors import BasePrior, Uniform
+from pybop.transformation.base_transformation import Transformation
+from pybop.transformation.transformations import (
+    ComposedTransformation,
+    IdentityTransformation,
+    LogTransformation,
+)
 
+# Type aliases
+NumericValue = float | int | np.number
+ArrayLike = Sequence[NumericValue] | NDArray[np.floating]
+BoundsPair = list[float]
 Inputs = dict[str, float]
+
+
+class ParameterError(Exception):
+    """Base exception for parameter-related errors."""
+
+    pass
+
+
+class ParameterValidationError(ParameterError):
+    """Raised when parameter validation fails."""
+
+    pass
+
+
+class ParameterNotFoundError(ParameterError):
+    """Raised when a parameter is not found."""
+
+    pass
+
+
+@dataclass(frozen=True)
+class Bounds:
+    """
+    Immutable bounds representation with validation.
+
+    Attributes
+    ----------
+    lower : float
+        Lower bound (inclusive)
+    upper : float
+        Upper bound (inclusive)
+    """
+
+    lower: float
+    upper: float
+
+    def __post_init__(self) -> None:
+        if self.lower >= self.upper:
+            raise ParameterValidationError(
+                f"Lower bound ({self.lower}) must be less than upper bound ({self.upper})"
+            )
+
+    def contains(self, value: NumericValue) -> bool:
+        """Check if value is within bounds."""
+        return self.lower <= value <= self.upper
+
+    def contains_array(self, values: ArrayLike) -> bool:
+        """Check if all values in array are within bounds."""
+        arr = np.asarray(values)
+        return bool(np.all((arr >= self.lower) & (arr <= self.upper)))
+
+    def clip(self, value: NumericValue) -> float:
+        """Clip value to bounds."""
+        return float(np.clip(value, self.lower, self.upper))
+
+    def clip_array(self, values: ArrayLike) -> NDArray[np.floating]:
+        """Clip array values to bounds."""
+        return np.clip(values, self.lower, self.upper)
+
+    def width(self) -> float:
+        """Return the width of the bounds."""
+        return self.upper - self.lower
 
 
 class Parameter:
@@ -16,308 +92,254 @@ class Parameter:
 
     This class encapsulates the definition of a parameter, including its name, prior
     distribution, initial value, bounds, and a margin to ensure the parameter stays
-    within feasible limits during optimization or sampling.
+    within feasible limits during optimisation or sampling.
 
     Parameters
     ----------
-    name : str
-        The name of the parameter.
-    initial_value : float, optional
-        The initial value to be assigned to the parameter. Defaults to None.
-    prior : scipy.stats distribution, optional
-        The prior distribution from which parameter values are drawn. Defaults to None.
-    bounds : tuple, optional
-        A tuple defining the lower and upper bounds for the parameter.
-        Defaults to None.
-
-    Raises
-    ------
-    ValueError
-        If the lower bound is not strictly less than the upper bound, or if
-        the margin is set outside the interval (0, 1).
+    initial_value : NumericValue, optional
+        Initial parameter value
+    bounds : tuple[float, float], optional
+        Parameter bounds as (lower, upper)
+    prior : pybop.BasePrior, optional
+        Prior distribution object
+    transformation : Transformation, optional
+        Parameter transformation
+    margin : float, default=1e-4
+        Safety margin for bounds sampling
     """
 
     def __init__(
         self,
-        name,
-        initial_value=None,
-        true_value=None,
-        prior=None,
-        bounds=None,
-        transformation=None,
-    ):
-        """
-        Construct the parameter class with a name, initial value, prior, and bounds.
-        """
-        self.name = name
-        self.prior = prior
-        self.true_value = true_value
-        self.initial_value = initial_value
-        self.value = initial_value
-        self.transformation = transformation
-        self.applied_prior_bounds = False
-        self.bounds = None
-        self.lower_bound = None
-        self.upper_bound = None
-        self.set_bounds(bounds)
-        self.margin = 1e-4
+        *,
+        initial_value: float = None,
+        bounds: BoundsPair | None = None,
+        prior: BasePrior | None = None,
+        transformation: Transformation | None = None,
+        margin: float = 1e-4,
+    ) -> None:
+        self._prior = prior
+        self._transformation = transformation or IdentityTransformation()
 
-    def rvs(self, n_samples: int = 1, random_state=None, apply_transform: bool = False):
-        """
-        Draw random samples from the parameter's prior distribution.
+        # Set bounds with validation
+        self._bounds: Bounds | None = None
+        if bounds is not None:
+            self._bounds = Bounds(bounds[0], bounds[1])
+            if self._prior is None and all(np.isfinite(np.asarray(bounds))):
+                self._prior = Uniform(bounds[0], bounds[1])
+        self._set_margin(margin)
 
-        The samples are constrained to be within the parameter's bounds, excluding
-        a predefined margin at the boundaries.
+        # Validate and set values
+        if initial_value is None and self._prior is not None:
+            initial_value = self.sample_from_prior()[0]
+        self._initial_value = (
+            float(initial_value) if initial_value is not None else None
+        )
+
+        # Validate initial values are within bounds
+        self._validate_values_within_bounds()
+
+    def sample_from_prior(
+        self,
+        n_samples: int = 1,
+        *,
+        random_state: int | None = None,
+        transformed: bool = False,
+    ) -> NDArray[np.floating] | None:
+        """
+        Sample from parameter's prior distribution.
 
         Parameters
         ----------
         n_samples : int
-            The number of samples to draw (default: 1).
+            Number of samples to draw (default: 1).
         random_state : int, optional
-            The random state seed for reproducibility (default: None).
-        apply_transform : bool
-            If True, the transformation is applied to the output (default: False).
+            Random seed for reproducibility.
+        transformed : bool
+            Whether to apply transformation to samples (default: False).
 
         Returns
         -------
-        array-like
-            An array of samples drawn from the prior distribution within the parameter's bounds.
+        NDArray[np.floating] or None
+            Array of samples, or None if no prior exists
         """
-        samples = self.prior.rvs(n_samples, random_state=random_state)
+        if self._prior is None:
+            return None
 
-        # Constrain samples to be within bounds
-        if self.bounds is not None:
-            offset = self.margin * (self.upper_bound - self.lower_bound)
-            samples = np.clip(
-                samples, self.lower_bound + offset, self.upper_bound - offset
-            )
+        samples = self._prior.rvs(n_samples, random_state=random_state)
+        samples = np.atleast_1d(samples).astype(float)
 
-        if apply_transform and self.transformation is not None:
-            samples = list(samples)
-            for i, x in enumerate(samples):
-                samples[i] = float(self.transformation.to_search(x))
-            return np.asarray(samples)
+        # Apply bounds clipping if bounds exist
+        if self._bounds is not None:
+            offset = self._margin * self._bounds.width()
+            effective_lower = self._bounds.lower + offset
+            effective_upper = self._bounds.upper - offset
+            samples = np.clip(samples, effective_lower, effective_upper)
+
+        if transformed:
+            samples = np.array([self._transformation.to_search(s)[0] for s in samples])
 
         return samples
 
-    def update(self, initial_value=None, value=None):
+    def update_initial_value(self, value: NumericValue) -> None:
         """
-        Update the parameter's current value.
+        Update the initial parameter value.
 
         Parameters
         ----------
-        value : float
-            The new value to be assigned to the parameter.
+        value : NumericValue
+            New initial value
         """
-        if initial_value is not None:
-            self.initial_value = initial_value
-            self.value = initial_value
-        if value is not None:
-            self.value = value
-        if initial_value is None and value is None:
-            raise ValueError("No value provided to update parameter")
+        self._initial_value = float(value)
 
-    def __repr__(self):
-        """
-        Return a string representation of the Parameter instance.
+    def __repr__(self) -> str:
+        """String representation of the parameter."""
+        return f"Parameter: Prior: {self.prior} \n Bounds: {self.bounds}"
 
-        Returns
-        -------
-        str
-            A string including the parameter's name, prior, bounds, and current value.
-        """
-        return f"Parameter: {self.name} \n Prior: {self.prior} \n Bounds: {self.bounds} \n Value: {self.value}"
-
-    def set_margin(self, margin):
+    def _set_margin(self, margin: float) -> None:
         """
         Set the margin to a specified positive value less than 1.
 
         The margin is used to ensure parameter samples are not drawn exactly at the bounds,
         which may be problematic in some optimization or sampling algorithms.
-
-        Parameters
-        ----------
-        margin : float
-            The new margin value to be used, which must be in the interval (0, 1).
-
-        Raises
-        ------
-        ValueError
-            If the margin is not between 0 and 1.
         """
         if not 0 < margin < 1:
-            raise ValueError("Margin must be between 0 and 1")
+            raise ParameterValidationError("Margin must be between 0 and 1")
+        self._margin = margin
 
-        self.margin = margin
-
-    def set_bounds(self, bounds=None, boundary_multiplier=15):
+    def set_bounds(self, bounds: BoundsPair) -> None:
         """
-        Set the upper and lower bounds and applies default values
-        from the prior if no bounds are provided. The default values
-        are calculated using the boundary_multiplier and the parameters
-        prior sigma value.
+        Set new parameter bounds.
 
         Parameters
         ----------
-        bounds : tuple, optional
-            A tuple defining the lower and upper bounds for the parameter.
-            Defaults to None.
-        boundary_multiplier : float, optional
-            Used to define the bounds when no bounds are passed but the parameter has
-            a prior distribution (default: 15).
-
-        Raises
-        ------
-        ValueError
-            If the lower bound is not strictly less than the upper bound, or if
-            the margin is set outside the interval (0, 1).
+        bounds : tuple[float, float]
+            New bounds as (lower, upper)
         """
-        if bounds is not None:
-            if bounds[0] >= bounds[1]:
-                raise ValueError("Lower bound must be less than upper bound")
-            else:
-                self.lower_bound = bounds[0]
-                self.upper_bound = bounds[1]
-        elif self.prior is not None:
-            self.applied_prior_bounds = True
-            self.lower_bound = self.prior.mean - boundary_multiplier * self.prior.sigma
-            self.upper_bound = self.prior.mean + boundary_multiplier * self.prior.sigma
-            print("Default bounds applied based on prior distribution.")
+        if bounds is None or (
+            not np.isfinite(bounds[0]) and not np.isfinite(bounds[1])
+        ):
+            self._bounds = None
         else:
-            self.bounds = None
+            self._bounds = Bounds(bounds[0], bounds[1])
+
+    def _validate_values_within_bounds(self) -> None:
+        """Validate that initial values are within bounds."""
+        if self._bounds is None or self._initial_value is None:
             return
 
-        self.bounds = [self.lower_bound, self.upper_bound]
+        if not self._bounds.contains(self._initial_value):
+            raise ParameterValidationError(
+                f"Initial value {self._initial_value} is outside bounds {self.bounds}"
+            )
 
-    def get_initial_value(self, apply_transform: bool = False) -> float:
-        """
-        Return the initial value of each parameter.
+    def get_initial_value_transformed(self) -> NDArray | None:
+        """Get initial value in transformed space."""
+        if self._initial_value is None:
+            return None
+        return self._transformation.to_search(self._initial_value)[0]
 
-        Parameters
-        ----------
-        apply_transform : bool
-            If True, the transformation is applied to the output (default: False).
-        """
-        if self.initial_value is None:
-            if self.prior is not None:
-                sample = self.rvs(1)[0]
-                self.update(initial_value=sample)
-            else:
-                warnings.warn(
-                    "Initial value and prior are None, proceeding without an initial value.",
-                    UserWarning,
-                    stacklevel=2,
-                )
+    def __call__(self, *unused_args, **unused_kwargs) -> float:
+        "Return the current value. The unused arguments are to pass pybamm.ParameterValues checks."
+        return self._current_value
 
-        if (
-            self.initial_value is not None
-            and apply_transform
-            and self.transformation is not None
-        ):
-            return float(self.transformation.to_search(self.initial_value))
+    @property
+    def initial_value(self) -> float:
+        return self._initial_value
 
-        return self.initial_value
+    @property
+    def bounds(self) -> BoundsPair | None:
+        """Parameter bounds as (lower, upper) tuple."""
+        return (
+            None if self._bounds is None else [self._bounds.lower, self._bounds.upper]
+        )
+
+    @property
+    def prior(self) -> Any | None:
+        return self._prior
+
+    @property
+    def transformation(self) -> Transformation:
+        return self._transformation
+
+    def __hash__(self) -> int:
+        """Hash based on name."""
+        return hash(self._name)
 
 
 class Parameters:
     """
-    Represents a set of uncertain parameters within the PyBOP framework.
+    Container for managing multiple Parameter objects with additional functionality.
 
-    This class encapsulates the definition of a parameter, including its name, prior
-    distribution, initial value, bounds, and a margin to ensure the parameter stays
-    within feasible limits during optimisation or sampling.
-
-    Parameters
-    ----------
-    parameter_list : pybop.Parameter or Dict
+    This class provides a comprehensive interface for parameter management including
+    validation, transformation, serialisation, and bulk operations.
     """
 
-    def __init__(self, *args):
-        self.param = OrderedDict()
-        for param in args:
-            self.add(param)
-        self.initial_value()
+    def __init__(self, parameters: dict | Parameters = None) -> None:
+        if parameters is None:
+            parameters = {}
+        elif not isinstance(parameters, (dict, Parameters)):
+            raise TypeError(
+                "parameters must be either a dictionary or a pybop.Parameters instance"
+            )
 
-    def __getitem__(self, key: str) -> Parameter:
+        self._parameters = OrderedDict()
+        for name, param in parameters.items():
+            self._add(name, param, update_transform=False)
+
+        self._transform = self.construct_transformation()
+
+    def __getitem__(self, name: str) -> Parameter:
+        return self.get(name)
+
+    def __len__(self) -> int:
+        return len(self._parameters)
+
+    def keys(self) -> Iterator[str]:
+        """Iterate over parameter names."""
+        return iter(self._parameters.keys())
+
+    @property
+    def names(self) -> list[str]:
+        return list(self._parameters.keys())
+
+    def __iter__(self) -> Iterator[Parameter]:
+        return iter(self._parameters.values())
+
+    def add(self, name: str, parameter: Parameter) -> None:
+        """Add a parameter to the collection."""
+        self._add(name, parameter)
+
+    def _add(
+        self, name: str, parameter: Parameter, update_transform: bool = True
+    ) -> None:
         """
-        Return the parameter dictionary corresponding to a particular key.
+        Internal method to add a parameter to the collection.
 
         Parameters
         ----------
-        key : str
-            The name of a parameter.
-
-        Returns
-        -------
-        pybop.Parameter
-            The Parameter object.
-
-        Raises
-        ------
-        ValueError
-            The key must be the name of one of the parameters.
+        parameter : Parameter
+            Parameter to add
+        update_transform : bool, optional
+            Whether to update the transformation after adding (default: True)
         """
-        if key not in self.param.keys():
-            raise ValueError(f"The key {key} is not the name of a parameter.")
+        if not isinstance(parameter, Parameter):
+            raise TypeError("Expected Parameter instance")
 
-        return self.param[key]
+        if name in self._parameters:
+            raise ParameterError(f"Parameter '{name}' already exists")
 
-    def __len__(self) -> int:
-        return len(self.param)
+        self._parameters[name] = parameter
 
-    def keys(self) -> list:
-        """
-        A list of parameter names
-        """
-        return list(self.param.keys())
+        if update_transform:
+            self._transform = self.construct_transformation()
 
-    def __iter__(self):
-        self.index = 0
-        return self
-
-    def __next__(self):
-        parameter_names = self.keys()
-        if self.index == len(parameter_names):
-            raise StopIteration
-        name = parameter_names[self.index]
-        self.index = self.index + 1
-        return self.param[name]
-
-    def add(self, parameter):
-        """
-        Construct the parameter class with a name, initial value, prior, and bounds.
-        """
-        if isinstance(parameter, Parameter):
-            if parameter.name in self.param.keys():
-                raise ValueError(
-                    f"There is already a parameter with the name {parameter.name} "
-                    "in the Parameters object. Please remove the duplicate entry."
-                )
-            self.param[parameter.name] = parameter
-        elif isinstance(parameter, dict):
-            if "name" not in parameter.keys():
-                raise Exception("Parameter requires a name.")
-            name = parameter["name"]
-            if name in self.param.keys():
-                raise ValueError(
-                    f"There is already a parameter with the name {name} "
-                    "in the Parameters object. Please remove the duplicate entry."
-                )
-            self.param[name] = Parameter(**parameter)
-        else:
-            raise TypeError("Each parameter input must be a Parameter or a dictionary.")
-
-    def remove(self, parameter_name):
-        """
-        Remove the `Parameter` object from the `Parameters` dictionary.
-        """
-        if not isinstance(parameter_name, str):
-            raise TypeError("The input parameter_name is not a string.")
-        if parameter_name not in self.param.keys():
-            raise ValueError("This parameter does not exist in the Parameters object.")
-
-        # Remove the parameter
-        self.param.pop(parameter_name)
+    def remove(self, name: str) -> Parameter:
+        """Remove parameter and return it."""
+        if not isinstance(name, str):
+            raise TypeError("The input name is not a string.")
+        if name not in self._parameters:
+            raise ParameterNotFoundError(f"Parameter '{name}' not found")
+        return self._parameters.pop(name)
 
     def join(self, parameters=None):
         """
@@ -327,42 +349,44 @@ class Parameters:
         ----------
         parameters : pybop.Parameters
         """
-        for param in parameters:
-            if param not in self.param.values():
-                self.add(param)
+        for name, param in parameters.items():
+            if name not in self._parameters.keys():
+                self.add(name, param)
             else:
-                print(f"Discarding duplicate {param.name}.")
+                print(f"Discarding duplicate {name}.")
 
-    def get_bounds(self, apply_transform: bool = False) -> dict:
+    def get(self, name: str) -> Parameter:
+        """Get a parameter by name."""
+        if name not in self._parameters:
+            raise ParameterNotFoundError(f"Parameter '{name}' not found")
+        return self._parameters[name]
+
+    def get_bounds(self, transformed: bool = False) -> dict:
         """
         Get bounds, for either all or no parameters.
 
         Parameters
         ----------
-        apply_transform : bool
+        transformed : bool
             If True, the transformation is applied to the output (default: False).
         """
         bounds = {"lower": [], "upper": []}
-        for param in self.param.values():
+        for param in self._parameters.values():
             lower, upper = param.bounds or (-np.inf, np.inf)
 
             if (
-                apply_transform
+                transformed
                 and param.bounds is not None
                 and param.transformation is not None
             ):
                 if isinstance(param.transformation, LogTransformation) and lower == 0:
                     bound_one = -np.inf
                 else:
-                    bound_one = float(param.transformation.to_search(lower))
-                bound_two = float(param.transformation.to_search(upper))
+                    bound_one = float(param.transformation.to_search(lower)[0])
+                bound_two = float(param.transformation.to_search(upper)[0])
 
                 if np.isnan(bound_one) or np.isnan(bound_two):
-                    raise ValueError(
-                        "Transformed bounds resulted in NaN values.\n"
-                        "If you've not applied bounds, this is due to the defaults applied from the prior distribution,\n"
-                        "consider bounding the parameters to avoid this error."
-                    )
+                    raise ValueError("Transformed bounds resulted in NaN values.")
 
                 lower = np.minimum(bound_one, bound_two)
                 upper = np.maximum(bound_one, bound_two)
@@ -372,172 +396,220 @@ class Parameters:
 
         return bounds
 
-    def update(self, initial_values=None, values=None, bounds=None):
+    def get_bounds_array(self, transformed: bool = False) -> np.ndarray:
         """
-        Set value of each parameter.
-        """
-        for i, param in enumerate(self.param.values()):
-            if initial_values is not None:
-                param.update(initial_value=initial_values[i])
-            if values is not None:
-                param.update(value=values[i])
-            if bounds is not None:
-                if isinstance(bounds, dict):
-                    param.set_bounds(bounds=[bounds["lower"][i], bounds["upper"][i]])
-                else:
-                    param.set_bounds(bounds=bounds[i])
-
-    def rvs(self, n_samples: int = 1, apply_transform: bool = False) -> np.ndarray:
-        """
-        Draw random samples from each parameter's prior distribution.
-
-        The samples are constrained to be within the parameter's bounds, excluding
-        a predefined margin at the boundaries.
-
-        Parameters
-        ----------
-        n_samples : int
-            The number of samples to draw (default: 1).
-        apply_transform : bool
-            If True, the transformation is applied to the output (default: False).
+        Retrieve parameter bounds in numpy format.
 
         Returns
         -------
-        array-like
-            An array of samples drawn from the prior distribution within each parameter's bounds.
+        bounds : numpy.ndarray
+            An array of shape (n_parameters, 2) containing the bounds for each parameter.
+        """
+        bounds = self.get_bounds(transformed=transformed)
+        return np.column_stack([bounds["lower"], bounds["upper"]])
+
+    def update(
+        self,
+        *,
+        initial_values: ArrayLike | Inputs | None = None,
+        bounds: Sequence[BoundsPair] | dict[str, BoundsPair] | None = None,
+        **individual_updates: dict[str, Any],
+    ) -> None:
+        """
+        Update multiple parameters efficiently.
+
+        Parameters
+        ----------
+        initial_values : array-like or dict, optional
+            New initial values (by position or name)
+        bounds : sequence or dict, optional
+            New bounds (by position or name)
+        **individual_updates : dict
+            Individual parameter updates with parameter names as keys
+        """
+        # Handle individual parameter updates
+        for param_name, updates in individual_updates.items():
+            param = self.get(param_name)  # Raises if not found
+
+            if isinstance(updates, dict):
+                if "initial_value" in updates:
+                    param.update_initial_value(updates["initial_value"])
+                if "bounds" in updates:
+                    param.set_bounds(updates["bounds"])
+
+        # Handle bulk updates
+        if initial_values is not None:
+            self._bulk_update_initial_values(initial_values)
+        if bounds is not None:
+            # Allow conversion from get_bounds output type to Sequence[BoundsPair] type
+            if isinstance(bounds, dict) and "upper" in bounds.keys():
+                converted_bounds = []
+                for i in range(len(bounds["lower"])):
+                    converted_bounds.append([bounds["lower"][i], bounds["upper"][i]])
+                bounds = converted_bounds
+            self._bulk_update_bounds(bounds)
+
+    def remove_bounds(self) -> None:
+        for param in self._parameters.values():
+            param.set_bounds(None)
+
+    def _bulk_update_initial_values(self, values: ArrayLike | Inputs) -> None:
+        """Update initial values in bulk."""
+        if isinstance(values, dict):
+            for name, value in values.items():
+                self.get(name).update_initial_value(value)
+        else:
+            values_array = np.atleast_1d(values)
+            param_list = list(self._parameters.values())
+
+            if len(values_array) != len(param_list):
+                raise ParameterValidationError(
+                    f"Values array length {len(values_array)} doesn't match "
+                    f"parameter count {len(param_list)}"
+                )
+
+            for param, value in zip(param_list, values_array, strict=False):
+                param.update_initial_value(value)
+
+    def _bulk_update_bounds(
+        self, bounds: Sequence[BoundsPair] | dict[str, BoundsPair]
+    ) -> None:
+        """Update bounds in bulk."""
+        if isinstance(bounds, dict):
+            for name, bound_pair in bounds.items():
+                self.get(name).set_bounds(bound_pair)
+        else:
+            param_list = list(self._parameters.values())
+
+            if len(bounds) != len(param_list):
+                raise ParameterValidationError(
+                    f"Bounds array length {len(bounds)} doesn't match "
+                    f"parameter count {len(param_list)}"
+                )
+
+            for param, bound_pair in zip(param_list, bounds, strict=False):
+                param.set_bounds(bound_pair)
+
+    def sample_from_priors(
+        self,
+        n_samples: int = 1,
+        *,
+        random_state: int | None = None,
+        transformed: bool = False,
+    ) -> NDArray[np.floating] | None:
+        """
+        Sample from all parameter priors.
+
+        Returns
+        -------
+        NDArray[np.floating] or None
+            Array of shape (n_samples, n_parameters) or None if any prior is missing
         """
         all_samples = []
 
-        for param in self.param.values():
-            samples = param.rvs(n_samples, apply_transform=apply_transform)
+        for param in self._parameters.values():
+            samples = param.sample_from_prior(
+                n_samples, random_state=random_state, transformed=transformed
+            )
+            if samples is None:
+                return None
             all_samples.append(samples)
 
-        if n_samples > 1:
-            return np.asarray(all_samples).T
+        return np.column_stack(all_samples)
 
-        return np.concatenate(all_samples)
-
-    def get_sigma0(self, apply_transform: bool = False) -> list:
+    def get_sigma0(self, transformed: bool = False) -> list:
         """
         Get the standard deviation, for either all or no parameters.
 
         Parameters
         ----------
-        apply_transform : bool
+        transformed : bool
             If True, the transformation is applied to the output (default: False).
         """
-        all_have_sigma = True  # assumption
         sigma0 = []
 
-        for param in self.param.values():
+        for param in self._parameters.values():
+            sig = None
             if hasattr(param.prior, "sigma"):
-                if apply_transform and param.transformation is not None:
-                    sigma0.append(
-                        np.ndarray.item(
-                            param.transformation.convert_standard_deviation(
-                                param.prior.sigma,
-                                param.get_initial_value(apply_transform=True),
-                            )
-                        )
+                sig = param.prior.sigma
+            elif param.bounds is not None:
+                lower, upper = param.bounds
+                if np.isfinite(upper - lower):
+                    sig = 0.05 * (upper - lower)
+
+            if transformed and sig is not None and param.transformation is not None:
+                sig = np.ndarray.item(
+                    param.transformation.convert_standard_deviation(
+                        sig, param.transformation.to_search(param.initial_value)[0]
                     )
-                else:
-                    sigma0.append(param.prior.sigma)
-            else:
-                all_have_sigma = False
-        if not all_have_sigma:
-            sigma0 = None
+                )
+
+            sigma0.extend([sig or 0.05])
         return sigma0
 
     def priors(self) -> list:
-        """
-        Return the prior distribution of each parameter.
-        """
-        return [param.prior for param in self.param.values()]
+        """Return the prior distribution of each parameter."""
+        return [
+            param.prior
+            for param in self._parameters.values()
+            if param.prior is not None
+        ]
 
-    def initial_value(self, apply_transform: bool = False) -> np.ndarray:
+    def get_initial_values(self, *, transformed: bool = False) -> NDArray[np.floating]:
         """
-        Return the initial value of each parameter.
+        Get initial values as array.
 
         Parameters
         ----------
-        apply_transform : bool
-            If True, the transformation is applied to the output (default: False).
+        transformed : bool, default=False
+            Whether to apply transformations to bounds
+
+        Returns
+        -------
+        NDArray[np.floating]
+            Array of initial values
         """
-        initial_values = []
+        values = []
+        for name, param in self._parameters.items():
+            value = param.initial_value
+            if value is None:
+                # Try to sample from prior if available
+                if param.prior is not None:
+                    samples = param.sample_from_prior(1, transformed=transformed)
+                    if samples is not None:
+                        param.update_initial_value(samples[0])
+                        value = samples[0] if transformed else param.initial_value
 
-        for param in self.param.values():
-            initial_value = param.get_initial_value(apply_transform=apply_transform)
-            initial_values.append(initial_value)
+                if value is None:
+                    raise ParameterError(f"Parameter '{name}' has no initial value")
 
-        return np.asarray(initial_values)
+            if transformed:
+                value = param.transformation.to_search(value)[0]
 
-    def reset_initial_value(self, apply_transform: bool = False) -> np.ndarray:
-        """
-        Reset and return the initial value of each parameter.
+            values.append(value)
 
-        Parameters
-        ----------
-        apply_transform : bool
-            If True, the transformation is applied to the output (default: False).
-        """
-        initial_values = []
+        return np.asarray(values)
 
-        for param in self.param.values():
-            initial_value = param.get_initial_value(apply_transform=apply_transform)
-            if initial_value is not None:
-                # Reset the current value as well
-                param.update(value=param.get_initial_value())
-            initial_values.append(initial_value)
+    @property
+    def transformation(self) -> Transformation:
+        """Get the transformation for the parameters."""
+        return self._transform
 
-        return np.asarray(initial_values)
-
-    def current_value(self) -> np.ndarray:
-        """
-        Return the current value of each parameter.
-        """
-        current_values = []
-
-        for param in self.param.values():
-            current_values.append(param.value)
-
-        return np.asarray(current_values)
-
-    def true_value(self) -> np.ndarray:
-        """
-        Return the true value of each parameter.
-        """
-        true_values = []
-
-        for param in self.param.values():
-            true_values.append(param.true_value)
-
-        return np.asarray(true_values)
-
-    def get_transformations(self):
-        """
-        Get the transformations for each parameter.
-        """
-        transformations = []
-
-        for param in self.param.values():
-            transformations.append(param.transformation)
-
-        return transformations
-
-    def construct_transformation(self):
+    def construct_transformation(self) -> Transformation:
         """
         Create a ComposedTransformation object from the individual parameter transformations.
         """
-        transformations = self.get_transformations()
-        if not transformations or all(t is None for t in transformations):
+        transformations = []
+
+        for param in self._parameters.values():
+            transformations.append(param.transformation)
+
+        if transformations == []:
             return None
 
-        valid_transformations = [
-            t if t is not None else IdentityTransformation() for t in transformations
-        ]
-        return ComposedTransformation(valid_transformations)
+        return ComposedTransformation(transformations)
 
-    def get_bounds_for_plotly(self, apply_transform: bool = False) -> np.ndarray:
+    def get_bounds_for_plotly(self, transformed: bool = False) -> np.ndarray:
         """
         Retrieve parameter bounds in the format expected by Plotly.
 
@@ -546,16 +618,7 @@ class Parameters:
         bounds : numpy.ndarray
             An array of shape (n_parameters, 2) containing the bounds for each parameter.
         """
-        for param in self.param.values():
-            if param.applied_prior_bounds:
-                warnings.warn(
-                    "Bounds were created from prior distributions. "
-                    "Please provide bounds for better plot results.",
-                    UserWarning,
-                    stacklevel=2,
-                )
-
-        bounds = self.get_bounds(apply_transform=apply_transform)
+        bounds = self.get_bounds(transformed=transformed)
 
         # Validate that all parameters have bounds
         if bounds is None or not np.isfinite(list(bounds.values())).all():
@@ -563,61 +626,76 @@ class Parameters:
 
         return np.asarray(list(bounds.values())).T
 
-    def as_dict(self, values=None) -> dict:
+    def to_dict(self, values: str | ArrayLike | None = None) -> Inputs:
         """
+        Convert to parameter dictionary.
+
         Parameters
         ----------
-        values : list or str, optional
-            A list of parameter values or one of the strings "initial" or "true" which can be used
-            to obtain a dictionary of parameters.
+        values : str or array-like, optional
+            Which values to use ('initial') or custom array. Default is "initial".
 
         Returns
         -------
         Inputs
-            A parameters dictionary.
+            Dictionary mapping parameter names to values
         """
         if values is None:
-            values = self.current_value()
-        elif isinstance(values, str):
-            if values == "initial":
-                values = self.initial_value()
-            elif values == "true":
-                values = self.true_value()
-        return {key: values[i] for i, key in enumerate(self.param.keys())}
+            values = "initial"
+        params = self._parameters.items()
 
-    def verify(self, inputs: Optional[Inputs] = None):
-        """
-        Verify that the inputs are an Inputs dictionary or numeric values
-        which can be used to construct an Inputs dictionary
-
-        Parameters
-        ----------
-        inputs : Inputs or numeric
-        """
-        if inputs is None or isinstance(inputs, dict):
-            return inputs
-        if isinstance(inputs, np.ndarray) and inputs.ndim == 0:
-            inputs = inputs[np.newaxis]
-        if (isinstance(inputs, list) and all(is_numeric(x) for x in inputs)) or all(
-            is_numeric(x) for x in list(inputs)
-        ):
-            return self.as_dict(inputs)
+        if isinstance(values, str) and values == "initial":
+            return {name: param.initial_value for name, param in params}
         else:
-            raise TypeError(
-                f"Inputs must be a dictionary or numeric. Received {type(inputs)}"
-            )
+            # Custom values array
+            values_array = np.atleast_1d(values)
+            if len(values_array) != len(self._parameters):
+                raise ParameterValidationError(
+                    f"Values array length {len(values_array)} doesn't match parameter count {len(self._parameters)}"
+                )
+            return dict(zip(self._parameters.keys(), values_array, strict=False))
 
-    def __repr__(self):
-        """
-        Return a string representation of the Parameters instance.
+    def verify_inputs(self, inputs: Inputs) -> bool:
+        """Check if the inputs are valid parameters."""
+        valid = True
+        for name, param in self._parameters.items():
+            if param.bounds is not None:
+                input_value = inputs[name]
+                if input_value < param.bounds[0] or input_value > param.bounds[1]:
+                    valid = False
+        return valid
 
-        Returns
-        -------
-        str
-            A string including the number of parameters and a summary of each parameter.
-        """
+    def __repr__(self) -> str:
         param_summary = "\n".join(
-            f" {name}: prior= {param.prior}, value={param.value}, bounds={param.bounds}"
-            for name, param in self.param.items()
+            f" {name}: prior= {param.prior}, bounds={param.bounds}"
+            for name, param in self._parameters.items()
         )
         return f"Parameters({len(self)}):\n{param_summary}"
+
+    def to_inputs(self, values: np.ndarray | list[np.ndarray]) -> list[Inputs]:
+        """
+        Return parameter values as a list of dictionaries, as required for multiprocessing.
+        """
+        values = np.asarray(values)
+        if values.ndim == 1:
+            return [self.to_dict(values=values)]
+
+        inputs_list = []
+        for val in values:
+            inputs_list.append(self.to_dict(values=val))
+        return inputs_list
+
+    def copy(self) -> Parameters:
+        """Create a deep copy of the Parameters object."""
+        return deepcopy(self)
+
+    def __contains__(self, name: str) -> bool:
+        return name in self._parameters
+
+    def values(self) -> Iterator[Parameter]:
+        """Iterate over parameters."""
+        return iter(self._parameters.values())
+
+    def items(self) -> Iterator[tuple[str, Parameter]]:
+        """Iterate over (name, parameter) pairs."""
+        return iter(self._parameters.items())

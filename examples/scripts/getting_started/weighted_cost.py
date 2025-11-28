@@ -1,72 +1,92 @@
 import numpy as np
+import pybamm
 
 import pybop
 
-# Parameter set and model definition
-parameter_set = pybop.ParameterSet("Chen2020")
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
+"""
+In this example, we introduce PyBOP's functionality for combining multiple cost into a
+single pybop.WeightedCost. This is commonly used for model identification with multiple
+"signals". In this case, we identify two parameters based on terminal voltage, and
+average cell temperature.
+"""
 
-# Fitting parameters
-parameters = pybop.Parameters(
-    pybop.Parameter(
-        "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.68, 0.05),
-        bounds=[0.5, 0.8],
-        true_value=parameter_set["Negative electrode active material volume fraction"],
-    ),
-    pybop.Parameter(
-        "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.58, 0.05),
-        bounds=[0.4, 0.7],
-        true_value=parameter_set["Positive electrode active material volume fraction"],
-    ),
-)
+# Define model and parameter values
+model = pybamm.lithium_ion.SPM()
+parameter_values = pybamm.ParameterValues("Chen2020")
+parameter_values.set_initial_state(0.5)
 
-# Generate data
+# Generate a synthetic dataset
 sigma = 0.001
-experiment = pybop.Experiment(
+experiment = pybamm.Experiment(
     [
-        (
-            "Discharge at 0.5C for 3 minutes (3 second period)",
-            "Charge at 0.5C for 3 minutes (3 second period)",
-        ),
+        "Discharge at 0.5C for 3 minutes (3 second period)",
+        "Charge at 0.5C for 3 minutes (3 second period)",
     ]
     * 2
 )
-values = model.predict(experiment=experiment, initial_state={"Initial SoC": 0.5})
+solution = pybamm.Simulation(
+    model, parameter_values=parameter_values, experiment=experiment
+).solve()
 
 
 def noisy(data, sigma):
     return data + np.random.normal(0, sigma, len(data))
 
 
-# Form dataset
 dataset = pybop.Dataset(
     {
-        "Time [s]": values["Time [s]"].data,
-        "Current function [A]": values["Current [A]"].data,
-        "Voltage [V]": noisy(values["Voltage [V]"].data, sigma),
+        "Time [s]": solution.t,
+        "Current function [A]": solution["Current [A]"].data,
+        "Voltage [V]": noisy(solution["Voltage [V]"].data, sigma),
     }
 )
 
-# Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(model, parameters, dataset)
-cost1 = pybop.SumSquaredError(problem)
-cost2 = pybop.RootMeanSquaredError(problem)
+# Save the true values
+true_values = [
+    parameter_values[p]
+    for p in [
+        "Negative electrode active material volume fraction",
+        "Positive electrode active material volume fraction",
+    ]
+]
+
+# Fitting parameters
+parameter_values.update(
+    {
+        "Negative electrode active material volume fraction": pybop.Parameter(
+            prior=pybop.Gaussian(0.68, 0.05),
+            bounds=[0.5, 0.8],
+        ),
+        "Positive electrode active material volume fraction": pybop.Parameter(
+            prior=pybop.Gaussian(0.58, 0.05),
+            bounds=[0.4, 0.7],
+        ),
+    }
+)
+
+# Generate cost functions and optimiser options
+simulator = pybop.pybamm.Simulator(
+    model, parameter_values=parameter_values, protocol=dataset
+)
+cost1 = pybop.SumSquaredError(dataset)
+cost2 = pybop.RootMeanSquaredError(dataset)
 weighted_cost = pybop.WeightedCost(cost1, cost2, weights=[0.1, 1])
+options = pybop.PintsOptions(verbose=True, max_iterations=60)
 
 for cost in [weighted_cost, cost1, cost2]:
-    optim = pybop.IRPropMin(cost, max_iterations=60)
+    problem = pybop.Problem(simulator, cost)
+    optim = pybop.IRPropMin(problem, options=options)
 
     # Run the optimisation
-    results = optim.run()
-    print("True parameters:", parameters.true_value())
+    result = optim.run()
+
+    # Compare identified to true parameter values
+    print("True parameters:", true_values)
+    print("Identified parameters:", result.x)
 
     # Plot the timeseries output
-    pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
+    pybop.plot.problem(problem, inputs=result.best_inputs, title="Optimised Comparison")
 
-    # Plot convergence
-    pybop.plot.convergence(optim)
-
-    # Plot the cost landscape with optimisation path
-    pybop.plot.surface(optim)
+    # Plot the optimisation result
+    result.plot_convergence()
+    result.plot_surface()

@@ -3,15 +3,17 @@ import pybamm
 
 import pybop
 
-# This example demonstrates how to use a pybamm.FunctionalParameter to
-# optimise functional parameters using PyBOP.
+"""
+This example demonstrates how to use a pybamm.FunctionParameter to optimise
+functional parameters using PyBOP.
 
-# Method: Define a new scalar parameter for use in a functional parameter
-# that already exists in the model, for example an exchange current density.
+Method: Define a new scalar parameter for use in a functional parameter
+that already exists in the model, for example an exchange current density.
+"""
 
-
-# Load parameter set
-parameter_set = pybop.ParameterSet("Chen2020")
+# Define model and parameter values
+model = pybamm.lithium_ion.SPM(options={"contact resistance": "true"})
+parameter_values = pybamm.ParameterValues("Chen2020")
 
 
 # Define a new function using pybamm parameters
@@ -27,70 +29,70 @@ def positive_electrode_exchange_current_density(c_e, c_s_surf, c_s_max, T):
 
     return (
         j0_ref
-        * ((c_e / c_e_init) * (c_s_surf / c_s_max) * (1 - c_s_surf / c_s_max)) ** alpha
+        * (c_s_surf / c_s_max) ** alpha
+        * ((c_e / c_e_init) * (1 - c_s_surf / c_s_max)) ** (1 - alpha)
     )
 
 
 # Give default values to the new scalar parameters and pass the new function
-parameter_set.update(
+parameter_values.update(
     {
         "Positive electrode reference exchange-current density [A.m-2]": 1,
         "Positive electrode charge transfer coefficient": 0.5,
     },
     check_already_exists=False,
 )
-parameter_set["Positive electrode exchange-current density [A.m-2]"] = (
+parameter_values["Positive electrode exchange-current density [A.m-2]"] = (
     positive_electrode_exchange_current_density
 )
 
-# Model definition
-model = pybop.lithium_ion.SPM(
-    parameter_set=parameter_set, options={"contact resistance": "true"}
-)
-
-# Fitting parameters
-parameters = pybop.Parameters(
-    pybop.Parameter(
-        "Positive electrode reference exchange-current density [A.m-2]",
-        prior=pybop.Gaussian(1, 0.1),
-    ),
-    pybop.Parameter(
-        "Positive electrode charge transfer coefficient",
-        prior=pybop.Gaussian(0.5, 0.1),
-    ),
-)
-
-# Generate data
+# Generate a synthetic dataset
 sigma = 0.001
 t_eval = np.arange(0, 900, 3)
-values = model.predict(t_eval=t_eval)
-corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
-
-# Form dataset
+solution = pybamm.Simulation(model, parameter_values=parameter_values).solve(
+    t_eval=t_eval
+)
+corrupt_values = solution["Voltage [V]"](t_eval) + np.random.normal(
+    0, sigma, len(t_eval)
+)
 dataset = pybop.Dataset(
     {
         "Time [s]": t_eval,
-        "Current function [A]": values["Current [A]"].data,
+        "Current function [A]": solution["Current [A]"](t_eval),
         "Voltage [V]": corrupt_values,
     }
 )
 
-# Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(model, parameters, dataset)
-cost = pybop.RootMeanSquaredError(problem)
-optim = pybop.SciPyMinimize(cost, sigma0=0.1, max_iterations=125, verbose=True)
+# Fitting parameters
+parameter_values.update(
+    {
+        "Positive electrode reference exchange-current density [A.m-2]": pybop.Parameter(
+            prior=pybop.Gaussian(1, 0.1),
+        ),
+        "Positive electrode charge transfer coefficient": pybop.Parameter(
+            prior=pybop.Gaussian(0.5, 0.1),
+        ),
+    }
+)
 
-# Run optimisation
-results = optim.run()
+# Build the problem
+simulator = pybop.pybamm.Simulator(
+    model, parameter_values=parameter_values, protocol=dataset
+)
+cost = pybop.RootMeanSquaredError(dataset)
+problem = pybop.Problem(simulator, cost)
+
+# Set up the optimiser
+options = pybop.SciPyMinimizeOptions(maxiter=125, verbose=True)
+optim = pybop.SciPyMinimize(problem, options=options)
+
+# Run the optimisation
+result = optim.run()
 
 # Plot the timeseries output
-pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.problem(problem, inputs=result.best_inputs, title="Optimised Comparison")
 
-# Plot convergence
-pybop.plot.convergence(optim)
-
-# Plot the parameter traces
-pybop.plot.parameters(optim)
-
-# Plot the cost landscape with optimisation path
-pybop.plot.surface(optim)
+# Plot the optimisation result
+result.plot_convergence()
+result.plot_parameters()
+result.plot_surface(bounds=[[0, 2], [0, 1]])
