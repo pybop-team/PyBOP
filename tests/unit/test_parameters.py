@@ -46,6 +46,9 @@ class TestParameter:
         samples = parameter.sample_from_distribution(n_samples=500)
         assert (samples >= 0.375).all() and (samples <= 0.7).all()
 
+        parameter = pybop.ParameterBounds((0, np.inf))
+        assert parameter.sample_from_distribution() is None
+
     def test_parameter_update(self, parameter):
         # Test initial value update
         parameter.update_initial_value(value=0.654)

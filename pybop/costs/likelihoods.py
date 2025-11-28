@@ -230,7 +230,7 @@ class LogPosterior(LogLikelihood):
             self.joint_prior = self.prior
         else:
             raise TypeError(
-                "All priors must either be of type pybop.ParameterDistribution, Distribution or scipy.stats.distributions.rv_frozen"
+                "All priors must either be of type pybop.ParameterDistribution, pybop.Distribution or scipy.stats.distributions.rv_frozen"
             )
 
     def __call__(

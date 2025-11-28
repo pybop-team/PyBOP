@@ -86,6 +86,22 @@ class TestLogPosterior:
         assert problem.parameters[key] is parameter[key]
         assert problem._cost.parameters is problem.parameters
 
+        # Test construction with ParameterDistribution
+        posterior = pybop.LogPosterior(
+            likelihood, prior=pybop.ParameterDistribution(distribution=prior)
+        )
+        problem = pybop.Problem(
+            simulator, posterior
+        )  # uses posterior.set_joint_prior()
+        assert posterior.joint_prior == prior
+
+        with pytest.raises(
+            TypeError,
+            match="All priors must either be of type pybop.ParameterDistribution, pybop.Distribution or scipy.stats.distributions.rv_frozen",
+        ):
+            posterior = pybop.LogPosterior(likelihood, prior=st.norm)
+            posterior.set_joint_prior()
+
     def test_log_posterior_construction_no_prior(self, simulator, likelihood):
         # Test log posterior construction without prior
         posterior = pybop.LogPosterior(likelihood, prior=None)

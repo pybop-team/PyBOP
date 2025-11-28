@@ -526,3 +526,25 @@ class TestOptimisation:
         assert result.n_iterations in result._n_iterations
         assert result.n_evaluations in result._n_evaluations
         assert result.x0 in result._x0
+
+    def test_multistart_fails_without_distribution(self, model, dataset):
+        # parameter with inifinite bound (no distribution)
+        parameter_values = model.default_parameter_values
+        param = pybop.ParameterBounds((0.5, np.inf), initial_value=0.8)
+        parameter_values.update(
+            {"Positive electrode active material volume fraction": param}
+        )
+        simulator = pybop.pybamm.Simulator(
+            model, parameter_values=parameter_values, protocol=dataset
+        )
+        cost = pybop.SumSquaredError(dataset)
+        problem = pybop.Problem(simulator, cost)
+
+        # Setup optimiser
+        options = pybop.PintsOptions(max_iterations=1, multistart=3)
+        optim = pybop.XNES(problem, options=options)
+
+        with pytest.raises(
+            RuntimeError, match="Distributions must be provided for multi-start"
+        ):
+            optim.run()
