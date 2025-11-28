@@ -1,5 +1,6 @@
 import warnings
 from copy import copy
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import casadi
@@ -10,10 +11,35 @@ from scipy.sparse.linalg import spsolve
 
 if TYPE_CHECKING:
     from pybop.parameters.parameter import Inputs
+from pybop._dataset import Dataset
 from pybop._utils import FailedSolution, SymbolReplacer
 from pybop.parameters.parameter import Parameter, Parameters
 from pybop.pybamm.simulator import Simulator
 from pybop.simulators.base_simulator import BaseSimulator, Solution
+
+
+@dataclass
+class TimeSeriesState:
+    """
+    The current state of a time series model that is a PyBaMM model.
+    """
+
+    sol: pybamm.Solution
+    inputs: "Inputs"
+    t: float = 0.0
+
+    def as_ndarray(self) -> np.ndarray:
+        ncol = self.sol.y.shape[1]
+        if ncol > 1:
+            y = self.sol.y[:, -1]
+        else:
+            y = self.sol.y
+        if isinstance(y, casadi.DM):
+            y = y.full()
+        return y
+
+    def __len__(self):
+        return self.sol.y.shape[0]
 
 
 class EISSimulator(BaseSimulator):
@@ -42,6 +68,9 @@ class EISSimulator(BaseSimulator):
         A valid initial state, e.g. `"Initial open-circuit voltage [V]"` or ``"Initial SoC"`.
         Defaults to None, indicating that the existing initial state of charge (for an ECM)
         or initial concentrations (for an EChem model) will be used.
+    protocol : Dataset | np.ndarray, optional
+        A 1D array of values or dataset containing the time points at which to simulate
+        operando EIS. Defaults to None, corresponding to stationary EIS at time t=0, with I=0.
     solver : pybamm.BaseSolver, optional
         The solver to simulate the composed Simulator. If None, uses `pybop.RecommendedSolver`.
     geometry : pybamm.Geometry, optional
@@ -66,6 +95,7 @@ class EISSimulator(BaseSimulator):
         f_eval: np.ndarray | list[float],
         parameter_values: pybamm.ParameterValues | None = None,
         initial_state: float | str | None = None,
+        protocol: Dataset | np.ndarray | None = None,
         solver: pybamm.BaseSolver | None = None,
         geometry: pybamm.Geometry | None = None,
         submesh_types: dict | None = None,
@@ -76,9 +106,21 @@ class EISSimulator(BaseSimulator):
     ):
         # Set-up model for EIS
         self._f_eval = f_eval
-        model = self.set_up_for_eis(model)
         parameter_values = parameter_values or model.default_parameter_values
-        parameter_values["Current function [A]"] = 0
+        if protocol is None:  # perform stationary EIS by default
+            parameter_values["Current function [A]"] = 0
+            initial_current = 0
+        elif isinstance(protocol, pybamm.Experiment):
+            raise ValueError("EISSimulator cannot simulate a pybamm.Experiment.")
+        elif (
+            isinstance(protocol, Dataset)
+            and "Current function [A]" in protocol.data.keys()
+        ):
+            parameter_values["Current function [A]"] = pybamm.Interpolant(
+                protocol["Time [s]"], protocol["Current function [A]"], pybamm.t
+            )
+            initial_current = protocol["Current function [A]"][0]
+        model = self.set_up_for_eis(model, initial_current=float(initial_current))
 
         # Unpack the uncertain parameters from the parameter values
         parameters = Parameters()
@@ -92,6 +134,7 @@ class EISSimulator(BaseSimulator):
             model,
             parameter_values=parameter_values,
             initial_state=initial_state,
+            protocol=protocol,
             solver=solver,
             geometry=geometry,
             submesh_types=submesh_types,
@@ -104,7 +147,7 @@ class EISSimulator(BaseSimulator):
         self.debug_mode = False
 
         # Initialise
-        self.M = None
+        self._mass = None
         self._jac = None
         self.b = None
 
@@ -112,7 +155,9 @@ class EISSimulator(BaseSimulator):
         i_scale = getattr(model.variables["Current [A]"], "scale", 1)
         self.z_scale = self._simulation.parameter_values.evaluate(v_scale / i_scale)
 
-    def set_up_for_eis(self, model: pybamm.BaseModel) -> pybamm.BaseModel:
+    def set_up_for_eis(
+        self, model: pybamm.BaseModel, initial_current: float
+    ) -> pybamm.BaseModel:
         """
         Set up the model for electrochemical impedance spectroscopy (EIS) simulations.
         This method adds the necessary algebraic equations and variables to the model.
@@ -178,7 +223,7 @@ class EISSimulator(BaseSimulator):
             "Current function [A]", {"Time [s]": pybamm.t}
         )
         model.algebraic[I_cell] = I - I_applied
-        model.initial_conditions[I_cell] = 0
+        model.initial_conditions[I_cell] = initial_current
 
         return model
 
@@ -200,7 +245,7 @@ class EISSimulator(BaseSimulator):
             If the model hasn't been built yet.
         """
         built_model = self._simulation.built_model
-        M = self._simulation.built_model.mass_matrix.entries
+        M = built_model.mass_matrix.entries
         self._simulation.solver.set_up(built_model, inputs=inputs)
 
         # Convert inputs to casadi format if needed
@@ -210,17 +255,48 @@ class EISSimulator(BaseSimulator):
             else inputs or []
         )
 
+        ## Stationary EIS
         # Extract the necessary attributes from the model
-        y0 = built_model.concatenated_initial_conditions.evaluate(0, inputs=inputs)
-        jac = built_model.jac_rhs_algebraic_eval(0, y0, casadi_inputs).sparse()
+        y = built_model.concatenated_initial_conditions.evaluate(0, inputs=inputs)
+        J = built_model.jac_rhs_algebraic_eval(0, y, casadi_inputs).sparse()
 
         # Convert to Compressed Sparse Column format
-        self.M = csc_matrix(M)
-        self._jac = csc_matrix(jac)
+        self._mass = csc_matrix(M)
+        self._jac = csc_matrix(J)
 
         # Add forcing to the RHS on the current density
-        self.b = np.zeros(y0.shape)
+        self.b = np.zeros(y.shape)
         self.b[-1] = -1
+
+        ## Operando EIS
+        if self.time_data is not None:
+            # Initial state
+            t = np.asarray([0])
+            inputs = inputs or {}
+            sol = pybamm.Solution([t], [y], built_model, inputs)
+            state = TimeSeriesState(sol=sol, inputs=inputs, t=t)
+
+            self._jac_at_time_t = [self._jac]
+            for t in self.time_data[1:]:
+                # Step forwards in time
+                dt = (t - state.t).item()
+                new_sol = self._simulation.solver.step(
+                    state.sol, built_model, dt, inputs=state.inputs, save=False
+                )
+                state = TimeSeriesState(sol=new_sol, inputs=state.inputs, t=t)
+
+                # Extract necessary attributes from the model
+                y = state.as_ndarray()
+                J = built_model.jac_rhs_algebraic_eval(t, y, casadi_inputs).sparse()
+
+                if np.abs(y[-1]) > 1e-10:
+                    warnings.warn(
+                        f"The current is not zero at the requested EIS point at V={y[-2]} V.",
+                        stacklevel=2,
+                    )
+
+                # Convert to Compressed Sparse Column format
+                self._jac_at_time_t.append(csc_matrix(J))
 
     def solve(
         self,
@@ -288,7 +364,10 @@ class EISSimulator(BaseSimulator):
                 try:
                     simulations.append(self._solve(x))
                 except (ZeroDivisionError, RuntimeError, ValueError) as e:
-                    if isinstance(e, ValueError) and str(e) not in self.exception:
+                    if (
+                        isinstance(e, ValueError)
+                        and str(e) not in self._simulation.exception
+                    ):
                         raise  # Raise the error if it doesn't match the expected list
                     simulations.append(
                         FailedSolution(["Impedance"], [k for k in x.keys()])
@@ -320,10 +399,26 @@ class EISSimulator(BaseSimulator):
         # Always run initialise_eis_matrices, after rebuilding the model if necessary
         self._model_rebuild(inputs)
 
-        zs = [self.calculate_impedance(frequency) for frequency in self._f_eval]
-
         solution = Solution()
-        solution.set_solution_variable("Impedance", data=np.asarray(zs) * self.z_scale)
+        if self.time_data is None:
+            ## Stationary EIS
+            zs = [self.calculate_impedance(frequency) for frequency in self._f_eval]
+            solution.set_solution_variable(
+                "Impedance", data=np.asarray(zs) * self.z_scale
+            )
+
+        else:
+            ## Operando EIS
+            zs_at_time_t = []
+            for i in range(len(self.time_data)):
+                self._jac = self._jac_at_time_t[i]
+                zs = [self.calculate_impedance(frequency) for frequency in self._f_eval]
+                zs_at_time_t.append(zs)
+            solution.set_solution_variable("Time [s]", data=np.asarray(self.time_data))
+            solution.set_solution_variable(
+                "Impedance", data=np.asarray(zs_at_time_t) * self.z_scale
+            )
+
         return solution
 
     def calculate_impedance(self, frequency):
@@ -345,7 +440,7 @@ class EISSimulator(BaseSimulator):
         """
 
         # Compute the system matrix
-        A = 1.0j * 2 * np.pi * frequency * self.M - self._jac
+        A = 1.0j * 2 * np.pi * frequency * self._mass - self._jac
 
         # Solve the system
         x = spsolve(A, self.b)
@@ -364,6 +459,10 @@ class EISSimulator(BaseSimulator):
     @property
     def input_parameter_names(self):
         return self._simulation.input_parameter_names
+
+    @property
+    def time_data(self):
+        return self._simulation.time_data
 
     @property
     def has_sensitivities(self):

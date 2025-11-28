@@ -548,6 +548,10 @@ class Simulator(BaseSimulator):
         return self._experiment
 
     @property
+    def time_data(self):
+        return self._t_interp if self._t_interp is not None else self._t_eval
+
+    @property
     def solver(self):
         return self._solver
 
