@@ -30,15 +30,15 @@ authors:
     affiliation: "1, 2"
     orcid: 0000-0002-0620-3955
 affiliations:
- - name: Department of Engineering Science, University of Oxford, Oxford, UK
+ - name: Department of Engineering Science, University of Oxford, Oxford, United Kingdom
    index: 1
- - name: The Faraday Institution, Harwell Campus, Didcot, UK
+ - name: The Faraday Institution, Harwell Campus, Didcot, United Kingdom
    index: 2
- - name: Research Software Engineering Group, University of Oxford, Oxford, UK
+ - name: Research Software Engineering Group, University of Oxford, Oxford, United Kingdom
    index: 3
  - name: Quansight
    index: 4
- - name:  Mathematics Institute, University of Warwick, Coventry, UK
+ - name:  Mathematics Institute, University of Warwick, Coventry, United Kingdom
    index: 5
 date: 19 December 2024
 bibliography: paper.bib
