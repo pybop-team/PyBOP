@@ -36,4 +36,6 @@ fig = pybop.plot.trajectories(
         fitted_dataset["Voltage [V]"],
     ],
     trace_names=["Ground truth", "Data vs. stoichiometry"],
+    xaxis_title="Stoichiometry",
+    yaxis_title="Voltage / V",
 )
