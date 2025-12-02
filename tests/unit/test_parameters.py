@@ -54,11 +54,6 @@ class TestParameter:
         parameter.update_initial_value(value=0.654)
         assert parameter.initial_value == 0.654
 
-    def test_parameter_margin(self, parameter):
-        assert parameter._margin == 1e-4
-        parameter._set_margin(margin=1e-3)
-        assert parameter._margin == 1e-3
-
     def test_no_bounds(self, name):
         parameter = pybop.ParameterInfo()
         assert parameter.bounds is None
@@ -69,12 +64,6 @@ class TestParameter:
         assert not np.isfinite(list(bounds.values())).all()
 
     def test_invalid_inputs(self, parameter):
-        # Test error with invalid value
-        with pytest.raises(
-            ParameterValidationError, match="Margin must be between 0 and 1"
-        ):
-            parameter._set_margin(margin=-1)
-
         # Test error with opposite bounds
         with pytest.raises(
             ParameterValidationError, match="must be less than upper bound"
@@ -231,8 +220,8 @@ class TestParameters:
         params = pybop.Parameters({name: parameter})
         assert params.get_sigma0() == pytest.approx([0.02])
 
+        parameter = pybop.ParameterBounds(bounds=(0.375, 0.7))
         parameter._distribution = None
-        parameter.set_bounds((0.375, 0.7))
         params = pybop.Parameters({name: parameter})
         assert params.get_sigma0() == [
             0.05 * (parameter.bounds[1] - parameter.bounds[0])

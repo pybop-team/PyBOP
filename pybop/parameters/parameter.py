@@ -92,8 +92,7 @@ class ParameterInfo:
     Represents a parameter within the PyBOP framework.
 
     This class encapsulates the definition of a parameter, including its
-    initial value, bounds, and a margin to ensure the parameter stays
-    within feasible limits during optimisation or sampling.
+    initial value, bounds.
 
     Parameters
     ----------
@@ -101,8 +100,6 @@ class ParameterInfo:
         Initial parameter value
     transformation : Transformation, optional
         Parameter transformation
-    margin : float, default=1e-4
-        Safety margin for bounds sampling
     """
 
     def __init__(
@@ -110,13 +107,10 @@ class ParameterInfo:
         *,
         initial_value: float = None,
         transformation: Transformation | None = None,
-        margin: float = 1e-4,
     ) -> None:
         self._distribution = None
         self._bounds = None
         self._transformation = transformation or IdentityTransformation()
-
-        self._set_margin(margin)
 
         # Validate and set values
         self._initial_value = (
@@ -156,13 +150,6 @@ class ParameterInfo:
         samples = self._distribution.rvs(n_samples, random_state=random_state)
         samples = np.atleast_1d(samples).astype(float)
 
-        # Apply bounds clipping if bounds exist
-        if self._bounds is not None:
-            offset = self._margin * self._bounds.width()
-            effective_lower = self._bounds.lower + offset
-            effective_upper = self._bounds.upper - offset
-            samples = np.clip(samples, effective_lower, effective_upper)
-
         if transformed:
             samples = np.array([self._transformation.to_search(s)[0] for s in samples])
 
@@ -182,17 +169,6 @@ class ParameterInfo:
     def __repr__(self) -> str:
         """String representation of the parameter."""
         return f"ParameterInfo - Initial value: {self.initial_value}"
-
-    def _set_margin(self, margin: float) -> None:
-        """
-        Set the margin to a specified positive value less than 1.
-
-        The margin is used to ensure parameter samples are not drawn exactly at the bounds,
-        which may be problematic in some optimization or sampling algorithms.
-        """
-        if not 0 < margin < 1:
-            raise ParameterValidationError("Margin must be between 0 and 1")
-        self._margin = margin
 
     def set_bounds(self, bounds: BoundsPair) -> None:
         """
@@ -266,21 +242,10 @@ class ParameterBounds(ParameterInfo):
         Parameter bounds as (lower, upper)
     transformation : Transformation, optional
         Parameter transformation
-    margin : float, default=1e-4
-        Safety margin for bounds sampling
     """
 
-    def __init__(
-        self,
-        bounds: BoundsPair,
-        *,
-        initial_value=None,
-        transformation=None,
-        margin=0.0001,
-    ):
-        super().__init__(
-            initial_value=initial_value, transformation=transformation, margin=margin
-        )
+    def __init__(self, bounds: BoundsPair, *, initial_value=None, transformation=None):
+        super().__init__(initial_value=initial_value, transformation=transformation)
         # Set bounds with validation
         self._bounds = Bounds(bounds[0], bounds[1])
         # Add uniform distribution for finite bounds in order to sample initial values
@@ -319,8 +284,6 @@ class ParameterDistribution(ParameterInfo):
         Distribution of the parameter
     transformation : Transformation, optional
         Parameter transformation
-    margin : float, default=1e-4
-        Safety margin for bounds sampling
     """
 
     def __init__(
@@ -329,11 +292,8 @@ class ParameterDistribution(ParameterInfo):
         *,
         initial_value=None,
         transformation=None,
-        margin=0.0001,
     ):
-        super().__init__(
-            initial_value=initial_value, transformation=transformation, margin=margin
-        )
+        super().__init__(initial_value=initial_value, transformation=transformation)
         self._distribution = distribution
         if initial_value is None:
             initial_value = self.sample_from_distribution()[0]
