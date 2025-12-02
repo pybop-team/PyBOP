@@ -31,7 +31,7 @@ To understand how to update your use of PyBOP, please take a look at the example
 </p>
 
 <p align="center">
-    <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/PyBOP_components.drawio.svg" alt="A diagram showing the main PyBOP classes: the Simulator and Cost, which together define the optimisation Problem, and the Optimiser or Sampler which generates the Result." width="700" />
+    <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/PyBOP_components.svg" alt="A diagram showing the main PyBOP classes: the Simulator and Cost, which together define the optimisation Problem, and the Optimiser or Sampler which generates the Result." width="700" />
 </p>
 
 ## 💻 Installation
