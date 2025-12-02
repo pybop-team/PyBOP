@@ -18,15 +18,17 @@ experiment = pybamm.Experiment(
         * 8,
     ]
 )
-sol = pybamm.Simulation(
+solution = pybamm.Simulation(
     model, parameter_values=parameter_values, experiment=experiment
 ).solve()
-corrupt_values = sol["Voltage [V]"].data + np.random.normal(0, sigma, len(sol.t))
+corrupt_values = solution["Voltage [V]"].data + np.random.normal(
+    0, sigma, len(solution.t)
+)
 dataset = pybop.Dataset(
     {
-        "Time [s]": sol.t,
-        "Current function [A]": sol["Current [A]"].data,
-        "Discharge capacity [A.h]": sol["Discharge capacity [A.h]"].data,
+        "Time [s]": solution.t,
+        "Current function [A]": solution["Current [A]"].data,
+        "Discharge capacity [A.h]": solution["Discharge capacity [A.h]"].data,
         "Voltage [V]": corrupt_values,
     }
 )
@@ -64,12 +66,13 @@ gitt_fit = pybop.GITTFit(
 )
 gitt_parameter_data = gitt_fit()
 
-# Plot the parameters
+# Plot the functional parameters
 pybop.plot.dataset(gitt_parameter_data, signal=["Particle diffusion time scale [s]"])
 pybop.plot.dataset(gitt_parameter_data, signal=["Series resistance [Ohm]"])
 
 # Run the identified model
 identified_model = pybop.lithium_ion.SPDiffusion(build=True)
+grouped_parameter_values.update(gitt_fit.best_inputs)
 grouped_parameter_values["Current function [A]"] = pybamm.Interpolant(
     dataset["Time [s]"], dataset["Current function [A]"], pybamm.t
 )
@@ -85,15 +88,15 @@ diffusivity = np.mean(
 parameter_values.update({"Positive particle diffusivity [m2.s-1]": diffusivity})
 
 # Compare the original, fitted and identified model predictions
-sol = pybamm.Simulation(
+solution = pybamm.Simulation(
     model, parameter_values=parameter_values, experiment=experiment
 ).solve()
 pybop.plot.trajectories(
-    sol.t,
+    solution.t,
     [
         dataset["Voltage [V]"],
         fitted_values["Voltage [V]"].data,
-        sol["Voltage [V]"].data,
+        solution["Voltage [V]"].data,
     ],
     trace_names=["Ground truth", "Fitted GITT Model", "Identified Model"],
     xaxis_title="Time / s",

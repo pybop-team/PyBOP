@@ -38,7 +38,7 @@ def convergence(result: "OptimisationResult", show=True, **layout_kwargs):
         x=iteration_numbers,
         y=cost_log,
         layout_options=dict(
-            xaxis_title="Iteration",
+            xaxis_title="Evaluation",
             yaxis_title="Cost",
             title="Convergence",
         ),

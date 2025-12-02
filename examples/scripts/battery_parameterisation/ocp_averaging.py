@@ -4,6 +4,10 @@ from pybamm import CasadiSolver
 
 import pybop
 
+"""
+An example to demonstrate the functionality of `pybop.OCPAverage`.
+"""
+
 # Generate some synthetic data for testing
 model = pybamm.lithium_ion.SPMe()
 parameter_values = pybamm.ParameterValues("Chen2020")

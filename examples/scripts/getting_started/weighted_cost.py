@@ -3,6 +3,13 @@ import pybamm
 
 import pybop
 
+"""
+In this example, we introduce PyBOP's functionality for combining multiple cost into a
+single pybop.WeightedCost. This is commonly used for model identification with multiple
+"signals". In this case, we identify two parameters based on terminal voltage, and
+average cell temperature.
+"""
+
 # Define model and parameter values
 model = pybamm.lithium_ion.SPM()
 parameter_values = pybamm.ParameterValues("Chen2020")
@@ -17,7 +24,7 @@ experiment = pybamm.Experiment(
     ]
     * 2
 )
-sol = pybamm.Simulation(
+solution = pybamm.Simulation(
     model, parameter_values=parameter_values, experiment=experiment
 ).solve()
 
@@ -28,11 +35,13 @@ def noisy(data, sigma):
 
 dataset = pybop.Dataset(
     {
-        "Time [s]": sol.t,
-        "Current function [A]": sol["Current [A]"].data,
-        "Voltage [V]": noisy(sol["Voltage [V]"].data, sigma),
+        "Time [s]": solution.t,
+        "Current function [A]": solution["Current [A]"].data,
+        "Voltage [V]": noisy(solution["Voltage [V]"].data, sigma),
     }
 )
+
+# Save the true values
 true_values = [
     parameter_values[p]
     for p in [
@@ -55,7 +64,7 @@ parameter_values.update(
     }
 )
 
-# Generate problem, cost function, and optimisation class
+# Generate cost functions and optimiser options
 simulator = pybop.pybamm.Simulator(
     model, parameter_values=parameter_values, protocol=dataset
 )
@@ -70,7 +79,10 @@ for cost in [weighted_cost, cost1, cost2]:
 
     # Run the optimisation
     result = optim.run()
+
+    # Compare identified to true parameter values
     print("True parameters:", true_values)
+    print("Identified parameters:", result.x)
 
     # Plot the timeseries output
     pybop.plot.problem(problem, inputs=result.best_inputs, title="Optimised Comparison")

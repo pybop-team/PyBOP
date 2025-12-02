@@ -1,2 +1,2 @@
 ## Data directory
-This directory contains both the experimental and synthetic data used in the examples.
+This directory contains the experimental data used in the examples.

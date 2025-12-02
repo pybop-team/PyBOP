@@ -79,6 +79,8 @@ options = pybop.PintsOptions(max_iterations=10)
 optim = pybop.XNES(problem, options=options)
 result = optim.run()
 print(result)
+
+# Compare the designs
 print(f"Initial gravimetric power density: {problem_1(result.x0):.2f} W.kg-1")
 print(f"Optimised gravimetric power density: {problem_1(result.x):.2f} W.kg-1")
 print(f"Initial volumetric power density: {problem_2(result.x0):.2f} W.m-3")
