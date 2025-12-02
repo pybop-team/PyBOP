@@ -6,7 +6,11 @@ from pybop.costs.base_cost import BaseCost
 
 def indices_of(values, target):
     roots = (np.sign(values[1:] - target) - np.sign(values[:-1] - target)).nonzero()[0]
-    nearest_roots = np.unique(np.where(np.abs(values[roots] - target) < np.abs(values[roots + 1]), roots, roots + 1))
+    nearest_roots = np.unique(
+        np.where(
+            np.abs(values[roots] - target) < np.abs(values[roots + 1]), roots, roots + 1
+        )
+    )
     return nearest_roots
 
 
@@ -15,12 +19,7 @@ class ParameterisedCost(BaseCost):
 
     _supported_features = []
 
-    def __init__(
-        self,
-        domain_data: np.ndarray,
-        target_data: np.ndarray,
-        feature: str
-    ):
+    def __init__(self, domain_data: np.ndarray, target_data: np.ndarray, feature: str):
         super().__init__()
         if feature not in self._supported_features:
             raise ValueError(
@@ -62,7 +61,6 @@ class ParameterisedCost(BaseCost):
         y: np.ndarray,
         dy: np.ndarray | None = None,
     ) -> float | tuple[float, np.ndarray]:
-
         if self.time_start:
             start_index = indices_of(self.domain_data, self.time_start)[0]
         else:
@@ -84,7 +82,8 @@ class ParameterisedCost(BaseCost):
                             y[start_index:end_index],
                         )
                         - data_fit
-                    ) / data_fit
+                    )
+                    / data_fit
                 ]
             )
         )

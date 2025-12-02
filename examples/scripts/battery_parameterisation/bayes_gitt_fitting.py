@@ -65,7 +65,9 @@ class GITT_Simulator(pybop.BaseSimulator):
             pybamm_sol = sim.solve()
             pybop_sol = pybop.Solution(i)
             pybop_sol.set_solution_variable("Time [s]", pybamm_sol["Time [s]"].entries)
-            pybop_sol.set_solution_variable("Voltage [V]", pybamm_sol["Voltage [V]"].entries)
+            pybop_sol.set_solution_variable(
+                "Voltage [V]", pybamm_sol["Voltage [V]"].entries
+            )
             outputs.append(pybop_sol)
         return outputs
 
@@ -108,8 +110,20 @@ dataset = pybop.Dataset(
     }
 )
 
-ICI_cost = SquareRootFit(dataset["Time [s]"], dataset["Voltage [V]"], feature="inverse_slope", time_start=0, time_end=90)
-GITT_cost = SquareRootFit(dataset["Time [s]"], dataset["Voltage [V]"], feature="inverse_slope", time_start=901, time_end=991)
+ICI_cost = SquareRootFit(
+    dataset["Time [s]"],
+    dataset["Voltage [V]"],
+    feature="inverse_slope",
+    time_start=0,
+    time_end=90,
+)
+GITT_cost = SquareRootFit(
+    dataset["Time [s]"],
+    dataset["Voltage [V]"],
+    feature="inverse_slope",
+    time_start=901,
+    time_end=991,
+)
 
 if __name__ == "__main__":
     ICI_problem = pybop.Problem(simulator, ICI_cost)
@@ -132,6 +146,7 @@ if __name__ == "__main__":
 
     # Issue: only log-scales the first parameter.
     import plotly.io as pio
+
     pio.renderers.default = "browser"
     pybop.plot.convergence(result, yaxis_type="log")
     pybop.plot.parameters(result, yaxis_type="log")

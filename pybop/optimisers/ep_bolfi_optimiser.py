@@ -4,13 +4,13 @@ import time
 from dataclasses import dataclass
 
 import numpy as np
-from pybop._result import BayesianOptimisationResult
-from pybop.parameters.multivariate_distributions import MultivariateGaussian
-from pybop._logging import Logger
 from pybamm import citations
 
 import pybop
 from pybop import BaseOptimiser
+from pybop._logging import Logger
+from pybop._result import BayesianOptimisationResult
+from pybop.parameters.multivariate_distributions import MultivariateGaussian
 
 
 @dataclass
@@ -227,8 +227,12 @@ class EP_BOLFI(BaseOptimiser):
                 model_bounds["upper"][i],
             ]
         simulators = [problem._simulator for problem in self.problem.problems]  # noqa: SLF001
-        experimental_datasets = [problem.target_data for problem in self.problem.problems]  # noqa: SLF001
-        feature_extractors = [lambda y: [problem._cost(y)] for problem in self.problem.problems]  # noqa: SLF001
+        experimental_datasets = [
+            problem.target_data for problem in self.problem.problems
+        ]  # noqa: SLF001
+        feature_extractors = [
+            lambda y: [problem._cost(y)] for problem in self.problem.problems
+        ]  # noqa: SLF001
         self.optimiser = ep_bolfi.EP_BOLFI(
             simulators,
             experimental_datasets,
@@ -253,7 +257,11 @@ class EP_BOLFI(BaseOptimiser):
             display_current_feature=None,  # ToDo: costs with names
             fixed_parameter_order=list(enumerate(self.problem.parameters.keys())),  # noqa: SLF001
         )
-        self._logger = Logger(minimising=True, verbose=self.verbose, verbose_print_rate=self.verbose_print_rate)
+        self._logger = Logger(
+            minimising=True,
+            verbose=self.verbose,
+            verbose_print_rate=self.verbose_print_rate,
+        )
 
     def _run(self):
         start = time.time()
