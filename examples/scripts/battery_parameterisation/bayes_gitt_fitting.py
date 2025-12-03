@@ -4,7 +4,7 @@ from ep_bolfi.models.solversetup import spectral_mesh_pts_and_method
 from pybamm import CasadiSolver, Experiment, print_citations
 
 import pybop
-from pybop.costs.parameterised_costs import SquareRootFit
+from pybop.costs.feature_distances import SquareRootFeatureDistance
 from pybop.optimisers.ep_bolfi_optimiser import EP_BOLFI, EPBOLFIOptions
 from pybop.parameters.multivariate_distributions import MultivariateGaussian
 from pybop.parameters.multivariate_parameters import MultivariateParameters
@@ -43,7 +43,7 @@ simulator = pybop.pybamm.Simulator(
     parameter_values=parameter_values,
     protocol=Experiment(
         [
-            "Discharge at 0.5 C for 15 minutes (1 second period)",
+            "Discharge at 1.0 C for 15 minutes (1 second period)",
             "Rest for 15 minutes (1 second period)",
         ]
     ),
@@ -81,14 +81,14 @@ dataset = pybop.Dataset(
     }
 )
 
-ICI_cost = SquareRootFit(
+ICI_cost = SquareRootFeatureDistance(
     dataset["Time [s]"],
     dataset["Voltage [V]"],
     feature="inverse_slope",
     time_start=0,
     time_end=90,
 )
-GITT_cost = SquareRootFit(
+GITT_cost = SquareRootFeatureDistance(
     dataset["Time [s]"],
     dataset["Voltage [V]"],
     feature="inverse_slope",
