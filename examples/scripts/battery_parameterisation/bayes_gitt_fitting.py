@@ -138,17 +138,17 @@ if __name__ == "__main__":
         bolfi_optimally_acquired_samples=10,
         bolfi_posterior_effective_sample_size=10,
         posterior_gelman_rubin_threshold=1.2,
-        verbose=False,
+        verbose=True,
     )
     optim = EP_BOLFI(problem, options)
 
     result = optim.run()
 
-    # Issue: only log-scales the first parameter.
     import plotly.io as pio
 
     pio.renderers.default = "browser"
-    pybop.plot.convergence(result, yaxis_type="log")
-    pybop.plot.parameters(result, yaxis_type="log")
+
+    pybop.plot.convergence(result, yaxis={"type": "log"})
+    pybop.plot.parameters(result, yaxis={"type": "log"}, yaxis2={"type": "log"})
 
     print_citations()

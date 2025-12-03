@@ -1,7 +1,9 @@
 import copy
 import json
 import time
+from contextlib import redirect_stderr, redirect_stdout
 from dataclasses import dataclass
+from sys import stderr, stdout
 
 import numpy as np
 from pybamm import citations
@@ -264,34 +266,38 @@ class EP_BOLFI(BaseOptimiser):
         )
 
     def _run(self):
-        start = time.time()
-        # bolfi_posterior is the full GPy object containing the state at
-        # the end of the last feature iteration, while the
-        # MultivariateGaussian is a slight approximation.
-        self.bolfi_posterior = self.optimiser.run(
-            self._options.bolfi_initial_sobol_samples,
-            self._options.bolfi_initial_sobol_samples
-            + self._options.bolfi_optimally_acquired_samples,
-            self._options.bolfi_posterior_effective_sample_size,
-            self._options.ep_iterations,
-            self._options.ep_stepwise_dampener,
-            self._options.ep_total_dampening,
-            -1,  # ep_dampener_reduction_steps; better re-init with another dampening factor
-            self._options.posterior_gelman_rubin_threshold,
-            self._options.posterior_ess_ratio_threshold_resampling,
-            self._options.posterior_ess_ratio_threshold_evaluation_at_centre,
-            self._options.posterior_ess_ratio_threshold_skip_feature,
-            self._options.max_posterior_sampling_retries,
-            self._options.posterior_actual_sample_size_increase,
-            self._options.posterior_model_resample_size_increase,
-            4,  # independent_mcmc_chains; 4 generally works well
-            self._options.ep_randomise_feature_order,
-            False,  # normalize_features; does not work when features assume 0, normalise within PyBOP
-            False,  # show_trials; use the PyBOP visualization tools instead
-            self._options.verbose,
-            self._options.seed,
-        )
-        end = time.time()
+        verbose_log_target = stdout if self._options.verbose else None
+        verbose_err_target = stderr if self._options.verbose else None
+        with redirect_stdout(verbose_log_target):
+            with redirect_stderr(verbose_err_target):
+                start = time.time()
+                # bolfi_posterior is the full GPy object containing the state at
+                # the end of the last feature iteration, while the
+                # MultivariateGaussian is a slight approximation.
+                self.bolfi_posterior = self.optimiser.run(
+                    self._options.bolfi_initial_sobol_samples,
+                    self._options.bolfi_initial_sobol_samples
+                    + self._options.bolfi_optimally_acquired_samples,
+                    self._options.bolfi_posterior_effective_sample_size,
+                    self._options.ep_iterations,
+                    self._options.ep_stepwise_dampener,
+                    self._options.ep_total_dampening,
+                    -1,  # ep_dampener_reduction_steps; better re-init with another dampening factor
+                    self._options.posterior_gelman_rubin_threshold,
+                    self._options.posterior_ess_ratio_threshold_resampling,
+                    self._options.posterior_ess_ratio_threshold_evaluation_at_centre,
+                    self._options.posterior_ess_ratio_threshold_skip_feature,
+                    self._options.max_posterior_sampling_retries,
+                    self._options.posterior_actual_sample_size_increase,
+                    self._options.posterior_model_resample_size_increase,
+                    4,  # independent_mcmc_chains; 4 generally works well
+                    self._options.ep_randomise_feature_order,
+                    False,  # normalize_features; does not work when features assume 0, normalise within PyBOP
+                    False,  # show_trials; use the PyBOP visualization tools instead
+                    self._options.verbose,
+                    self._options.seed,
+                )
+                end = time.time()
         ep_bolfi_result = json.loads(
             self.optimiser.result_to_json(seed=self._options.seed)
         )
