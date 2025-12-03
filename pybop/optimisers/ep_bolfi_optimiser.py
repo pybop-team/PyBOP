@@ -180,6 +180,8 @@ class EP_BOLFI(BaseOptimiser):
         problem: pybop.MetaProblem,
         options: EPBOLFIOptions | None = None,
     ):
+        if type(problem) is not pybop.MetaProblem:
+            problem = pybop.MetaProblem(problem)
         super().__init__(problem, options)
         # citations.register("""@article{
         #     Minka2013,
