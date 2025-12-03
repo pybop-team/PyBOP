@@ -228,7 +228,10 @@ class EP_BOLFI(BaseOptimiser):
                 model_bounds["lower"][i],
                 model_bounds["upper"][i],
             ]
-        simulators = [problem._simulator for problem in self.problem.problems]  # noqa: SLF001
+        simulators = [
+            lambda inputs: problem._simulator.solve(inputs)["Voltage [V]"].data
+            for problem in self.problem.problems
+        ]  # noqa: SLF001
         experimental_datasets = [
             problem.target_data for problem in self.problem.problems
         ]  # noqa: SLF001
