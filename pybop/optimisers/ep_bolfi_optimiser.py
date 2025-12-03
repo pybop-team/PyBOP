@@ -240,7 +240,7 @@ class EP_BOLFI(BaseOptimiser):
             problem.target_data for problem in self.problem.problems
         ]
         feature_extractors = [
-            lambda y, prob=problem: [prob._cost(y)]  # noqa: SLF001
+            lambda y, prob=problem: [prob._cost(y).values]  # noqa: SLF001
             for problem in self.problem.problems
         ]
         self.optimiser = ep_bolfi.EP_BOLFI(
@@ -319,11 +319,11 @@ class EP_BOLFI(BaseOptimiser):
             for j in range(len(cost_list)):
                 cost_list[j][0] += feature_costs[i][j][0]
         cost_list = np.array([np.exp(value[0]) for value in cost_list])
-        x_best = copy.deepcopy(x_list)
+        x_best_over_time = copy.deepcopy(x_list)
         cost_best = copy.deepcopy(cost_list)
         for i in range(1, len(cost_list)):
             if cost_list[i] < cost_best[i - 1]:
-                x_best[i:, None] = x_list[i, None]
+                x_best_over_time[i:, None] = x_list[i, None]
                 cost_best[i:] = cost_list[i]
 
         self._logger.x_model = x_list.tolist()
@@ -340,14 +340,15 @@ class EP_BOLFI(BaseOptimiser):
             for i in range(len(cost_list))
         ]
         self._logger.evaluations = [i + 1 for i in range(len(cost_list))]
-        self._logger.x_model_best = x_best
-        self._logger.x_search_best = [
+        self._logger.x_model_best = x_best_over_time[-1]
+        x_search_best_over_time = [
             [
                 par.transformation.to_search(e)[0]
                 for e, par in zip(entry, self.problem.parameters.values(), strict=False)  # noqa: SLF001
             ]
-            for entry in x_best
+            for entry in x_best_over_time
         ]
+        self._logger.x_search_best = x_search_best_over_time[-1]
         self._logger.cost_best = cost_best[0]
         model_mean_dict = {
             key: value[0]
