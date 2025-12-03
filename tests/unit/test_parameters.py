@@ -279,7 +279,7 @@ class TestMultivariateParameters:
                 [[np.log(10), 0.0], [0.0, np.log(10)]],
             ),
         )
-    
+
     def test_rvs(self, multivariate_parameters)
         samples = multivariate_parameters.rvs(10, apply_transform=True)
         assert samples.shape == [10, 2]
