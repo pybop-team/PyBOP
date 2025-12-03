@@ -96,16 +96,14 @@ class MultivariateParameters(Parameters):
         # Constrain samples to be within bounds.
         bounds = self.get_bounds(transformed=True)
         margins = self.get_margins()
-        for i in range(len(samples)):
+        for i in range(samples.shape[1]):
             offset = margins[i] * (bounds["upper"][i] - bounds["lower"][i])
             samples[i] = np.clip(
                 samples[i], bounds["lower"][i] + offset, bounds["upper"][i] - offset
             )
 
         if apply_transform:
-            samples = np.asarray(
-                [self.transformation().to_model(s) for s in samples.T]
-            ).T
+            samples = np.asarray([self.transformation.to_model(s) for s in samples])
 
         return samples
 

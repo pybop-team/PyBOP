@@ -250,3 +250,38 @@ class TestParameters:
             repr(params)
             == "Parameters(1):\n Negative electrode active material volume fraction: prior= Gaussian, loc: 0.6, scale: 0.02, bounds=[0.375, 0.7]"
         )
+
+
+class TestMultivariateParameters:
+    """
+    A class to test the multivariate parameters class.
+    """
+
+    pytestmark = pytest.mark.unit
+
+    @pytest.fixture
+    def multivariate_parameters(self):
+        return pybop.MultivariateParameters(
+            {
+                "Negative particle diffusivity [m2.s-1]": pybop.Parameter(
+                    initial_value=3.9e-14,
+                    bounds=[3.9e-15, 3.9e-13],
+                    transformation=pybop.LogTransformation(),
+                ),
+                "Positive particle diffusivity [m2.s-1]": pybop.Parameter(
+                    initial_value=1e-15,
+                    bounds=[1e-16, 1e-14],
+                    transformation=pybop.LogTransformation(),
+                ),
+            },
+            distribution=pybop.MultivariateGaussian(
+                [np.log(3.9e-14), np.log(1e-15)],
+                [[np.log(10), 0.0], [0.0, np.log(10)]],
+            ),
+        )
+    
+    def test_rvs(self, multivariate_parameters)
+        samples = multivariate_parameters.rvs(10, apply_transform=True)
+        assert samples.shape == [10, 2]
+        assert samples.T[1].min() >= 1e-16
+        assert samples.T[1].max() <= 1e-14
