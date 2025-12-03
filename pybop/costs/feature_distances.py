@@ -43,14 +43,12 @@ class FeatureDistance(BaseCost):
         self.feature = feature
         self.time_start = time_start
         self.time_end = time_end
-        if self.time_start:
-            self.start_index = indices_of(self.domain_data, self.time_start)[0]
-        else:
-            self.start_index = 0
-        if self.time_end:
-            self.end_index = indices_of(self.domain_data, self.time_end)[0]
-        else:
-            self.end_index = None
+        self.start_index = (
+            indices_of(self.domain_data, self.time_start)[0] if self.time_start else 0
+        )
+        self.end_index = (
+            indices_of(self.domain_data, self.time_end)[0] if self.time_end else None
+        )
 
         with warnings.catch_warnings():
             # Suppress SciPy's UserWarning about delta_grad == 0.
@@ -145,7 +143,7 @@ class SquareRootFeatureDistance(FeatureDistance):
             Set the time (in seconds) until which the data shall be fitted,
             counted from the start of the data. Default is the end.
         """
-        super().__init__(domain_data, target_data, feature)
+        super().__init__(domain_data, target_data, feature, time_start, time_end)
         self.time_start = time_start
         self.time_end = time_end
 
@@ -202,7 +200,7 @@ class ExponentialFeatureDistance(FeatureDistance):
             Set the time (in seconds) until which the data shall be fitted,
             counted from the start of the data. Default is the end.
         """
-        super().__init__(domain_data, target_data, feature)
+        super().__init__(domain_data, target_data, feature, time_start, time_end)
         self.time_start = time_start
         self.time_end = time_end
 

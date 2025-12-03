@@ -3,6 +3,10 @@ import pybamm
 import pytest
 
 import pybop
+from pybop.costs.feature_distances import (
+    ExponentialFeatureDistance,
+    SquareRootFeatureDistance,
+)
 
 
 class TestCosts:
@@ -51,6 +55,16 @@ class TestCosts:
                 "Voltage [V]": solution["Terminal voltage [V]"].data,
             }
         )
+
+    @pytest.fixture
+    def gitt_like_dataset(self):
+        domain_data = np.linspace(0, 100, 1001)
+        target_data = np.append(
+            0.2 + 0.4 * np.sqrt(domain_data[0:200]),
+            0.2 + 0.4 * 20**0.5 + 3 * (2 / 3 - np.exp(-0.02 * domain_data[200:])),
+        )
+        switchover_point = 20.0
+        return domain_data, target_data, switchover_point
 
     def test_base(self, dataset):
         cost = pybop.ErrorMeasure(dataset)
@@ -442,3 +456,17 @@ class TestCosts:
             match="Costs must be either all design costs or all error measures",
         ):
             pybop.WeightedCost(cost1, cost2)
+
+    def test_square_root_feature_distance(self, gitt_like_dataset):
+        domain_data, target_data, switchover_point = gitt_like_dataset
+        srfd = SquareRootFeatureDistance(
+            domain_data, target_data, feature="slope", time_end=switchover_point
+        )
+        assert abs(srfd.data_fit - 0.4) < 1e-8
+
+    def test_exponential_feature_distance(self, gitt_like_dataset):
+        domain_data, target_data, switchover_point = gitt_like_dataset
+        efd = ExponentialFeatureDistance(
+            domain_data, target_data, feature="timescale", time_start=switchover_point
+        )
+        assert abs(efd.data_fit + 0.02) < 1e-8
