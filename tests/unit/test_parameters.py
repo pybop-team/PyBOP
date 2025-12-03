@@ -282,6 +282,6 @@ class TestMultivariateParameters:
 
     def test_rvs(self, multivariate_parameters):
         samples = multivariate_parameters.rvs(10, apply_transform=True)
-        assert samples.shape == [10, 2]
+        assert samples.shape == (10, 2)
         assert samples.T[1].min() >= 1e-16
         assert samples.T[1].max() <= 1e-14

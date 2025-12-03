@@ -208,10 +208,10 @@ class ExponentialFeatureDistance(FeatureDistance):
         """Logarithm function to transform data for a linear fit."""
         log_arg = (y - b) / c
         log_arg[log_arg <= 0] = 0.1**d
-        return np.log(log_arg) / d
+        return -d * np.log(log_arg)
 
     def _fit_guess(self, t, y):
-        return [y[-1], y[-1] - y[len(y) // 10], 1 / (t[-1] - t[len(t) // 10])]
+        return [y[-1], y[len(y) // 10] - y[-1], t[-1] - t[len(t) // 10]]
 
     def _feature_selection(self, fit):
         if self.feature == "asymptote":
