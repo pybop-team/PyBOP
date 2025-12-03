@@ -1,5 +1,3 @@
-from copy import deepcopy
-
 import numpy as np
 import pybamm
 from ep_bolfi.models.solversetup import spectral_mesh_pts_and_method
@@ -10,71 +8,6 @@ from pybop.costs.parameterised_costs import SquareRootFit
 from pybop.optimisers.ep_bolfi_optimiser import EP_BOLFI, EPBOLFIOptions
 from pybop.parameters.multivariate_distributions import MultivariateGaussian
 from pybop.parameters.multivariate_parameters import MultivariateParameters
-
-
-class GITT_Simulator(pybop.BaseSimulator):
-    parameter_values = pybamm.ParameterValues("Chen2020")
-    model = pybamm.lithium_ion.DFN()
-    experiment = Experiment(
-        [
-            "Discharge at 0.5 C for 15 minutes (1 second period)",
-            "Rest for 15 minutes (1 second period)",
-        ]
-    )
-    solver = CasadiSolver(
-        rtol=1e-5,
-        atol=1e-5,
-        root_tol=1e-3,
-        max_step_decrease_count=10,
-        extra_options_setup={
-            "disable_internal_warnings": True,
-            "newton_scheme": "tfqmr",
-        },
-        return_solution_if_failed_early=True,
-    )
-    submesh_types, var_pts, spatial_methods = spectral_mesh_pts_and_method(10, 10, 10)
-
-    def __init__(self, parameters):
-        super().__init__(parameters)
-        self.true_sim = pybamm.Simulation(
-            self.model,
-            parameter_values=self.parameter_values,
-            experiment=self.experiment,
-            submesh_types=self.submesh_types,
-            var_pts=self.var_pts,
-            spatial_methods=self.spatial_methods,
-            solver=self.solver,
-        )
-
-    def batch_solve(self, inputs, calculate_sensitivities=False):
-        if calculate_sensitivities:
-            return NotImplementedError
-        outputs = []
-        for i in inputs:
-            parameter_eval = deepcopy(self.parameter_values)
-            parameter_eval.update(i)
-            sim = pybamm.Simulation(
-                self.model,
-                parameter_values=parameter_eval,
-                experiment=self.experiment,
-                submesh_types=self.submesh_types,
-                var_pts=self.var_pts,
-                spatial_methods=self.spatial_methods,
-                solver=self.solver,
-            )
-            pybamm_sol = sim.solve()
-            pybop_sol = pybop.Solution(i)
-            pybop_sol.set_solution_variable("Time [s]", pybamm_sol["Time [s]"].entries)
-            pybop_sol.set_solution_variable(
-                "Voltage [V]", pybamm_sol["Voltage [V]"].entries
-            )
-            outputs.append(pybop_sol)
-        return outputs
-
-    # Compatibility with EP-BOLFI: callable.
-    def __call__(self, inputs):
-        return self.batch_solve([inputs])[0]["Voltage [V]"].data
-
 
 parameter_set = pybamm.ParameterValues("Chen2020")
 original_D_n = parameter_set["Negative particle diffusivity [m2.s-1]"]
@@ -99,8 +32,46 @@ unknowns = MultivariateParameters(
     ),
 )
 
-simulator = GITT_Simulator(unknowns)
-synthetic_data = simulator.true_sim.solve()
+submesh_types, var_pts, spatial_methods = spectral_mesh_pts_and_method(10, 10, 10)
+parameter_values = pybamm.ParameterValues("Chen2020")
+# Put empty Parameter slots as placeholders.
+parameter_values["Negative particle diffusivity [m2.s-1]"] = pybop.Parameter()
+parameter_values["Positive particle diffusivity [m2.s-1]"] = pybop.Parameter()
+
+simulator = pybop.pybamm.Simulator(
+    model=pybamm.lithium_ion.DFN(),
+    parameter_values=parameter_values,
+    protocol=Experiment(
+        [
+            "Discharge at 0.5 C for 15 minutes (1 second period)",
+            "Rest for 15 minutes (1 second period)",
+        ]
+    ),
+    solver=CasadiSolver(
+        rtol=1e-5,
+        atol=1e-5,
+        root_tol=1e-3,
+        max_step_decrease_count=10,
+        extra_options_setup={
+            "disable_internal_warnings": True,
+            "newton_scheme": "tfqmr",
+        },
+        return_solution_if_failed_early=True,
+    ),
+    output_variables=["Voltage [V]"],
+    submesh_types=submesh_types,
+    var_pts=var_pts,
+    spatial_methods=spatial_methods,
+)
+# Override the forced univariate Parameters.
+simulator.parameters = unknowns
+
+synthetic_data = simulator.solve(
+    {
+        "Negative particle diffusivity [m2.s-1]": original_D_n,
+        "Positive particle diffusivity [m2.s-1]": original_D_p,
+    }
+)
 
 dataset = pybop.Dataset(
     {

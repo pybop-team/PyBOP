@@ -228,13 +228,21 @@ class EP_BOLFI(BaseOptimiser):
                 model_bounds["lower"][i],
                 model_bounds["upper"][i],
             ]
-        simulators = [problem._simulator for problem in self.problem.problems]  # noqa: SLF001
+        # Use the first output variable to pass to EP-BOLFI; define separate simulators
+        # for multiple output variables.
+        simulators = [
+            lambda inputs, sim=problem._simulator: sim.solve(inputs)[  # noqa: SLF001
+                sim.output_variables[0]
+            ].data
+            for problem in self.problem.problems
+        ]
         experimental_datasets = [
             problem.target_data for problem in self.problem.problems
-        ]  # noqa: SLF001
+        ]
         feature_extractors = [
-            lambda y: [problem._cost(y)] for problem in self.problem.problems
-        ]  # noqa: SLF001
+            lambda y, prob=problem: [prob._cost(y)]  # noqa: SLF001
+            for problem in self.problem.problems
+        ]
         self.optimiser = ep_bolfi.EP_BOLFI(
             simulators,
             experimental_datasets,
