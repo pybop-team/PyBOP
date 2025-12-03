@@ -62,7 +62,7 @@ bpx = [
     "bpx>=0.5, <0.6",
 ]
 ep-bolfi = [
-    "GPy",
+    "GPy==1.13.2",
     "ep-bolfi"
 ]
 
