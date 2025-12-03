@@ -28,10 +28,14 @@ def classify_using_hessian(
     problem = result.optim.problem
     parameters = problem.parameters
     minimising = result.minimising
+    cost_tolerance = float(cost_tolerance) if cost_tolerance is not None else 0.0
 
     def cost(x):
         return problem.evaluate(x).values
 
+    cfd_hessian = np.full((2, 2), np.nan, dtype=float)
+    eigenvalues = np.array([np.nan, np.nan], dtype=float)
+    eigenvectors = np.full((2, 2), np.nan, dtype=float)
     n = len(x)
     if n != 2 or len(dx) != n:
         raise ValueError(
@@ -86,24 +90,37 @@ def classify_using_hessian(
         # Estimate the Hessian using fourth-order accurate central finite differences
         cfd_hessian = np.zeros((2, 2))
         cfd_hessian[0, 0] = (
-            -costs[2, 1, 1]
-            + 16 * costs[2, 1, 0]
-            - 30 * costs[1, 1, 0]
-            + 16 * costs[0, 1, 0]
-            - costs[0, 1, 1]
-        ) / 12
+            (
+                -costs[2, 1, 1]
+                + 16 * costs[2, 1, 0]
+                - 30 * costs[1, 1, 0]
+                + 16 * costs[0, 1, 0]
+                - costs[0, 1, 1]
+            )
+            / 12
+            / (dx[0] ** 2)
+        )
         cfd_hessian[0, 1] = (
-            -(costs[2, 2, 1] - costs[2, 0, 1] + costs[0, 0, 1] - costs[0, 2, 1])
-            + 16 * (costs[2, 2, 0] - costs[2, 0, 0] + costs[0, 0, 0] - costs[0, 2, 0])
-        ) / 48
+            (
+                -(costs[2, 2, 1] - costs[2, 0, 1] + costs[0, 0, 1] - costs[0, 2, 1])
+                + 16
+                * (costs[2, 2, 0] - costs[2, 0, 0] + costs[0, 0, 0] - costs[0, 2, 0])
+            )
+            / 48
+            / (dx[0] * dx[1])
+        )
         cfd_hessian[1, 0] = cfd_hessian[0, 1]
         cfd_hessian[1, 1] = (
-            -costs[1, 2, 1]
-            + 16 * costs[1, 2, 0]
-            - 30 * costs[1, 1, 0]
-            + 16 * costs[1, 0, 0]
-            - costs[1, 0, 1]
-        ) / 12
+            (
+                -costs[1, 2, 1]
+                + 16 * costs[1, 2, 0]
+                - 30 * costs[1, 1, 0]
+                + 16 * costs[1, 0, 0]
+                - costs[1, 0, 1]
+            )
+            / 12
+            / (dx[1] ** 2)
+        )
 
         # Compute the eigenvalues and sort into ascending order
         eigenvalues, eigenvectors = np.linalg.eig(cfd_hessian)
@@ -139,4 +156,40 @@ def classify_using_hessian(
                     message += " There may be a correlation between these parameters."
 
     print(message)
-    return message
+
+    # Build a plotting span around x.
+    span_multiplier = 4.0
+    span0 = (x[0] - span_multiplier * dx[0], x[0] + span_multiplier * dx[0])
+    span1 = (x[1] - span_multiplier * dx[1], x[1] + span_multiplier * dx[1])
+
+    ng = 41  # grid resolution per axis
+    param0 = np.linspace(span0[0], span0[1], ng)
+    param1 = np.linspace(span1[0], span1[1], ng)
+
+    # Evaluate cost on the grid
+    Z = np.empty((ng, ng), dtype=float)
+    for i in range(ng):
+        for j in range(ng):
+            p = np.array([param0[i], param1[j]], dtype=float)
+            try:
+                Z[i, j] = float(cost(p))
+            except Exception:
+                Z[i, j] = np.nan
+
+    # Pack everything useful into a dictionary for plotting
+    info = {
+        "hessian_fd": cfd_hessian,
+        "eigenvalues": eigenvalues,
+        "eigenvectors": eigenvectors,
+        "x": np.asarray(x).astype(float),
+        "dx": np.asarray(dx).astype(float),
+        "names": list(names) if names is not None else None,
+        "best_cost": float(best_cost) if np.isfinite(best_cost) else best_cost,
+        "span0": span0,
+        "span1": span1,
+        "param0": param0,
+        "param1": param1,
+        "Z": Z,
+    }
+
+    return message, info
