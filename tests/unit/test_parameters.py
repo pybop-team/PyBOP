@@ -198,13 +198,6 @@ class TestParameters:
         ):
             params.get_bounds(transformed=True)
 
-    def test_parameters_update(self, name, parameter):
-        params = pybop.Parameters({name: parameter})
-        params.update(bounds=[[0.38, 0.68]])
-        assert parameter.bounds == [0.38, 0.68]
-        params.update(bounds=dict(lower=[0.37], upper=[0.7]))
-        assert parameter.bounds == [0.37, 0.7]
-
     def test_parameters_sampling(self, name, parameter):
         parameter._transformation = pybop.ScaledTransformation(
             coefficient=0.2, intercept=-1

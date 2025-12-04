@@ -170,22 +170,6 @@ class ParameterInfo:
         """String representation of the parameter."""
         return f"ParameterInfo - Initial value: {self.initial_value}"
 
-    def set_bounds(self, bounds: BoundsPair) -> None:
-        """
-        Set new parameter bounds.
-
-        Parameters
-        ----------
-        bounds : tuple[float, float]
-            New bounds as (lower, upper)
-        """
-        if bounds is None or (
-            not np.isfinite(bounds[0]) and not np.isfinite(bounds[1])
-        ):
-            self._bounds = None
-        else:
-            self._bounds = Bounds(bounds[0], bounds[1])
-
     def _validate_values_within_bounds(self) -> None:
         """Validate that initial values are within bounds."""
         if self._bounds is None or self._initial_value is None:
@@ -338,6 +322,9 @@ class Parameters:
     def __getitem__(self, name: str) -> ParameterInfo:
         return self.get(name)
 
+    def __setitem__(self, name: str, param: ParameterInfo) -> None:
+        self.set(name, param)
+
     def __len__(self) -> int:
         return len(self._parameters)
 
@@ -408,6 +395,14 @@ class Parameters:
             raise ParameterNotFoundError(f"ParameterInfo for '{name}' not found")
         return self._parameters[name]
 
+    def set(self, name: str, param: ParameterInfo) -> None:
+        """Get a parameter by name."""
+        if name not in self._parameters:
+            raise ParameterNotFoundError(f"ParameterInfo for '{name}' not found")
+        if not isinstance(param, ParameterInfo):
+            raise TypeError({"Paremeter must be of type pybop.ParemterInfo"})
+        self._parameters[name] = param
+
     def get_bounds(self, transformed: bool = False) -> dict:
         """
         Get bounds, for either all or no parameters.
@@ -459,7 +454,6 @@ class Parameters:
         self,
         *,
         initial_values: ArrayLike | Inputs | None = None,
-        bounds: Sequence[BoundsPair] | dict[str, BoundsPair] | None = None,
         **individual_updates: dict[str, Any],
     ) -> None:
         """
@@ -481,24 +475,10 @@ class Parameters:
             if isinstance(updates, dict):
                 if "initial_value" in updates:
                     param.update_initial_value(updates["initial_value"])
-                if "bounds" in updates:
-                    param.set_bounds(updates["bounds"])
 
         # Handle bulk updates
         if initial_values is not None:
             self._bulk_update_initial_values(initial_values)
-        if bounds is not None:
-            # Allow conversion from get_bounds output type to Sequence[BoundsPair] type
-            if isinstance(bounds, dict) and "upper" in bounds.keys():
-                converted_bounds = []
-                for i in range(len(bounds["lower"])):
-                    converted_bounds.append([bounds["lower"][i], bounds["upper"][i]])
-                bounds = converted_bounds
-            self._bulk_update_bounds(bounds)
-
-    def remove_bounds(self) -> None:
-        for param in self._parameters.values():
-            param.set_bounds(None)
 
     def _bulk_update_initial_values(self, values: ArrayLike | Inputs) -> None:
         """Update initial values in bulk."""
@@ -517,25 +497,6 @@ class Parameters:
 
             for param, value in zip(param_list, values_array, strict=False):
                 param.update_initial_value(value)
-
-    def _bulk_update_bounds(
-        self, bounds: Sequence[BoundsPair] | dict[str, BoundsPair]
-    ) -> None:
-        """Update bounds in bulk."""
-        if isinstance(bounds, dict):
-            for name, bound_pair in bounds.items():
-                self.get(name).set_bounds(bound_pair)
-        else:
-            param_list = list(self._parameters.values())
-
-            if len(bounds) != len(param_list):
-                raise ParameterValidationError(
-                    f"Bounds array length {len(bounds)} doesn't match "
-                    f"parameter count {len(param_list)}"
-                )
-
-            for param, bound_pair in zip(param_list, bounds, strict=False):
-                param.set_bounds(bound_pair)
 
     def sample_from_distributions(
         self,

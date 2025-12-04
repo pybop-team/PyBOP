@@ -55,6 +55,23 @@ class TestPlots:
         }
 
     @pytest.fixture
+    def parameters_no_bounds(self):
+        return {
+            "Negative electrode active material volume fraction": pybop.ParameterDistribution(
+                distribution=pybop.Gaussian(0.68, 0.05),
+                transformation=pybop.ScaledTransformation(
+                    coefficient=1 / 0.3, intercept=-0.5
+                ),
+            ),
+            "Positive electrode active material volume fraction": pybop.ParameterDistribution(
+                distribution=pybop.Gaussian(0.58, 0.05),
+                transformation=pybop.ScaledTransformation(
+                    coefficient=1 / 0.3, intercept=-0.4
+                ),
+            ),
+        }
+
+    @pytest.fixture
     def dataset(self, model):
         t_eval = np.arange(0, 50, 2)
         solution = pybamm.Simulation(model).solve(t_eval=t_eval)
@@ -86,6 +103,16 @@ class TestPlots:
         return pybop.Problem(simulator, cost)
 
     @pytest.fixture
+    def fitting_problem_no_bounds(self, model, parameters_no_bounds, dataset):
+        parameter_values = model.default_parameter_values
+        parameter_values.update(parameters_no_bounds)
+        simulator = pybop.pybamm.Simulator(
+            model, parameter_values=parameter_values, protocol=dataset
+        )
+        cost = pybop.SumSquaredError(dataset)
+        return pybop.Problem(simulator, cost)
+
+    @pytest.fixture
     def experiment(self):
         return pybamm.Experiment(["Discharge at 1C for 10 minutes (20 second period)"])
 
@@ -109,16 +136,15 @@ class TestPlots:
             fitting_problem, inputs=fitting_problem.parameters.to_dict([0.6, 0.6])
         )
 
-    def test_cost_plots(self, fitting_problem):
+    def test_cost_plots(self, fitting_problem, fitting_problem_no_bounds):
         # Test plot of Cost objects
         pybop.plot.contour(fitting_problem, gradient=True, steps=5)
 
         pybop.plot.contour(fitting_problem, gradient=True, steps=5, transformed=True)
 
         # Test without bounds
-        fitting_problem.parameters.remove_bounds()
         with pytest.raises(ValueError, match="All parameters require bounds for plot."):
-            pybop.plot.contour(fitting_problem, steps=5)
+            pybop.plot.contour(fitting_problem_no_bounds, steps=5)
 
         # Test with bounds
         pybop.plot.contour(

@@ -149,9 +149,30 @@ class Test_SPM_Parameterisation:
         ]:
             bounds = {"lower": [0.375, 0.375], "upper": [0.775, 0.775]}
             if isinstance(cost, pybop.GaussianLogLikelihood):
-                bounds["lower"].append(0.0)
-                bounds["upper"].append(0.05)
-            problem.parameters.update(bounds=bounds)
+                cost.set_sigma0(
+                    pybop.ParameterDistribution(
+                        distribution=pybop.Uniform(
+                            max(1e-8 * self.sigma0, 0.0), min(3 * self.sigma0, 0.05)
+                        ),
+                        initial_value=self.sigma0,
+                    )
+                )
+            problem.parameters["Negative electrode active material volume fraction"] = (
+                pybop.ParameterDistribution(
+                    stats.uniform(
+                        bounds["lower"][0], bounds["upper"][0] - bounds["lower"][0]
+                    ),
+                    initial_value=stats.uniform(0.4, 0.75 - 0.4).rvs(),
+                )
+            )
+            problem.parameters["Positive electrode active material volume fraction"] = (
+                pybop.ParameterDistribution(
+                    stats.uniform(
+                        bounds["lower"][1], bounds["upper"][1] - bounds["lower"][1]
+                    ),
+                    initial_value=stats.uniform(0.4, 0.75 - 0.4).rvs(),
+                )
+            )
 
         # Create optimiser
         optim = optimiser(problem, options=options)
@@ -248,9 +269,31 @@ class Test_SPM_Parameterisation:
         if multi_optimiser is pybop.SciPyDifferentialEvolution:
             bounds = {"lower": [0.375, 0.375], "upper": [0.775, 0.775]}
             if isinstance(two_signal_problem.cost, pybop.GaussianLogLikelihood):
-                bounds["lower"].extend([0.0, 0.0])
-                bounds["upper"].extend([0.05, 0.05])
-            two_signal_problem.parameters.update(bounds=bounds)
+                two_signal_problem.cost.set_sigma0(
+                    pybop.ParameterDistribution(
+                        distribution=pybop.Uniform(
+                            max(1e-8 * self.sigma0 * 4, 0.0),
+                            min(3 * self.sigma0 * 4, 0.05),
+                        ),
+                        initial_value=self.sigma0 * 4,
+                    )
+                )
+            two_signal_problem.parameters[
+                "Negative electrode active material volume fraction"
+            ] = pybop.ParameterDistribution(
+                stats.uniform(
+                    bounds["lower"][0], bounds["upper"][0] - bounds["lower"][0]
+                ),
+                initial_value=stats.uniform(0.4, 0.75 - 0.4).rvs(),
+            )
+            two_signal_problem.parameters[
+                "Positive electrode active material volume fraction"
+            ] = pybop.ParameterDistribution(
+                stats.uniform(
+                    bounds["lower"][1], bounds["upper"][1] - bounds["lower"][1]
+                ),
+                initial_value=stats.uniform(0.4, 0.75 - 0.4).rvs(),
+            )
 
         # Test each optimiser
         optim = multi_optimiser(two_signal_problem, options=options)
