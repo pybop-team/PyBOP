@@ -203,8 +203,8 @@ class ParameterInfo:
         return self._transformation.to_search(self._initial_value)[0]
 
     def __call__(self, *unused_args, **unused_kwargs) -> float:
-        "Return the current value. The unused arguments are to pass pybamm.ParameterValues checks."
-        return self._current_value
+        "Return the initial value. The unused arguments are to pass pybamm.ParameterValues checks."
+        return self._initial_value
 
     @property
     def initial_value(self) -> float:
