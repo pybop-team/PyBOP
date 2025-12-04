@@ -6,6 +6,8 @@
 
 ## Bug Fixes
 
+- [#847](https://github.com/pybop-team/PyBOP/pull/847) - Update readme and diagram of pybop components so that the diagram is displayed correctly in the readme.
+
 ## Breaking Changes
 
 - [#839](https://github.com/pybop-team/PyBOP/pull/839) - Renames 'prior' as 'distribution' ``for pybop.Parameter``. Allows construction of a ``pybop.Parameter`` with a distribution of type ``scipy.stats.distributions.rv_frozen``. Removes ``margins``,  ``set_bounds``, ``remove_bounds`` from ``pybop.Parameter``.
