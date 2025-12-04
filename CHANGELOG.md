@@ -8,6 +8,8 @@
 
 ## Breaking Changes
 
+- [#839](https://github.com/pybop-team/PyBOP/pull/839) - Renames 'prior' as 'distribution' ``for pybop.Parameter``. Allows construction of a ``pybop.Parameter`` with a distribution of type ``scipy.stats.distributions.rv_frozen``. Removes ``margins``,  ``set_bounds``, ``remove_bounds`` from ``pybop.Parameter``.
+
 # [v25.11](https://github.com/pybop-team/PyBOP/tree/v25.11) - 2025-11-24
 
 ## Features
