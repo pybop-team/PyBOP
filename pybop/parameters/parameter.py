@@ -10,7 +10,7 @@ import numpy as np
 import scipy.stats as stats
 from numpy.typing import NDArray
 
-from pybop.parameters.priors import Distribution
+from pybop.parameters.distributions import Distribution
 from pybop.transformation.base_transformation import Transformation
 from pybop.transformation.transformations import (
     ComposedTransformation,
