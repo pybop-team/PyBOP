@@ -64,7 +64,7 @@ class TestTransformation:
     @pytest.fixture
     def parameters(self, transformation_r0, transformation_r1):
         return {
-            "R0 [Ohm]": pybop.ParameterDistribution(
+            "R0 [Ohm]": pybop.ParameterInfo(
                 distribution=pybop.Gaussian(
                     0.05,
                     0.02,
@@ -72,7 +72,7 @@ class TestTransformation:
                 ),
                 transformation=transformation_r0,
             ),
-            "R1 [Ohm]": pybop.ParameterDistribution(
+            "R1 [Ohm]": pybop.ParameterInfo(
                 distribution=pybop.Gaussian(
                     0.05,
                     0.02,

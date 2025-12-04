@@ -96,6 +96,10 @@ class ParameterInfo:
 
     Parameters
     ----------
+    distribution : stats.distribution.rv_frozen | Distribution
+        Distribution of the parameter
+    bounds : tuple[float, float], optional
+        Parameter bounds as (lower, upper)
     initial_value : NumericValue, optional
         Initial parameter value
     transformation : Transformation, optional
@@ -104,15 +108,27 @@ class ParameterInfo:
 
     def __init__(
         self,
+        distribution: stats.distributions.rv_frozen | Distribution | None = None,
         bounds: BoundsPair | None = None,
         initial_value: float = None,
         transformation: Transformation | None = None,
     ) -> None:
-        self._distribution = None
+        self._distribution = distribution
         self._bounds = None
         self._transformation = transformation or IdentityTransformation()
 
+        if self._distribution is not None:
+            lower, upper = self._distribution.support()
+            if np.isinf(lower) and np.isinf(upper):
+                self._bounds = None
+            else:
+                self._bounds = Bounds(lower, upper)
+
         if bounds is not None:
+            if distribution is not None:
+                raise ParameterError(
+                    "Bounds can only be set if no distribution is provided. If a bounded distribution is needed, please ensure the distribution itself is bounded."
+                )
             # Set bounds with validation
             self._bounds = Bounds(bounds[0], bounds[1])
             # Add uniform distribution for finite bounds in order to sample initial values
@@ -180,7 +196,7 @@ class ParameterInfo:
 
     def __repr__(self) -> str:
         """String representation of the parameter."""
-        return f"ParameterInfo - Initial value: {self.initial_value}"
+        return f"ParameterInfo - Distribution: {self._distribution}, Bounds: ({self.bounds[0]}, {self.bounds[1]}), Initial value: {self.initial_value}"
 
     def _validate_values_within_bounds(self) -> None:
         """Validate that initial values are within bounds."""
@@ -220,50 +236,6 @@ class ParameterInfo:
     @property
     def transformation(self) -> Transformation:
         return self._transformation
-
-
-class ParameterDistribution(ParameterInfo):
-    """
-    Subclass of ParameterInfo
-
-    This class accepts a distribution but no bounds in its constructor. The bounds are
-    set based on the support of the distribution.
-
-    Parameters
-    ----------
-    initial_value : NumericValue, optional
-        Initial parameter value
-    distribution : stats.distribution.rv_frozen | Distribution
-        Distribution of the parameter
-    transformation : Transformation, optional
-        Parameter transformation
-    """
-
-    def __init__(
-        self,
-        distribution: stats.distributions.rv_frozen | Distribution,
-        *,
-        initial_value=None,
-        transformation=None,
-    ):
-        super().__init__(initial_value=initial_value, transformation=transformation)
-        self._distribution = distribution
-        if initial_value is None:
-            initial_value = self.sample_from_distribution()[0]
-        self._initial_value = (
-            float(initial_value) if initial_value is not None else None
-        )
-        lower, upper = self._distribution.support()
-        if np.isinf(lower) and np.isinf(upper):
-            self._bounds = None
-        else:
-            self._bounds = Bounds(lower, upper)
-        # Validate initial values are within bounds
-        self._validate_values_within_bounds()
-
-    def __repr__(self) -> str:
-        """String representation of the parameter distribution."""
-        return f"ParameterDistribution - Distribution: {self.distribution}, Initial value: {self.initial_value}"
 
 
 class Parameters:

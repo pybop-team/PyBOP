@@ -32,14 +32,14 @@ class TestSimulator:
             BaseSimulator(params)
 
         params = [
-            pybop.ParameterDistribution(
+            pybop.ParameterInfo(
                 pybop.Gaussian(
                     2e-05,
                     0.1e-5,
                     truncated_at=[1e-6, 5e-5],
                 )
             ),
-            pybop.ParameterDistribution(
+            pybop.ParameterInfo(
                 pybop.Gaussian(
                     2e-05,
                     0.1e-5,

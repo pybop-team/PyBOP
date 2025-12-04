@@ -195,7 +195,7 @@ class Distribution:
         """
         Returns a string representation of the object.
         """
-        return f"{self.__class__.__name__}, mean: {self.mean()}, standard deviation: {self.std()}, support: ({self.support()[0]}, {self.support()[1]})"
+        return f"{self.__class__.__name__}, mean: {self.mean()}, standard deviation: {self.std()}"
 
     def mean(self):
         """

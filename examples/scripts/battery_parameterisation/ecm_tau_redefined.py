@@ -95,21 +95,21 @@ true_values.append(parameter_values.evaluate(pybamm.Parameter("C1 [F]")))
 # Fitting parameters
 parameter_values.update(
     {
-        "R0 [Ohm]": pybop.ParameterDistribution(
+        "R0 [Ohm]": pybop.ParameterInfo(
             pybop.Gaussian(
                 0.0002,
                 0.0001,
                 truncated_at=[1e-4, 1e-2],
             ),
         ),
-        "R1 [Ohm]": pybop.ParameterDistribution(
+        "R1 [Ohm]": pybop.ParameterInfo(
             pybop.Gaussian(
                 0.0001,
                 0.0001,
                 truncated_at=[1e-5, 1e-2],
             ),
         ),
-        "tau1 [s]": pybop.ParameterDistribution(
+        "tau1 [s]": pybop.ParameterInfo(
             pybop.Gaussian(
                 1.0,
                 0.025,

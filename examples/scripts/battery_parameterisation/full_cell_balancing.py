@@ -61,7 +61,7 @@ true_values = [
 # Define fitting parameters for OCP balancing
 parameter_values.update(
     {
-        "Maximum concentration in negative electrode [mol.m-3]": pybop.ParameterDistribution(
+        "Maximum concentration in negative electrode [mol.m-3]": pybop.ParameterInfo(
             pybop.Gaussian(
                 cs_n_max,
                 6e3,
@@ -69,7 +69,7 @@ parameter_values.update(
             ),
             initial_value=cs_n_max * 0.8,
         ),
-        "Maximum concentration in positive electrode [mol.m-3]": pybop.ParameterDistribution(
+        "Maximum concentration in positive electrode [mol.m-3]": pybop.ParameterInfo(
             pybop.Gaussian(
                 cs_p_max,
                 6e3,
@@ -77,7 +77,7 @@ parameter_values.update(
             ),
             initial_value=cs_p_max * 0.8,
         ),
-        "Initial concentration in negative electrode [mol.m-3]": pybop.ParameterDistribution(
+        "Initial concentration in negative electrode [mol.m-3]": pybop.ParameterInfo(
             pybop.Gaussian(
                 cs_n_init,
                 6e3,
@@ -85,7 +85,7 @@ parameter_values.update(
             ),
             initial_value=cs_n_max * 0.8,
         ),
-        "Initial concentration in positive electrode [mol.m-3]": pybop.ParameterDistribution(
+        "Initial concentration in positive electrode [mol.m-3]": pybop.ParameterInfo(
             pybop.Gaussian(
                 cs_p_init,
                 6e3,

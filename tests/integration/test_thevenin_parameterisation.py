@@ -50,7 +50,7 @@ class TestTheveninParameterisation:
     @pytest.fixture
     def parameters(self):
         return {
-            "R0 [Ohm]": pybop.ParameterDistribution(
+            "R0 [Ohm]": pybop.ParameterInfo(
                 distribution=pybop.Gaussian(
                     0.05,
                     0.01,
@@ -58,7 +58,7 @@ class TestTheveninParameterisation:
                 ),
                 transformation=pybop.LogTransformation(),
             ),
-            "R1 [Ohm]": pybop.ParameterDistribution(
+            "R1 [Ohm]": pybop.ParameterInfo(
                 distribution=pybop.Gaussian(
                     0.05,
                     0.01,

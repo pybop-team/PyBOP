@@ -43,11 +43,11 @@ class Test_SPM_Parameterisation:
     @pytest.fixture
     def parameters(self):
         return {
-            "Negative electrode active material volume fraction": pybop.ParameterDistribution(
+            "Negative electrode active material volume fraction": pybop.ParameterInfo(
                 stats.uniform(0.3, 0.9 - 0.3),
                 initial_value=stats.uniform(0.4, 0.75 - 0.4).rvs(),
             ),
-            "Positive electrode active material volume fraction": pybop.ParameterDistribution(
+            "Positive electrode active material volume fraction": pybop.ParameterInfo(
                 stats.uniform(0.3, 0.9 - 0.3),
                 initial_value=stats.uniform(0.4, 0.75 - 0.4).rvs(),
             ),
@@ -56,11 +56,11 @@ class Test_SPM_Parameterisation:
     @pytest.fixture
     def priors(self):
         return {
-            "Negative electrode active material volume fraction": pybop.ParameterDistribution(
+            "Negative electrode active material volume fraction": pybop.ParameterInfo(
                 pybop.Uniform(0.3, 0.9),
                 initial_value=stats.uniform(0.4, 0.75 - 0.4).rvs(),
             ),
-            "Positive electrode active material volume fraction": pybop.ParameterDistribution(
+            "Positive electrode active material volume fraction": pybop.ParameterInfo(
                 pybop.Uniform(0.3, 0.9),
                 initial_value=stats.uniform(0.4, 0.75 - 0.4).rvs(),
             ),
@@ -150,7 +150,7 @@ class Test_SPM_Parameterisation:
             bounds = {"lower": [0.375, 0.375], "upper": [0.775, 0.775]}
             if isinstance(cost, pybop.GaussianLogLikelihood):
                 cost.set_sigma0(
-                    pybop.ParameterDistribution(
+                    pybop.ParameterInfo(
                         distribution=pybop.Uniform(
                             max(1e-8 * self.sigma0, 0.0), min(3 * self.sigma0, 0.05)
                         ),
@@ -158,7 +158,7 @@ class Test_SPM_Parameterisation:
                     )
                 )
             problem.parameters["Negative electrode active material volume fraction"] = (
-                pybop.ParameterDistribution(
+                pybop.ParameterInfo(
                     stats.uniform(
                         bounds["lower"][0], bounds["upper"][0] - bounds["lower"][0]
                     ),
@@ -166,7 +166,7 @@ class Test_SPM_Parameterisation:
                 )
             )
             problem.parameters["Positive electrode active material volume fraction"] = (
-                pybop.ParameterDistribution(
+                pybop.ParameterInfo(
                     stats.uniform(
                         bounds["lower"][1], bounds["upper"][1] - bounds["lower"][1]
                     ),
@@ -270,7 +270,7 @@ class Test_SPM_Parameterisation:
             bounds = {"lower": [0.375, 0.375], "upper": [0.775, 0.775]}
             if isinstance(two_signal_problem.cost, pybop.GaussianLogLikelihood):
                 two_signal_problem.cost.set_sigma0(
-                    pybop.ParameterDistribution(
+                    pybop.ParameterInfo(
                         distribution=pybop.Uniform(
                             max(1e-8 * self.sigma0 * 4, 0.0),
                             min(3 * self.sigma0 * 4, 0.05),
@@ -280,7 +280,7 @@ class Test_SPM_Parameterisation:
                 )
             two_signal_problem.parameters[
                 "Negative electrode active material volume fraction"
-            ] = pybop.ParameterDistribution(
+            ] = pybop.ParameterInfo(
                 stats.uniform(
                     bounds["lower"][0], bounds["upper"][0] - bounds["lower"][0]
                 ),
@@ -288,7 +288,7 @@ class Test_SPM_Parameterisation:
             )
             two_signal_problem.parameters[
                 "Positive electrode active material volume fraction"
-            ] = pybop.ParameterDistribution(
+            ] = pybop.ParameterInfo(
                 stats.uniform(
                     bounds["lower"][1], bounds["upper"][1] - bounds["lower"][1]
                 ),

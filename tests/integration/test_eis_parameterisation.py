@@ -41,11 +41,11 @@ class TestEISParameterisation:
     @pytest.fixture
     def parameters(self):
         return {
-            "Negative electrode active material volume fraction": pybop.ParameterDistribution(
+            "Negative electrode active material volume fraction": pybop.ParameterInfo(
                 distribution=stats.uniform(loc=0.3, scale=0.9 - 0.3),
                 initial_value=stats.uniform(loc=0.4, scale=0.75 - 0.4).rvs(),
             ),
-            "Positive electrode active material volume fraction": pybop.ParameterDistribution(
+            "Positive electrode active material volume fraction": pybop.ParameterInfo(
                 distribution=stats.uniform(loc=0.3, scale=0.9 - 0.3),
                 initial_value=stats.uniform(loc=0.4, scale=0.75 - 0.4).rvs(),
             ),

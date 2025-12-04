@@ -3,7 +3,7 @@ import scipy.stats as stats
 
 from pybop._dataset import Dataset
 from pybop.costs.error_measures import ErrorMeasure
-from pybop.parameters.parameter import Inputs, ParameterDistribution, Parameters
+from pybop.parameters.parameter import Inputs, ParameterInfo, Parameters
 from pybop.parameters.priors import Distribution, JointDistribution, Uniform
 
 
@@ -98,7 +98,7 @@ class GaussianLogLikelihood(LogLikelihood):
     def __init__(
         self,
         dataset: Dataset,
-        sigma0: float | list[float] | list[ParameterDistribution] = 1e-2,
+        sigma0: float | list[float] | list[ParameterInfo] = 1e-2,
         dsigma_scale: float = 1.0,
         target: str | list[str] = None,
     ):
@@ -107,7 +107,7 @@ class GaussianLogLikelihood(LogLikelihood):
         self._dsigma_scale = dsigma_scale
         self._logpi = -0.5 * self.n_data * np.log(2 * np.pi)
 
-    def set_sigma0(self, sigma0: float | list[float] | list[ParameterDistribution]):
+    def set_sigma0(self, sigma0: float | list[float] | list[ParameterInfo]):
         # Reset
         self.parameters = Parameters()
         self.sigma = Parameters()
@@ -129,16 +129,16 @@ class GaussianLogLikelihood(LogLikelihood):
         return sigma0
 
     def _add_single_sigma(self, index, value):
-        if isinstance(value, ParameterDistribution):
+        if isinstance(value, ParameterInfo):
             sigma = value
         elif isinstance(value, int | float):
-            sigma = ParameterDistribution(
+            sigma = ParameterInfo(
                 distribution=Uniform(1e-8 * value, 3 * value),
                 initial_value=value,
             )
         else:
             raise TypeError(
-                f"Expected sigma0 to contain ParameterDistribution objects or numeric values. "
+                f"Expected sigma0 to contain ParameterInfo objects or numeric values. "
                 f"Received {type(value)}"
             )
         self.sigma.add(f"Sigma for output {index + 1}", sigma)
@@ -197,8 +197,8 @@ class LogPosterior(LogLikelihood):
     ---------------------
     log_likelihood : LogLikelihood
         The likelihood class of type ``LogLikelihood``.
-    prior : Optional, Union[pybop.ParameterDistribution, stats.distributions.rv_frozen]
-        The prior class of type ``ParameterDistribution``, ``Distribution`` or ``stats.distributions.rv_frozen``.
+    prior : Optional, Union[pybop.ParameterInfo, stats.distributions.rv_frozen]
+        The prior class of type ``ParameterInfo``, ``Distribution`` or ``stats.distributions.rv_frozen``.
         If not provided, the prior class will be taken from the parameter distributions
         constructed in the `pybop.Parameters` class.
     """
@@ -206,7 +206,7 @@ class LogPosterior(LogLikelihood):
     def __init__(
         self,
         log_likelihood: LogLikelihood,
-        prior: ParameterDistribution
+        prior: ParameterInfo
         | stats.distributions.rv_frozen
         | Distribution
         | None = None,
@@ -224,13 +224,13 @@ class LogPosterior(LogLikelihood):
             self.joint_prior = JointDistribution(*self.parameters.distributions())
         elif isinstance(self.prior, (stats.distributions.rv_frozen)):
             self.joint_prior = Distribution(self.prior)
-        elif isinstance(self.prior, ParameterDistribution):
+        elif isinstance(self.prior, ParameterInfo):
             self.joint_prior = self.prior.distribution
         elif isinstance(self.prior, Distribution):
             self.joint_prior = self.prior
         else:
             raise TypeError(
-                "All priors must either be of type pybop.ParameterDistribution, pybop.Distribution or scipy.stats.distributions.rv_frozen"
+                "All priors must either be of type pybop.ParameterInfo, pybop.Distribution or scipy.stats.distributions.rv_frozen"
             )
 
     def __call__(

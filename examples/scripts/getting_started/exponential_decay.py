@@ -31,8 +31,8 @@ dataset = pybop.Dataset(
 # Fitting parameters
 parameter_values.update(
     {
-        "k": pybop.ParameterDistribution(stats.norm(0.5, 0.05)),
-        "y0": pybop.ParameterDistribution(stats.norm(0.2, 0.05)),
+        "k": pybop.ParameterInfo(stats.norm(0.5, 0.05)),
+        "y0": pybop.ParameterInfo(stats.norm(0.2, 0.05)),
     }
 )
 

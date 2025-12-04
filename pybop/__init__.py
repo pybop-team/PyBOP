@@ -47,7 +47,7 @@ from .transformation.transformations import (
 #
 # Parameter classes
 #
-from .parameters.parameter import ParameterInfo, ParameterDistribution, Parameters
+from .parameters.parameter import ParameterInfo, ParameterInfo, Parameters
 from .parameters.priors import (Distribution, Gaussian, Uniform, Exponential, JointDistribution)
 
 #

@@ -19,7 +19,7 @@ class TestParameter:
 
     @pytest.fixture
     def parameter(self):
-        return pybop.ParameterDistribution(
+        return pybop.ParameterInfo(
             distribution=pybop.Gaussian(
                 0.6,
                 0.02,
@@ -39,14 +39,14 @@ class TestParameter:
     def test_parameter_repr(self, parameter):
         assert (
             repr(parameter)
-            == f"ParameterDistribution - Distribution: Gaussian, mean: {parameter.distribution.mean()}, standard deviation: {parameter.distribution.std()}, support: (0.375, 0.7), Initial value: 0.6"
+            == f"ParameterInfo - Distribution: Gaussian, mean: {parameter.distribution.mean()}, standard deviation: {parameter.distribution.std()}, Bounds: (0.375, 0.7), Initial value: 0.6"
         )
 
     def test_parameter_sampling(self, parameter):
         samples = parameter.sample_from_distribution(n_samples=500)
         assert (samples >= 0.375).all() and (samples <= 0.7).all()
 
-        parameter = pybop.ParameterInfo((0, np.inf))
+        parameter = pybop.ParameterInfo(bounds=(0, np.inf))
         assert parameter.sample_from_distribution() is None
 
     def test_parameter_update(self, parameter):
@@ -71,7 +71,7 @@ class TestParameter:
             pybop.ParameterInfo(bounds=[0.7, 0.3])
 
     def test_sample_initial_values(self):
-        parameter = pybop.ParameterDistribution(
+        parameter = pybop.ParameterInfo(
             distribution=pybop.Gaussian(
                 0.6,
                 0.02,
@@ -91,7 +91,7 @@ class TestParameters:
 
     @pytest.fixture
     def parameter(self):
-        return pybop.ParameterDistribution(
+        return pybop.ParameterInfo(
             distribution=pybop.Gaussian(
                 0.6,
                 0.02,
@@ -119,7 +119,7 @@ class TestParameters:
             pybop.Parameters(
                 {
                     name: parameter,
-                    "Positive electrode active material volume fraction": pybop.ParameterDistribution(
+                    "Positive electrode active material volume fraction": pybop.ParameterInfo(
                         distribution=pybop.Gaussian(
                             0.6,
                             0.02,
@@ -182,7 +182,7 @@ class TestParameters:
         # Test unbounded transformation causes ValueError due to NaN
         params = pybop.Parameters(
             {
-                name: pybop.ParameterDistribution(
+                name: pybop.ParameterInfo(
                     distribution=pybop.Gaussian(
                         0.01,
                         0.2,
@@ -209,7 +209,7 @@ class TestParameters:
         parameter._transformation = None
 
     def test_get_sigma(self, name):
-        parameter = pybop.ParameterDistribution(stats.norm(loc=0.6, scale=0.02))
+        parameter = pybop.ParameterInfo(stats.norm(loc=0.6, scale=0.02))
         params = pybop.Parameters({name: parameter})
         assert params.get_sigma0() == pytest.approx([0.02])
 
@@ -249,5 +249,5 @@ class TestParameters:
         params = pybop.Parameters({name: parameter})
         assert (
             repr(params)
-            == f"Parameters(1):\n Negative electrode active material volume fraction: ParameterDistribution - Distribution: Gaussian, mean: {parameter.distribution.mean()}, standard deviation: {parameter.distribution.std()}, support: (0.375, 0.7), Initial value: 0.6"
+            == f"Parameters(1):\n Negative electrode active material volume fraction: ParameterInfo - Distribution: Gaussian, mean: {parameter.distribution.mean()}, standard deviation: {parameter.distribution.std()}, Bounds: (0.375, 0.7), Initial value: 0.6"
         )

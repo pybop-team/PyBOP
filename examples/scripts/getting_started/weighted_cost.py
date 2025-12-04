@@ -53,10 +53,10 @@ true_values = [
 # Fitting parameters
 parameter_values.update(
     {
-        "Negative electrode active material volume fraction": pybop.ParameterDistribution(
+        "Negative electrode active material volume fraction": pybop.ParameterInfo(
             distribution=pybop.Gaussian(0.68, 0.05, truncated_at=[0.5, 0.8])
         ),
-        "Positive electrode active material volume fraction": pybop.ParameterDistribution(
+        "Positive electrode active material volume fraction": pybop.ParameterInfo(
             distribution=pybop.Gaussian(
                 0.58,
                 0.05,

@@ -28,7 +28,7 @@ class TestCosts:
     @pytest.fixture
     def parameters(self):
         return {
-            "Negative electrode active material volume fraction": pybop.ParameterDistribution(
+            "Negative electrode active material volume fraction": pybop.ParameterInfo(
                 distribution=pybop.Gaussian(
                     truncated_at=[0.375, 0.625], mean=0.5, sigma=0.010
                 )

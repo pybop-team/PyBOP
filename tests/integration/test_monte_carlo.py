@@ -51,11 +51,11 @@ class Test_Sampling_SPM:
     @pytest.fixture
     def parameters(self):
         return {
-            "Negative electrode active material volume fraction": pybop.ParameterDistribution(
+            "Negative electrode active material volume fraction": pybop.ParameterInfo(
                 pybop.Gaussian(0.575, 0.05, truncated_at=[0.375, 0.725]),
                 initial_value=stats.uniform(0.4, 0.7 - 0.4).rvs(),
             ),
-            "Positive electrode active material volume fraction": pybop.ParameterDistribution(
+            "Positive electrode active material volume fraction": pybop.ParameterInfo(
                 stats.norm(loc=0.525, scale=0.05),
                 initial_value=stats.uniform(0.4, 0.7 - 0.4).rvs(),
                 # no bounds

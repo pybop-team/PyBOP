@@ -40,14 +40,14 @@ class TestOptimisation:
     @pytest.fixture
     def parameters(self):
         return {
-            "Negative electrode active material volume fraction": pybop.ParameterDistribution(
+            "Negative electrode active material volume fraction": pybop.ParameterInfo(
                 distribution=pybop.Gaussian(
                     0.55,
                     0.05,
                     truncated_at=[0.375, 0.75],
                 ),
             ),
-            "Positive electrode active material volume fraction": pybop.ParameterDistribution(
+            "Positive electrode active material volume fraction": pybop.ParameterInfo(
                 stats.norm(loc=0.55, scale=0.05),
                 # no bounds
             ),

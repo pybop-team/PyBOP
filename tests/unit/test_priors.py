@@ -150,15 +150,12 @@ class TestDistributions:
         assert abs(mean - 1) < 0.2
 
     def test_repr(self, Gaussian, Uniform, Exponential, JointDistribution1):
-        assert (
-            repr(Gaussian)
-            == "Gaussian, mean: 0.5, standard deviation: 1.0, support: (-inf, inf)"
-        )
+        assert repr(Gaussian) == "Gaussian, mean: 0.5, standard deviation: 1.0"
         assert repr(Uniform) == "Uniform, lower: 0, upper: 1"
         assert repr(Exponential) == "Exponential, loc: 0, scale: 1"
         assert (
             repr(JointDistribution1)
-            == "JointDistribution(distributions: [Gaussian, mean: 0.5, standard deviation: 1.0, support: (-inf, inf); Uniform, lower: 0, upper: 1])"
+            == "JointDistribution(distributions: [Gaussian, mean: 0.5, standard deviation: 1.0; Uniform, lower: 0, upper: 1])"
         )
 
     def test_invalid_size(self, Gaussian, Uniform, Exponential):
