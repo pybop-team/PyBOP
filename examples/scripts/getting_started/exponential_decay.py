@@ -1,5 +1,6 @@
 import numpy as np
 import pybamm
+from scipy import stats
 
 import pybop
 
@@ -30,8 +31,8 @@ dataset = pybop.Dataset(
 # Fitting parameters
 parameter_values.update(
     {
-        "k": pybop.Parameter(prior=pybop.Gaussian(0.5, 0.05)),
-        "y0": pybop.Parameter(prior=pybop.Gaussian(0.2, 0.05)),
+        "k": pybop.Parameter(stats.norm(0.5, 0.05)),
+        "y0": pybop.Parameter(stats.norm(0.2, 0.05)),
     }
 )
 

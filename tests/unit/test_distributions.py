@@ -4,9 +4,9 @@ import pytest
 import pybop
 
 
-class TestPriors:
+class TestDistributions:
     """
-    A class to test the priors.
+    A class to test the distribution.
     """
 
     pytestmark = pytest.mark.unit
@@ -24,18 +24,22 @@ class TestPriors:
         return pybop.Exponential(scale=1)
 
     @pytest.fixture
-    def JointPrior1(self, Gaussian, Uniform):
-        return pybop.JointPrior(Gaussian, Uniform)
+    def JointDistribution1(self, Gaussian, Uniform):
+        return pybop.JointDistribution(Gaussian, Uniform)
 
     @pytest.fixture
-    def JointPrior2(self, Gaussian, Exponential):
-        return pybop.JointPrior(Gaussian, Exponential)
+    def JointDistribution2(self, Gaussian, Exponential):
+        return pybop.JointDistribution(Gaussian, Exponential)
 
-    def test_base_prior(self):
-        base = pybop.BasePrior()
-        assert isinstance(base, pybop.BasePrior)
+    def test_distribution_class(self):
+        base = pybop.Distribution()
+        assert isinstance(base, pybop.Distribution)
+        with pytest.raises(NotImplementedError):
+            base.logpdfS1(0.0)
 
-    def test_priors(self, Gaussian, Uniform, Exponential, JointPrior1, JointPrior2):
+    def test_distributions(
+        self, Gaussian, Uniform, Exponential, JointDistribution1, JointDistribution2
+    ):
         # Test pdf
         np.testing.assert_allclose(Gaussian.pdf(0.5), 0.3989422804014327, atol=1e-4)
         np.testing.assert_allclose(Uniform.pdf(0.5), 1, atol=1e-4)
@@ -57,10 +61,10 @@ class TestPriors:
         np.testing.assert_allclose(Exponential.cdf(1), 0.6321205588285577, atol=1e-4)
 
         # Test logpdf
-        assert JointPrior1.logpdf([0.5, 0.5]) == Gaussian.logpdf(0.5) + Uniform.logpdf(
+        assert JointDistribution1.logpdf([0.5, 0.5]) == Gaussian.logpdf(
             0.5
-        )
-        assert JointPrior2.logpdf([0.5, 1]) == Gaussian.logpdf(
+        ) + Uniform.logpdf(0.5)
+        assert JointDistribution2.logpdf([0.5, 1]) == Gaussian.logpdf(
             0.5
         ) + Exponential.logpdf(1)
 
@@ -79,46 +83,48 @@ class TestPriors:
         assert p == Exponential.logpdf(1)
         assert dp == Exponential.logpdf(1)
 
-        # Test JointPrior1.logpdfS1
-        p, dp = JointPrior1.logpdfS1([0.5, 0.5])
+        # Test JointDistribution1.logpdfS1
+        p, dp = JointDistribution1.logpdfS1([0.5, 0.5])
         assert p == Gaussian.logpdf(0.5) + Uniform.logpdf(0.5)
         np.testing.assert_allclose(dp, np.array([0.0, 0.0]), atol=1e-4)
 
-        # Test JointPrior.logpdfS1
-        p, dp = JointPrior2.logpdfS1([0.5, 1])
+        # Test JointDistribution.logpdfS1
+        p, dp = JointDistribution2.logpdfS1([0.5, 1])
         assert p == Gaussian.logpdf(0.5) + Exponential.logpdf(1)
         np.testing.assert_allclose(
             dp, np.array([0.0, Exponential.logpdf(1)]), atol=1e-4
         )
 
-        # Test JointPrior1 non-symmetric
+        # Test JointDistribution1 non-symmetric
         with pytest.raises(AssertionError):
             np.testing.assert_allclose(
-                JointPrior1.logpdf([0.4, 0.5]),
-                JointPrior1.logpdf([0.5, 0.4]),
+                JointDistribution1.logpdf([0.4, 0.5]),
+                JointDistribution1.logpdf([0.5, 0.4]),
                 atol=1e-4,
             )
 
-        # Test JointPrior2 non-symmetric
+        # Test JointDistribution2 non-symmetric
         with pytest.raises(AssertionError):
             np.testing.assert_allclose(
-                JointPrior2.logpdf([0.4, 1]), JointPrior2.logpdf([1, 0.4]), atol=1e-4
+                JointDistribution2.logpdf([0.4, 1]),
+                JointDistribution2.logpdf([1, 0.4]),
+                atol=1e-4,
             )
 
-        # Test JointPrior with incorrect dimensions
+        # Test JointDistribution with incorrect dimensions
         with pytest.raises(ValueError, match="Input x must have length 2, got 1"):
-            JointPrior1.logpdf([0.4])
+            JointDistribution1.logpdf([0.4])
 
         with pytest.raises(ValueError, match="Input x must have length 2, got 1"):
-            JointPrior1.logpdfS1([0.4])
+            JointDistribution1.logpdfS1([0.4])
 
         # Test properties
-        assert Uniform.mean == (Uniform.upper - Uniform.lower) / 2
+        assert Uniform.mean() == (Uniform.upper - Uniform.lower) / 2
         np.testing.assert_allclose(
-            Uniform.sigma, (Uniform.upper - Uniform.lower) / (2 * np.sqrt(3)), atol=1e-8
+            Uniform.std(), (Uniform.upper - Uniform.lower) / (2 * np.sqrt(3)), atol=1e-8
         )
-        assert Exponential.mean == Exponential.scale
-        assert Exponential.sigma == Exponential.scale
+        assert Exponential.mean() == Exponential.scale
+        assert Exponential.std() == Exponential.scale
 
     def test_gaussian_rvs(self, Gaussian):
         samples = Gaussian.rvs(size=500)
@@ -143,13 +149,13 @@ class TestPriors:
         mean = np.mean(samples)
         assert abs(mean - 1) < 0.2
 
-    def test_repr(self, Gaussian, Uniform, Exponential, JointPrior1):
-        assert repr(Gaussian) == "Gaussian, loc: 0.5, scale: 1"
-        assert repr(Uniform) == "Uniform, loc: 0, scale: 1"
+    def test_repr(self, Gaussian, Uniform, Exponential, JointDistribution1):
+        assert repr(Gaussian) == "Gaussian, mean: 0.5, standard deviation: 1.0"
+        assert repr(Uniform) == "Uniform, lower: 0, upper: 1"
         assert repr(Exponential) == "Exponential, loc: 0, scale: 1"
         assert (
-            repr(JointPrior1)
-            == "JointPrior(priors: [Gaussian, loc: 0.5, scale: 1, Uniform, loc: 0, scale: 1])"
+            repr(JointDistribution1)
+            == "JointDistribution(distributions: [Gaussian, mean: 0.5, standard deviation: 1.0; Uniform, lower: 0, upper: 1])"
         )
 
     def test_invalid_size(self, Gaussian, Uniform, Exponential):
@@ -160,12 +166,12 @@ class TestPriors:
         with pytest.raises(ValueError):
             Exponential.rvs(-1)
 
-    def test_incorrect_composed_priors(self, Gaussian, Uniform):
+    def test_incorrect_composed_distributions(self, Gaussian, Uniform):
         with pytest.raises(
-            ValueError, match="All priors must be instances of BasePrior"
+            ValueError, match="All distributions must be instances of Distribution"
         ):
-            pybop.JointPrior(Gaussian, Uniform, "string")
+            pybop.JointDistribution(Gaussian, Uniform, "string")
         with pytest.raises(
-            ValueError, match="All priors must be instances of BasePrior"
+            ValueError, match="All distributions must be instances of Distribution"
         ):
-            pybop.JointPrior(Gaussian, Uniform, 0.5)
+            pybop.JointDistribution(Gaussian, Uniform, 0.5)

@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from scipy import stats
 
 import pybop
 from pybop.parameters.parameter import (
@@ -19,8 +20,11 @@ class TestParameter:
     @pytest.fixture
     def parameter(self):
         return pybop.Parameter(
-            prior=pybop.Gaussian(0.6, 0.02),
-            bounds=[0.375, 0.7],
+            distribution=pybop.Gaussian(
+                0.6,
+                0.02,
+                truncated_at=[0.375, 0.7],
+            ),
             initial_value=0.6,
         )
 
@@ -29,30 +33,34 @@ class TestParameter:
         return "Negative electrode active material volume fraction"
 
     def test_parameter_construction(self, parameter):
-        assert parameter.prior.mean == 0.6
-        assert parameter.prior.sigma == 0.02
         assert parameter.bounds == [0.375, 0.7]
         assert parameter.initial_value == 0.6
+        assert parameter() == 0.6
+
+        # test error if bounds and distribution
+        with pytest.raises(
+            ParameterError,
+            match="Bounds can only be set if no distribution is provided. If a bounded distribution is needed, please ensure the distribution itself is bounded.",
+        ):
+            pybop.Parameter(distribution=stats.norm(0.3, 0.1), bounds=(0.4, 0.8))
 
     def test_parameter_repr(self, parameter):
         assert (
             repr(parameter)
-            == "Parameter: Prior: Gaussian, loc: 0.6, scale: 0.02 \n Bounds: [0.375, 0.7]"
+            == f"Parameter - Distribution: Gaussian, mean: {parameter.distribution.mean()}, standard deviation: {parameter.distribution.std()}, Bounds: (0.375, 0.7), Initial value: 0.6"
         )
 
     def test_parameter_sampling(self, parameter):
-        samples = parameter.sample_from_prior(n_samples=500)
+        samples = parameter.sample_from_distribution(n_samples=500)
         assert (samples >= 0.375).all() and (samples <= 0.7).all()
+
+        parameter = pybop.Parameter(bounds=(0, np.inf))
+        assert parameter.sample_from_distribution() is None
 
     def test_parameter_update(self, parameter):
         # Test initial value update
         parameter.update_initial_value(value=0.654)
         assert parameter.initial_value == 0.654
-
-    def test_parameter_margin(self, parameter):
-        assert parameter._margin == 1e-4
-        parameter._set_margin(margin=1e-3)
-        assert parameter._margin == 1e-3
 
     def test_no_bounds(self, name):
         parameter = pybop.Parameter()
@@ -64,12 +72,6 @@ class TestParameter:
         assert not np.isfinite(list(bounds.values())).all()
 
     def test_invalid_inputs(self, parameter):
-        # Test error with invalid value
-        with pytest.raises(
-            ParameterValidationError, match="Margin must be between 0 and 1"
-        ):
-            parameter._set_margin(margin=-1)
-
         # Test error with opposite bounds
         with pytest.raises(
             ParameterValidationError, match="must be less than upper bound"
@@ -78,8 +80,11 @@ class TestParameter:
 
     def test_sample_initial_values(self):
         parameter = pybop.Parameter(
-            prior=pybop.Gaussian(0.6, 0.02),
-            bounds=[0.375, 0.7],
+            distribution=pybop.Gaussian(
+                0.6,
+                0.02,
+                truncated_at=[0.375, 0.7],
+            )
         )
         sample = parameter._initial_value
         assert (sample >= 0.375) and (sample <= 0.7)
@@ -95,8 +100,11 @@ class TestParameters:
     @pytest.fixture
     def parameter(self):
         return pybop.Parameter(
-            prior=pybop.Gaussian(0.6, 0.02),
-            bounds=[0.375, 0.7],
+            distribution=pybop.Gaussian(
+                0.6,
+                0.02,
+                truncated_at=[0.375, 0.7],
+            ),
             initial_value=0.6,
         )
 
@@ -120,8 +128,11 @@ class TestParameters:
                 {
                     name: parameter,
                     "Positive electrode active material volume fraction": pybop.Parameter(
-                        prior=pybop.Gaussian(0.6, 0.02),
-                        bounds=[0.375, 0.7],
+                        distribution=pybop.Gaussian(
+                            0.6,
+                            0.02,
+                            truncated_at=[0.375, 0.7],
+                        ),
                         initial_value=0.6,
                     ),
                 }
@@ -130,6 +141,14 @@ class TestParameters:
 
         with pytest.raises(ParameterError, match="already exists"):
             params.add(name, parameter)
+
+        # setting parameters with wrong input
+        with pytest.raises(ParameterNotFoundError, match="not found"):
+            params["not a parameter"] = pybop.Parameter(initial_value=0.8)
+        with pytest.raises(
+            TypeError, match="Paremeter must be of type pybop.ParemterInfo"
+        ):
+            params[name] = pybop.Gaussian(0.5, 0.02)
 
         params.remove(name=name)
         with pytest.raises(ParameterNotFoundError, match="not found"):
@@ -180,9 +199,12 @@ class TestParameters:
         params = pybop.Parameters(
             {
                 name: pybop.Parameter(
-                    prior=pybop.Gaussian(0.01, 0.2),
+                    distribution=pybop.Gaussian(
+                        0.01,
+                        0.2,
+                        truncated_at=[-1, 1],
+                    ),
                     transformation=pybop.LogTransformation(),
-                    bounds=[-1, 1],
                 )
             }
         )
@@ -192,28 +214,23 @@ class TestParameters:
         ):
             params.get_bounds(transformed=True)
 
-    def test_parameters_update(self, name, parameter):
-        params = pybop.Parameters({name: parameter})
-        params.update(bounds=[[0.38, 0.68]])
-        assert parameter.bounds == [0.38, 0.68]
-        params.update(bounds=dict(lower=[0.37], upper=[0.7]))
-        assert parameter.bounds == [0.37, 0.7]
-
     def test_parameters_sampling(self, name, parameter):
         parameter._transformation = pybop.ScaledTransformation(
             coefficient=0.2, intercept=-1
         )
         params = pybop.Parameters({name: parameter})
         params.construct_transformation()
-        samples = params.sample_from_priors(n_samples=500, transformed=True)
+        samples = params.sample_from_distributions(n_samples=500, transformed=True)
         assert (samples >= -0.125).all() and (samples <= -0.06).all()
         parameter._transformation = None
 
-    def test_get_sigma(self, name, parameter):
+    def test_get_sigma(self, name):
+        parameter = pybop.Parameter(stats.norm(loc=0.6, scale=0.02))
         params = pybop.Parameters({name: parameter})
-        assert params.get_sigma0() == [0.02]
+        assert params.get_sigma0() == pytest.approx([0.02])
 
-        parameter._prior = None
+        parameter = pybop.Parameter(bounds=(0.375, 0.7))
+        parameter._distribution = None
         params = pybop.Parameters({name: parameter})
         assert params.get_sigma0() == [
             0.05 * (parameter.bounds[1] - parameter.bounds[0])
@@ -226,6 +243,11 @@ class TestParameters:
         )
         with pytest.raises(ParameterError, match="has no initial value"):
             parameter.get_initial_values()
+
+    def test_get_initial_values_if_none(self, name, parameter):
+        params = pybop.Parameters({name: parameter})
+        params[name]._initial_value = None
+        assert params.get_initial_values() is not None
 
     def test_parameters_init(self, name, parameter):
         # Error if parameters not dictionary or pybop.Parameters
@@ -248,5 +270,5 @@ class TestParameters:
         params = pybop.Parameters({name: parameter})
         assert (
             repr(params)
-            == "Parameters(1):\n Negative electrode active material volume fraction: prior= Gaussian, loc: 0.6, scale: 0.02, bounds=[0.375, 0.7]"
+            == f"Parameters(1):\n Negative electrode active material volume fraction: Parameter - Distribution: Gaussian, mean: {parameter.distribution.mean()}, standard deviation: {parameter.distribution.std()}, Bounds: (0.375, 0.7), Initial value: 0.6"
         )

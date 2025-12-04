@@ -67,12 +67,10 @@ class BenchmarkTrackParameterisation:
         parameter_values.update(
             {
                 "Negative electrode active material volume fraction": pybop.Parameter(
-                    prior=pybop.Gaussian(0.55, 0.03),
-                    bounds=[0.375, 0.7],
+                    pybop.Gaussian(0.55, 0.03, truncated_at=[0.375, 0.7]),
                 ),
                 "Positive electrode active material volume fraction": pybop.Parameter(
-                    prior=pybop.Gaussian(0.55, 0.03),
-                    bounds=[0.375, 0.7],
+                    pybop.Gaussian(0.55, 0.03, truncated_at=[0.375, 0.7]),
                 ),
             }
         )

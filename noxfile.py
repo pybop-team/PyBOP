@@ -114,7 +114,6 @@ def run_tests(session):
         "--integration",
         "--nbmake",
         "--examples",
-        "--notebooks",
         "-n",
         "auto",
         *specific_tests,
@@ -151,6 +150,7 @@ def run_quick(session):
     """
     run_tests(session)
     run_doc_tests(session)
+    notebooks(session)
 
 
 @nox.session

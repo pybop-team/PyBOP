@@ -67,10 +67,10 @@ dataset = pybop.Dataset(
 parameter_values.update(
     {
         "Positive electrode reference exchange-current density [A.m-2]": pybop.Parameter(
-            prior=pybop.Gaussian(1, 0.1),
+            distribution=pybop.Gaussian(1, 0.1),
         ),
         "Positive electrode charge transfer coefficient": pybop.Parameter(
-            prior=pybop.Gaussian(0.5, 0.1),
+            distribution=pybop.Gaussian(0.5, 0.1),
         ),
     }
 )
