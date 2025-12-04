@@ -46,7 +46,7 @@ class TestParameter:
         samples = parameter.sample_from_distribution(n_samples=500)
         assert (samples >= 0.375).all() and (samples <= 0.7).all()
 
-        parameter = pybop.ParameterBounds((0, np.inf))
+        parameter = pybop.ParameterInfo((0, np.inf))
         assert parameter.sample_from_distribution() is None
 
     def test_parameter_update(self, parameter):
@@ -68,7 +68,7 @@ class TestParameter:
         with pytest.raises(
             ParameterValidationError, match="must be less than upper bound"
         ):
-            pybop.ParameterBounds(bounds=[0.7, 0.3])
+            pybop.ParameterInfo(bounds=[0.7, 0.3])
 
     def test_sample_initial_values(self):
         parameter = pybop.ParameterDistribution(
@@ -155,19 +155,19 @@ class TestParameters:
         # Construct params
         params = pybop.Parameters(
             {
-                "LogParam": pybop.ParameterBounds(
+                "LogParam": pybop.ParameterInfo(
                     bounds=[0, 1],
                     transformation=pybop.LogTransformation(),
                 ),
-                "ScaledParam": pybop.ParameterBounds(
+                "ScaledParam": pybop.ParameterInfo(
                     bounds=[0, 1],
                     transformation=pybop.ScaledTransformation(1, 0.5),
                 ),
-                "IdentityParam": pybop.ParameterBounds(
+                "IdentityParam": pybop.ParameterInfo(
                     bounds=[0, 1],
                     transformation=pybop.IdentityTransformation(),
                 ),
-                "UnitHyperParam": pybop.ParameterBounds(
+                "UnitHyperParam": pybop.ParameterInfo(
                     bounds=[0, 1],
                     transformation=pybop.UnitHyperCube(1, 2),
                 ),
@@ -213,7 +213,7 @@ class TestParameters:
         params = pybop.Parameters({name: parameter})
         assert params.get_sigma0() == pytest.approx([0.02])
 
-        parameter = pybop.ParameterBounds(bounds=(0.375, 0.7))
+        parameter = pybop.ParameterInfo(bounds=(0.375, 0.7))
         parameter._distribution = None
         params = pybop.Parameters({name: parameter})
         assert params.get_sigma0() == [

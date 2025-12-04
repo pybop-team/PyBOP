@@ -599,7 +599,7 @@ class TestOptimisation:
     def test_multistart_fails_without_distribution(self, model, dataset):
         # parameter with inifinite bound (no distribution)
         parameter_values = model.default_parameter_values
-        param = pybop.ParameterBounds((0.5, np.inf), initial_value=0.8)
+        param = pybop.ParameterInfo((0.5, np.inf), initial_value=0.8)
         parameter_values.update(
             {"Positive electrode active material volume fraction": param}
         )

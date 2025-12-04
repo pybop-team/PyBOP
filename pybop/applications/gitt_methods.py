@@ -36,10 +36,10 @@ class GITTPulseFit(BaseApplication):
     ):
         self.parameter_values = parameter_values.copy()
         self.parameters = {
-            "Particle diffusion time scale [s]": pybop.ParameterBounds(
+            "Particle diffusion time scale [s]": pybop.ParameterInfo(
                 bounds=[0, np.inf]
             ),
-            "Series resistance [Ohm]": pybop.ParameterBounds(bounds=[0, np.inf]),
+            "Series resistance [Ohm]": pybop.ParameterInfo(bounds=[0, np.inf]),
         }
         self.cost = cost or pybop.RootMeanSquaredError
         self.optimiser = optimiser or pybop.SciPyMinimize

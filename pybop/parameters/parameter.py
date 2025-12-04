@@ -104,13 +104,25 @@ class ParameterInfo:
 
     def __init__(
         self,
-        *,
+        bounds: BoundsPair | None = None,
         initial_value: float = None,
         transformation: Transformation | None = None,
     ) -> None:
         self._distribution = None
         self._bounds = None
         self._transformation = transformation or IdentityTransformation()
+
+        if bounds is not None:
+            # Set bounds with validation
+            self._bounds = Bounds(bounds[0], bounds[1])
+            # Add uniform distribution for finite bounds in order to sample initial values
+            if all(np.isfinite(np.asarray(bounds))):
+                self._distribution = stats.uniform(
+                    loc=bounds[0], scale=bounds[1] - bounds[0]
+                )
+
+        if initial_value is None and self._distribution is not None:
+            initial_value = self.sample_from_distribution()[0]
 
         # Validate and set values
         self._initial_value = (
@@ -208,49 +220,6 @@ class ParameterInfo:
     @property
     def transformation(self) -> Transformation:
         return self._transformation
-
-
-class ParameterBounds(ParameterInfo):
-    """
-    Subclass of ParameterInfo
-
-    This class accepts bounds in its constructor and sets the parameter
-    distribution to None or to a uniform distribution if both the lower
-    and the upper bound are finite.
-
-    Parameters
-    ----------
-    initial_value : NumericValue, optional
-        Initial parameter value
-    bounds : tuple[float, float], optional
-        Parameter bounds as (lower, upper)
-    transformation : Transformation, optional
-        Parameter transformation
-    """
-
-    def __init__(self, bounds: BoundsPair, *, initial_value=None, transformation=None):
-        super().__init__(initial_value=initial_value, transformation=transformation)
-        # Set bounds with validation
-        self._bounds = Bounds(bounds[0], bounds[1])
-        # Add uniform distribution for finite bounds in order to sample initial values
-        if all(np.isfinite(np.asarray(bounds))):
-            self._distribution = stats.uniform(
-                loc=bounds[0], scale=bounds[1] - bounds[0]
-            )
-            # Sample uniformly if no initial value provided
-            if initial_value is None:
-                initial_value = self.sample_from_distribution()[0]
-
-        # Set initial value
-        self._initial_value = (
-            float(initial_value) if initial_value is not None else None
-        )
-        # Validate initial values are within bounds
-        self._validate_values_within_bounds()
-
-    def __repr__(self) -> str:
-        """String representation of the parameter bounds."""
-        return f"ParameterBounds - Bounds: {self.bounds}, Initial value: {self.initial_value}"
 
 
 class ParameterDistribution(ParameterInfo):
