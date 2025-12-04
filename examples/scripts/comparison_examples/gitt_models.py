@@ -36,7 +36,7 @@ dataset = pybop.Dataset(
 
 for model in [pybop.lithium_ion.WeppnerHuggins(), pybop.lithium_ion.SPDiffusion()]:
     # GITT target parameter
-    diffusion_parameter = pybop.ParameterDistribution(stats.norm(5000, 1000))
+    diffusion_parameter = pybop.ParameterDistribution(stats.Normal(mu=5000, sigma=1000))
     if isinstance(model, pybop.lithium_ion.WeppnerHuggins):
         # Group parameter values
         grouped_parameter_values = (

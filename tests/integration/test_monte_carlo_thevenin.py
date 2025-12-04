@@ -76,7 +76,7 @@ class TestSamplingThevenin:
                     truncated_at=[1e-4, 1e-1],
                 ),
                 transformation=pybop.LogTransformation(),
-                initial_value=stats.uniform(2e-3, 8e-2 - 2e-3).rvs(),
+                initial_value=stats.Uniform(a=2e-3, b=8e-2).sample(),
             ),
             "R1 [Ohm]": pybop.ParameterDistribution(
                 distribution=pybop.Gaussian(
@@ -85,7 +85,7 @@ class TestSamplingThevenin:
                     truncated_at=[1e-4, 1e-1],
                 ),
                 transformation=pybop.LogTransformation(),
-                initial_value=stats.uniform(2e-3, 8e-2 - 2e-3).rvs(),
+                initial_value=stats.Uniform(a=2e-3, b=8e-2).sample(),
             ),
         }
 

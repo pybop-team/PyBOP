@@ -39,7 +39,7 @@ class TestParameter:
     def test_parameter_repr(self, parameter):
         assert (
             repr(parameter)
-            == f"ParameterDistribution - Distribution: Gaussian, mean: {parameter.distribution.mean()}, standard deviation: {parameter.distribution.std()}, support: (0.375, 0.7), Initial value: 0.6"
+            == f"ParameterDistribution - Distribution: Gaussian, mean: {parameter.distribution.mean()}, standard deviation: {parameter.distribution.standard_deviation()}, support: (0.375, 0.7), Initial value: 0.6"
         )
 
     def test_parameter_sampling(self, parameter):
@@ -216,7 +216,7 @@ class TestParameters:
         parameter._transformation = None
 
     def test_get_sigma(self, name):
-        parameter = pybop.ParameterDistribution(stats.norm(loc=0.6, scale=0.02))
+        parameter = pybop.ParameterDistribution(stats.Normal(mu=0.6, sigma=0.02))
         params = pybop.Parameters({name: parameter})
         assert params.get_sigma0() == pytest.approx([0.02])
 
@@ -256,5 +256,5 @@ class TestParameters:
         params = pybop.Parameters({name: parameter})
         assert (
             repr(params)
-            == f"Parameters(1):\n Negative electrode active material volume fraction: ParameterDistribution - Distribution: Gaussian, mean: {parameter.distribution.mean()}, standard deviation: {parameter.distribution.std()}, support: (0.375, 0.7), Initial value: 0.6"
+            == f"Parameters(1):\n Negative electrode active material volume fraction: ParameterDistribution - Distribution: Gaussian, mean: {parameter.distribution.mean()}, standard deviation: {parameter.distribution.standard_deviation()}, support: (0.375, 0.7), Initial value: 0.6"
         )

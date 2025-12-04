@@ -44,12 +44,12 @@ class Test_SPM_Parameterisation:
     def parameters(self):
         return {
             "Negative electrode active material volume fraction": pybop.ParameterDistribution(
-                stats.uniform(0.3, 0.9 - 0.3),
-                initial_value=stats.uniform(0.4, 0.75 - 0.4).rvs(),
+                stats.Uniform(a=0.3, b=0.9),
+                initial_value=stats.Uniform(a=0.4, b=0.75).sample(),
             ),
             "Positive electrode active material volume fraction": pybop.ParameterDistribution(
-                stats.uniform(0.3, 0.9 - 0.3),
-                initial_value=stats.uniform(0.4, 0.75 - 0.4).rvs(),
+                stats.Uniform(a=0.3, b=0.9),
+                initial_value=stats.Uniform(a=0.4, b=0.75).sample(),
             ),
         }
 
@@ -58,11 +58,11 @@ class Test_SPM_Parameterisation:
         return {
             "Negative electrode active material volume fraction": pybop.ParameterDistribution(
                 pybop.Uniform(0.3, 0.9),
-                initial_value=stats.uniform(0.4, 0.75 - 0.4).rvs(),
+                initial_value=stats.Uniform(a=0.4, b=0.75).sample(),
             ),
             "Positive electrode active material volume fraction": pybop.ParameterDistribution(
                 pybop.Uniform(0.3, 0.9),
-                initial_value=stats.uniform(0.4, 0.75 - 0.4).rvs(),
+                initial_value=stats.Uniform(a=0.4, b=0.75).sample(),
             ),
         }
 

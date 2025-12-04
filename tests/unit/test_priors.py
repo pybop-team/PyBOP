@@ -121,13 +121,15 @@ class TestDistributions:
         # Test properties
         assert Uniform.mean() == (Uniform.upper - Uniform.lower) / 2
         np.testing.assert_allclose(
-            Uniform.std(), (Uniform.upper - Uniform.lower) / (2 * np.sqrt(3)), atol=1e-8
+            Uniform.standard_deviation(),
+            (Uniform.upper - Uniform.lower) / (2 * np.sqrt(3)),
+            atol=1e-8,
         )
         assert Exponential.mean() == Exponential.scale
-        assert Exponential.std() == Exponential.scale
+        assert Exponential.standard_deviation() == Exponential.scale
 
     def test_gaussian_rvs(self, Gaussian):
-        samples = Gaussian.rvs(size=500)
+        samples = Gaussian.sample(shape=500)
         mean = np.mean(samples)
         std = np.std(samples)
         assert abs(mean - 0.5) < 0.2
@@ -135,16 +137,16 @@ class TestDistributions:
 
     def test_incorrect_rvs(self, Gaussian):
         with pytest.raises(ValueError):
-            Gaussian.rvs(size="a")
+            Gaussian.sample(shape="a")
         with pytest.raises(ValueError):
-            Gaussian.rvs(size=(1, 2, -1))
+            Gaussian.sample(shape=(1, 2, -1))
 
     def test_uniform_rvs(self, Uniform):
-        samples = Uniform.rvs(size=500)
+        samples = Uniform.sample(shape=500)
         assert (samples >= 0).all() and (samples <= 1).all()
 
     def test_exponential_rvs(self, Exponential):
-        samples = Exponential.rvs(size=500)
+        samples = Exponential.sample(shape=500)
         assert (samples >= 0).all()
         mean = np.mean(samples)
         assert abs(mean - 1) < 0.2
@@ -163,11 +165,11 @@ class TestDistributions:
 
     def test_invalid_size(self, Gaussian, Uniform, Exponential):
         with pytest.raises(ValueError):
-            Gaussian.rvs(-1)
+            Gaussian.sample(-1)
         with pytest.raises(ValueError):
-            Uniform.rvs(-1)
+            Uniform.sample(-1)
         with pytest.raises(ValueError):
-            Exponential.rvs(-1)
+            Exponential.sample(-1)
 
     def test_incorrect_composed_distributions(self, Gaussian, Uniform):
         with pytest.raises(

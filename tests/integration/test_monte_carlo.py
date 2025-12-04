@@ -53,11 +53,11 @@ class Test_Sampling_SPM:
         return {
             "Negative electrode active material volume fraction": pybop.ParameterDistribution(
                 pybop.Gaussian(0.575, 0.05, truncated_at=[0.375, 0.725]),
-                initial_value=stats.uniform(0.4, 0.7 - 0.4).rvs(),
+                initial_value=stats.Uniform(a=0.4, b=0.7).sample(),
             ),
             "Positive electrode active material volume fraction": pybop.ParameterDistribution(
-                stats.norm(loc=0.525, scale=0.05),
-                initial_value=stats.uniform(0.4, 0.7 - 0.4).rvs(),
+                stats.Normal(mu=0.525, sigma=0.05),
+                initial_value=stats.Uniform(a=0.4, b=0.7).sample(),
                 # no bounds
             ),
         }

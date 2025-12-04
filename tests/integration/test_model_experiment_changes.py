@@ -164,7 +164,7 @@ class TestModelAndExperimentChanges:
         parameter_values.update(
             {
                 "Negative electrode active material volume fraction": pybop.ParameterDistribution(
-                    distribution=stats.norm(loc=0.68, scale=0.05),
+                    distribution=stats.Normal(mu=0.68, sigma=0.05),
                 )
             }
         )
@@ -187,7 +187,7 @@ class TestModelAndExperimentChanges:
         parameter_values.update(
             {
                 "Negative electrode active material volume fraction": pybop.ParameterDistribution(
-                    distribution=stats.norm(loc=0.68, scale=0.05),
+                    distribution=stats.Normal(mu=0.68, sigma=0.05),
                 )
             }
         )

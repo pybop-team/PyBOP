@@ -147,7 +147,7 @@ class ParameterInfo:
         if self._distribution is None:
             return None
 
-        samples = self._distribution.rvs(n_samples, random_state=random_state)
+        samples = self._distribution.sample(n_samples, rng=random_state)
         samples = np.atleast_1d(samples).astype(float)
 
         if transformed:
@@ -250,9 +250,7 @@ class ParameterBounds(ParameterInfo):
         self._bounds = Bounds(bounds[0], bounds[1])
         # Add uniform distribution for finite bounds in order to sample initial values
         if all(np.isfinite(np.asarray(bounds))):
-            self._distribution = stats.uniform(
-                loc=bounds[0], scale=bounds[1] - bounds[0]
-            )
+            self._distribution = stats.Uniform(a=bounds[0], b=bounds[1])
             # Sample uniformly if no initial value provided
             if initial_value is None:
                 initial_value = self.sample_from_distribution()[0]
@@ -288,13 +286,40 @@ class ParameterDistribution(ParameterInfo):
 
     def __init__(
         self,
-        distribution: stats.distributions.rv_frozen | Distribution,
+        distribution: stats.rv_continuous
+        | Distribution
+        | stats._distribution_infrastructure.ContinuousDistribution,
         *,
         initial_value=None,
         transformation=None,
+        distribution_params: dict | None = None,
     ):
         super().__init__(initial_value=initial_value, transformation=transformation)
-        self._distribution = distribution
+
+        if isinstance(distribution, stats.rv_continuous):
+            distribution = stats.make_distribution(distribution)
+            if "loc" in distribution_params:
+                loc = distribution_params["loc"]
+                del distribution_params["loc"]
+            else:
+                loc = 0.0
+            if "scale" in distribution_params:
+                scale = distribution_params["scale"]
+                del distribution_params["scale"]
+            else:
+                scale = 0.0
+            X = distribution(**distribution_params)
+            self._distribution = scale * X + loc
+        elif isinstance(
+            distribution,
+            (Distribution, stats._distribution_infrastructure.ContinuousDistribution),
+        ):
+            self._distribution = distribution
+        else:
+            raise TypeError(
+                "The distribution must be of type pybop.Distribution, stats.rv_continous, or stats._distribution_infrastructure.ContinousDistribution"
+            )
+
         if initial_value is None:
             initial_value = self.sample_from_distribution()[0]
         self._initial_value = (
@@ -577,8 +602,8 @@ class Parameters:
 
         for param in self._parameters.values():
             sig = None
-            if param.distribution is not None and hasattr(param.distribution, "std"):
-                sig = param.distribution.std()
+            if param.distribution is not None:
+                sig = param.distribution.standard_deviation()
             elif param.bounds is not None:
                 lower, upper = param.bounds
                 if np.isfinite(upper - lower):

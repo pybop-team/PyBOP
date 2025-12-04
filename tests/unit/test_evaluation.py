@@ -40,7 +40,7 @@ class TestEvaluation:
                 ),
             ),
             "Positive electrode Bruggeman coefficient (electrode)": pybop.ParameterDistribution(
-                distribution=stats.norm(loc=1.5, scale=0.1),
+                distribution=stats.Normal(mu=1.5, sigma=0.1),
                 transformation=pybop.LogTransformation(),
             ),
         }

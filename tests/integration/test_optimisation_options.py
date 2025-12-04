@@ -48,7 +48,7 @@ class TestOptimisation:
                 ),
             ),
             "Positive electrode active material volume fraction": pybop.ParameterDistribution(
-                stats.norm(loc=0.55, scale=0.05),
+                stats.Normal(mu=0.55, sigma=0.05),
                 # no bounds
             ),
         }

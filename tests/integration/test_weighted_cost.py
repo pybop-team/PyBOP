@@ -68,10 +68,10 @@ class TestWeightedCost:
     def parameters(self):
         return {
             "Negative electrode active material volume fraction": pybop.ParameterDistribution(
-                stats.uniform(0.4, 0.75 - 0.4),
+                stats.Uniform(a=0.4, b=0.75),
             ),
             "Positive electrode active material volume fraction": pybop.ParameterDistribution(
-                stats.uniform(0.4, 0.75 - 0.4),
+                stats.Uniform(a=0.4, b=0.75),
                 # no bounds
             ),
         }

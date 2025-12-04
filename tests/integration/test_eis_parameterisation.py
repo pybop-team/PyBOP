@@ -42,12 +42,12 @@ class TestEISParameterisation:
     def parameters(self):
         return {
             "Negative electrode active material volume fraction": pybop.ParameterDistribution(
-                distribution=stats.uniform(loc=0.3, scale=0.9 - 0.3),
-                initial_value=stats.uniform(loc=0.4, scale=0.75 - 0.4).rvs(),
+                distribution=stats.Uniform(a=0.3, b=0.9),
+                initial_value=stats.Uniform(a=0.4, b=0.75).sample(),
             ),
             "Positive electrode active material volume fraction": pybop.ParameterDistribution(
-                distribution=stats.uniform(loc=0.3, scale=0.9 - 0.3),
-                initial_value=stats.uniform(loc=0.4, scale=0.75 - 0.4).rvs(),
+                distribution=stats.Uniform(a=0.3, b=0.9),
+                initial_value=stats.Uniform(a=0.4, b=0.75).sample(),
             ),
         }
 

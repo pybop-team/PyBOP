@@ -116,7 +116,7 @@ class TestLikelihoods:
         assert grad_likelihood[0][1] <= 0
 
         # Test construction with sigma as a Parameter
-        sigma = pybop.ParameterDistribution(stats.uniform(loc=0.4, scale=0.6 - 0.4))
+        sigma = pybop.ParameterDistribution(stats.Uniform(a=0.4, b=0.6))
         likelihood = pybop.GaussianLogLikelihood(dataset, sigma0=sigma)
 
         # Test invalid sigma

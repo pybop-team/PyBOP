@@ -233,7 +233,7 @@ class TestOptimisation:
                     optim.optimiser.learning_rate()
                     == problem.parameters[
                         "Positive electrode active material volume fraction"
-                    ].distribution.std()
+                    ].distribution.standard_deviation()
                 )
                 optim.optimiser.set_learning_rate(0.1)
                 assert optim.optimiser.learning_rate() == 0.1

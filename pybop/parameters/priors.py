@@ -19,7 +19,8 @@ class Distribution:
 
     def __init__(
         self,
-        distribution: stats.distributions.rv_frozen | None = None,
+        distribution: stats._distribution_infrastructure.ContinuousDistribution
+        | None = None,
     ):
         self.distribution = distribution
 
@@ -81,7 +82,7 @@ class Distribution:
         if self.distribution is None:
             raise NotImplementedError
         else:
-            return self.distribution.ppf(q)
+            return self.distribution.icdf(q)
 
     def cdf(self, x):
         """
@@ -102,13 +103,13 @@ class Distribution:
         else:
             return self.distribution.cdf(x)
 
-    def rvs(self, size=1, random_state=None):
+    def sample(self, shape=1, rng=None):
         """
         Generates random variates from the distribution.
 
         Parameters
         ----------
-        size : int
+        shape : int
             The number of random variates to generate.
         random_state : int, optional
             The random state seed for reproducibility. Default is None.
@@ -121,21 +122,21 @@ class Distribution:
         Raises
         ------
         ValueError
-            If the size parameter is negative.
+            If the shape parameter is negative.
         """
-        if not isinstance(size, int | tuple):
+        if not isinstance(shape, int | tuple):
             raise ValueError(
-                "size must be a positive integer or tuple of positive integers"
+                "shape must be a positive integer or tuple of positive integers"
             )
-        if isinstance(size, int) and size < 1:
-            raise ValueError("size must be a positive integer")
-        if isinstance(size, tuple) and any(s < 1 for s in size):
-            raise ValueError("size must be a tuple of positive integers")
+        if isinstance(shape, int) and shape < 1:
+            raise ValueError("shape must be a positive integer")
+        if isinstance(shape, tuple) and any(s < 1 for s in shape):
+            raise ValueError("shape must be a tuple of positive integers")
 
         if self.distribution is None:
             raise NotImplementedError
         else:
-            return self.distribution.rvs(size=size, random_state=random_state)
+            return self.distribution.sample(shape=shape, rng=rng)
 
     def logpdfS1(self, x):
         """
@@ -195,7 +196,7 @@ class Distribution:
         """
         Returns a string representation of the object.
         """
-        return f"{self.__class__.__name__}, mean: {self.mean()}, standard deviation: {self.std()}, support: ({self.support()[0]}, {self.support()[1]})"
+        return f"{self.__class__.__name__}, mean: {self.mean()}, standard deviation: {self.standard_deviation()}, support: ({self.support()[0]}, {self.support()[1]})"
 
     def mean(self):
         """
@@ -208,7 +209,7 @@ class Distribution:
         """
         return self.distribution.mean()
 
-    def std(self):
+    def standard_deviation(self):
         """
         Get the standard deviation of the distribution.
 
@@ -217,7 +218,7 @@ class Distribution:
         float
             The standard deviation of the distribution.
         """
-        return self.distribution.std()
+        return self.distribution.standard_deviation()
 
 
 class Gaussian(Distribution):
@@ -241,15 +242,11 @@ class Gaussian(Distribution):
         sigma,
         truncated_at: list[float] = None,
     ):
+        distribution = stats.Normal(mu=mean, sigma=sigma)
         if truncated_at is not None:
-            distribution = stats.truncnorm(
-                (truncated_at[0] - mean) / sigma,
-                (truncated_at[1] - mean) / sigma,
-                loc=mean,
-                scale=sigma,
+            distribution = stats.truncate(
+                distribution, truncated_at[0], truncated_at[1]
             )
-        else:
-            distribution = stats.norm(loc=mean, scale=sigma)
         super().__init__(distribution)
         self.name = "Gaussian"
         self._n_parameters = 1
@@ -293,7 +290,7 @@ class Uniform(Distribution):
         lower,
         upper,
     ):
-        super().__init__(stats.uniform(loc=lower, scale=upper - lower))
+        super().__init__(stats.Uniform(a=lower, b=upper))
         self.name = "Uniform"
         self.lower = lower
         self.upper = upper
@@ -346,7 +343,9 @@ class Exponential(Distribution):
         scale: float,
         loc: float = 0,
     ):
-        super().__init__(stats.expon(loc=loc, scale=scale))
+        distr = stats.make_distribution(stats.expon)
+        X = distr()
+        super().__init__(scale * X + loc)
         self.name = "Exponential"
         self._n_parameters = 1
         self.loc = loc
@@ -392,7 +391,13 @@ class JointDistribution(Distribution):
             return
 
         if not all(
-            isinstance(distribution, (Distribution, stats.distributions.rv_frozen))
+            isinstance(
+                distribution,
+                (
+                    Distribution,
+                    stats._distribution_infrastructure.ContinuousDistribution,
+                ),
+            )
             for distribution in distributions
         ):
             raise ValueError(

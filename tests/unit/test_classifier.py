@@ -35,7 +35,7 @@ class TestClassifier:
         parameter_values.update(
             {
                 "R0 [Ohm]": pybop.ParameterDistribution(
-                    distribution=stats.uniform(loc=0.001, scale=0.1 - 0.001)
+                    distribution=stats.Uniform(a=0.001, b=0.1)
                 )
             }
         )
