@@ -19,7 +19,7 @@ class TestParameter:
 
     @pytest.fixture
     def parameter(self):
-        return pybop.ParameterInfo(
+        return pybop.Parameter(
             distribution=pybop.Gaussian(
                 0.6,
                 0.02,
@@ -39,14 +39,14 @@ class TestParameter:
     def test_parameter_repr(self, parameter):
         assert (
             repr(parameter)
-            == f"ParameterInfo - Distribution: Gaussian, mean: {parameter.distribution.mean()}, standard deviation: {parameter.distribution.std()}, Bounds: (0.375, 0.7), Initial value: 0.6"
+            == f"Parameter - Distribution: Gaussian, mean: {parameter.distribution.mean()}, standard deviation: {parameter.distribution.std()}, Bounds: (0.375, 0.7), Initial value: 0.6"
         )
 
     def test_parameter_sampling(self, parameter):
         samples = parameter.sample_from_distribution(n_samples=500)
         assert (samples >= 0.375).all() and (samples <= 0.7).all()
 
-        parameter = pybop.ParameterInfo(bounds=(0, np.inf))
+        parameter = pybop.Parameter(bounds=(0, np.inf))
         assert parameter.sample_from_distribution() is None
 
     def test_parameter_update(self, parameter):
@@ -55,7 +55,7 @@ class TestParameter:
         assert parameter.initial_value == 0.654
 
     def test_no_bounds(self, name):
-        parameter = pybop.ParameterInfo()
+        parameter = pybop.Parameter()
         assert parameter.bounds is None
 
         # Test get_bounds with bounds == None
@@ -68,10 +68,10 @@ class TestParameter:
         with pytest.raises(
             ParameterValidationError, match="must be less than upper bound"
         ):
-            pybop.ParameterInfo(bounds=[0.7, 0.3])
+            pybop.Parameter(bounds=[0.7, 0.3])
 
     def test_sample_initial_values(self):
-        parameter = pybop.ParameterInfo(
+        parameter = pybop.Parameter(
             distribution=pybop.Gaussian(
                 0.6,
                 0.02,
@@ -91,7 +91,7 @@ class TestParameters:
 
     @pytest.fixture
     def parameter(self):
-        return pybop.ParameterInfo(
+        return pybop.Parameter(
             distribution=pybop.Gaussian(
                 0.6,
                 0.02,
@@ -119,7 +119,7 @@ class TestParameters:
             pybop.Parameters(
                 {
                     name: parameter,
-                    "Positive electrode active material volume fraction": pybop.ParameterInfo(
+                    "Positive electrode active material volume fraction": pybop.Parameter(
                         distribution=pybop.Gaussian(
                             0.6,
                             0.02,
@@ -138,7 +138,7 @@ class TestParameters:
         with pytest.raises(ParameterNotFoundError, match="not found"):
             params.remove(name="Negative electrode active material volume fraction")
 
-        with pytest.raises(TypeError, match="Expected ParameterInfo instance"):
+        with pytest.raises(TypeError, match="Expected Parameter instance"):
             params.add(name, parameter="Invalid string")
         with pytest.raises(TypeError, match="The input name is not a string."):
             params.remove(name=parameter)
@@ -155,19 +155,19 @@ class TestParameters:
         # Construct params
         params = pybop.Parameters(
             {
-                "LogParam": pybop.ParameterInfo(
+                "LogParam": pybop.Parameter(
                     bounds=[0, 1],
                     transformation=pybop.LogTransformation(),
                 ),
-                "ScaledParam": pybop.ParameterInfo(
+                "ScaledParam": pybop.Parameter(
                     bounds=[0, 1],
                     transformation=pybop.ScaledTransformation(1, 0.5),
                 ),
-                "IdentityParam": pybop.ParameterInfo(
+                "IdentityParam": pybop.Parameter(
                     bounds=[0, 1],
                     transformation=pybop.IdentityTransformation(),
                 ),
-                "UnitHyperParam": pybop.ParameterInfo(
+                "UnitHyperParam": pybop.Parameter(
                     bounds=[0, 1],
                     transformation=pybop.UnitHyperCube(1, 2),
                 ),
@@ -182,7 +182,7 @@ class TestParameters:
         # Test unbounded transformation causes ValueError due to NaN
         params = pybop.Parameters(
             {
-                name: pybop.ParameterInfo(
+                name: pybop.Parameter(
                     distribution=pybop.Gaussian(
                         0.01,
                         0.2,
@@ -209,11 +209,11 @@ class TestParameters:
         parameter._transformation = None
 
     def test_get_sigma(self, name):
-        parameter = pybop.ParameterInfo(stats.norm(loc=0.6, scale=0.02))
+        parameter = pybop.Parameter(stats.norm(loc=0.6, scale=0.02))
         params = pybop.Parameters({name: parameter})
         assert params.get_sigma0() == pytest.approx([0.02])
 
-        parameter = pybop.ParameterInfo(bounds=(0.375, 0.7))
+        parameter = pybop.Parameter(bounds=(0.375, 0.7))
         parameter._distribution = None
         params = pybop.Parameters({name: parameter})
         assert params.get_sigma0() == [
@@ -223,7 +223,7 @@ class TestParameters:
     def test_initial_values_without_attributes(self):
         # Test without initial values
         parameter = pybop.Parameters(
-            {"Negative electrode conductivity [S.m-1]": pybop.ParameterInfo()}
+            {"Negative electrode conductivity [S.m-1]": pybop.Parameter()}
         )
         with pytest.raises(ParameterError, match="has no initial value"):
             parameter.get_initial_values()
@@ -249,5 +249,5 @@ class TestParameters:
         params = pybop.Parameters({name: parameter})
         assert (
             repr(params)
-            == f"Parameters(1):\n Negative electrode active material volume fraction: ParameterInfo - Distribution: Gaussian, mean: {parameter.distribution.mean()}, standard deviation: {parameter.distribution.std()}, Bounds: (0.375, 0.7), Initial value: 0.6"
+            == f"Parameters(1):\n Negative electrode active material volume fraction: Parameter - Distribution: Gaussian, mean: {parameter.distribution.mean()}, standard deviation: {parameter.distribution.std()}, Bounds: (0.375, 0.7), Initial value: 0.6"
         )

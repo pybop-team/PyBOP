@@ -17,7 +17,7 @@ class TestModelAndExperimentChanges:
         params=[
             [
                 {
-                    "Negative particle radius [m]": pybop.ParameterInfo(  # geometric parameter
+                    "Negative particle radius [m]": pybop.Parameter(  # geometric parameter
                         distribution=pybop.Gaussian(
                             6e-06,
                             0.1e-6,
@@ -30,7 +30,7 @@ class TestModelAndExperimentChanges:
             ],
             [
                 {
-                    "Positive particle diffusivity [m2.s-1]": pybop.ParameterInfo(  # non-geometric parameter
+                    "Positive particle diffusivity [m2.s-1]": pybop.Parameter(  # non-geometric parameter
                         distribution=pybop.Gaussian(
                             3.43e-15,
                             1e-15,
@@ -163,7 +163,7 @@ class TestModelAndExperimentChanges:
 
         parameter_values.update(
             {
-                "Negative electrode active material volume fraction": pybop.ParameterInfo(
+                "Negative electrode active material volume fraction": pybop.Parameter(
                     distribution=stats.norm(loc=0.68, scale=0.05),
                 )
             }
@@ -186,7 +186,7 @@ class TestModelAndExperimentChanges:
 
         parameter_values.update(
             {
-                "Negative electrode active material volume fraction": pybop.ParameterInfo(
+                "Negative electrode active material volume fraction": pybop.Parameter(
                     distribution=stats.norm(loc=0.68, scale=0.05),
                 )
             }

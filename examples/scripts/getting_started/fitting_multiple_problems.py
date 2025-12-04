@@ -48,10 +48,10 @@ for init_soc, experiment in zip(init_socs, experiments, strict=False):
     param_copy = parameter_values.copy()
     param_copy.update(
         {
-            "Negative electrode active material volume fraction": pybop.ParameterInfo(
+            "Negative electrode active material volume fraction": pybop.Parameter(
                 stats.norm(0.68, 0.05),
             ),
-            "Positive electrode active material volume fraction": pybop.ParameterInfo(
+            "Positive electrode active material volume fraction": pybop.Parameter(
                 stats.norm(0.58, 0.05),
             ),
         }

@@ -169,10 +169,10 @@ class OCPAverage(BaseApplication):
 
         # Define the optimisation parameters
         self.parameters = pybop.Parameters(
-            {"shift": pybop.ParameterInfo(initial_value=0.05)}
+            {"shift": pybop.Parameter(initial_value=0.05)}
         )
         if self.allow_stretching:
-            self.parameters.add("stretch", pybop.ParameterInfo(initial_value=1.0))
+            self.parameters.add("stretch", pybop.Parameter(initial_value=1.0))
 
         # Create the fitting problem
         class OCVCurve(pybop.BaseSimulator):
@@ -319,8 +319,8 @@ class OCPCapacityToStoichiometry(BaseApplication):
         )
         parameters = pybop.Parameters(
             {
-                "shift": pybop.ParameterInfo(initial_value=0),
-                "stretch": pybop.ParameterInfo(initial_value=capacity_range),
+                "shift": pybop.Parameter(initial_value=0),
+                "stretch": pybop.Parameter(initial_value=capacity_range),
             }
         )
 

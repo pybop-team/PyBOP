@@ -32,7 +32,7 @@ class TestPlots:
     @pytest.fixture
     def parameters(self):
         return {
-            "Negative electrode active material volume fraction": pybop.ParameterInfo(
+            "Negative electrode active material volume fraction": pybop.Parameter(
                 distribution=pybop.Gaussian(
                     0.68,
                     0.05,
@@ -42,7 +42,7 @@ class TestPlots:
                     coefficient=1 / 0.3, intercept=-0.5
                 ),
             ),
-            "Positive electrode active material volume fraction": pybop.ParameterInfo(
+            "Positive electrode active material volume fraction": pybop.Parameter(
                 distribution=pybop.Gaussian(
                     0.58,
                     0.05,
@@ -57,13 +57,13 @@ class TestPlots:
     @pytest.fixture
     def parameters_no_bounds(self):
         return {
-            "Negative electrode active material volume fraction": pybop.ParameterInfo(
+            "Negative electrode active material volume fraction": pybop.Parameter(
                 distribution=pybop.Gaussian(0.68, 0.05),
                 transformation=pybop.ScaledTransformation(
                     coefficient=1 / 0.3, intercept=-0.5
                 ),
             ),
-            "Positive electrode active material volume fraction": pybop.ParameterInfo(
+            "Positive electrode active material volume fraction": pybop.Parameter(
                 distribution=pybop.Gaussian(0.58, 0.05),
                 transformation=pybop.ScaledTransformation(
                     coefficient=1 / 0.3, intercept=-0.4
@@ -230,7 +230,7 @@ class TestPlots:
         # Test with less than two paramters
         parameter_values.update(
             {
-                "Negative electrode active material volume fraction": pybop.ParameterInfo(
+                "Negative electrode active material volume fraction": pybop.Parameter(
                     distribution=pybop.Gaussian(
                         0.68,
                         0.05,
@@ -252,14 +252,14 @@ class TestPlots:
         # Test with more than two paramters
         parameter_values.update(
             {
-                "Positive electrode active material volume fraction": pybop.ParameterInfo(
+                "Positive electrode active material volume fraction": pybop.Parameter(
                     pybop.Gaussian(
                         0.58,
                         0.05,
                         truncated_at=[0.4, 0.7],
                     ),
                 ),
-                "Positive particle radius [m]": pybop.ParameterInfo(
+                "Positive particle radius [m]": pybop.Parameter(
                     distribution=pybop.Gaussian(
                         4.8e-06,
                         0.05e-06,
@@ -283,7 +283,7 @@ class TestPlots:
         # Fitting parameters
         parameter_values.update(
             {
-                "Positive electrode thickness [m]": pybop.ParameterInfo(
+                "Positive electrode thickness [m]": pybop.Parameter(
                     distribution=pybop.Gaussian(
                         60e-6,
                         1e-6,

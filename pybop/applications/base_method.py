@@ -123,7 +123,7 @@ class InverseOCV:
         self.optimiser_options = optimiser_options or self.optimiser.default_options()
 
         parameters = pybop.Parameters(
-            {"Root": pybop.ParameterInfo(initial_value=0.5, bounds=[0, 1])}
+            {"Root": pybop.Parameter(initial_value=0.5, bounds=[0, 1])}
         )
 
         # Set up a root-finding cost function

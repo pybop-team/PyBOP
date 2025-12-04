@@ -32,7 +32,7 @@ class TestLogPosterior:
     @pytest.fixture
     def parameter(self, ground_truth):
         return {
-            "Negative electrode active material volume fraction": pybop.ParameterInfo(
+            "Negative electrode active material volume fraction": pybop.Parameter(
                 distribution=pybop.Gaussian(
                     0.5,
                     0.01,
@@ -86,9 +86,9 @@ class TestLogPosterior:
         assert problem.parameters[key] is parameter[key]
         assert problem._cost.parameters is problem.parameters
 
-        # Test construction with ParameterInfo
+        # Test construction with Parameter
         posterior = pybop.LogPosterior(
-            likelihood, prior=pybop.ParameterInfo(distribution=prior)
+            likelihood, prior=pybop.Parameter(distribution=prior)
         )
         problem = pybop.Problem(
             simulator, posterior
@@ -97,7 +97,7 @@ class TestLogPosterior:
 
         with pytest.raises(
             TypeError,
-            match="All priors must either be of type pybop.ParameterInfo, pybop.Distribution or scipy.stats.distributions.rv_frozen",
+            match="All priors must either be of type pybop.Parameter, pybop.Distribution or scipy.stats.distributions.rv_frozen",
         ):
             posterior = pybop.LogPosterior(likelihood, prior=st.norm)
             posterior.set_joint_prior()

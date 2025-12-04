@@ -25,14 +25,14 @@ class TestClassification:
     def parameters(self, request):
         self.ground_truth = request.param
         return {
-            "R0 [Ohm]": pybop.ParameterInfo(
+            "R0 [Ohm]": pybop.Parameter(
                 distribution=pybop.Gaussian(
                     0.05,
                     0.01,
                     truncated_at=[0.02, 0.08],
                 )
             ),
-            "R1 [Ohm]": pybop.ParameterInfo(
+            "R1 [Ohm]": pybop.Parameter(
                 distribution=pybop.Gaussian(
                     0.05,
                     0.01,
@@ -135,8 +135,8 @@ class TestClassification:
         # assert message == "The optimiser has located a saddle point."
 
     def test_insensitive_classify_using_hessian(self, model, parameter_values):
-        param_R0_a = pybop.ParameterInfo(bounds=[0, 0.002])
-        param_R0_b = pybop.ParameterInfo(bounds=[-0.001, 0.001])
+        param_R0_a = pybop.Parameter(bounds=[0, 0.002])
+        param_R0_b = pybop.Parameter(bounds=[-0.001, 0.001])
         parameter_values.update(
             {"R0_a [Ohm]": 0.001, "R0_b [Ohm]": 0},
             check_already_exists=False,

@@ -66,10 +66,10 @@ class BenchmarkParameterisation:
         # Define fitting parameters
         parameter_values.update(
             {
-                "Negative electrode active material volume fraction": pybop.ParameterInfo(
+                "Negative electrode active material volume fraction": pybop.Parameter(
                     pybop.Gaussian(0.55, 0.03, truncated_at=[0.375, 0.7]),
                 ),
-                "Positive electrode active material volume fraction": pybop.ParameterInfo(
+                "Positive electrode active material volume fraction": pybop.Parameter(
                     pybop.Gaussian(0.55, 0.03, truncated_at=[0.375, 0.7]),
                 ),
             }

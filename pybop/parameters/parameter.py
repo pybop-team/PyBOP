@@ -87,7 +87,7 @@ class Bounds:
         return self.upper - self.lower
 
 
-class ParameterInfo:
+class Parameter:
     """
     Represents a parameter within the PyBOP framework.
 
@@ -196,7 +196,7 @@ class ParameterInfo:
 
     def __repr__(self) -> str:
         """String representation of the parameter."""
-        return f"ParameterInfo - Distribution: {self._distribution}, Bounds: ({self.bounds[0]}, {self.bounds[1]}), Initial value: {self.initial_value}"
+        return f"Parameter - Distribution: {self._distribution}, Bounds: ({self.bounds[0]}, {self.bounds[1]}), Initial value: {self.initial_value}"
 
     def _validate_values_within_bounds(self) -> None:
         """Validate that initial values are within bounds."""
@@ -240,7 +240,7 @@ class ParameterInfo:
 
 class Parameters:
     """
-    Container for managing multiple ParameterInfo objects with additional functionality.
+    Container for managing multiple Parameter objects with additional functionality.
 
     This class provides a comprehensive interface for parameter management including
     validation, transformation, serialisation, and bulk operations.
@@ -260,10 +260,10 @@ class Parameters:
 
         self._transform = self.construct_transformation()
 
-    def __getitem__(self, name: str) -> ParameterInfo:
+    def __getitem__(self, name: str) -> Parameter:
         return self.get(name)
 
-    def __setitem__(self, name: str, param: ParameterInfo) -> None:
+    def __setitem__(self, name: str, param: Parameter) -> None:
         self.set(name, param)
 
     def __len__(self) -> int:
@@ -277,48 +277,48 @@ class Parameters:
     def names(self) -> list[str]:
         return list(self._parameters.keys())
 
-    def __iter__(self) -> Iterator[ParameterInfo]:
+    def __iter__(self) -> Iterator[Parameter]:
         return iter(self._parameters.values())
 
-    def add(self, name: str, parameter: ParameterInfo) -> None:
+    def add(self, name: str, parameter: Parameter) -> None:
         """Add a parameter to the collection."""
         self._add(name, parameter)
 
     def _add(
-        self, name: str, parameter: ParameterInfo, update_transform: bool = True
+        self, name: str, parameter: Parameter, update_transform: bool = True
     ) -> None:
         """
         Internal method to add a parameter to the collection.
 
         Parameters
         ----------
-        parameter : ParameterInfo
-            ParameterInfo to add
+        parameter : Parameter
+            Parameter to add
         update_transform : bool, optional
             Whether to update the transformation after adding (default: True)
         """
-        if not isinstance(parameter, ParameterInfo):
-            raise TypeError("Expected ParameterInfo instance")
+        if not isinstance(parameter, Parameter):
+            raise TypeError("Expected Parameter instance")
 
         if name in self._parameters:
-            raise ParameterError(f"ParameterInfo for '{name}' already exists")
+            raise ParameterError(f"Parameter for '{name}' already exists")
 
         self._parameters[name] = parameter
 
         if update_transform:
             self._transform = self.construct_transformation()
 
-    def remove(self, name: str) -> ParameterInfo:
+    def remove(self, name: str) -> Parameter:
         """Remove parameter and return it."""
         if not isinstance(name, str):
             raise TypeError("The input name is not a string.")
         if name not in self._parameters:
-            raise ParameterNotFoundError(f"ParameterInfo for '{name}' not found")
+            raise ParameterNotFoundError(f"Parameter for '{name}' not found")
         return self._parameters.pop(name)
 
     def join(self, parameters=None):
         """
-        Join two Parameters objects into the first by copying across each ParameterInfo.
+        Join two Parameters objects into the first by copying across each Parameter.
 
         Parameters
         ----------
@@ -330,17 +330,17 @@ class Parameters:
             else:
                 print(f"Discarding duplicate {name}.")
 
-    def get(self, name: str) -> ParameterInfo:
+    def get(self, name: str) -> Parameter:
         """Get a parameter by name."""
         if name not in self._parameters:
-            raise ParameterNotFoundError(f"ParameterInfo for '{name}' not found")
+            raise ParameterNotFoundError(f"Parameter for '{name}' not found")
         return self._parameters[name]
 
-    def set(self, name: str, param: ParameterInfo) -> None:
+    def set(self, name: str, param: Parameter) -> None:
         """Get a parameter by name."""
         if name not in self._parameters:
-            raise ParameterNotFoundError(f"ParameterInfo for '{name}' not found")
-        if not isinstance(param, ParameterInfo):
+            raise ParameterNotFoundError(f"Parameter for '{name}' not found")
+        if not isinstance(param, Parameter):
             raise TypeError({"Paremeter must be of type pybop.ParemterInfo"})
         self._parameters[name] = param
 
@@ -530,7 +530,7 @@ class Parameters:
                         value = samples[0] if transformed else param.initial_value
 
                 if value is None:
-                    raise ParameterError(f"ParameterInfo '{name}' has no initial value")
+                    raise ParameterError(f"Parameter '{name}' has no initial value")
 
             if transformed:
                 value = param.transformation.to_search(value)[0]
@@ -640,10 +640,10 @@ class Parameters:
     def __contains__(self, name: str) -> bool:
         return name in self._parameters
 
-    def values(self) -> Iterator[ParameterInfo]:
+    def values(self) -> Iterator[Parameter]:
         """Iterate over parameters."""
         return iter(self._parameters.values())
 
-    def items(self) -> Iterator[tuple[str, ParameterInfo]]:
+    def items(self) -> Iterator[tuple[str, Parameter]]:
         """Iterate over (name, parameter) pairs."""
         return iter(self._parameters.items())
