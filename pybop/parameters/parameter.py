@@ -159,9 +159,9 @@ class Parameter:
                 self._bounds = Bounds(lower, upper)
 
         if bounds is not None:
-            if distribution is not None:
-                raise ParameterError(
-                    "Bounds can only be set if no distribution is provided. If a bounded distribution is needed, please ensure the distribution itself is bounded."
+            if self._distribution is not None:
+                self._distribution = stats.truncate(
+                    self._distribution, bounds[0], bounds[1]
                 )
             # Set bounds with validation
             self._bounds = Bounds(bounds[0], bounds[1])

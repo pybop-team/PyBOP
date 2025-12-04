@@ -37,14 +37,26 @@ class TestParameter:
         assert parameter.initial_value == 0.6
         assert parameter() == 0.6
 
-        # test error if bounds and distribution
+        # test truncate distribution
+        param = pybop.Parameter(
+            distribution=stats.Normal(mu=0.3, sigma=0.1), bounds=(0.4, 0.8)
+        )
+        assert param.distribution.support()[0] == 0.4
+        assert param.distribution.support()[1] == 0.8
+
+        # test set from stats.rv_continuous
+        param = pybop.Parameter(
+            distribution=stats.norm, distribution_params={"loc": 0.3, "scale": 0.02}
+        )
+        assert param.distribution.standard_deviation() == 0.02
+        assert param.distribution.mean() == 0.3
+
+        # test error if distribution of type stats.distribution.rv_frozen
         with pytest.raises(
-            ParameterError,
-            match="Bounds can only be set if no distribution is provided. If a bounded distribution is needed, please ensure the distribution itself is bounded.",
+            TypeError,
+            match="The distribution must be of type pybop.Distribution, stats.rv_continous, or stats._distribution_infrastructure.ContinousDistribution",
         ):
-            pybop.Parameter(
-                distribution=stats.Normal(mu=0.3, sigma=0.1), bounds=(0.4, 0.8)
-            )
+            pybop.Parameter(distribution=stats.norm(loc=0.3, scale=0.02))
 
     def test_parameter_repr(self, parameter):
         assert (
