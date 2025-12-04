@@ -35,6 +35,14 @@ class TestParameter:
     def test_parameter_construction(self, parameter):
         assert parameter.bounds == [0.375, 0.7]
         assert parameter.initial_value == 0.6
+        assert parameter() == 0.6
+
+        # test error if bounds and distribution
+        with pytest.raises(
+            ParameterError,
+            match="Bounds can only be set if no distribution is provided. If a bounded distribution is needed, please ensure the distribution itself is bounded.",
+        ):
+            pybop.Parameter(distribution=stats.norm(0.3, 0.1), bounds=(0.4, 0.8))
 
     def test_parameter_repr(self, parameter):
         assert (
@@ -134,6 +142,14 @@ class TestParameters:
         with pytest.raises(ParameterError, match="already exists"):
             params.add(name, parameter)
 
+        # setting parameters with wrong input
+        with pytest.raises(ParameterNotFoundError, match="not found"):
+            params["not a parameter"] = pybop.Parameter(initial_value=0.8)
+        with pytest.raises(
+            TypeError, match="Paremeter must be of type pybop.ParemterInfo"
+        ):
+            params[name] = pybop.Gaussian(0.5, 0.02)
+
         params.remove(name=name)
         with pytest.raises(ParameterNotFoundError, match="not found"):
             params.remove(name="Negative electrode active material volume fraction")
@@ -227,6 +243,11 @@ class TestParameters:
         )
         with pytest.raises(ParameterError, match="has no initial value"):
             parameter.get_initial_values()
+
+    def test_get_initial_values_if_none(self, name, parameter):
+        params = pybop.Parameters({name: parameter})
+        params[name]._initial_value = None
+        assert params.get_initial_values() is not None
 
     def test_parameters_init(self, name, parameter):
         # Error if parameters not dictionary or pybop.Parameters
