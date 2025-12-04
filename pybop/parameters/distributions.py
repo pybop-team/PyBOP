@@ -196,7 +196,7 @@ class Distribution:
         """
         Returns a string representation of the object.
         """
-        return f"{self.__class__.__name__}, mean: {self.mean()}, standard deviation: {self.standard_deviation()}, support: ({self.support()[0]}, {self.support()[1]})"
+        return f"{self.__class__.__name__}, mean: {self.mean()}, standard deviation: {self.standard_deviation()}"
 
     def mean(self):
         """
@@ -395,7 +395,7 @@ class JointDistribution(Distribution):
                 distribution,
                 (
                     Distribution,
-                    stats._distribution_infrastructure.ContinuousDistribution,
+                    stats._distribution_infrastructure.ContinuousDistribution,  # noqa SLF001
                 ),
             )
             for distribution in distributions

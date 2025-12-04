@@ -29,7 +29,7 @@ class TestLikelihoods:
     @pytest.fixture
     def parameters(self):
         return {
-            "Negative electrode active material volume fraction": pybop.ParameterDistribution(
+            "Negative electrode active material volume fraction": pybop.Parameter(
                 distribution=pybop.Gaussian(
                     0.5,
                     0.01,
@@ -116,13 +116,13 @@ class TestLikelihoods:
         assert grad_likelihood[0][1] <= 0
 
         # Test construction with sigma as a Parameter
-        sigma = pybop.ParameterDistribution(stats.Uniform(a=0.4, b=0.6))
+        sigma = pybop.Parameter(stats.Uniform(a=0.4, b=0.6))
         likelihood = pybop.GaussianLogLikelihood(dataset, sigma0=sigma)
 
         # Test invalid sigma
         with pytest.raises(
             TypeError,
-            match=r"Expected sigma0 to contain ParameterDistribution objects or numeric values.",
+            match=r"Expected sigma0 to contain Parameter objects or numeric values.",
         ):
             likelihood = pybop.GaussianLogLikelihood(dataset, sigma0="Invalid string")
             pybop.Problem(simulator, likelihood)

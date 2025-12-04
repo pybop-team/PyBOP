@@ -67,10 +67,10 @@ class TestWeightedCost:
     @pytest.fixture
     def parameters(self):
         return {
-            "Negative electrode active material volume fraction": pybop.ParameterDistribution(
+            "Negative electrode active material volume fraction": pybop.Parameter(
                 stats.Uniform(a=0.4, b=0.75),
             ),
-            "Positive electrode active material volume fraction": pybop.ParameterDistribution(
+            "Positive electrode active material volume fraction": pybop.Parameter(
                 stats.Uniform(a=0.4, b=0.75),
                 # no bounds
             ),
@@ -143,14 +143,14 @@ class TestWeightedCost:
         initial_state = {"Initial SoC": 1.0}
         parameter_values.update(
             {
-                "Positive electrode thickness [m]": pybop.ParameterDistribution(
+                "Positive electrode thickness [m]": pybop.Parameter(
                     distribution=pybop.Gaussian(
                         5e-05,
                         5e-06,
                         truncated_at=[2e-06, 10e-05],
                     )
                 ),
-                "Negative electrode thickness [m]": pybop.ParameterDistribution(
+                "Negative electrode thickness [m]": pybop.Parameter(
                     distribution=pybop.Gaussian(
                         5e-05,
                         5e-06,

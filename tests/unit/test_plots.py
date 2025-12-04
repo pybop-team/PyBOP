@@ -32,7 +32,7 @@ class TestPlots:
     @pytest.fixture
     def parameters(self):
         return {
-            "Negative electrode active material volume fraction": pybop.ParameterDistribution(
+            "Negative electrode active material volume fraction": pybop.Parameter(
                 distribution=pybop.Gaussian(
                     0.68,
                     0.05,
@@ -42,12 +42,29 @@ class TestPlots:
                     coefficient=1 / 0.3, intercept=-0.5
                 ),
             ),
-            "Positive electrode active material volume fraction": pybop.ParameterDistribution(
+            "Positive electrode active material volume fraction": pybop.Parameter(
                 distribution=pybop.Gaussian(
                     0.58,
                     0.05,
                     truncated_at=[0.4, 0.7],
                 ),
+                transformation=pybop.ScaledTransformation(
+                    coefficient=1 / 0.3, intercept=-0.4
+                ),
+            ),
+        }
+
+    @pytest.fixture
+    def parameters_no_bounds(self):
+        return {
+            "Negative electrode active material volume fraction": pybop.Parameter(
+                distribution=pybop.Gaussian(0.68, 0.05),
+                transformation=pybop.ScaledTransformation(
+                    coefficient=1 / 0.3, intercept=-0.5
+                ),
+            ),
+            "Positive electrode active material volume fraction": pybop.Parameter(
+                distribution=pybop.Gaussian(0.58, 0.05),
                 transformation=pybop.ScaledTransformation(
                     coefficient=1 / 0.3, intercept=-0.4
                 ),
@@ -86,6 +103,16 @@ class TestPlots:
         return pybop.Problem(simulator, cost)
 
     @pytest.fixture
+    def fitting_problem_no_bounds(self, model, parameters_no_bounds, dataset):
+        parameter_values = model.default_parameter_values
+        parameter_values.update(parameters_no_bounds)
+        simulator = pybop.pybamm.Simulator(
+            model, parameter_values=parameter_values, protocol=dataset
+        )
+        cost = pybop.SumSquaredError(dataset)
+        return pybop.Problem(simulator, cost)
+
+    @pytest.fixture
     def experiment(self):
         return pybamm.Experiment(["Discharge at 1C for 10 minutes (20 second period)"])
 
@@ -109,16 +136,15 @@ class TestPlots:
             fitting_problem, inputs=fitting_problem.parameters.to_dict([0.6, 0.6])
         )
 
-    def test_cost_plots(self, fitting_problem):
+    def test_cost_plots(self, fitting_problem, fitting_problem_no_bounds):
         # Test plot of Cost objects
         pybop.plot.contour(fitting_problem, gradient=True, steps=5)
 
         pybop.plot.contour(fitting_problem, gradient=True, steps=5, transformed=True)
 
         # Test without bounds
-        fitting_problem.parameters.remove_bounds()
         with pytest.raises(ValueError, match="All parameters require bounds for plot."):
-            pybop.plot.contour(fitting_problem, steps=5)
+            pybop.plot.contour(fitting_problem_no_bounds, steps=5)
 
         # Test with bounds
         pybop.plot.contour(
@@ -204,7 +230,7 @@ class TestPlots:
         # Test with less than two paramters
         parameter_values.update(
             {
-                "Negative electrode active material volume fraction": pybop.ParameterDistribution(
+                "Negative electrode active material volume fraction": pybop.Parameter(
                     distribution=pybop.Gaussian(
                         0.68,
                         0.05,
@@ -226,14 +252,14 @@ class TestPlots:
         # Test with more than two paramters
         parameter_values.update(
             {
-                "Positive electrode active material volume fraction": pybop.ParameterDistribution(
+                "Positive electrode active material volume fraction": pybop.Parameter(
                     pybop.Gaussian(
                         0.58,
                         0.05,
                         truncated_at=[0.4, 0.7],
                     ),
                 ),
-                "Positive particle radius [m]": pybop.ParameterDistribution(
+                "Positive particle radius [m]": pybop.Parameter(
                     distribution=pybop.Gaussian(
                         4.8e-06,
                         0.05e-06,
@@ -257,7 +283,7 @@ class TestPlots:
         # Fitting parameters
         parameter_values.update(
             {
-                "Positive electrode thickness [m]": pybop.ParameterDistribution(
+                "Positive electrode thickness [m]": pybop.Parameter(
                     distribution=pybop.Gaussian(
                         60e-6,
                         1e-6,

@@ -62,10 +62,10 @@ true_values = [
 # Fitting parameters
 parameter_values.update(
     {
-        "Negative electrode active material volume fraction": pybop.ParameterDistribution(
+        "Negative electrode active material volume fraction": pybop.Parameter(
             pybop.Uniform(0.4, 0.75)
         ),
-        "Positive electrode active material volume fraction": pybop.ParameterDistribution(
+        "Positive electrode active material volume fraction": pybop.Parameter(
             pybop.Uniform(0.4, 0.75)
         ),
     }

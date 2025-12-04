@@ -69,7 +69,7 @@ class TestSamplingThevenin:
     @pytest.fixture
     def parameters(self):
         return {
-            "R0 [Ohm]": pybop.ParameterDistribution(
+            "R0 [Ohm]": pybop.Parameter(
                 distribution=pybop.Gaussian(
                     5e-2,
                     5e-3,
@@ -78,7 +78,7 @@ class TestSamplingThevenin:
                 transformation=pybop.LogTransformation(),
                 initial_value=stats.Uniform(a=2e-3, b=8e-2).sample(),
             ),
-            "R1 [Ohm]": pybop.ParameterDistribution(
+            "R1 [Ohm]": pybop.Parameter(
                 distribution=pybop.Gaussian(
                     5e-2,
                     5e-3,

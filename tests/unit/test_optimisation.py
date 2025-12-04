@@ -31,7 +31,7 @@ class TestOptimisation:
     @pytest.fixture
     def one_parameter(self):
         return {
-            "Positive electrode active material volume fraction": pybop.ParameterDistribution(
+            "Positive electrode active material volume fraction": pybop.Parameter(
                 pybop.Gaussian(0.5, 0.02, truncated_at=(0.48, 0.52))
             ),
         }
@@ -39,14 +39,14 @@ class TestOptimisation:
     @pytest.fixture
     def two_parameters(self):
         return {
-            "Negative electrode active material volume fraction": pybop.ParameterDistribution(
+            "Negative electrode active material volume fraction": pybop.Parameter(
                 distribution=pybop.Gaussian(
                     0.6,
                     0.02,
                     truncated_at=[0.58, 0.62],
                 )
             ),
-            "Positive electrode active material volume fraction": pybop.ParameterDistribution(
+            "Positive electrode active material volume fraction": pybop.Parameter(
                 distribution=pybop.Gaussian(
                     0.5,
                     0.05,
@@ -79,6 +79,41 @@ class TestOptimisation:
         cost = pybop.SumSquaredError(dataset)
         return pybop.Problem(simulator, cost)
 
+    @pytest.fixture
+    def problem_no_bounds(self, model, one_parameter, dataset):
+        parameter_values = model.default_parameter_values
+        parameter_values.update(
+            {
+                "Positive electrode active material volume fraction": pybop.Parameter(
+                    pybop.Gaussian(0.5, 0.02)
+                ),
+            }
+        )
+        simulator = pybop.pybamm.Simulator(
+            model, parameter_values=parameter_values, protocol=dataset
+        )
+        cost = pybop.SumSquaredError(dataset)
+        return pybop.Problem(simulator, cost)
+
+    @pytest.fixture
+    def two_param_problem_no_bounds(self, model, two_parameters, dataset):
+        parameter_values = model.default_parameter_values
+        parameter_values.update(
+            {
+                "Negative electrode active material volume fraction": pybop.Parameter(
+                    distribution=pybop.Gaussian(0.6, 0.02)
+                ),
+                "Positive electrode active material volume fraction": pybop.Parameter(
+                    distribution=pybop.Gaussian(0.5, 0.05)
+                ),
+            }
+        )
+        simulator = pybop.pybamm.Simulator(
+            model, parameter_values=parameter_values, protocol=dataset
+        )
+        cost = pybop.SumSquaredError(dataset)
+        return pybop.Problem(simulator, cost)
+
     @pytest.mark.parametrize(
         "optimiser, expected_name, sensitivities",
         [
@@ -103,7 +138,12 @@ class TestOptimisation:
         ],
     )
     def test_optimiser_classes(
-        self, two_param_problem, optimiser, expected_name, sensitivities
+        self,
+        two_param_problem,
+        two_param_problem_no_bounds,
+        optimiser,
+        expected_name,
+        sensitivities,
     ):
         # Test class construction
         problem = two_param_problem
@@ -117,8 +157,7 @@ class TestOptimisation:
             pybop.PSO
         ]:
             # Test construction without bounds
-            problem.parameters.remove_bounds()
-            optim = optimiser(problem)
+            optim = optimiser(two_param_problem_no_bounds)
             assert all(np.isinf(optim.problem.parameters.get_bounds()["lower"]))
             assert all(np.isinf(optim.problem.parameters.get_bounds()["upper"]))
 
@@ -170,7 +209,7 @@ class TestOptimisation:
         multistart_optim = optimiser(problem, options=options)
         check_multistart(multistart_optim, 6, 2)
 
-        bounds = {"upper": [0.53], "lower": [0.47]}
+        bounds = {"upper": 0.53, "lower": 0.47}
         if optimiser in [pybop.GradientDescent, pybop.AdamW, pybop.NelderMead]:
             optim = optimiser(problem)
             assert optim._optimiser._boundaries is None
@@ -178,11 +217,27 @@ class TestOptimisation:
             with pytest.raises(
                 ValueError, match="Either all bounds or no bounds must be set"
             ):
-                problem.parameters.update(bounds={"upper": [np.inf], "lower": [0.57]})
+                problem.parameters[
+                    "Positive electrode active material volume fraction"
+                ] = pybop.Parameter(
+                    pybop.Gaussian(0.5, 0.02, truncated_at=(0.57, np.inf))
+                )
                 optimiser(problem)
-            problem.parameters.update(bounds=bounds)
+            problem.parameters["Positive electrode active material volume fraction"] = (
+                pybop.Parameter(
+                    pybop.Gaussian(
+                        0.5, 0.02, truncated_at=(bounds["lower"], bounds["upper"])
+                    )
+                )
+            )
         elif issubclass(optimiser, pybop.BasePintsOptimiser):
-            problem.parameters.update(bounds=bounds)
+            problem.parameters["Positive electrode active material volume fraction"] = (
+                pybop.Parameter(
+                    pybop.Gaussian(
+                        0.5, 0.02, truncated_at=(bounds["lower"], bounds["upper"])
+                    )
+                )
+            )
             optim = optimiser(problem)
             assert optim._optimiser._boundaries is not None
 
@@ -318,18 +373,30 @@ class TestOptimisation:
             assert optim._logger.x_model[0] == x0_new
             assert optim._logger.x_model[-1] != x0
 
-    def test_cuckoo_no_bounds(self, problem):
-        problem.parameters.remove_bounds()
+    def test_cuckoo_no_bounds(self, problem_no_bounds):
         options = pybop.PintsOptions(max_iterations=1)
-        optim = pybop.CuckooSearch(problem, options=options)
+        optim = pybop.CuckooSearch(problem_no_bounds, options=options)
         optim.run()
         assert all(np.isinf(optim.problem.parameters.get_bounds()["lower"]))
         assert all(np.isinf(optim.problem.parameters.get_bounds()["upper"]))
 
-    def test_randomsearch_bounds(self, two_param_problem):
+    def test_randomsearch_bounds(self, two_param_problem, two_param_problem_no_bounds):
         # Test clip_candidates with bound
         bounds = {"upper": [0.62, 0.54], "lower": [0.58, 0.46]}
-        two_param_problem.parameters.update(bounds=bounds)
+        two_param_problem.parameters[
+            "Negative electrode active material volume fraction"
+        ] = pybop.Parameter(
+            distribution=pybop.Gaussian(
+                0.6, 0.02, truncated_at=(bounds["lower"][0], bounds["upper"][0])
+            )
+        )
+        two_param_problem.parameters[
+            "Positive electrode active material volume fraction"
+        ] = pybop.Parameter(
+            distribution=pybop.Gaussian(
+                0.5, 0.05, truncated_at=(bounds["lower"][1], bounds["upper"][1])
+            )
+        )
         options = pybop.PintsOptions(max_iterations=1)
         optim = pybop.RandomSearch(two_param_problem, options=options)
         candidates = np.array([[0.57, 0.55], [0.63, 0.44]])
@@ -338,18 +405,16 @@ class TestOptimisation:
         assert np.allclose(clipped_candidates, expected_clipped)
 
         # Test clip_candidates without bound
-        two_param_problem.parameters.remove_bounds()
-        optim = pybop.RandomSearch(two_param_problem, options=options)
+        optim = pybop.RandomSearch(two_param_problem_no_bounds, options=options)
         candidates = np.array([[0.57, 0.52], [0.63, 0.58]])
         clipped_candidates = optim.optimiser.clip_candidates(candidates)
         assert np.allclose(clipped_candidates, candidates)
 
-    def test_randomsearch_ask_without_bounds(self, two_param_problem):
+    def test_randomsearch_ask_without_bounds(self, two_param_problem_no_bounds):
         # Initialize optimiser without boundaries
-        two_param_problem.parameters.remove_bounds()
-        two_param_problem.parameters.update(initial_values=[0.6, 0.55])
+        two_param_problem_no_bounds.parameters.update(initial_values=[0.6, 0.55])
         options = pybop.PintsOptions(max_iterations=1)
-        optim = pybop.RandomSearch(two_param_problem, options=options)
+        optim = pybop.RandomSearch(two_param_problem_no_bounds, options=options)
 
         # Set population size, generate candidates
         optim.set_population_size(2)
@@ -534,7 +599,7 @@ class TestOptimisation:
     def test_multistart_fails_without_distribution(self, model, dataset):
         # parameter with inifinite bound (no distribution)
         parameter_values = model.default_parameter_values
-        param = pybop.ParameterBounds((0.5, np.inf), initial_value=0.8)
+        param = pybop.Parameter(bounds=(0.5, np.inf), initial_value=0.8)
         parameter_values.update(
             {"Positive electrode active material volume fraction": param}
         )

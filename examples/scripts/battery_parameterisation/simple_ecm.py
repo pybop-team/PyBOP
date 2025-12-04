@@ -78,14 +78,14 @@ true_values = [parameter_values[p] for p in ["R0 [Ohm]", "R1 [Ohm]"]]
 # Fitting parameters
 parameter_values.update(
     {
-        "R0 [Ohm]": pybop.ParameterDistribution(
+        "R0 [Ohm]": pybop.Parameter(
             pybop.Gaussian(
                 0.0002,
                 0.0001,
                 truncated_at=[1e-4, 1e-2],
             )
         ),
-        "R1 [Ohm]": pybop.ParameterDistribution(
+        "R1 [Ohm]": pybop.Parameter(
             pybop.Gaussian(
                 0.0001,
                 0.0001,

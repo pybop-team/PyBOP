@@ -10,7 +10,7 @@ import numpy as np
 import scipy.stats as stats
 from numpy.typing import NDArray
 
-from pybop.parameters.priors import Distribution
+from pybop.parameters.distributions import Distribution
 from pybop.transformation.base_transformation import Transformation
 from pybop.transformation.transformations import (
     ComposedTransformation,
@@ -87,7 +87,7 @@ class Bounds:
         return self.upper - self.lower
 
 
-class ParameterInfo:
+class Parameter:
     """
     Represents a parameter within the PyBOP framework.
 
@@ -96,6 +96,10 @@ class ParameterInfo:
 
     Parameters
     ----------
+    distribution : stats.distribution.rv_frozen | Distribution
+        Distribution of the parameter
+    bounds : tuple[float, float], optional
+        Parameter bounds as (lower, upper)
     initial_value : NumericValue, optional
         Initial parameter value
     transformation : Transformation, optional
@@ -104,13 +108,69 @@ class ParameterInfo:
 
     def __init__(
         self,
-        *,
+        distribution: stats.rv_continuous
+        | Distribution
+        | stats._distribution_infrastructure.ContinuousDistribution
+        | None = None,
+        distribution_params: dict | None = None,
+        bounds: BoundsPair | None = None,
         initial_value: float = None,
         transformation: Transformation | None = None,
     ) -> None:
-        self._distribution = None
+        self._distribution = distribution
         self._bounds = None
         self._transformation = transformation or IdentityTransformation()
+
+        if isinstance(distribution, stats.rv_continuous):
+            distribution = stats.make_distribution(distribution)
+            if "loc" in distribution_params:
+                loc = distribution_params["loc"]
+                del distribution_params["loc"]
+            else:
+                loc = 0.0
+            if "scale" in distribution_params:
+                scale = distribution_params["scale"]
+                del distribution_params["scale"]
+            else:
+                scale = 0.0
+            X = distribution(**distribution_params)
+            self._distribution = scale * X + loc
+        elif (
+            isinstance(
+                distribution,
+                (
+                    Distribution,
+                    stats._distribution_infrastructure.ContinuousDistribution,  # noqa SLF001
+                ),
+            )
+            or distribution is None
+        ):
+            self._distribution = distribution
+        else:
+            raise TypeError(
+                "The distribution must be of type pybop.Distribution, stats.rv_continous, or stats._distribution_infrastructure.ContinousDistribution"
+            )
+
+        if self._distribution is not None:
+            lower, upper = self._distribution.support()
+            if np.isinf(lower) and np.isinf(upper):
+                self._bounds = None
+            else:
+                self._bounds = Bounds(lower, upper)
+
+        if bounds is not None:
+            if distribution is not None:
+                raise ParameterError(
+                    "Bounds can only be set if no distribution is provided. If a bounded distribution is needed, please ensure the distribution itself is bounded."
+                )
+            # Set bounds with validation
+            self._bounds = Bounds(bounds[0], bounds[1])
+            # Add uniform distribution for finite bounds in order to sample initial values
+            if all(np.isfinite(np.asarray(bounds))):
+                self._distribution = stats.Uniform(a=bounds[0], b=bounds[1])
+
+        if initial_value is None and self._distribution is not None:
+            initial_value = self.sample_from_distribution()[0]
 
         # Validate and set values
         self._initial_value = (
@@ -168,23 +228,7 @@ class ParameterInfo:
 
     def __repr__(self) -> str:
         """String representation of the parameter."""
-        return f"ParameterInfo - Initial value: {self.initial_value}"
-
-    def set_bounds(self, bounds: BoundsPair) -> None:
-        """
-        Set new parameter bounds.
-
-        Parameters
-        ----------
-        bounds : tuple[float, float]
-            New bounds as (lower, upper)
-        """
-        if bounds is None or (
-            not np.isfinite(bounds[0]) and not np.isfinite(bounds[1])
-        ):
-            self._bounds = None
-        else:
-            self._bounds = Bounds(bounds[0], bounds[1])
+        return f"Parameter - Distribution: {self._distribution}, Bounds: ({self.bounds[0]}, {self.bounds[1]}), Initial value: {self.initial_value}"
 
     def _validate_values_within_bounds(self) -> None:
         """Validate that initial values are within bounds."""
@@ -203,8 +247,8 @@ class ParameterInfo:
         return self._transformation.to_search(self._initial_value)[0]
 
     def __call__(self, *unused_args, **unused_kwargs) -> float:
-        "Return the current value. The unused arguments are to pass pybamm.ParameterValues checks."
-        return self._current_value
+        "Return the initial value. The unused arguments are to pass pybamm.ParameterValues checks."
+        return self._initial_value
 
     @property
     def initial_value(self) -> float:
@@ -226,121 +270,9 @@ class ParameterInfo:
         return self._transformation
 
 
-class ParameterBounds(ParameterInfo):
-    """
-    Subclass of ParameterInfo
-
-    This class accepts bounds in its constructor and sets the parameter
-    distribution to None or to a uniform distribution if both the lower
-    and the upper bound are finite.
-
-    Parameters
-    ----------
-    initial_value : NumericValue, optional
-        Initial parameter value
-    bounds : tuple[float, float], optional
-        Parameter bounds as (lower, upper)
-    transformation : Transformation, optional
-        Parameter transformation
-    """
-
-    def __init__(self, bounds: BoundsPair, *, initial_value=None, transformation=None):
-        super().__init__(initial_value=initial_value, transformation=transformation)
-        # Set bounds with validation
-        self._bounds = Bounds(bounds[0], bounds[1])
-        # Add uniform distribution for finite bounds in order to sample initial values
-        if all(np.isfinite(np.asarray(bounds))):
-            self._distribution = stats.Uniform(a=bounds[0], b=bounds[1])
-            # Sample uniformly if no initial value provided
-            if initial_value is None:
-                initial_value = self.sample_from_distribution()[0]
-
-        # Set initial value
-        self._initial_value = (
-            float(initial_value) if initial_value is not None else None
-        )
-        # Validate initial values are within bounds
-        self._validate_values_within_bounds()
-
-    def __repr__(self) -> str:
-        """String representation of the parameter bounds."""
-        return f"ParameterBounds - Bounds: {self.bounds}, Initial value: {self.initial_value}"
-
-
-class ParameterDistribution(ParameterInfo):
-    """
-    Subclass of ParameterInfo
-
-    This class accepts a distribution but no bounds in its constructor. The bounds are
-    set based on the support of the distribution.
-
-    Parameters
-    ----------
-    initial_value : NumericValue, optional
-        Initial parameter value
-    distribution : stats.distribution.rv_frozen | Distribution
-        Distribution of the parameter
-    transformation : Transformation, optional
-        Parameter transformation
-    """
-
-    def __init__(
-        self,
-        distribution: stats.rv_continuous
-        | Distribution
-        | stats._distribution_infrastructure.ContinuousDistribution,
-        *,
-        initial_value=None,
-        transformation=None,
-        distribution_params: dict | None = None,
-    ):
-        super().__init__(initial_value=initial_value, transformation=transformation)
-
-        if isinstance(distribution, stats.rv_continuous):
-            distribution = stats.make_distribution(distribution)
-            if "loc" in distribution_params:
-                loc = distribution_params["loc"]
-                del distribution_params["loc"]
-            else:
-                loc = 0.0
-            if "scale" in distribution_params:
-                scale = distribution_params["scale"]
-                del distribution_params["scale"]
-            else:
-                scale = 0.0
-            X = distribution(**distribution_params)
-            self._distribution = scale * X + loc
-        elif isinstance(
-            distribution,
-            (Distribution, stats._distribution_infrastructure.ContinuousDistribution),
-        ):
-            self._distribution = distribution
-        else:
-            raise TypeError(
-                "The distribution must be of type pybop.Distribution, stats.rv_continous, or stats._distribution_infrastructure.ContinousDistribution"
-            )
-
-        if initial_value is None:
-            initial_value = self.sample_from_distribution()[0]
-        self._initial_value = (
-            float(initial_value) if initial_value is not None else None
-        )
-        lower, upper = self._distribution.support()
-        if np.isinf(lower) and np.isinf(upper):
-            self._bounds = None
-        else:
-            self._bounds = Bounds(lower, upper)
-        # Validate initial values are within bounds
-        self._validate_values_within_bounds()
-
-    def __repr__(self) -> str:
-        """String representation of the parameter distribution."""
-        return f"ParameterDistribution - Distribution: {self.distribution}, Initial value: {self.initial_value}"
-
-
 class Parameters:
     """
-    Container for managing multiple ParameterInfo objects with additional functionality.
+    Container for managing multiple Parameter objects with additional functionality.
 
     This class provides a comprehensive interface for parameter management including
     validation, transformation, serialisation, and bulk operations.
@@ -360,8 +292,11 @@ class Parameters:
 
         self._transform = self.construct_transformation()
 
-    def __getitem__(self, name: str) -> ParameterInfo:
+    def __getitem__(self, name: str) -> Parameter:
         return self.get(name)
+
+    def __setitem__(self, name: str, param: Parameter) -> None:
+        self.set(name, param)
 
     def __len__(self) -> int:
         return len(self._parameters)
@@ -374,48 +309,48 @@ class Parameters:
     def names(self) -> list[str]:
         return list(self._parameters.keys())
 
-    def __iter__(self) -> Iterator[ParameterInfo]:
+    def __iter__(self) -> Iterator[Parameter]:
         return iter(self._parameters.values())
 
-    def add(self, name: str, parameter: ParameterInfo) -> None:
+    def add(self, name: str, parameter: Parameter) -> None:
         """Add a parameter to the collection."""
         self._add(name, parameter)
 
     def _add(
-        self, name: str, parameter: ParameterInfo, update_transform: bool = True
+        self, name: str, parameter: Parameter, update_transform: bool = True
     ) -> None:
         """
         Internal method to add a parameter to the collection.
 
         Parameters
         ----------
-        parameter : ParameterInfo
-            ParameterInfo to add
+        parameter : Parameter
+            Parameter to add
         update_transform : bool, optional
             Whether to update the transformation after adding (default: True)
         """
-        if not isinstance(parameter, ParameterInfo):
-            raise TypeError("Expected ParameterInfo instance")
+        if not isinstance(parameter, Parameter):
+            raise TypeError("Expected Parameter instance")
 
         if name in self._parameters:
-            raise ParameterError(f"ParameterInfo for '{name}' already exists")
+            raise ParameterError(f"Parameter for '{name}' already exists")
 
         self._parameters[name] = parameter
 
         if update_transform:
             self._transform = self.construct_transformation()
 
-    def remove(self, name: str) -> ParameterInfo:
+    def remove(self, name: str) -> Parameter:
         """Remove parameter and return it."""
         if not isinstance(name, str):
             raise TypeError("The input name is not a string.")
         if name not in self._parameters:
-            raise ParameterNotFoundError(f"ParameterInfo for '{name}' not found")
+            raise ParameterNotFoundError(f"Parameter for '{name}' not found")
         return self._parameters.pop(name)
 
     def join(self, parameters=None):
         """
-        Join two Parameters objects into the first by copying across each ParameterInfo.
+        Join two Parameters objects into the first by copying across each Parameter.
 
         Parameters
         ----------
@@ -427,11 +362,19 @@ class Parameters:
             else:
                 print(f"Discarding duplicate {name}.")
 
-    def get(self, name: str) -> ParameterInfo:
+    def get(self, name: str) -> Parameter:
         """Get a parameter by name."""
         if name not in self._parameters:
-            raise ParameterNotFoundError(f"ParameterInfo for '{name}' not found")
+            raise ParameterNotFoundError(f"Parameter for '{name}' not found")
         return self._parameters[name]
+
+    def set(self, name: str, param: Parameter) -> None:
+        """Get a parameter by name."""
+        if name not in self._parameters:
+            raise ParameterNotFoundError(f"Parameter for '{name}' not found")
+        if not isinstance(param, Parameter):
+            raise TypeError({"Paremeter must be of type pybop.ParemterInfo"})
+        self._parameters[name] = param
 
     def get_bounds(self, transformed: bool = False) -> dict:
         """
@@ -484,7 +427,6 @@ class Parameters:
         self,
         *,
         initial_values: ArrayLike | Inputs | None = None,
-        bounds: Sequence[BoundsPair] | dict[str, BoundsPair] | None = None,
         **individual_updates: dict[str, Any],
     ) -> None:
         """
@@ -506,24 +448,10 @@ class Parameters:
             if isinstance(updates, dict):
                 if "initial_value" in updates:
                     param.update_initial_value(updates["initial_value"])
-                if "bounds" in updates:
-                    param.set_bounds(updates["bounds"])
 
         # Handle bulk updates
         if initial_values is not None:
             self._bulk_update_initial_values(initial_values)
-        if bounds is not None:
-            # Allow conversion from get_bounds output type to Sequence[BoundsPair] type
-            if isinstance(bounds, dict) and "upper" in bounds.keys():
-                converted_bounds = []
-                for i in range(len(bounds["lower"])):
-                    converted_bounds.append([bounds["lower"][i], bounds["upper"][i]])
-                bounds = converted_bounds
-            self._bulk_update_bounds(bounds)
-
-    def remove_bounds(self) -> None:
-        for param in self._parameters.values():
-            param.set_bounds(None)
 
     def _bulk_update_initial_values(self, values: ArrayLike | Inputs) -> None:
         """Update initial values in bulk."""
@@ -542,25 +470,6 @@ class Parameters:
 
             for param, value in zip(param_list, values_array, strict=False):
                 param.update_initial_value(value)
-
-    def _bulk_update_bounds(
-        self, bounds: Sequence[BoundsPair] | dict[str, BoundsPair]
-    ) -> None:
-        """Update bounds in bulk."""
-        if isinstance(bounds, dict):
-            for name, bound_pair in bounds.items():
-                self.get(name).set_bounds(bound_pair)
-        else:
-            param_list = list(self._parameters.values())
-
-            if len(bounds) != len(param_list):
-                raise ParameterValidationError(
-                    f"Bounds array length {len(bounds)} doesn't match "
-                    f"parameter count {len(param_list)}"
-                )
-
-            for param, bound_pair in zip(param_list, bounds, strict=False):
-                param.set_bounds(bound_pair)
 
     def sample_from_distributions(
         self,
@@ -653,7 +562,7 @@ class Parameters:
                         value = samples[0] if transformed else param.initial_value
 
                 if value is None:
-                    raise ParameterError(f"ParameterInfo '{name}' has no initial value")
+                    raise ParameterError(f"Parameter '{name}' has no initial value")
 
             if transformed:
                 value = param.transformation.to_search(value)[0]
@@ -763,10 +672,10 @@ class Parameters:
     def __contains__(self, name: str) -> bool:
         return name in self._parameters
 
-    def values(self) -> Iterator[ParameterInfo]:
+    def values(self) -> Iterator[Parameter]:
         """Iterate over parameters."""
         return iter(self._parameters.values())
 
-    def items(self) -> Iterator[tuple[str, ParameterInfo]]:
+    def items(self) -> Iterator[tuple[str, Parameter]]:
         """Iterate over (name, parameter) pairs."""
         return iter(self._parameters.items())

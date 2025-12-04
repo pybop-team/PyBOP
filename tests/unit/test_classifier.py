@@ -33,11 +33,7 @@ class TestClassifier:
 
         parameter_values = model.default_parameter_values
         parameter_values.update(
-            {
-                "R0 [Ohm]": pybop.ParameterDistribution(
-                    distribution=stats.Uniform(a=0.001, b=0.1)
-                )
-            }
+            {"R0 [Ohm]": pybop.Parameter(distribution=stats.Uniform(a=0.001, b=0.1))}
         )
         simulator = pybop.pybamm.Simulator(
             model, parameter_values=parameter_values, protocol=dataset

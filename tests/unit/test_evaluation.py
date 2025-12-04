@@ -29,7 +29,7 @@ class TestEvaluation:
     @pytest.fixture
     def parameters(self):
         return {
-            "Negative electrode active material volume fraction": pybop.ParameterDistribution(
+            "Negative electrode active material volume fraction": pybop.Parameter(
                 distribution=pybop.Gaussian(
                     0.5,
                     0.01,
@@ -39,7 +39,7 @@ class TestEvaluation:
                     coefficient=1 / 0.25, intercept=-0.375
                 ),
             ),
-            "Positive electrode Bruggeman coefficient (electrode)": pybop.ParameterDistribution(
+            "Positive electrode Bruggeman coefficient (electrode)": pybop.Parameter(
                 distribution=stats.Normal(mu=1.5, sigma=0.1),
                 transformation=pybop.LogTransformation(),
             ),

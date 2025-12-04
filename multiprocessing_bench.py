@@ -32,7 +32,7 @@ parameter_values.set_initial_state(f"{csv_data[0, 2]} V")
 # Fitting parameters
 parameter_values.update(
     {
-        "Negative electrode active material volume fraction": pybop.ParameterDistribution(
+        "Negative electrode active material volume fraction": pybop.Parameter(
             pybop.Gaussian(0.68, 0.05, truncated_at=[0.4, 0.9]),
             initial_value=0.65,
         ),

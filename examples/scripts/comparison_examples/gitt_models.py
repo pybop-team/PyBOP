@@ -36,7 +36,7 @@ dataset = pybop.Dataset(
 
 for model in [pybop.lithium_ion.WeppnerHuggins(), pybop.lithium_ion.SPDiffusion()]:
     # GITT target parameter
-    diffusion_parameter = pybop.ParameterDistribution(stats.Normal(mu=5000, sigma=1000))
+    diffusion_parameter = pybop.Parameter(stats.Normal(mu=5000, sigma=1000))
     if isinstance(model, pybop.lithium_ion.WeppnerHuggins):
         # Group parameter values
         grouped_parameter_values = (
@@ -66,7 +66,7 @@ for model in [pybop.lithium_ion.WeppnerHuggins(), pybop.lithium_ion.SPDiffusion(
         grouped_parameter_values.update(
             {
                 "Particle diffusion time scale [s]": diffusion_parameter,
-                "Reference voltage [V]": pybop.ParameterInfo(
+                "Reference voltage [V]": pybop.Parameter(
                     initial_value=grouped_parameter_values["Reference voltage [V]"],
                 ),
             }
@@ -82,7 +82,7 @@ for model in [pybop.lithium_ion.WeppnerHuggins(), pybop.lithium_ion.SPDiffusion(
         grouped_parameter_values.update(
             {
                 "Particle diffusion time scale [s]": diffusion_parameter,
-                "Series resistance [Ohm]": pybop.ParameterInfo(
+                "Series resistance [Ohm]": pybop.Parameter(
                     initial_value=grouped_parameter_values["Series resistance [Ohm]"],
                 ),
             }
