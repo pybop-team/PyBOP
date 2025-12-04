@@ -144,18 +144,12 @@ class TestWeightedCost:
         parameter_values.update(
             {
                 "Positive electrode thickness [m]": pybop.Parameter(
-                    distribution=pybop.Gaussian(
-                        5e-05,
-                        5e-06,
-                        truncated_at=[2e-06, 10e-05],
-                    )
+                    distribution=pybop.Gaussian(5e-05, 5e-06),
+                    bounds=[2e-06, 10e-05],
                 ),
                 "Negative electrode thickness [m]": pybop.Parameter(
-                    distribution=pybop.Gaussian(
-                        5e-05,
-                        5e-06,
-                        truncated_at=[2e-06, 10e-05],
-                    )
+                    distribution=pybop.Gaussian(5e-05, 5e-06),
+                    bounds=[2e-06, 10e-05],
                 ),
             }
         )

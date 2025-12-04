@@ -41,11 +41,8 @@ class TestOptimisation:
     def parameters(self):
         return {
             "Negative electrode active material volume fraction": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    0.55,
-                    0.05,
-                    truncated_at=[0.375, 0.75],
-                ),
+                distribution=stats.Normal(mu=0.55, sigma=0.05),
+                bounds=[0.375, 0.75],
             ),
             "Positive electrode active material volume fraction": pybop.Parameter(
                 stats.Normal(mu=0.55, sigma=0.05),

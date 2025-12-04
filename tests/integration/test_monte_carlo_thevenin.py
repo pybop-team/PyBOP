@@ -3,7 +3,6 @@ import json
 import numpy as np
 import pybamm
 import pytest
-from scipy import stats
 
 import pybop
 from pybop import (
@@ -70,22 +69,16 @@ class TestSamplingThevenin:
     def parameters(self):
         return {
             "R0 [Ohm]": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    5e-2,
-                    5e-3,
-                    truncated_at=[1e-4, 1e-1],
-                ),
+                distribution=pybop.Gaussian(5e-2, 5e-3),
                 transformation=pybop.LogTransformation(),
-                initial_value=stats.Uniform(a=2e-3, b=8e-2).sample(),
+                initial_value=pybop.Uniform(2e-3, 8e-2).sample()[0],
+                bounds=[1e-4, 1e-1],
             ),
             "R1 [Ohm]": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    5e-2,
-                    5e-3,
-                    truncated_at=[1e-4, 1e-1],
-                ),
+                distribution=pybop.Gaussian(5e-2, 5e-3),
                 transformation=pybop.LogTransformation(),
-                initial_value=stats.Uniform(a=2e-3, b=8e-2).sample(),
+                initial_value=pybop.Uniform(2e-3, 8e-2).sample()[0],
+                bounds=[1e-4, 1e-1],
             ),
         }
 

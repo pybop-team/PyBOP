@@ -65,19 +65,13 @@ class TestTransformation:
     def parameters(self, transformation_r0, transformation_r1):
         return {
             "R0 [Ohm]": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    0.05,
-                    0.02,
-                    truncated_at=[1e-4, 0.1],
-                ),
+                distribution=pybop.Gaussian(0.05, 0.02),
+                bounds=[1e-4, 0.1],
                 transformation=transformation_r0,
             ),
             "R1 [Ohm]": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    0.05,
-                    0.02,
-                    truncated_at=[1e-4, 0.1],
-                ),
+                distribution=pybop.Gaussian(0.05, 0.02),
+                bounds=[1e-4, 0.1],
                 transformation=transformation_r1,
             ),
         }

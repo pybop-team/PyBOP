@@ -32,7 +32,7 @@ class TestOptimisation:
     def one_parameter(self):
         return {
             "Positive electrode active material volume fraction": pybop.Parameter(
-                pybop.Gaussian(0.5, 0.02, truncated_at=(0.48, 0.52))
+                pybop.Gaussian(0.5, 0.02), bounds=(0.48, 0.52)
             ),
         }
 
@@ -40,18 +40,12 @@ class TestOptimisation:
     def two_parameters(self):
         return {
             "Negative electrode active material volume fraction": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    0.6,
-                    0.02,
-                    truncated_at=[0.58, 0.62],
-                )
+                distribution=pybop.Gaussian(0.6, 0.02),
+                bounds=[0.58, 0.62],
             ),
             "Positive electrode active material volume fraction": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    0.5,
-                    0.05,
-                    truncated_at=[0.48, 0.52],
-                )
+                distribution=pybop.Gaussian(0.5, 0.05),
+                bounds=[0.48, 0.52],
             ),
         }
 
@@ -219,23 +213,17 @@ class TestOptimisation:
             ):
                 problem.parameters[
                     "Positive electrode active material volume fraction"
-                ] = pybop.Parameter(
-                    pybop.Gaussian(0.5, 0.02, truncated_at=(0.57, np.inf))
-                )
+                ] = pybop.Parameter(pybop.Gaussian(0.5, 0.02), bounds=(0.57, np.inf))
                 optimiser(problem)
             problem.parameters["Positive electrode active material volume fraction"] = (
                 pybop.Parameter(
-                    pybop.Gaussian(
-                        0.5, 0.02, truncated_at=(bounds["lower"], bounds["upper"])
-                    )
+                    pybop.Gaussian(0.5, 0.02), bounds=(bounds["lower"], bounds["upper"])
                 )
             )
         elif issubclass(optimiser, pybop.BasePintsOptimiser):
             problem.parameters["Positive electrode active material volume fraction"] = (
                 pybop.Parameter(
-                    pybop.Gaussian(
-                        0.5, 0.02, truncated_at=(bounds["lower"], bounds["upper"])
-                    )
+                    pybop.Gaussian(0.5, 0.02), bounds=(bounds["lower"], bounds["upper"])
                 )
             )
             optim = optimiser(problem)
@@ -386,16 +374,14 @@ class TestOptimisation:
         two_param_problem.parameters[
             "Negative electrode active material volume fraction"
         ] = pybop.Parameter(
-            distribution=pybop.Gaussian(
-                0.6, 0.02, truncated_at=(bounds["lower"][0], bounds["upper"][0])
-            )
+            distribution=pybop.Gaussian(0.6, 0.02),
+            bounds=(bounds["lower"][0], bounds["upper"][0]),
         )
         two_param_problem.parameters[
             "Positive electrode active material volume fraction"
         ] = pybop.Parameter(
-            distribution=pybop.Gaussian(
-                0.5, 0.05, truncated_at=(bounds["lower"][1], bounds["upper"][1])
-            )
+            distribution=pybop.Gaussian(0.5, 0.05),
+            bounds=(bounds["lower"][1], bounds["upper"][1]),
         )
         options = pybop.PintsOptions(max_iterations=1)
         optim = pybop.RandomSearch(two_param_problem, options=options)

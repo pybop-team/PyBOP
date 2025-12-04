@@ -49,18 +49,12 @@ class TestPintsSamplers:
     def parameters(self):
         return {
             "Negative electrode active material volume fraction": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    0.6,
-                    0.2,
-                    truncated_at=[0.58, 0.62],
-                ),
+                distribution=pybop.Gaussian(0.6, 0.2),
+                bounds=[0.58, 0.62],
             ),
             "Positive electrode active material volume fraction": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    0.55,
-                    0.05,
-                    truncated_at=[0.53, 0.57],
-                ),
+                distribution=pybop.Gaussian(0.55, 0.05),
+                bounds=[0.53, 0.57],
             ),
         }
 
@@ -171,7 +165,7 @@ class TestPintsSamplers:
         parameter_values.update(
             {
                 "Negative electrode active material volume fraction": pybop.Parameter(
-                    distribution=pybop.Gaussian(0.6, 0.2, truncated_at=[0.58, 0.62])
+                    distribution=pybop.Gaussian(0.6, 0.2), bounds=[0.58, 0.62]
                 )
             }
         )

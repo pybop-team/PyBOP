@@ -51,19 +51,13 @@ class TestTheveninParameterisation:
     def parameters(self):
         return {
             "R0 [Ohm]": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    0.05,
-                    0.01,
-                    truncated_at=[1e-6, 0.1],
-                ),
+                distribution=pybop.Gaussian(0.05, 0.01),
+                bounds=[1e-6, 0.1],
                 transformation=pybop.LogTransformation(),
             ),
             "R1 [Ohm]": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    0.05,
-                    0.01,
-                    truncated_at=[1e-6, 0.1],
-                ),
+                distribution=pybop.Gaussian(0.05, 0.01),
+                bounds=[1e-6, 0.1],
                 transformation=pybop.LogTransformation(),
             ),
         }

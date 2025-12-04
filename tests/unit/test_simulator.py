@@ -13,16 +13,8 @@ class TestSimulator:
 
     def test_parameter_errors_constructor(self):
         params = {
-            "Negative particle radius [m]": pybop.Gaussian(
-                2e-05,
-                0.1e-5,
-                truncated_at=[1e-6, 5e-5],
-            ),
-            "Positive particle radius [m]": pybop.Gaussian(
-                0.5e-05,
-                0.1e-5,
-                truncated_at=[1e-6, 5e-5],
-            ),
+            "Negative particle radius [m]": pybop.Gaussian(2e-05, 0.1e-5),
+            "Positive particle radius [m]": pybop.Gaussian(0.5e-05, 0.1e-5),
         }
 
         with pytest.raises(
@@ -32,20 +24,8 @@ class TestSimulator:
             BaseSimulator(params)
 
         params = [
-            pybop.Parameter(
-                pybop.Gaussian(
-                    2e-05,
-                    0.1e-5,
-                    truncated_at=[1e-6, 5e-5],
-                )
-            ),
-            pybop.Parameter(
-                pybop.Gaussian(
-                    2e-05,
-                    0.1e-5,
-                    truncated_at=[1e-6, 5e-5],
-                )
-            ),
+            pybop.Parameter(pybop.Gaussian(2e-05, 0.1e-5), bounds=[1e-6, 5e-5]),
+            pybop.Parameter(pybop.Gaussian(2e-05, 0.1e-5), bounds=[1e-6, 5e-5]),
         ]
 
         with pytest.raises(

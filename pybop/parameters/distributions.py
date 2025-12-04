@@ -24,6 +24,9 @@ class Distribution:
     ):
         self.distribution = distribution
 
+    def truncate(self, lower, upper):
+        self.distribution = stats.truncate(self.distribution, lower, upper)
+
     def support(self):
         return self.distribution.support()
 
@@ -240,13 +243,8 @@ class Gaussian(Distribution):
         self,
         mean,
         sigma,
-        truncated_at: list[float] = None,
     ):
         distribution = stats.Normal(mu=mean, sigma=sigma)
-        if truncated_at is not None:
-            distribution = stats.truncate(
-                distribution, truncated_at[0], truncated_at[1]
-            )
         super().__init__(distribution)
         self.name = "Gaussian"
         self._n_parameters = 1

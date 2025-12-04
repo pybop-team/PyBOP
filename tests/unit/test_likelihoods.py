@@ -30,11 +30,8 @@ class TestLikelihoods:
     def parameters(self):
         return {
             "Negative electrode active material volume fraction": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    0.5,
-                    0.01,
-                    truncated_at=[0.375, 0.625],
-                )
+                distribution=pybop.Gaussian(0.5, 0.01),
+                bounds=[0.375, 0.625],
             )
         }
 
