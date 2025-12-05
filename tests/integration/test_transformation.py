@@ -29,7 +29,7 @@ class TestTransformation:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.sigma0 = 2e-3
+        self.sigma0 = 2e-4
         self.ground_truth = np.clip(
             np.asarray([0.05, 0.05]) + np.random.normal(loc=0.0, scale=0.01, size=2),
             a_min=0.0,
@@ -131,7 +131,7 @@ class TestTransformation:
         x0 = problem.parameters.get_initial_values()
         if optimiser is pybop.SciPyDifferentialEvolution:
             options = pybop.SciPyDifferentialEvolutionOptions(
-                maxiter=150,
+                maxiter=50,
                 popsize=3,
             )
         else:

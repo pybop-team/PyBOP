@@ -58,7 +58,7 @@ class TestCosts:
 
     @pytest.fixture
     def gitt_like_dataset(self):
-        domain_data = np.linspace(0, 200, 2001)
+        domain_data = np.linspace(0, 500, 5001)
         target_data = np.append(
             0.2 + 0.4 * np.sqrt(domain_data[0:200]),
             0.2 + 0.4 * 20**0.5 + 3 * (2 / 3 - np.exp(-0.02 * domain_data[200:])),
