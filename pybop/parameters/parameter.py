@@ -191,7 +191,7 @@ class Parameter:
         self,
         n_samples: int = 1,
         *,
-        random_state: int | None = None,
+        random_state: int | None = 1,
         transformed: bool = False,
     ) -> NDArray[np.floating] | None:
         """
@@ -214,7 +214,7 @@ class Parameter:
         if self._distribution is None:
             return None
 
-        samples = self._distribution.sample(n_samples, rng=random_state)
+        samples = self._distribution.sample(shape=n_samples, rng=random_state)
         samples = np.atleast_1d(samples).astype(float)
 
         if transformed:
