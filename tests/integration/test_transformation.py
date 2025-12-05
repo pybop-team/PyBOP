@@ -131,7 +131,7 @@ class TestTransformation:
         x0 = problem.parameters.get_initial_values()
         if optimiser is pybop.SciPyDifferentialEvolution:
             options = pybop.SciPyDifferentialEvolutionOptions(
-                maxiter=50,
+                maxiter=150,
                 popsize=3,
             )
         else:
