@@ -48,6 +48,11 @@ class TestParameter:
         assert param.distribution.standard_deviation() == 0.02
         assert param.distribution.mean() == 0.3
 
+        # test set from stats.rv_continuous with default loc=0.0 and scale=1.0
+        param = pybop.Parameter(distribution=stats.norm)
+        assert param.distribution.standard_deviation() == 1.0
+        assert param.distribution.mean() == 0.0
+
         # test error if distribution of type stats.distribution.rv_frozen
         with pytest.raises(
             TypeError,

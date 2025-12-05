@@ -122,18 +122,21 @@ class Parameter:
 
         if isinstance(distribution, stats.rv_continuous):
             distribution = stats.make_distribution(distribution)
-            if "loc" in distribution_params:
-                loc = distribution_params["loc"]
-                del distribution_params["loc"]
+            loc = 0.0
+            scale = 1.0
+            if distribution_params is not None:
+                if "loc" in distribution_params.keys():
+                    loc = distribution_params["loc"]
+                    del distribution_params["loc"]
+                if "scale" in distribution_params.keys():
+                    scale = distribution_params["scale"]
+                    del distribution_params["scale"]
+
+                X = distribution(**distribution_params)
+                self._distribution = scale * X + loc
             else:
-                loc = 0.0
-            if "scale" in distribution_params:
-                scale = distribution_params["scale"]
-                del distribution_params["scale"]
-            else:
-                scale = 0.0
-            X = distribution(**distribution_params)
-            self._distribution = scale * X + loc
+                self._distribution = distribution()
+            
         elif (
             isinstance(
                 distribution,
