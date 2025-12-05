@@ -136,7 +136,7 @@ class Parameter:
                 self._distribution = scale * X + loc
             else:
                 self._distribution = distribution()
-            
+
         elif (
             isinstance(
                 distribution,
