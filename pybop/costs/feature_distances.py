@@ -211,7 +211,16 @@ class ExponentialFeatureDistance(FeatureDistance):
         return -d * np.log(log_arg)
 
     def _fit_guess(self, t, y):
-        return [y[-1], y[len(y) // 10] - y[-1], t[-1] - t[len(t) // 10]]
+        constant = y[-1]
+        difference = (y[-1] - y[0]) / (t[-1] - t[0])
+        second_difference = (y[-1] - 2 * y[len(y) // 2] + y[0]) / (
+            t[len(t) // 2] - t[0]
+        ) ** 2
+        return [
+            constant,
+            difference**2 / second_difference,
+            -difference / second_difference,
+        ]
 
     def _feature_selection(self, fit):
         if self.feature == "asymptote":
