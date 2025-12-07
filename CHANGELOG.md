@@ -6,6 +6,8 @@
 
 ## Bug Fixes
 
+- [#847](https://github.com/pybop-team/PyBOP/pull/847) - Update readme and diagram of pybop components so that the diagram is displayed correctly in the readme.
+
 ## Breaking Changes
 
 # [v25.11](https://github.com/pybop-team/PyBOP/tree/v25.11) - 2025-11-24
