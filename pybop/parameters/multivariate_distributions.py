@@ -3,7 +3,7 @@ import scipy.integrate as integrate
 import scipy.stats as stats
 from scipy.linalg import sqrtm
 
-from pybop import BasePrior
+from pybop.parameters.priors import BasePrior
 
 
 def insert_x_at_dim(other, x, dim):
@@ -228,7 +228,7 @@ class MultivariateGaussian(BaseMultivariateDistribution):
         super().__init__()
         self.name = "MultivariateGaussian"
         self.distribution = stats.multivariate_normal
-        self.properties = {"mean": mean, "cov": covariance, "bounds": bounds}
+        self.properties = {"mean": mean, "cov": covariance}
         self.sigma2 = covariance
         self._n_parameters = len(mean)
 

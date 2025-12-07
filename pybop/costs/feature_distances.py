@@ -1,7 +1,10 @@
+import warnings
+
 import numpy as np
 from scipy.optimize import minimize
 
 from pybop.costs.base_cost import BaseCost
+from pybop.costs.evaluation import Evaluation
 
 
 def indices_of(values, target):
@@ -14,12 +17,19 @@ def indices_of(values, target):
     return nearest_roots
 
 
-class ParameterisedCost(BaseCost):
-    """Base for defining cost functions based on fit parameters."""
+class FeatureDistance(BaseCost):
+    """Base for defining cost functions based on comparing fit functions."""
 
     _supported_features = []
 
-    def __init__(self, domain_data: np.ndarray, target_data: np.ndarray, feature: str):
+    def __init__(
+        self,
+        domain_data: np.ndarray,
+        target_data: np.ndarray,
+        feature: str,
+        time_start: float = None,
+        time_end: float = None,
+    ):
         super().__init__()
         if feature not in self._supported_features:
             raise ValueError(
@@ -31,6 +41,22 @@ class ParameterisedCost(BaseCost):
         self._domain_data = domain_data
         self._target_data = target_data
         self.feature = feature
+        self.time_start = time_start
+        self.time_end = time_end
+        self.start_index = (
+            indices_of(self.domain_data, self.time_start)[0] if self.time_start else 0
+        )
+        self.end_index = (
+            indices_of(self.domain_data, self.time_end)[0] if self.time_end else None
+        )
+
+        with warnings.catch_warnings():
+            # Suppress SciPy's UserWarning about delta_grad == 0.
+            warnings.simplefilter("ignore")
+            self.data_fit = self._fit(
+                self.domain_data[self.start_index : self.end_index],
+                self.target_data[self.start_index : self.end_index],
+            )
 
     def _inverse_fit_function(self, y, *args):
         return NotImplementedError
@@ -61,36 +87,27 @@ class ParameterisedCost(BaseCost):
         y: np.ndarray,
         dy: np.ndarray | None = None,
     ) -> float | tuple[float, np.ndarray]:
-        if self.time_start:
-            start_index = indices_of(self.domain_data, self.time_start)[0]
-        else:
-            start_index = 0
-        if self.time_end:
-            end_index = indices_of(self.domain_data, self.time_end)[0]
-        else:
-            end_index = None
-        data_fit = self._fit(
-            self.domain_data[start_index:end_index],
-            self.target_data[start_index:end_index],
-        )
-        error = np.abs(
-            np.asarray(
-                [
-                    (
-                        self._fit(
-                            self.domain_data[start_index:end_index],
-                            y[start_index:end_index],
+        with warnings.catch_warnings():
+            # Suppress SciPy's UserWarning about delta_grad == 0.
+            warnings.simplefilter("ignore")
+            error = np.abs(
+                np.asarray(
+                    [
+                        (
+                            self._fit(
+                                self.domain_data[self.start_index : self.end_index],
+                                y[self.start_index : self.end_index],
+                            )
+                            - self.data_fit
                         )
-                        - data_fit
-                    )
-                    / data_fit
-                ]
+                        / self.data_fit
+                    ]
+                )
             )
-        )
-        return error.item()
+        return Evaluation(error.item())
 
 
-class SquareRootFit(ParameterisedCost):
+class SquareRootFeatureDistance(FeatureDistance):
     """
     Square-root fit cost function.
 
@@ -126,7 +143,7 @@ class SquareRootFit(ParameterisedCost):
             Set the time (in seconds) until which the data shall be fitted,
             counted from the start of the data. Default is the end.
         """
-        super().__init__(domain_data, target_data, feature)
+        super().__init__(domain_data, target_data, feature, time_start, time_end)
         self.time_start = time_start
         self.time_end = time_end
 
@@ -146,7 +163,7 @@ class SquareRootFit(ParameterisedCost):
             return 1 / fit[1]
 
 
-class ExponentialFit(ParameterisedCost):
+class ExponentialFeatureDistance(FeatureDistance):
     """
     Exponential fit cost function.
 
@@ -183,7 +200,7 @@ class ExponentialFit(ParameterisedCost):
             Set the time (in seconds) until which the data shall be fitted,
             counted from the start of the data. Default is the end.
         """
-        super().__init__(domain_data, target_data, feature)
+        super().__init__(domain_data, target_data, feature, time_start, time_end)
         self.time_start = time_start
         self.time_end = time_end
 
@@ -191,10 +208,19 @@ class ExponentialFit(ParameterisedCost):
         """Logarithm function to transform data for a linear fit."""
         log_arg = (y - b) / c
         log_arg[log_arg <= 0] = 0.1**d
-        return np.log(log_arg) / d
+        return -d * np.log(log_arg)
 
     def _fit_guess(self, t, y):
-        return [y[-1], y[-1] - y[len(y) // 10], 1 / (t[-1] - t[len(t) // 10])]
+        constant = y[-1]
+        difference = (y[-1] - y[0]) / (t[-1] - t[0])
+        second_difference = (y[-1] - 2 * y[len(y) // 2] + y[0]) / (
+            t[len(t) // 2] - t[0]
+        ) ** 2
+        return [
+            constant,
+            difference**2 / second_difference,
+            -difference / second_difference,
+        ]
 
     def _feature_selection(self, fit):
         if self.feature == "asymptote":
