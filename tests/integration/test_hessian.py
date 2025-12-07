@@ -95,11 +95,13 @@ class TestClassification:
         logger.extend_log(x_search=[x0], x_model=[x0], cost=[problem(x0)])
         result = pybop.OptimisationResult(optim=optim, logger=logger, time=1.0)
 
-        message, info = pybop.classify_using_hessian(result)
+        info = pybop.classify_using_hessian(result)
+        pybop.plot_hessian_eigenvectors(info, steps=3)
 
         assert isinstance(info, dict)
         for k in (
-            "hessian_fd",
+            "message",
+            "cfd_hessian",
             "eigenvalues",
             "eigenvectors",
             "x",
@@ -113,7 +115,7 @@ class TestClassification:
             "Z",
         ):
             assert k in info
-        assert info["hessian_fd"].shape == (2, 2)
+        assert info["cfd_hessian"].shape == (2, 2)
         assert info["eigenvalues"].shape == (2,)
         assert info["eigenvectors"].shape == (2, 2)
         assert info["x"].shape == (2,)
@@ -128,7 +130,7 @@ class TestClassification:
         assert info["Z"].shape[0] == info["Z"].shape[1]  # grid is square
 
         # Hessian may be NaN on some model combinations
-        H = info["hessian_fd"]
+        H = info["cfd_hessian"]
 
         if np.isfinite(H).all():
             # finite and (approximately) symmetric
@@ -173,17 +175,17 @@ class TestClassification:
         assert p1.min() < x_center[1] < p1.max()
 
         if np.all(x == np.asarray([0.05, 0.05])):
-            message, _ = pybop.classify_using_hessian(result)
-            assert message == "The optimiser has located a minimum."
+            info = pybop.classify_using_hessian(result)
+            assert info["message"] == "The optimiser has located a minimum."
         elif np.all(x == np.asarray([0.1, 0.05])):
-            message, _ = pybop.classify_using_hessian(result)
-            assert message == (
+            info = pybop.classify_using_hessian(result)
+            assert info["message"] == (
                 "The optimiser has not converged to a stationary point."
                 " The result is near the upper bound of R0 [Ohm]."
             )
         elif np.all(x == np.asarray([0.05, 0.01])):
-            message, _ = pybop.classify_using_hessian(result)
-            assert message == (
+            info = pybop.classify_using_hessian(result)
+            assert info["message"] == (
                 "The optimiser has not converged to a stationary point."
                 " The result is near the lower bound of R1 [Ohm]."
             )
@@ -199,8 +201,8 @@ class TestClassification:
             logger.extend_log(x_search=[x], x_model=[x], cost=[problem(x)])
             result = pybop.OptimisationResult(optim=optim, logger=logger, time=1.0)
 
-            message, _ = pybop.classify_using_hessian(result)
-            assert message == "The optimiser has located a maximum."
+            info = pybop.classify_using_hessian(result)
+            assert info["message"] == "The optimiser has located a maximum."
 
     def test_insensitive_classify_using_hessian(self, model, parameter_values):
         param_R0_a = pybop.Parameter(bounds=[0, 0.002])
@@ -240,25 +242,25 @@ class TestClassification:
         logger.extend_log(x_search=[x], x_model=[x], cost=[problem(x)])
         result = pybop.OptimisationResult(optim=optim, logger=logger, time=1.0)
 
-        message, _ = pybop.classify_using_hessian(result)
+        info = pybop.classify_using_hessian(result)
         expected1 = (
             "The cost variation is too small to classify with certainty."
             " The cost is insensitive to a change of 1e-42 in R0_b [Ohm]."
         )
         expected2 = "The cost variation is smaller than the cost tolerance: 0.01."
-        assert message in {expected1, expected2}
+        assert info["message"] in {expected1, expected2}
 
-        message, _ = pybop.classify_using_hessian(result, dx=[0.0001, 0.0001])
-        assert message == (
+        info = pybop.classify_using_hessian(result, dx=[0.0001, 0.0001])
+        assert info["message"] == (
             "The optimiser has located a minimum."
             " There may be a correlation between these parameters."
         )
 
-        message, _ = pybop.classify_using_hessian(result, cost_tolerance=1e-2)
-        assert message in {expected1, expected2}
+        info = pybop.classify_using_hessian(result, cost_tolerance=1e-2)
+        assert info["message"] in {expected1, expected2}
 
-        message, _ = pybop.classify_using_hessian(result, dx=[1, 1])
-        assert message == (
+        info = pybop.classify_using_hessian(result, dx=[1, 1])
+        assert info["message"] == (
             "Classification cannot proceed due to infinite cost value(s)."
             " The result is near the upper bound of R0_a [Ohm]."
         )
