@@ -1,53 +1,59 @@
-from copy import deepcopy
-
 import numpy as np
 import pybamm
 from ep_bolfi.models.solversetup import spectral_mesh_pts_and_method
 from pybamm import CasadiSolver, Experiment, print_citations
 
 import pybop
-from pybop.costs.parameterised_costs import SquareRootFit
+from pybop.costs.feature_distances import SquareRootFeatureDistance
 from pybop.optimisers.ep_bolfi_optimiser import EP_BOLFI, EPBOLFIOptions
 from pybop.parameters.multivariate_distributions import MultivariateGaussian
 from pybop.parameters.multivariate_parameters import MultivariateParameters
 
-
 # Define model and parameter values
-model = pybamm.lithium_ion.DFN()
+model = pybamm.lithium_ion.SPMe()
 parameter_values = pybamm.ParameterValues("Chen2020")
+original_D_n = parameter_values["Negative particle diffusivity [m2.s-1]"]
+original_D_p = parameter_values["Positive particle diffusivity [m2.s-1]"]
 
-# Specify solver settings
-solver = CasadiSolver(
-    rtol=1e-5,
-    atol=1e-5,
-    root_tol=1e-3,
-    max_step_decrease_count=10,
-    extra_options_setup={
-        "disable_internal_warnings": True,
-        "newton_scheme": "tfqmr",
-    },
-    return_solution_if_failed_early=True,
-)
+# Put empty Parameter slots as placeholders
+parameter_values["Negative particle diffusivity [m2.s-1]"] = pybop.Parameter()
+parameter_values["Positive particle diffusivity [m2.s-1]"] = pybop.Parameter()
+
+# Set up simulator with custom settings
 submesh_types, var_pts, spatial_methods = spectral_mesh_pts_and_method(10, 10, 10)
-
-# Define protocol
-experiment = Experiment(
-    [
-        "Discharge at 0.5 C for 15 minutes (1 second period)",
-        "Rest for 15 minutes (1 second period)",
-    ]
-)
-
-# Generate synthetic data
-synthetic_data = pybamm.Simulation(
-    model,
+simulator = pybop.pybamm.Simulator(
+    model=model,
     parameter_values=parameter_values,
-    experiment=experiment,
+    protocol=Experiment(
+        [
+            "Discharge at 1.0 C for 15 minutes (1 second period)",
+            "Rest for 15 minutes (1 second period)",
+        ]
+    ),
+    solver=CasadiSolver(
+        rtol=1e-5,
+        atol=1e-5,
+        root_tol=1e-3,
+        max_step_decrease_count=10,
+        extra_options_setup={
+            "disable_internal_warnings": True,
+            "newton_scheme": "tfqmr",
+        },
+        return_solution_if_failed_early=True,
+    ),
+    output_variables=["Voltage [V]"],
     submesh_types=submesh_types,
     var_pts=var_pts,
     spatial_methods=spatial_methods,
-    solver=solver,
-).solve()
+)
+
+# Generate synthetic data
+synthetic_data = simulator.solve(
+    inputs={
+        "Negative particle diffusivity [m2.s-1]": original_D_n,
+        "Positive particle diffusivity [m2.s-1]": original_D_p,
+    }
+)
 dataset = pybop.Dataset(
     {
         "Time [s]": synthetic_data["Time [s]"].data,
@@ -56,31 +62,7 @@ dataset = pybop.Dataset(
     }
 )
 
-# Save true values
-original_D_n = parameter_values["Negative particle diffusivity [m2.s-1]"]
-original_D_p = parameter_values["Positive particle diffusivity [m2.s-1]"]
-
-# Mark the optimisation parameters as inputs
-parameter_values.update(
-    {
-        "Negative particle diffusivity [m2.s-1]": "[input]",
-        "Positive particle diffusivity [m2.s-1]": "[input]",
-    }
-)
-
-# Define simulator
-simulator = pybop.pybamm.Simulator(
-    model,
-    parameter_values=parameter_values,
-    protocol=experiment,
-    submesh_types=submesh_types,
-    var_pts=var_pts,
-    spatial_methods=spatial_methods,
-    solver=solver,
-    output_variables=["Time [s]", "Voltage [V]"],
-)
-
-# Overwrite the parameters attribute with MultivariateParameters
+# Override the forced univariate Parameters
 simulator.parameters = MultivariateParameters(
     {
         "Negative particle diffusivity [m2.s-1]": pybop.Parameter(
@@ -100,14 +82,14 @@ simulator.parameters = MultivariateParameters(
     ),
 )
 
-ICI_cost = SquareRootFit(
+ICI_cost = SquareRootFeatureDistance(
     dataset["Time [s]"],
     dataset["Voltage [V]"],
     feature="inverse_slope",
     time_start=0,
     time_end=90,
 )
-GITT_cost = SquareRootFit(
+GITT_cost = SquareRootFeatureDistance(
     dataset["Time [s]"],
     dataset["Voltage [V]"],
     feature="inverse_slope",
@@ -123,7 +105,8 @@ if __name__ == "__main__":
     # Copy the MultivariateParameters to the meta-problem
     problem.parameters = simulator.parameters
 
-    # Set up and run the optimiser
+    # Set up and run the optimiser, increase the number of iterations
+    # and samples to improve accuracy
     options = EPBOLFIOptions(
         ep_iterations=2,
         ep_total_dampening=0,
