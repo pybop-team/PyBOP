@@ -110,15 +110,10 @@ class TestTheveninParameterisation:
             options = pybop.SciPyMinimizeOptions(maxiter=150)
         else:
             options = pybop.PintsOptions(max_iterations=150)
-        if optimiser in [pybop.GradientDescent]:
-            options.sigma0 = 2.5e-2
-        elif method == "L-BFGS-B":
-            options.sigma0 = 2.5e-2
+        if optimiser is pybop.SciPyMinimize:
             options.method = method
+        if method == "L-BFGS-B":
             options.jac = True
-        else:
-            options.sigma0 = 0.02
-            options.method = method
         optim = optimiser(problem, options=options)
 
         if isinstance(optimiser, pybop.BasePintsOptimiser):
