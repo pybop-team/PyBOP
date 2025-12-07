@@ -166,7 +166,7 @@ from .samplers.pints_samplers import (
 #
 # Analysis
 #
-from .analysis.classification import classify_using_hessian
+from .analysis.classification import classify_using_hessian, plot_hessian_eigenvectors
 
 #
 # Applications
