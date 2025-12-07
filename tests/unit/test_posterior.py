@@ -33,8 +33,11 @@ class TestLogPosterior:
     def parameter(self, ground_truth):
         return {
             "Negative electrode active material volume fraction": pybop.Parameter(
-                prior=pybop.Gaussian(0.5, 0.01),
-                bounds=[0.375, 0.625],
+                distribution=pybop.Gaussian(
+                    0.5,
+                    0.01,
+                    truncated_at=[0.375, 0.625],
+                ),
                 initial_value=ground_truth,
             )
         }
@@ -83,6 +86,22 @@ class TestLogPosterior:
         assert problem.parameters[key] is parameter[key]
         assert problem._cost.parameters is problem.parameters
 
+        # Test construction with Parameter
+        posterior = pybop.LogPosterior(
+            likelihood, prior=pybop.Parameter(distribution=prior)
+        )
+        problem = pybop.Problem(
+            simulator, posterior
+        )  # uses posterior.set_joint_prior()
+        assert posterior.joint_prior == prior
+
+        with pytest.raises(
+            TypeError,
+            match="All priors must either be of type pybop.Parameter, pybop.Distribution or scipy.stats.distributions.rv_frozen",
+        ):
+            posterior = pybop.LogPosterior(likelihood, prior=st.norm)
+            posterior.set_joint_prior()
+
     def test_log_posterior_construction_no_prior(self, simulator, likelihood):
         # Test log posterior construction without prior
         posterior = pybop.LogPosterior(likelihood, prior=None)
@@ -90,10 +109,10 @@ class TestLogPosterior:
 
         problem._cost.set_joint_prior()
         assert problem._cost.joint_prior is not None
-        assert isinstance(problem._cost.joint_prior, pybop.JointPrior)
+        assert isinstance(problem._cost.joint_prior, pybop.JointDistribution)
 
-        for i, p in enumerate(problem._cost.joint_prior._priors):
-            assert p == problem.parameters.priors()[i]
+        for i, p in enumerate(problem.parameters.distributions()):
+            assert p == problem._cost.joint_prior._distributions[i]
 
     @pytest.fixture
     def problem(self, simulator, likelihood, prior):

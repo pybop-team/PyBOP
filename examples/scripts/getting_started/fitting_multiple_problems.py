@@ -48,10 +48,10 @@ for init_soc, experiment in zip(init_socs, experiments, strict=False):
     param_copy.update(
         {
             "Negative electrode active material volume fraction": pybop.Parameter(
-                prior=pybop.Gaussian(0.68, 0.05),
+                pybop.Gaussian(0.68, 0.05),
             ),
             "Positive electrode active material volume fraction": pybop.Parameter(
-                prior=pybop.Gaussian(0.58, 0.05),
+                pybop.Gaussian(0.58, 0.05),
             ),
         }
     )

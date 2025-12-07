@@ -30,8 +30,8 @@ dataset = pybop.Dataset(
 # Fitting parameters
 parameter_values.update(
     {
-        "k": pybop.Parameter(prior=pybop.Gaussian(0.5, 0.05)),
-        "y0": pybop.Parameter(prior=pybop.Gaussian(0.2, 0.05)),
+        "k": pybop.Parameter(pybop.Gaussian(0.5, 0.05)),
+        "y0": pybop.Parameter(pybop.Gaussian(0.2, 0.05)),
     }
 )
 

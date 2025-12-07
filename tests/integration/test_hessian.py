@@ -26,12 +26,18 @@ class TestClassification:
         self.ground_truth = request.param
         return {
             "R0 [Ohm]": pybop.Parameter(
-                prior=pybop.Gaussian(0.05, 0.01),
-                bounds=[0.02, 0.08],
+                distribution=pybop.Gaussian(
+                    0.05,
+                    0.01,
+                    truncated_at=[0.02, 0.08],
+                )
             ),
             "R1 [Ohm]": pybop.Parameter(
-                prior=pybop.Gaussian(0.05, 0.01),
-                bounds=[0.02, 0.08],
+                distribution=pybop.Gaussian(
+                    0.05,
+                    0.01,
+                    truncated_at=[0.02, 0.08],
+                )
             ),
         }
 
