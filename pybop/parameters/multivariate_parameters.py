@@ -26,18 +26,7 @@ class MultivariateParameters(Parameters):
         for param in self._parameters.values():
             # Ensure that no individual distributions are mixed with the joint
             # one. They may have been used for setting boundaries.
-            param._prior = None  # noqa: SLF001
-
-    def get_margins(self) -> list:
-        """
-        Collects the margins of all parameters.
-
-        Returns
-        -------
-            array-like
-                A list of the margin attributes of each parameter.
-        """
-        return [param._margin for param in self._parameters.values()]  # noqa: SLF001
+            param._distribution = None  # noqa: SLF001
 
     def pdf(self, x: np.ndarray) -> np.ndarray:
         """
@@ -59,7 +48,7 @@ class MultivariateParameters(Parameters):
         x = np.asarray([self.transformation().to_search(m) for m in x.T]).T
         return self.distribution.pdf(x)
 
-    def sample_from_priors(
+    def sample_from_distribution(
         self, n_samples: int = 1, random_state=None, apply_transform: bool = False
     ) -> np.ndarray:
         return self.rvs(n_samples, random_state, apply_transform)
@@ -93,19 +82,10 @@ class MultivariateParameters(Parameters):
         if samples.ndim < 2:
             samples = np.atleast_2d(samples)
 
-        # Constrain samples to be within bounds.
-        bounds = self.get_bounds(transformed=True)
-        margins = self.get_margins()
-        for i in range(samples.shape[1]):
-            offset = margins[i] * (bounds["upper"][i] - bounds["lower"][i])
-            samples[i] = np.clip(
-                samples[i], bounds["lower"][i] + offset, bounds["upper"][i] - offset
-            )
-
         if apply_transform:
             samples = np.asarray([self.transformation.to_model(s) for s in samples])
 
         return samples
 
-    def priors(self) -> BaseMultivariateDistribution:
+    def distribution(self) -> BaseMultivariateDistribution:
         return self.distribution

@@ -220,7 +220,7 @@ class TestParameters:
         )
         params = pybop.Parameters({name: parameter})
         params.construct_transformation()
-        samples = params.sample_from_distributions(n_samples=500, transformed=True)
+        samples = params.sample_from_distribution(n_samples=500, transformed=True)
         assert (samples >= -0.125).all() and (samples <= -0.06).all()
         parameter._transformation = None
 

@@ -3,7 +3,7 @@ import scipy.integrate as integrate
 import scipy.stats as stats
 from scipy.linalg import sqrtm
 
-from pybop.parameters.priors import BasePrior
+from pybop.parameters.distributions import Distribution
 
 
 def insert_x_at_dim(other, x, dim):
@@ -25,14 +25,14 @@ def insert_x_at_dim(other, x, dim):
     )
 
 
-class BaseMultivariateDistribution(BasePrior):
+class BaseMultivariateDistribution(Distribution):
     """
     A base class for defining multivariate parameter distributions.
 
-    This class extends ``pybop.BasePrior`` with methods that reduce the
+    This class extends ``pybop.Distribution`` with methods that reduce the
     output of a multivariate distribution to its individual dimensions.
 
-    Note that, unlike in ``pybop.BasePrior``, distribution attributes
+    Note that, unlike in ``pybop.Distribution``, distribution attributes
     are stored in a dictionary, as multivariate distributiosn in SciPy
     do not follow the loc/scale convention.
 
