@@ -49,7 +49,7 @@ from .transformation.transformations import (
 #
 from .parameters.parameter import Parameter, Parameters
 from .parameters.multivariate_parameters import MultivariateParameters
-from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential, JointPrior
+from .parameters.distributions import Distribution, Gaussian, Uniform, Exponential, JointDistribution
 from .parameters.multivariate_distributions import MultivariateNonparametric, MultivariateUniform, MultivariateGaussian
 
 #
@@ -168,7 +168,7 @@ from .samplers.pints_samplers import (
 #
 # Analysis
 #
-from .analysis.classification import classify_using_hessian
+from .analysis.classification import classify_using_hessian, plot_hessian_eigenvectors
 
 #
 # Applications

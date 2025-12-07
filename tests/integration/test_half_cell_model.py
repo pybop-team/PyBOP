@@ -2,6 +2,7 @@ import numpy as np
 import pybamm
 import pytest
 from pybamm import Parameter
+from scipy import stats
 
 import pybop
 
@@ -68,7 +69,7 @@ class TestHalfCellModel:
     def parameters(self):
         return {
             "Positive electrode active material volume fraction": pybop.Parameter(
-                prior=pybop.Uniform(0.4, 0.75),
+                stats.uniform(0.4, 0.75 - 0.4),
                 # no bounds
             ),
         }
@@ -114,9 +115,12 @@ class TestHalfCellModel:
         parameter_values.update(
             {
                 "Positive electrode thickness [m]": pybop.Parameter(
-                    prior=pybop.Gaussian(5e-05, 5e-06),
-                    bounds=[2e-06, 10e-05],
-                ),
+                    distribution=pybop.Gaussian(
+                        5e-05,
+                        5e-06,
+                        truncated_at=[2e-06, 10e-05],
+                    ),
+                )
             }
         )
         experiment = pybamm.Experiment(
