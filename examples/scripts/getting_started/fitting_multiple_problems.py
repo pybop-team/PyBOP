@@ -1,6 +1,5 @@
 import numpy as np
 import pybamm
-from scipy import stats
 
 import pybop
 
@@ -49,10 +48,10 @@ for init_soc, experiment in zip(init_socs, experiments, strict=False):
     param_copy.update(
         {
             "Negative electrode active material volume fraction": pybop.Parameter(
-                stats.norm(0.68, 0.05),
+                pybop.Gaussian(0.68, 0.05),
             ),
             "Positive electrode active material volume fraction": pybop.Parameter(
-                stats.norm(0.58, 0.05),
+                pybop.Gaussian(0.58, 0.05),
             ),
         }
     )

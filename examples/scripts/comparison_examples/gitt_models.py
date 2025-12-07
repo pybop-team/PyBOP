@@ -1,6 +1,5 @@
 import numpy as np
 import pybamm
-from scipy import stats
 
 import pybop
 
@@ -36,7 +35,7 @@ dataset = pybop.Dataset(
 
 for model in [pybop.lithium_ion.WeppnerHuggins(), pybop.lithium_ion.SPDiffusion()]:
     # GITT target parameter
-    diffusion_parameter = pybop.Parameter(stats.norm(5000, 1000))
+    diffusion_parameter = pybop.Parameter(pybop.Gaussian(5000, 1000))
     if isinstance(model, pybop.lithium_ion.WeppnerHuggins):
         # Group parameter values
         grouped_parameter_values = (
