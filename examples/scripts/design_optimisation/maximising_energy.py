@@ -1,5 +1,5 @@
 import pybamm
-from pybamm import CasadiSolver, Parameter
+from pybamm import Parameter
 
 import pybop
 
@@ -67,7 +67,6 @@ simulator = pybop.pybamm.Simulator(
     model,
     parameter_values=parameter_values,
     protocol=experiment,
-    solver=CasadiSolver(max_step_decrease_count=20),
     initial_state={"Initial SoC": 1.0},
 )
 cost_1 = pybop.DesignCost(target="Gravimetric energy density [W.h.kg-1]")
