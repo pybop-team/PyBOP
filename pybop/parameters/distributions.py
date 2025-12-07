@@ -377,12 +377,12 @@ class Exponential(Distribution):
 
 class JointDistribution(Distribution):
     """
-    Represents a joint distribution distribution composed of multiple distribution distributions.
+    Represents a joint distribution composed of multiple distributions.
 
     Parameters
     ----------
     distributions : Distribution
-        One or more distribution distributions to combine into a joint distribution.
+        One or more distributions to combine into a joint distribution.
     """
 
     def __init__(self, *distributions: Distribution | stats.distributions.rv_frozen):
@@ -409,7 +409,7 @@ class JointDistribution(Distribution):
 
     def logpdf(self, x: float | np.ndarray) -> float:
         """
-        Evaluates the joint log-distribution distribution at a given point.
+        Evaluates the log of the joint distribution at a given point.
 
         Parameters
         ----------
@@ -434,7 +434,7 @@ class JointDistribution(Distribution):
 
     def logpdfS1(self, x: float | np.ndarray) -> tuple[float, np.ndarray]:
         """
-        Evaluates the first derivative of the joint log-distribution distribution at a given point.
+        Evaluates the first derivative of the log of the joint distribution at a given point.
 
         Parameters
         ----------
