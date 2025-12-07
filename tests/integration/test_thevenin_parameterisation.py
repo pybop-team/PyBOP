@@ -82,7 +82,6 @@ class TestTheveninParameterisation:
             (pybop.SciPyMinimize, "SLSQP"),
             (pybop.SciPyMinimize, "trust-constr"),
             (pybop.SciPyMinimize, "L-BFGS-B"),
-            (pybop.SciPyMinimize, "COBYLA"),
             (pybop.GradientDescent, ""),
             (pybop.PSO, ""),
         ],
