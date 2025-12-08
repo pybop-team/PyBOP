@@ -2,6 +2,8 @@
 
 ## Features
 
+- [#846](https://github.com/pybop-team/PyBOP/pull/846) - Adds Bayesian optimisation framework and, as an example, the EP-BOLFI optimiser
+
 ## Optimisations
 
 ## Bug Fixes
@@ -17,7 +19,6 @@
 ## Features
 
 - [#815](https://github.com/pybop-team/PyBOP/pull/815) - Adds function import_pyprobe_result to import a pyprobe.result into a pybop.dataset. Allows for creating a dataset directly from a pybamm.solution object.
-- [#846](https://github.com/pybop-team/PyBOP/pull/846) - Adds Bayesian optimisation framework and, as an example, the EP-BOLFI optimiser
 
 ## Optimisations
 
