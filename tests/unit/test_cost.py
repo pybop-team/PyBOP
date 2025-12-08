@@ -463,12 +463,49 @@ class TestCosts:
     def test_square_root_feature_distance(self, gitt_like_dataset):
         domain_data, target_data, switchover_point = gitt_like_dataset
         srfd = SquareRootFeatureDistance(
+            domain_data, target_data, feature="offset", time_end=switchover_point
+        )
+        assert abs(srfd.data_fit - 0.2) < 1e-4
+        srfd = SquareRootFeatureDistance(
             domain_data, target_data, feature="slope", time_end=switchover_point
         )
         assert abs(srfd.data_fit - 0.4) < 1e-4
+        srfd = SquareRootFeatureDistance(
+            domain_data, target_data, feature="inverse_slope", time_end=switchover_point
+        )
+        assert abs(srfd.data_fit - 1 / 0.4) < 1e-4
+        with pytest.raises(
+            ValueError,
+            match="Feature 'non_existent' not supported. Options: "
+            + str(srfd._supported_features),
+        ):
+            srfd = SquareRootFeatureDistance(
+                domain_data, target_data, feature="non_existent"
+            )
 
     def test_exponential_feature_distance(self, gitt_like_dataset):
         domain_data, target_data, switchover_point = gitt_like_dataset
+        efd = ExponentialFeatureDistance(
+            domain_data,
+            target_data,
+            feature="asymptote",
+            time_start=switchover_point,
+        )
+        assert abs(efd.data_fit - (2.2 + 0.4 * 20**0.5)) < 1e-4
+        efd = ExponentialFeatureDistance(
+            domain_data,
+            target_data,
+            feature="magnitude",
+            time_start=switchover_point,
+        )
+        assert abs(efd.data_fit - 3.0) < 1e-4
+        efd = ExponentialFeatureDistance(
+            domain_data,
+            target_data,
+            feature="timescale",
+            time_start=switchover_point,
+        )
+        assert abs(efd.data_fit - 1 / 0.02) < 1e-4
         efd = ExponentialFeatureDistance(
             domain_data,
             target_data,
