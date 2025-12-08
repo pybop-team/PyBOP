@@ -63,7 +63,7 @@ bpx = [
 ]
 
 pyprobe = [
-  "PyProBE-Data;python_version>='3.11'"
+  "PyProBE-Data>=2.5.0;python_version>='3.11'"
 ]
 
 all = ["pybop[plot,scifem,bpx,pyprobe]"]
