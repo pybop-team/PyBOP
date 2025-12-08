@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from scipy.linalg import sqrtm
 
 import pybop
 
@@ -30,6 +31,20 @@ class TestDistributions:
     @pytest.fixture
     def JointDistribution2(self, Gaussian, Exponential):
         return pybop.JointDistribution(Gaussian, Exponential)
+
+    @pytest.fixture
+    def MultivariateGaussian(self):
+        return pybop.MultivariateGaussian(
+            np.asarray([0, 1]), np.asarray([[0.2, 0.0], [0.0, 2.0]])
+        )
+
+    @pytest.fixture
+    def MultivariateUniform(self):
+        return pybop.MultivariateUniform(np.asarray([[0, 0], [1, 2]]))
+
+    @pytest.fixture
+    def MultivariateNonparametric(self, MultivariateGaussian):
+        return pybop.MultivariateNonparametric(MultivariateGaussian.rvs(100))
 
     def test_distribution_class(self):
         base = pybop.Distribution()
@@ -175,3 +190,30 @@ class TestDistributions:
             ValueError, match="All distributions must be instances of Distribution"
         ):
             pybop.JointDistribution(Gaussian, Uniform, 0.5)
+
+    def test_multivariate_distributions(
+        self, MultivariateGaussian, MultivariateUniform, MultivariateNonparametric
+    ):
+        assert (
+            MultivariateNonparametric.pdf(np.asarray([0, 1]))
+            - MultivariateGaussian.pdf(np.asarray([0, 1]))
+            < 1e-2
+        )
+        assert (
+            MultivariateNonparametric.logpdf(np.asarray([0, 1]))
+            - MultivariateGaussian.logpdf(np.asarray([0, 1]))
+            < 1e-2
+        )
+        assert (
+            MultivariateNonparametric.cdf(np.asarray([0, 1]))
+            - MultivariateGaussian.cdf(np.asarray([0, 1]))
+            < 1e-2
+        )
+        assert (
+            MultivariateNonparametric.rvs(10).shape
+            == MultivariateGaussian.rvs(10).shape
+        )
+        assert MultivariateGaussian.mean == np.asarray([0, 1])
+        assert MultivariateGaussian.sigma == sqrtm(np.asarray([[0.2, 0.0], [0.0, 2.0]]))
+        assert MultivariateGaussian.pdf_marginal > 0
+        assert MultivariateGaussian.logpdf_marginal > 0

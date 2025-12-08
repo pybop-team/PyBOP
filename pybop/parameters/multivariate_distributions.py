@@ -156,7 +156,6 @@ class MultivariateNonparametric(BaseMultivariateDistribution):
     ----------
     samples : numpy.ndarray
         The random variates to base the distribution on.
-        ``ToDo: decide which way around the two dimensions should be.``
     transforms : list of 2-tuple of callables
     """
 
@@ -192,7 +191,6 @@ class MultivariateUniform(BaseMultivariateDistribution):
     ----------
     bounds : numpy.ndarray
         The lower and upper bounds for the uniform distribution.
-        ``ToDo: decide which way around the two dimensions should be.``
     """
 
     def __init__(self, bounds, random_state=None):
