@@ -4,6 +4,7 @@ from shutil import which
 
 import numpy as np
 import plotly
+import pybamm
 import pytest
 
 import pybop
@@ -120,8 +121,8 @@ def is_package_installed(package_name):
 @pytest.fixture
 def dataset(plotly_installed):
     # Construct and simulate model
-    model = pybop.lithium_ion.SPM()
-    solution = model.predict(t_eval=np.linspace(0, 10, 100))
+    model = pybamm.lithium_ion.SPM()
+    solution = pybamm.Simulation(model).solve(t_eval=np.linspace(0, 10, 100))
 
     # Form dataset
     data_dictionary = {

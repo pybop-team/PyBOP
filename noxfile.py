@@ -26,16 +26,22 @@ def coverage(session):
     session.install("pip")
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
-    session.run("pytest", "--unit", "--cov", "--cov-append", "--cov-report=xml")
     session.run(
         "pytest",
-        "--integration",
-        "--cov",
-        "--cov-append",
+        "--unit",
+        "--cov=pybop",
         "--cov-report=xml",
+        "--cov-config=pyproject.toml",
     )
     session.run(
-        "pytest", "--plots", "--cov", "--cov-append", "--cov-report=xml", "-n", "0"
+        "pytest",
+        "--plots",
+        "--cov=pybop",
+        "--cov-append",
+        "--cov-report=xml",
+        "--cov-config=pyproject.toml",
+        "-n",
+        "0",
     )
 
 
@@ -56,10 +62,9 @@ def integration(session):
 
 @nox.session
 def examples(session):
-    """Run the examples and notebooks"""
+    """Run the example scripts."""
     session.install("-e", ".[all,dev]", "--upgrade", silent=False)
     session.run("pytest", "--examples")
-    notebooks(session)
 
 
 @nox.session
@@ -98,6 +103,7 @@ def notebooks_overwrite(session):
 @nox.session(name="tests")
 def run_tests(session):
     """Run all or a user-defined set of tests."""
+    session.install("openpyxl", "ipywidgets")
     session.install("-e", ".[all,dev]", "--upgrade", silent=False)
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
@@ -144,6 +150,7 @@ def run_quick(session):
     """
     run_tests(session)
     run_doc_tests(session)
+    notebooks(session)
 
 
 @nox.session

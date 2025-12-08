@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Union
 
 import numpy as np
 
@@ -18,8 +17,7 @@ class Transformation(ABC):
 
     References
     -----------
-    .. [1] Erik Jorgensen and Asger Roer Pedersen. "How to Obtain Those Nasty Standard Errors From Transformed Data."
-           https://tinyurl.com/mrxjynbj
+    .. [1] Erik Jorgensen and Asger Roer Pedersen. "How to Obtain Those Nasty Standard Errors From Transformed Data." 1997.
     .. [2] Kaare Brandt Petersen and Michael Syskind Pedersen. "The Matrix Cookbook." 2012.
 
     """
@@ -33,13 +31,13 @@ class Transformation(ABC):
         return jac_inv @ cov @ jac_inv.T
 
     def convert_standard_deviation(
-        self, std: Union[float, np.ndarray], q: np.ndarray
+        self, std: float | np.ndarray, q: np.ndarray
     ) -> np.ndarray:
         """
         Converts standard deviation `std`, either a scalar or a vector, from the model space
         to the search space around a parameter vector `q` in the search space.
         """
-        if isinstance(q, (int, float)):
+        if isinstance(q, int | float):
             q = np.asarray([q])
         jac_inv = np.linalg.pinv(self.jacobian(q))
         cov = jac_inv @ jac_inv.T
@@ -48,6 +46,7 @@ class Transformation(ABC):
     @abstractmethod
     def jacobian(self, q: np.ndarray) -> np.ndarray:
         """Returns the Jacobian matrix of the transformation at the parameter vector `q`."""
+        raise NotImplementedError
 
     def jacobian_S1(self, q: np.ndarray) -> tuple[np.ndarray, Sequence[np.ndarray]]:
         """
@@ -93,6 +92,7 @@ class Transformation(ABC):
         Transforms a parameter vector `x` from the search space to the model space if `method`
         is "to_model", or from the model space to the search space if `method` is "to_search".
         """
+        raise NotImplementedError
 
     def is_elementwise(self) -> bool:
         """
@@ -102,10 +102,10 @@ class Transformation(ABC):
         raise NotImplementedError("is_elementwise method must be implemented if used.")
 
     def verify_input(
-        self, inputs: Union[float, int, list[float], np.ndarray, dict[str, float]]
+        self, inputs: float | int | list[float] | np.ndarray | dict[str, float]
     ) -> np.ndarray:
         """Set and validate the transformation parameter."""
-        if isinstance(inputs, (float, int)):
+        if isinstance(inputs, float | int):
             return np.full(self._n_parameters, float(inputs))
 
         if isinstance(inputs, dict):
