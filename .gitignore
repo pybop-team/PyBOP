@@ -323,3 +323,6 @@ results/
 
 # Pycharm
 *.idea/
+
+# JOSS
+jats/
