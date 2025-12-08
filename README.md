@@ -14,6 +14,7 @@
   [![nbviewer](https://raw.githubusercontent.com/jupyter/design/master/logos/Badges/nbviewer_badge.svg)](https://nbviewer.org/github/pybop-team/PyBOP/tree/develop/examples/notebooks/)
   [![Static Badge](https://img.shields.io/badge/https%3A%2F%2Fpybop-team.github.io%2Fpybop-bench%2F?label=Benchmarks)](https://pybop-team.github.io/pybop-bench/)
   [![Releases](https://img.shields.io/github/v/release/pybop-team/PyBOP?color=gold)](https://github.com/pybop-team/PyBOP/releases)
+  [![DOI](https://joss.theoj.org/papers/10.21105/joss.07874/status.svg)](https://doi.org/10.21105/joss.07874)
 
 [<ins>Main Branch Examples</ins>](https://github.com/pybop-team/PyBOP/tree/main/examples) [<ins>Develop Branch Examples</ins>](https://github.com/pybop-team/PyBOP/tree/develop/examples)
 

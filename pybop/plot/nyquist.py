@@ -78,11 +78,7 @@ def nyquist(problem, inputs: Inputs = None, show=True, **layout_kwargs):
                 scaleratio=1,
             ),
             legend=dict(
-                x=0.02,
-                y=0.98,
-                bgcolor="rgba(255, 255, 255, 0.5)",
-                bordercolor="black",
-                borderwidth=1,
+                orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
             ),
             width=600,
             height=600,
@@ -97,8 +93,8 @@ def nyquist(problem, inputs: Inputs = None, show=True, **layout_kwargs):
 
         plot_dict.traces[0].update(
             mode="lines+markers",
-            line=dict(color="blue", width=2),
-            marker=dict(size=8, color="blue", symbol="circle"),
+            line=dict(color="#00CC96", width=2),
+            marker=dict(size=8, color="#00CC96", symbol="circle"),
         )
 
         target_trace = plot_dict.create_trace(
@@ -106,26 +102,12 @@ def nyquist(problem, inputs: Inputs = None, show=True, **layout_kwargs):
             y=-target_output[var].imag,
             name="Reference",
             mode="markers",
-            marker=dict(size=8, color="red", symbol="circle-open"),
+            marker=dict(size=8, color="#636EFA", symbol="circle-open"),
             showlegend=True,
         )
         plot_dict.traces.append(target_trace)
 
         fig = plot_dict(show=False)
-
-        # Add minor gridlines
-        fig.update_xaxes(
-            showgrid=True,
-            gridwidth=1,
-            gridcolor="lightgray",
-            minor=dict(showgrid=True, gridwidth=0.5, gridcolor="lightgray"),
-        )
-        fig.update_yaxes(
-            showgrid=True,
-            gridwidth=1,
-            gridcolor="lightgray",
-            minor=dict(showgrid=True, gridwidth=0.5, gridcolor="lightgray"),
-        )
 
         # Overwrite with user-kwargs
         fig.update_layout(**layout_kwargs)

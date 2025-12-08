@@ -1,35 +1,62 @@
-cff-version: 1.2.0
-title: 'PyBOP: A Python package for battery model optimisation and parameterisation'
-message: >-
-  If you use this software, please cite the article below.
+cff-version: "1.2.0"
 authors:
-  - given-names: Brady
-    family-names: Planden
+- family-names: Planden
+  given-names: Brady
+  orcid: "https://orcid.org/0000-0002-1082-9125"
+- family-names: Courtier
+  given-names: Nicola E.
+  orcid: "https://orcid.org/0000-0002-5714-1096"
+- family-names: Robinson
+  given-names: Martin
+  orcid: "https://orcid.org/0000-0002-1572-6782"
+- family-names: Khetarpal
+  given-names: Agriya
+  orcid: "https://orcid.org/0000-0002-1112-1786"
+- family-names: Planella
+  given-names: Ferran Brosa
+  orcid: "https://orcid.org/0000-0001-6363-2812"
+- family-names: Howey
+  given-names: David A.
+  orcid: "https://orcid.org/0000-0002-0620-3955"
+contact:
+- family-names: Howey
+  given-names: David A.
+  orcid: "https://orcid.org/0000-0002-0620-3955"
+doi: 10.5281/zenodo.17711656
+message: If you use this software, please cite our article in the
+  Journal of Open Source Software.
+preferred-citation:
+  authors:
+  - family-names: Planden
+    given-names: Brady
     orcid: "https://orcid.org/0000-0002-1082-9125"
-  - given-names: Nicola E.
-    family-names: Courtier
+  - family-names: Courtier
+    given-names: Nicola E.
     orcid: "https://orcid.org/0000-0002-5714-1096"
-  - given-names: Martin
-    family-names: Robinson
+  - family-names: Robinson
+    given-names: Martin
     orcid: "https://orcid.org/0000-0002-1572-6782"
-  - given-names: Agriya
-    family-names: Khetarpal
+  - family-names: Khetarpal
+    given-names: Agriya
     orcid: "https://orcid.org/0000-0002-1112-1786"
-  - given-names: Ferran
-    family-names: Brosa Planella
+  - family-names: Planella
+    given-names: Ferran Brosa
     orcid: "https://orcid.org/0000-0001-6363-2812"
-  - given-names: David A.
-    family-names: Howey
+  - family-names: Howey
+    given-names: David A.
     orcid: "https://orcid.org/0000-0002-0620-3955"
-
-keywords:
-  - "python"
-  - "battery models"
-  - "parameter inference"
-  - "optimization"
-
-journal: "arXiv"
-date-released: 2024-12-20
-doi: 10.48550/arXiv.2412.15859
-version: "25.11" # Update this alongside new releases
-repository-code: 'https://www.github.com/pybop-team/pybop'
+  date-published: 2025-12-03
+  doi: 10.21105/joss.07874
+  issn: 2475-9066
+  issue: 116
+  journal: Journal of Open Source Software
+  publisher:
+    name: Open Journals
+  start: 7874
+  title: "PyBOP: A Python package for battery model optimisation and
+    parameterisation"
+  type: article
+  url: "https://joss.theoj.org/papers/10.21105/joss.07874"
+  volume: 10
+title: "PyBOP: A Python package for battery model optimisation and
+  parameterisation"
