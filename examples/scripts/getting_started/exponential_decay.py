@@ -3,6 +3,11 @@ import pybamm
 
 import pybop
 
+"""
+A parameterisation example using PyBOP's exponential decay model, which has one
+parameter (k) and initial state (y0).
+"""
+
 # Define model and parameter values
 model = pybop.ExponentialDecayModel(n_states=2)
 parameter_values = pybamm.ParameterValues({"k": 1, "y0": 0.5})
