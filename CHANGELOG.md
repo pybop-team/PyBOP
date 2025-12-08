@@ -6,7 +6,11 @@
 
 ## Bug Fixes
 
+- [#847](https://github.com/pybop-team/PyBOP/pull/847) - Update readme and diagram of pybop components so that the diagram is displayed correctly in the readme.
+
 ## Breaking Changes
+
+- [#839](https://github.com/pybop-team/PyBOP/pull/839) - Renames 'prior' as 'distribution' ``for pybop.Parameter``. Allows construction of a ``pybop.Parameter`` with a distribution of type ``scipy.stats.distributions.rv_frozen``. Removes ``margins``,  ``set_bounds``, ``remove_bounds`` from ``pybop.Parameter``.
 
 # [v25.11](https://github.com/pybop-team/PyBOP/tree/v25.11) - 2025-11-24
 
@@ -21,6 +25,8 @@
 - [#816](https://github.com/pybop-team/PyBOP/pull/816) - Enable simulator multi-processing via the evaluators.
 
 ## Bug Fixes
+
+- [#834](https://github.com/pybop-team/PyBOP/issues/834) - Finite difference calculations of the Hessian matrix are updated. A new notebbok file is added which demonstrates sensitivity analysis using SALib.
 
 ## Breaking Changes
 

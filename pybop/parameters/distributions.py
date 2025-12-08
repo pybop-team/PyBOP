@@ -2,27 +2,29 @@ import numpy as np
 import scipy.stats as stats
 
 
-class BasePrior:
+class Distribution:
     """
-    A base class for defining prior distributions.
+    A base class for defining parameter distributions.
 
-    This class provides a foundation for implementing various prior distributions.
+    This class provides a foundation for implementing various distributions.
     It includes methods for calculating the probability density function (PDF),
     log probability density function (log PDF), and generating random variates
     from the distribution.
 
     Attributes
     ----------
-    distribution : scipy.stats.rv_continuous
+    distribution : scipy.stats.distributions.rv_frozen
         The underlying continuous random variable distribution.
-    loc : float
-        The location parameter of the distribution.
-    scale : float
-        The scale parameter of the distribution.
     """
 
-    def __init__(self):
-        pass
+    def __init__(
+        self,
+        distribution: stats.distributions.rv_frozen | None = None,
+    ):
+        self.distribution = distribution
+
+    def support(self):
+        return self.distribution.support()
 
     def pdf(self, x):
         """
@@ -38,7 +40,10 @@ class BasePrior:
         float
             The probability density function value at x.
         """
-        return self.distribution.pdf(x, loc=self.loc, scale=self.scale)
+        if self.distribution is None:
+            raise NotImplementedError
+        else:
+            return self.distribution.pdf(x)
 
     def logpdf(self, x):
         """
@@ -54,7 +59,10 @@ class BasePrior:
         float
             The logarithm of the probability density function value at x.
         """
-        return self.distribution.logpdf(x, loc=self.loc, scale=self.scale)
+        if self.distribution is None:
+            raise NotImplementedError
+        else:
+            return self.distribution.logpdf(x)
 
     def icdf(self, q):
         """
@@ -70,7 +78,10 @@ class BasePrior:
         float
             The inverse cumulative distribution function value at q.
         """
-        return self.distribution.ppf(q, loc=self.loc, scale=self.scale)
+        if self.distribution is None:
+            raise NotImplementedError
+        else:
+            return self.distribution.ppf(q)
 
     def cdf(self, x):
         """
@@ -86,7 +97,10 @@ class BasePrior:
         float
             The cumulative distribution function value at x.
         """
-        return self.distribution.cdf(x, loc=self.loc, scale=self.scale)
+        if self.distribution is None:
+            raise NotImplementedError
+        else:
+            return self.distribution.cdf(x)
 
     def rvs(self, size=1, random_state=None):
         """
@@ -118,9 +132,10 @@ class BasePrior:
         if isinstance(size, tuple) and any(s < 1 for s in size):
             raise ValueError("size must be a tuple of positive integers")
 
-        return self.distribution.rvs(
-            loc=self.loc, scale=self.scale, size=size, random_state=random_state
-        )
+        if self.distribution is None:
+            raise NotImplementedError
+        else:
+            return self.distribution.rvs(size=size, random_state=random_state)
 
     def logpdfS1(self, x):
         """
@@ -156,12 +171,15 @@ class BasePrior:
         float
             The value(s) of the first derivative at x.
         """
-        # Use a finite difference approximation of the gradient
-        delta = max(abs(x) * 1e-3, np.finfo(float).eps)
-        log_prior_upper = self.joint_prior.logpdf(x + delta)
-        log_prior_lower = self.joint_prior.logpdf(x - delta)
+        if self.distribution is None:
+            raise NotImplementedError
+        else:
+            # Use a finite difference approximation of the gradient
+            delta = max(abs(x) * 1e-3, np.finfo(float).eps)
+            log_distribution_upper = self.logpdf(x + delta)
+            log_distribution_lower = self.logpdf(x - delta)
 
-        return (log_prior_upper - log_prior_lower) / (2 * delta)
+            return (log_distribution_upper - log_distribution_lower) / (2 * delta)
 
     def verify(self, x):
         """
@@ -174,29 +192,35 @@ class BasePrior:
         return x
 
     def __repr__(self):
-        """Return a string representation of the object."""
-        return f"{self.__class__.__name__}, loc: {self.loc}, scale: {self.scale}"
+        """
+        Returns a string representation of the object.
+        """
+        return f"{self.__class__.__name__}, mean: {self.mean()}, standard deviation: {self.std()}"
 
-    @property
     def mean(self):
-        """The mean of the distribution."""
-        return self.distribution.mean(loc=self.loc, scale=self.scale)
+        """
+        Get the mean of the distribution.
 
-    @property
-    def sigma(self):
-        """The standard deviation of the distribution."""
-        return self.distribution.std(loc=self.loc, scale=self.scale)
+        Returns
+        -------
+        float
+            The mean of the distribution.
+        """
+        return self.distribution.mean()
 
-    def bounds(self) -> tuple[float, float] | None:
-        """Get the bounds of the distribution, if any."""
-        upper = self.distribution.ppf(1, loc=self.loc, scale=self.scale)
-        lower = self.distribution.ppf(0, loc=self.loc, scale=self.scale)
-        if np.isinf(upper) and np.isinf(lower):
-            return None
-        return (lower, upper)
+    def std(self):
+        """
+        Get the standard deviation of the distribution.
+
+        Returns
+        -------
+        float
+            The standard deviation of the distribution.
+        """
+        return self.distribution.std()
 
 
-class Gaussian(BasePrior):
+class Gaussian(Distribution):
     """
     Represents a Gaussian (normal) distribution with a given mean and standard deviation.
 
@@ -211,13 +235,26 @@ class Gaussian(BasePrior):
         The standard deviation (sigma) of the Gaussian distribution.
     """
 
-    def __init__(self, mean, sigma, random_state=None):
-        super().__init__()
+    def __init__(
+        self,
+        mean,
+        sigma,
+        truncated_at: list[float] = None,
+    ):
+        if truncated_at is not None:
+            distribution = stats.truncnorm(
+                (truncated_at[0] - mean) / sigma,
+                (truncated_at[1] - mean) / sigma,
+                loc=mean,
+                scale=sigma,
+            )
+        else:
+            distribution = stats.norm(loc=mean, scale=sigma)
+        super().__init__(distribution)
         self.name = "Gaussian"
+        self._n_parameters = 1
         self.loc = mean
         self.scale = sigma
-        self.distribution = stats.norm
-        self._n_parameters = 1
 
     def _dlogpdf_dx(self, x):
         """
@@ -236,7 +273,7 @@ class Gaussian(BasePrior):
         return (self.loc - x) / self.scale**2
 
 
-class Uniform(BasePrior):
+class Uniform(Distribution):
     """
     Represents a uniform distribution over a specified interval.
 
@@ -251,14 +288,15 @@ class Uniform(BasePrior):
         The upper bound of the distribution.
     """
 
-    def __init__(self, lower, upper, random_state=None):
-        super().__init__()
+    def __init__(
+        self,
+        lower,
+        upper,
+    ):
+        super().__init__(stats.uniform(loc=lower, scale=upper - lower))
         self.name = "Uniform"
         self.lower = lower
         self.upper = upper
-        self.loc = lower
-        self.scale = upper - lower
-        self.distribution = stats.uniform
         self._n_parameters = 1
 
     def _dlogpdf_dx(self, x):
@@ -277,8 +315,20 @@ class Uniform(BasePrior):
         """
         return np.zeros_like(x)
 
+    def mean(self):
+        """
+        Returns the mean of the distribution.
+        """
+        return (self.upper - self.lower) / 2
 
-class Exponential(BasePrior):
+    def __repr__(self):
+        """
+        Returns a string representation of the object.
+        """
+        return f"{self.__class__.__name__}, lower: {self.lower}, upper: {self.upper}"
+
+
+class Exponential(Distribution):
     """
     Represents an exponential distribution with a specified scale parameter.
 
@@ -291,13 +341,16 @@ class Exponential(BasePrior):
         The scale parameter (lambda) of the exponential distribution.
     """
 
-    def __init__(self, loc=0, scale=1, random_state=None):
-        super().__init__()
+    def __init__(
+        self,
+        scale: float,
+        loc: float = 0,
+    ):
+        super().__init__(stats.expon(loc=loc, scale=scale))
         self.name = "Exponential"
+        self._n_parameters = 1
         self.loc = loc
         self.scale = scale
-        self.distribution = stats.expon
-        self._n_parameters = 1
 
     def _dlogpdf_dx(self, x):
         """
@@ -315,32 +368,48 @@ class Exponential(BasePrior):
         """
         return -1 / self.scale * np.ones_like(x)
 
+    def __repr__(self):
+        """
+        Returns a string representation of the object.
+        """
+        return f"{self.__class__.__name__}, loc: {self.loc}, scale: {self.scale}"
 
-class JointPrior(BasePrior):
+
+class JointDistribution(Distribution):
     """
-    Represents a joint prior distribution composed of multiple prior distributions.
+    Represents a joint distribution composed of multiple distributions.
 
     Parameters
     ----------
-    priors : BasePrior
-        One or more prior distributions to combine into a joint distribution.
+    distributions : Distribution
+        One or more distributions to combine into a joint distribution.
     """
 
-    def __init__(self, *priors: BasePrior):
+    def __init__(self, *distributions: Distribution | stats.distributions.rv_frozen):
         super().__init__()
 
-        if all(prior is None for prior in priors):
+        if all(distribution is None for distribution in distributions):
             return
 
-        if not all(isinstance(prior, BasePrior) for prior in priors):
-            raise ValueError("All priors must be instances of BasePrior")
+        if not all(
+            isinstance(distribution, (Distribution, stats.distributions.rv_frozen))
+            for distribution in distributions
+        ):
+            raise ValueError(
+                "All distributions must be instances of Distribution or scipy.stats.distributions.rv_frozen"
+            )
 
-        self._n_parameters = len(priors)
-        self._priors: list[BasePrior] = list(priors)
+        self._n_parameters = len(distributions)
+        self._distributions: list[Distribution] = [
+            distribution
+            if isinstance(distribution, Distribution)
+            else Distribution(distribution)
+            for distribution in distributions
+        ]
 
     def logpdf(self, x: float | np.ndarray) -> float:
         """
-        Evaluates the joint log-prior distribution at a given point.
+        Evaluates the log of the joint distribution at a given point.
 
         Parameters
         ----------
@@ -358,11 +427,14 @@ class JointPrior(BasePrior):
                 f"Input x must have length {self._n_parameters}, got {len(x)}"
             )
 
-        return sum(prior.logpdf(x) for prior, x in zip(self._priors, x, strict=False))
+        return sum(
+            distribution.logpdf(x)
+            for distribution, x in zip(self._distributions, x, strict=False)
+        )
 
     def logpdfS1(self, x: float | np.ndarray) -> tuple[float, np.ndarray]:
         """
-        Evaluates the first derivative of the joint log-prior distribution at a given point.
+        Evaluates the first derivative of the log of the joint distribution at a given point.
 
         Parameters
         ----------
@@ -383,8 +455,8 @@ class JointPrior(BasePrior):
         log_probs = []
         derivatives = []
 
-        for prior, xi in zip(self._priors, x, strict=False):
-            p, dp = prior.logpdfS1(xi)
+        for distribution, xi in zip(self._distributions, x, strict=False):
+            p, dp = distribution.logpdfS1(xi)
             log_probs.append(p)
             derivatives.append(dp)
 
@@ -397,5 +469,7 @@ class JointPrior(BasePrior):
         return output, doutput.T
 
     def __repr__(self) -> str:
-        priors_repr = ", ".join([repr(prior) for prior in self._priors])
-        return f"{self.__class__.__name__}(priors: [{priors_repr}])"
+        distributions_repr = "; ".join(
+            [repr(distribution) for distribution in self._distributions]
+        )
+        return f"{self.__class__.__name__}(distributions: [{distributions_repr}])"

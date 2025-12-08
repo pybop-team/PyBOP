@@ -9,24 +9,6 @@ import sys
 from os import path
 
 #
-# Multiprocessing
-#
-try:
-    import multiprocessing as mp
-    if sys.platform == "win32":
-        mp.set_start_method("spawn")
-    else:
-        mp.set_start_method("fork")
-except Exception as e: # pragma: no cover
-    error_message = (
-        "Multiprocessing context could not be set. "
-        "Continuing import without setting context.\n"
-        f"Error: {e}"
-    ) # pragma: no cover
-    print(error_message) # pragma: no cover
-    pass # pragma: no cover
-
-#
 # Version info
 #
 from pybop._version import __version__
@@ -66,7 +48,7 @@ from .transformation.transformations import (
 # Parameter classes
 #
 from .parameters.parameter import Parameter, Parameters
-from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential, JointPrior
+from .parameters.distributions import (Distribution, Gaussian, Uniform, Exponential, JointDistribution)
 
 #
 # Model classes
@@ -118,7 +100,7 @@ from .costs.design_cost import DesignCost
 from ._evaluation import PopulationEvaluator, ScalarEvaluator, SequentialEvaluator
 
 #
-# Optimisation logging
+# Optimisation logging and result
 #
 from ._logging import Logger
 from ._result import OptimisationResult
@@ -182,9 +164,9 @@ from .samplers.pints_samplers import (
 )
 
 #
-# Classification classes
+# Analysis
 #
-from .analysis.classification import classify_using_hessian
+from .analysis.classification import classify_using_hessian, plot_hessian_eigenvectors
 
 #
 # Applications

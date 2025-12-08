@@ -29,8 +29,9 @@ class TestCosts:
     def parameters(self):
         return {
             "Negative electrode active material volume fraction": pybop.Parameter(
-                prior=pybop.Gaussian(0.5, 0.01),
-                bounds=[0.375, 0.625],
+                distribution=pybop.Gaussian(
+                    truncated_at=[0.375, 0.625], mean=0.5, sigma=0.010
+                )
             )
         }
 
@@ -403,8 +404,10 @@ class TestCosts:
         problem_4 = pybop.Problem(simulator, cost4)
         weighted_4 = pybop.Problem(simulator, weighted_cost_4)
         sigma = 0.01
-        assert np.isfinite(cost4.parameters["Sigma for output 1"].prior.logpdf(sigma))
-        assert np.isfinite(weighted_4.evaluate([0.5, sigma]).values)
+        assert np.isfinite(
+            cost4.parameters["Sigma for output 1"].distribution.logpdf(sigma)
+        )
+        assert np.isfinite(weighted_4([0.5, sigma]))
         np.testing.assert_allclose(
             weighted_4.evaluate([0.6, sigma]).values,
             problem_1.evaluate([0.6]).values

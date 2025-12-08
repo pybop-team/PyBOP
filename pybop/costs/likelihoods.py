@@ -3,8 +3,8 @@ import scipy.stats as stats
 
 from pybop._dataset import Dataset
 from pybop.costs.error_measures import ErrorMeasure
+from pybop.parameters.distributions import Distribution, JointDistribution, Uniform
 from pybop.parameters.parameter import Inputs, Parameter, Parameters
-from pybop.parameters.priors import BasePrior, JointPrior, Uniform
 
 
 class LogLikelihood(ErrorMeasure):
@@ -133,9 +133,8 @@ class GaussianLogLikelihood(LogLikelihood):
             sigma = value
         elif isinstance(value, int | float):
             sigma = Parameter(
+                distribution=Uniform(1e-8 * value, 3 * value),
                 initial_value=value,
-                prior=Uniform(1e-8 * value, 3 * value),
-                bounds=[1e-8, 3 * value],
             )
         else:
             raise TypeError(
@@ -198,16 +197,16 @@ class LogPosterior(LogLikelihood):
     ---------------------
     log_likelihood : LogLikelihood
         The likelihood class of type ``LogLikelihood``.
-    prior : Optional, Union[pybop.BasePrior, stats.rv_continuous]
-        The prior class of type ``BasePrior`` or ``stats.rv_continuous``.
-        If not provided, the prior class will be taken from the parameter priors
+    prior : Optional, Union[pybop.Parameter, stats.distributions.rv_frozen]
+        The prior class of type ``Parameter``, ``Distribution`` or ``stats.distributions.rv_frozen``.
+        If not provided, the prior class will be taken from the parameter distributions
         constructed in the `pybop.Parameters` class.
     """
 
     def __init__(
         self,
         log_likelihood: LogLikelihood,
-        prior: BasePrior | stats.rv_continuous | None = None,
+        prior: Parameter | stats.distributions.rv_frozen | Distribution | None = None,
     ):
         dataset = Dataset(log_likelihood.dataset)
         dataset.domain = log_likelihood.domain
@@ -219,9 +218,17 @@ class LogPosterior(LogLikelihood):
 
     def set_joint_prior(self):
         if self.prior is None:
-            self.joint_prior = JointPrior(*self.parameters.priors())
-        else:
+            self.joint_prior = JointDistribution(*self.parameters.distributions())
+        elif isinstance(self.prior, (stats.distributions.rv_frozen)):
+            self.joint_prior = Distribution(self.prior)
+        elif isinstance(self.prior, Parameter):
+            self.joint_prior = self.prior.distribution
+        elif isinstance(self.prior, Distribution):
             self.joint_prior = self.prior
+        else:
+            raise TypeError(
+                "All priors must either be of type pybop.Parameter, pybop.Distribution or scipy.stats.distributions.rv_frozen"
+            )
 
     def __call__(
         self,
