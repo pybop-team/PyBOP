@@ -10,7 +10,7 @@ class MultivariateParameters(Parameters):
     framework.
 
     This class encapsulates the definition of each of its parameters,
-    including their names, bounds, and margins to ensure the parameter
+    including their names and bounds to ensure the parameter
     stays within feasible limits during optimisation or sampling.
 
     Parameters
@@ -45,7 +45,7 @@ class MultivariateParameters(Parameters):
         """
         if len(x.shape) == 1:  # one-dimensional
             x = np.atleast_2d(x)
-        x = np.asarray([self.transformation().to_search(m) for m in x.T]).T
+        x = np.asarray([self.transformation.to_search(m) for m in x])
         return self.distribution.pdf(x)
 
     def sample_from_distribution(
@@ -59,8 +59,7 @@ class MultivariateParameters(Parameters):
         """
         Draw random samples from the joint parameters distribution.
 
-        The samples are constrained to be within each parameter's bounds,
-        excluding a pre-defined margin at the boundaries.
+        The samples are constrained to be within each parameter's bounds.
 
         Parameters
         ----------

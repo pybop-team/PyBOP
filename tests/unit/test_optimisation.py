@@ -154,23 +154,23 @@ class TestOptimisation:
         return simulator
 
     @pytest.fixture
-    def multivariate_problem(self, simulator, dataset):
+    def multivariate_problem(self, multivariate_simulator, dataset):
         cost = pybop.SumSquaredError(dataset)
-        problem = pybop.Problem(simulator, cost)
+        problem = pybop.Problem(multivariate_simulator, cost)
         # Copy the MultivariateParameters to the problem
-        problem.parameters = simulator.parameters
+        problem.parameters = multivariate_simulator.parameters
         return problem
 
     @pytest.fixture
-    def gitt_like_problem(self, simulator, dataset):
-        sqrt_cost_1 = pybop.SquareRootFeatureDistance(
+    def gitt_like_problem(self, multivariate_simulator, dataset):
+        sqrt_cost_1 = pybop.costs.feature_distances.SquareRootFeatureDistance(
             dataset["Time [s]"],
             dataset["Voltage [V]"],
             feature="offset",
             time_start=0,
             time_end=180,
         )
-        sqrt_cost_2 = pybop.SquareRootFeatureDistance(
+        sqrt_cost_2 = pybop.costs.feature_distances.SquareRootFeatureDistance(
             dataset["Time [s]"],
             dataset["Voltage [V]"],
             feature="offset",
@@ -178,10 +178,11 @@ class TestOptimisation:
             time_end=360,
         )
         problem = pybop.MetaProblem(
-            pybop.Problem(simulator, sqrt_cost_1), pybop.Problem(simulator, sqrt_cost_2)
+            pybop.Problem(multivariate_simulator, sqrt_cost_1),
+            pybop.Problem(multivariate_simulator, sqrt_cost_2),
         )
         # Copy the MultivariateParameters to the problem
-        problem.parameters = simulator.parameters
+        problem.parameters = multivariate_simulator.parameters
         return problem
 
     @pytest.mark.parametrize(
@@ -518,7 +519,7 @@ class TestOptimisation:
         result = optim.run()
         assert result.posterior is not None
         assert (
-            optim.name
+            optim.name()
             == "Expectation Propagation with Bayesian Optimization for Likelihood-Free Inference"
         )
         with pytest.raises(
