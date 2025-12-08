@@ -15,7 +15,7 @@ class PyprobeResult(Protocol):
         """Get result data as numpy ndarray"""
 
     @property
-    def column_list(self) -> list[str]:
+    def columns(self) -> list[str]:
         """List of column data"""
 
 
@@ -219,8 +219,8 @@ def import_pyprobe_result(
     for i, col in enumerate(pybop_columns):
         if (
             pyprobe_columns[i] == "Cycle"
-            and "Cycle" not in result.column_list
-            and "Step" in result.column_list
+            and "Cycle" not in result.columns
+            and "Step" in result.columns
         ):
             warnings.warn(
                 "No cycle information present. Cycles will be inferred from the step numbers.",
