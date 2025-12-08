@@ -6,25 +6,6 @@ from scipy.linalg import sqrtm
 from pybop.parameters.distributions import Distribution
 
 
-def insert_x_at_dim(other, x, dim):
-    """
-    Inserts each element of x at dim in other.
-
-    Parameters
-    ----------
-    other : numpy.ndarray
-        The fixed other variables in all dimensions but dim.
-    x : numpy.ndarray
-        The point(s) at which to evaluate in dim.
-    dim : int
-        The dimension at which to insert x.
-    """
-    x = np.atleast_1d(x)
-    return np.array(
-        [np.concatenate(other[: dim - 1], [entry], other[dim - 1 :]) for entry in x]
-    )
-
-
 class BaseMultivariateDistribution(Distribution):
     """
     A base class for defining multivariate parameter distributions.
@@ -33,7 +14,7 @@ class BaseMultivariateDistribution(Distribution):
     output of a multivariate distribution to its individual dimensions.
 
     Note that, unlike in ``pybop.Distribution``, distribution attributes
-    are stored in a dictionary, as multivariate distributiosn in SciPy
+    are stored in a dictionary, as multivariate distributions in SciPy
     do not follow the loc/scale convention.
 
     Attributes
@@ -103,21 +84,19 @@ class MultivariateNonparametric(BaseMultivariateDistribution):
     a random sampling and a kernel density estimate on that sampling.
 
     This class provides methods to calculate the probability density
-    fuction (pdf), the logarithm of the pdf, and to generate random
+    function (pdf), the logarithm of the pdf, and to generate random
     variates (rvs) from the distribution.
 
     Parameters
     ----------
     samples : numpy.ndarray
         The random variates to base the distribution on.
-    transforms : list of 2-tuple of callables
     """
 
     def __init__(self, samples, random_state=None):
-        super().__init__()
+        super().__init__(distribution=stats.gaussian_kde(samples))
         self.name = "MultivariateNonparametric"
         self.properties = {}
-        self.distribution = stats.gaussian_kde(samples)
         self._n_parameters = samples.shape[0]
 
     def pdf(self, x):
@@ -145,10 +124,9 @@ class MultivariateUniform(BaseMultivariateDistribution):
     """
 
     def __init__(self, bounds, random_state=None):
-        super().__init__()
+        super().__init__(distribution=stats.uniform(bounds))
         self.name = "MultivariateUniform"
         self.properties = {"bounds": bounds}
-        self.distribution = stats.uniform(bounds)
         self._n_parameters = bounds.shape[1]
 
 
@@ -174,9 +152,8 @@ class MultivariateGaussian(BaseMultivariateDistribution):
     """
 
     def __init__(self, mean=None, covariance=None, bounds=None, random_state=None):
-        super().__init__()
+        super().__init__(distribution=stats.multivariate_normal)
         self.name = "MultivariateGaussian"
-        self.distribution = stats.multivariate_normal
         self.properties = {"mean": mean, "cov": covariance}
         self.sigma2 = covariance
         self._n_parameters = len(mean)

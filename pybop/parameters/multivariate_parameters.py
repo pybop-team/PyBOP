@@ -1,7 +1,6 @@
 import numpy as np
 
 from pybop import Parameters
-from pybop.parameters.multivariate_distributions import BaseMultivariateDistribution
 
 
 class MultivariateParameters(Parameters):
@@ -16,6 +15,7 @@ class MultivariateParameters(Parameters):
     Parameters
     ----------
     parameters : pybop.Parameters or dict
+        The optimisation parameters.
     distribution : pybop.BaseMultivariateDistribution
         The joint multivariate distribution.
     """
@@ -40,8 +40,8 @@ class MultivariateParameters(Parameters):
 
         Returns
         -------
-            np.ndarray
-                An array of the pdf values at each parameter vector.
+        np.ndarray
+            An array of the pdf values at each parameter vector.
         """
         if len(x.shape) == 1:  # one-dimensional
             x = np.atleast_2d(x)
@@ -59,8 +59,6 @@ class MultivariateParameters(Parameters):
         """
         Draw random samples from the joint parameters distribution.
 
-        The samples are constrained to be within each parameter's bounds.
-
         Parameters
         ----------
         n_samples : int
@@ -73,9 +71,8 @@ class MultivariateParameters(Parameters):
 
         Returns
         -------
-            array-like
-                A matrix (i.e., a 2D array) of samples drawn from the
-                joint distribution inside parameter boundaries.
+        array-like
+            A 2D array of samples drawn from the joint distribution.
         """
         samples = self.distribution.rvs(n_samples, random_state=random_state)
         if samples.ndim < 2:
@@ -85,6 +82,3 @@ class MultivariateParameters(Parameters):
             samples = np.asarray([self.transformation.to_model(s) for s in samples])
 
         return samples
-
-    def distribution(self) -> BaseMultivariateDistribution:
-        return self.distribution

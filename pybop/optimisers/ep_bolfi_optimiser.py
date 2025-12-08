@@ -180,15 +180,15 @@ class EP_BOLFI(BaseOptimiser):
 
     Note that all properties may and should be given here as PyBOP
     objects, but will be converted to an ep_bolfi.EP_BOLFI instance
-    upon instantation of this class. To change attributes, re-init.
+    upon instantiation of this class. To change attributes, re-init.
 
-    Only compatible with MultivariateParameters with
-    MultivariateGaussian prior and a MetaProblem.
+    Only compatible with MultivariateParameters with a
+    MultivariateGaussian distribution.
     """
 
     def __init__(
         self,
-        problem: pybop.MetaProblem,
+        problem: pybop.Problem,
         options: EPBOLFIOptions | None = None,
     ):
         if type(problem) is not pybop.MetaProblem:

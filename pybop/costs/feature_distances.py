@@ -144,8 +144,6 @@ class SquareRootFeatureDistance(FeatureDistance):
             counted from the start of the data. Default is the end.
         """
         super().__init__(domain_data, target_data, feature, time_start, time_end)
-        self.time_start = time_start
-        self.time_end = time_end
 
     def _inverse_fit_function(self, y, b, c):
         """Square function to transform data for a linear fit."""
@@ -201,8 +199,6 @@ class ExponentialFeatureDistance(FeatureDistance):
             counted from the start of the data. Default is the end.
         """
         super().__init__(domain_data, target_data, feature, time_start, time_end)
-        self.time_start = time_start
-        self.time_end = time_end
 
     def _inverse_fit_function(self, y, b, c, d):
         """Logarithm function to transform data for a linear fit."""

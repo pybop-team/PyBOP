@@ -95,6 +95,7 @@ from .costs.likelihoods import (
 )
 from .costs.weighted_cost import WeightedCost
 from .costs.design_cost import DesignCost
+from .costs.feature_distances import SquareRootFeatureDistance, ExponentialFeatureDistance
 
 #
 # Evaluation

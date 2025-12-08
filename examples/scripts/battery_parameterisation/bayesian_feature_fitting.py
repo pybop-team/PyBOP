@@ -4,10 +4,6 @@ from ep_bolfi.models.solversetup import spectral_mesh_pts_and_method
 from pybamm import CasadiSolver, Experiment, print_citations
 
 import pybop
-from pybop.costs.feature_distances import SquareRootFeatureDistance
-from pybop.optimisers.ep_bolfi_optimiser import EP_BOLFI, EPBOLFIOptions
-from pybop.parameters.multivariate_distributions import MultivariateGaussian
-from pybop.parameters.multivariate_parameters import MultivariateParameters
 
 # Define model and parameter values
 model = pybamm.lithium_ion.SPMe()
@@ -63,7 +59,7 @@ dataset = pybop.Dataset(
 )
 
 # Override the forced univariate Parameters
-simulator.parameters = MultivariateParameters(
+simulator.parameters = pybop.MultivariateParameters(
     {
         "Negative particle diffusivity [m2.s-1]": pybop.Parameter(
             initial_value=0.9 * original_D_n,
@@ -76,20 +72,20 @@ simulator.parameters = MultivariateParameters(
             transformation=pybop.LogTransformation(),
         ),
     },
-    distribution=MultivariateGaussian(
+    distribution=pybop.MultivariateGaussian(
         [np.log(original_D_n), np.log(original_D_p)],
         [[np.log(2), 0.0], [0.0, np.log(2)]],
     ),
 )
 
-ICI_cost = SquareRootFeatureDistance(
+ICI_cost = pybop.SquareRootFeatureDistance(
     dataset["Time [s]"],
     dataset["Voltage [V]"],
     feature="inverse_slope",
     time_start=0,
     time_end=90,
 )
-GITT_cost = SquareRootFeatureDistance(
+GITT_cost = pybop.SquareRootFeatureDistance(
     dataset["Time [s]"],
     dataset["Voltage [V]"],
     feature="inverse_slope",
@@ -107,7 +103,7 @@ if __name__ == "__main__":
 
     # Set up and run the optimiser, increase the number of iterations
     # and samples to improve accuracy
-    options = EPBOLFIOptions(
+    options = pybop.EPBOLFIOptions(
         ep_iterations=2,
         ep_total_dampening=0,
         bolfi_initial_sobol_samples=10,
@@ -116,7 +112,7 @@ if __name__ == "__main__":
         posterior_gelman_rubin_threshold=1.2,
         verbose=True,
     )
-    optim = EP_BOLFI(problem, options=options)
+    optim = pybop.EP_BOLFI(problem, options=options)
     result = optim.run()
 
     pybop.plot.convergence(result, yaxis={"type": "log"})
