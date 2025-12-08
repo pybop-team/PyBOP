@@ -133,6 +133,7 @@ from .optimisers.pints_optimisers import (
     AdamW,
     SimulatedAnnealing,
 )
+from .optimisers.ep_bolfi_optimiser import EP_BOLFI, EPBOLFIOptions
 
 #
 # Monte Carlo classes

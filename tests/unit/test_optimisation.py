@@ -114,6 +114,49 @@ class TestOptimisation:
         cost = pybop.SumSquaredError(dataset)
         return pybop.Problem(simulator, cost)
 
+    @pytest.fixture
+    def multivariate_problem(self, model, two_parameters, dataset):
+        parameter_values = model.default_parameter_values
+        # Put empty Parameter slots as placeholders
+        parameter_values["Negative electrode active material volume fraction"] = (
+            pybop.Parameter()
+        )
+        parameter_values["Positive electrode active material volume fraction"] = (
+            pybop.Parameter()
+        )
+        parameter_values.update(
+            {
+                "Negative electrode active material volume fraction": pybop.Parameter(
+                    distribution=pybop.Gaussian(0.6, 0.02)
+                ),
+                "Positive electrode active material volume fraction": pybop.Parameter(
+                    distribution=pybop.Gaussian(0.5, 0.05)
+                ),
+            }
+        )
+        simulator = pybop.pybamm.Simulator(
+            model, parameter_values=parameter_values, protocol=dataset
+        )
+        # Override the forced univariate Parameters
+        simulator.parameters = pybop.MultivariateParameters(
+            {
+                "Negative electrode active material volume fraction": pybop.Parameter(
+                    initial_value=0.6, bounds=[0.001, 0.999]
+                ),
+                "Positive electrode active material volume fraction": pybop.Parameter(
+                    initial_value=0.5, bounds=[0.001, 0.999]
+                ),
+            },
+            distribution=pybop.MultivariateGaussian(
+                [0.6, 0.5], [[0.02, 0.0], [0.0, 0.05]]
+            ),
+        )
+        cost = pybop.SumSquaredError(dataset)
+        problem = pybop.Problem(simulator, cost)
+        # Copy the MultivariateParameters to the problem
+        problem.parameters = simulator.parameters
+        return problem
+
     @pytest.mark.parametrize(
         "optimiser, expected_name, sensitivities",
         [
@@ -441,6 +484,12 @@ class TestOptimisation:
         optim = pybop.SciPyMinimize(problem, options=options)
         result = optim.run()
         assert result.scipy_result is not None
+
+    def test_ep_bolfi(self, multivariate_problem):
+        options = pybop.EPBOLFIOptions()
+        optim = pybop.EP_BOLFI(multivariate_problem, options=options)
+        result = optim.run()
+        assert result.posterior is not None
 
     def test_single_parameter(self, problem):
         # Test catch for optimisers that can only run with multiple parameters

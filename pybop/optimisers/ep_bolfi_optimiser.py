@@ -15,6 +15,17 @@ from pybop._result import BayesianOptimisationResult
 from pybop.parameters.multivariate_distributions import MultivariateGaussian
 
 
+def ep_bolfi_problem_processing(y, problem):
+    if isinstance(y, dict):
+        evaluation = problem._cost(y[problem._simulator.output_variables[0]])  # noqa: SLF001
+    else:
+        evaluation = problem._cost(y)  # noqa: SLF001
+    if isinstance(evaluation, pybop.costs.evaluation.Evaluation):
+        return [evaluation.values]
+    else:
+        return [evaluation]
+
+
 @dataclass
 class EPBOLFIOptions(pybop.OptimiserOptions):
     """
@@ -181,7 +192,10 @@ class EP_BOLFI(BaseOptimiser):
         options: EPBOLFIOptions | None = None,
     ):
         if type(problem) is not pybop.MetaProblem:
+            # Store the parameters and replace the forced univariate Parameters with them
+            parameters = problem.parameters
             problem = pybop.MetaProblem(problem)
+            problem.parameters = parameters
         super().__init__(problem, options)
         # citations.register("""@article{
         #     Minka2013,
@@ -242,7 +256,7 @@ class EP_BOLFI(BaseOptimiser):
             problem.target_data for problem in self.problem.problems
         ]
         feature_extractors = [
-            lambda y, prob=problem: [prob._cost(y).values]  # noqa: SLF001
+            lambda y, prob=problem: ep_bolfi_problem_processing(y, prob)
             for problem in self.problem.problems
         ]
         self.optimiser = ep_bolfi.EP_BOLFI(
@@ -284,10 +298,16 @@ class EP_BOLFI(BaseOptimiser):
                 # bolfi_posterior is the full GPy object containing the state at
                 # the end of the last feature iteration, while the
                 # MultivariateGaussian is a slight approximation.
+                total_samples = (
+                    None
+                    if self._options.bolfi_initial_sobol_samples is None
+                    or self._options.bolfi_optimally_acquired_samples is None
+                    else self._options.bolfi_initial_sobol_samples
+                    + self._options.bolfi_optimally_acquired_samples
+                )
                 self.bolfi_posterior = self.optimiser.run(
                     self._options.bolfi_initial_sobol_samples,
-                    self._options.bolfi_initial_sobol_samples
-                    + self._options.bolfi_optimally_acquired_samples,
+                    total_samples,
                     self._options.bolfi_posterior_effective_sample_size,
                     self._options.ep_iterations,
                     self._options.ep_stepwise_dampener,
