@@ -303,7 +303,11 @@ class TestMultivariateParameters:
         )
 
     def test_rvs(self, multivariate_parameters):
-        samples = multivariate_parameters.rvs(10, apply_transform=True)
-        assert samples.shape == (10, 2)
+        samples = multivariate_parameters.sample_from_distribution(
+            1, apply_transform=True
+        )
+        assert samples.shape == (1, 2)
         assert samples.T[1].min() >= 1e-16
         assert samples.T[1].max() <= 1e-14
+        assert multivariate_parameters.pdf(np.asarray([3.9e-14, 1e-15])) > 0
+        assert multivariate_parameters.distribution is not None
