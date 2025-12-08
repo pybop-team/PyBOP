@@ -17,8 +17,6 @@ class PlotlyManager:
     ----------
     go : module
         The Plotly graph_objects module for creating figures.
-    px : module
-        The Plotly express plots module.
     pio : module
         The Plotly input/output module for configuring the renderer.
     make_subplots : function
@@ -35,7 +33,6 @@ class PlotlyManager:
         """
         self.go = None
         self.pio = None
-        self.px = None
         self.make_subplots = None
         self.ensure_plotly_installed()
         self.check_renderer_settings()
@@ -46,13 +43,11 @@ class PlotlyManager:
         Check if Plotly is installed and import necessary modules; prompt for installation if missing.
         """
         try:
-            import plotly.express as px
             import plotly.graph_objs as go
             import plotly.io as pio
             from plotly.subplots import make_subplots
 
             self.go = go
-            self.px = px
             self.pio = pio
             self.make_subplots = make_subplots
         except ImportError:
@@ -91,13 +86,11 @@ class PlotlyManager:
         """
         Import Plotly modules and set the default renderer after installation.
         """
-        import plotly.express as px
         import plotly.graph_objs as go
         import plotly.io as pio
         from plotly.subplots import make_subplots
 
         self.go = go
-        self.px = px
         self.pio = pio
         self.make_subplots = make_subplots
         if pio.renderers.default == "":
