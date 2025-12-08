@@ -114,6 +114,77 @@ class TestOptimisation:
         cost = pybop.SumSquaredError(dataset)
         return pybop.Problem(simulator, cost)
 
+    @pytest.fixture
+    def multivariate_simulator(self, model, dataset):
+        parameter_values = model.default_parameter_values
+        # Put empty Parameter slots as placeholders
+        parameter_values["Negative electrode active material volume fraction"] = (
+            pybop.Parameter()
+        )
+        parameter_values["Positive electrode active material volume fraction"] = (
+            pybop.Parameter()
+        )
+        parameter_values.update(
+            {
+                "Negative electrode active material volume fraction": pybop.Parameter(
+                    distribution=pybop.Gaussian(0.6, 0.02)
+                ),
+                "Positive electrode active material volume fraction": pybop.Parameter(
+                    distribution=pybop.Gaussian(0.5, 0.05)
+                ),
+            }
+        )
+        simulator = pybop.pybamm.Simulator(
+            model, parameter_values=parameter_values, protocol=dataset
+        )
+        # Override the forced univariate Parameters
+        simulator.parameters = pybop.MultivariateParameters(
+            {
+                "Negative electrode active material volume fraction": pybop.Parameter(
+                    initial_value=0.6, bounds=[0.001, 0.999]
+                ),
+                "Positive electrode active material volume fraction": pybop.Parameter(
+                    initial_value=0.5, bounds=[0.001, 0.999]
+                ),
+            },
+            distribution=pybop.MultivariateGaussian(
+                [0.6, 0.5], [[0.02, 0.0], [0.0, 0.05]]
+            ),
+        )
+        return simulator
+
+    @pytest.fixture
+    def multivariate_problem(self, multivariate_simulator, dataset):
+        cost = pybop.SumSquaredError(dataset)
+        problem = pybop.Problem(multivariate_simulator, cost)
+        # Copy the MultivariateParameters to the problem
+        problem.parameters = multivariate_simulator.parameters
+        return problem
+
+    @pytest.fixture
+    def gitt_like_problem(self, multivariate_simulator, dataset):
+        sqrt_cost_1 = pybop.costs.feature_distances.SquareRootFeatureDistance(
+            dataset["Time [s]"],
+            dataset["Voltage [V]"],
+            feature="offset",
+            time_start=0,
+            time_end=180,
+        )
+        sqrt_cost_2 = pybop.costs.feature_distances.SquareRootFeatureDistance(
+            dataset["Time [s]"],
+            dataset["Voltage [V]"],
+            feature="offset",
+            time_start=180,
+            time_end=360,
+        )
+        problem = pybop.MetaProblem(
+            pybop.Problem(multivariate_simulator, sqrt_cost_1),
+            pybop.Problem(multivariate_simulator, sqrt_cost_2),
+        )
+        # Copy the MultivariateParameters to the problem
+        problem.parameters = multivariate_simulator.parameters
+        return problem
+
     @pytest.mark.parametrize(
         "optimiser, expected_name, sensitivities",
         [
@@ -441,6 +512,90 @@ class TestOptimisation:
         optim = pybop.SciPyMinimize(problem, options=options)
         result = optim.run()
         assert result.scipy_result is not None
+
+    def test_ep_bolfi(self, multivariate_problem, gitt_like_problem):
+        options = pybop.EPBOLFIOptions()
+        optim = pybop.EP_BOLFI(multivariate_problem, options=options)
+        result = optim.run()
+        assert result.posterior is not None
+        assert (
+            optim.name()
+            == "Expectation Propagation with Bayesian Optimization for Likelihood-Free Inference"
+        )
+        with pytest.raises(
+            ValueError,
+            match="EP-BOLFI is not parallelisable by design for sample efficiency. Use SOBER instead for parallelisation.",
+        ):
+            optim = pybop.EP_BOLFI(
+                multivariate_problem, options=pybop.EPBOLFIOptions(parallel=True)
+            )
+        with pytest.raises(
+            ValueError,
+            match="The EP dampening has to be a positive number smaller than 1.",
+        ):
+            optim = pybop.EP_BOLFI(
+                multivariate_problem, options=pybop.EPBOLFIOptions(ep_total_dampening=1)
+            )
+        with pytest.raises(
+            ValueError,
+            match="Hard parameter boundaries can't be negative multiples of σ.",
+        ):
+            optim = pybop.EP_BOLFI(
+                multivariate_problem,
+                options=pybop.EPBOLFIOptions(boundaries_in_standard_deviations=-1),
+            )
+        with pytest.raises(
+            ValueError,
+            match="Initial Sobol parameter samples can not be a negative number.",
+        ):
+            optim = pybop.EP_BOLFI(
+                multivariate_problem,
+                options=pybop.EPBOLFIOptions(bolfi_initial_sobol_samples=-1),
+            )
+        with pytest.raises(
+            ValueError,
+            match="Optimally acquired parameter samples can not be a negative number.",
+        ):
+            optim = pybop.EP_BOLFI(
+                multivariate_problem,
+                options=pybop.EPBOLFIOptions(bolfi_optimally_acquired_samples=-1),
+            )
+        with pytest.raises(
+            ValueError,
+            match="Effective Sample Size for posterior evaluation can not be a negative number.",
+        ):
+            optim = pybop.EP_BOLFI(
+                multivariate_problem,
+                options=pybop.EPBOLFIOptions(bolfi_posterior_effective_sample_size=-1),
+            )
+        with pytest.raises(
+            ValueError,
+            match="The factor by which to increase posterior samples has to be greater than 1.",
+        ):
+            optim = pybop.EP_BOLFI(
+                multivariate_problem,
+                options=pybop.EPBOLFIOptions(posterior_actual_sample_size_increase=1),
+            )
+        with pytest.raises(
+            ValueError,
+            match="The factor by which to increase model samples has to be greater than 1.",
+        ):
+            optim = pybop.EP_BOLFI(
+                multivariate_problem,
+                options=pybop.EPBOLFIOptions(posterior_model_resample_size_increase=1),
+            )
+        with pytest.raises(
+            ValueError,
+            match="The Gelman-Rubin threshold has to be a number greater than 1.",
+        ):
+            optim = pybop.EP_BOLFI(
+                multivariate_problem,
+                options=pybop.EPBOLFIOptions(posterior_gelman_rubin_threshold=1),
+            )
+        options = pybop.EPBOLFIOptions()
+        optim = pybop.EP_BOLFI(gitt_like_problem, options=options)
+        result = optim.run()
+        assert result.posterior is not None
 
     def test_single_parameter(self, problem):
         # Test catch for optimisers that can only run with multiple parameters

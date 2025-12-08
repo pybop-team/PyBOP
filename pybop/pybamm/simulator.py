@@ -87,6 +87,8 @@ class Simulator(BaseSimulator):
         for name, param in parameter_values.items():
             if isinstance(param, Parameter):
                 parameters.add(name, param)
+            elif isinstance(param, pybamm.InputParameter):
+                parameters.add(name, Parameter())
         super().__init__(parameters=parameters)
 
         # Simulation params

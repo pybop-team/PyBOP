@@ -48,7 +48,9 @@ from .transformation.transformations import (
 # Parameter classes
 #
 from .parameters.parameter import Parameter, Parameters
-from .parameters.distributions import (Distribution, Gaussian, Uniform, Exponential, JointDistribution)
+from .parameters.multivariate_parameters import MultivariateParameters
+from .parameters.distributions import Distribution, Gaussian, Uniform, Exponential, JointDistribution
+from .parameters.multivariate_distributions import MultivariateNonparametric, MultivariateUniform, MultivariateGaussian
 
 #
 # Model classes
@@ -93,6 +95,7 @@ from .costs.likelihoods import (
 )
 from .costs.weighted_cost import WeightedCost
 from .costs.design_cost import DesignCost
+from .costs.feature_distances import SquareRootFeatureDistance, ExponentialFeatureDistance
 
 #
 # Evaluation
@@ -131,6 +134,7 @@ from .optimisers.pints_optimisers import (
     AdamW,
     SimulatedAnnealing,
 )
+from .optimisers.ep_bolfi_optimiser import EP_BOLFI, EPBOLFIOptions
 
 #
 # Monte Carlo classes

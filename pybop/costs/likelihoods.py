@@ -218,7 +218,7 @@ class LogPosterior(LogLikelihood):
 
     def set_joint_prior(self):
         if self.prior is None:
-            self.joint_prior = JointDistribution(*self.parameters.distributions())
+            self.joint_prior = JointDistribution(*self.parameters.distribution())
         elif isinstance(self.prior, (stats.distributions.rv_frozen)):
             self.joint_prior = Distribution(self.prior)
         elif isinstance(self.prior, Parameter):
