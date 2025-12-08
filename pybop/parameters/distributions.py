@@ -400,7 +400,7 @@ class JointDistribution(Distribution):
             )
 
         self._n_parameters = len(distributions)
-        self._distributions: list[Distribution] = [
+        self._distribution: list[Distribution] = [
             distribution
             if isinstance(distribution, Distribution)
             else Distribution(distribution)
@@ -429,7 +429,7 @@ class JointDistribution(Distribution):
 
         return sum(
             distribution.logpdf(x)
-            for distribution, x in zip(self._distributions, x, strict=False)
+            for distribution, x in zip(self._distribution, x, strict=False)
         )
 
     def logpdfS1(self, x: float | np.ndarray) -> tuple[float, np.ndarray]:
@@ -455,7 +455,7 @@ class JointDistribution(Distribution):
         log_probs = []
         derivatives = []
 
-        for distribution, xi in zip(self._distributions, x, strict=False):
+        for distribution, xi in zip(self._distribution, x, strict=False):
             p, dp = distribution.logpdfS1(xi)
             log_probs.append(p)
             derivatives.append(dp)
@@ -470,6 +470,6 @@ class JointDistribution(Distribution):
 
     def __repr__(self) -> str:
         distributions_repr = "; ".join(
-            [repr(distribution) for distribution in self._distributions]
+            [repr(distribution) for distribution in self._distribution]
         )
         return f"{self.__class__.__name__}(distributions: [{distributions_repr}])"

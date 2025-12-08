@@ -439,7 +439,7 @@ class Parameters:
             for param, value in zip(param_list, values_array, strict=False):
                 param.update_initial_value(value)
 
-    def sample_from_distributions(
+    def sample_from_distribution(
         self,
         n_samples: int = 1,
         *,
@@ -447,7 +447,7 @@ class Parameters:
         transformed: bool = False,
     ) -> NDArray[np.floating] | None:
         """
-        Sample from all parameter distributions.
+        Sample from each parameter distribution.
 
         Returns
         -------
@@ -496,7 +496,7 @@ class Parameters:
             sigma0.extend([sig or 0.05])
         return sigma0
 
-    def distributions(self) -> list:
+    def distribution(self) -> list:
         """Return the initial distribution of each parameter."""
         return [
             param.distribution
