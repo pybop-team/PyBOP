@@ -44,8 +44,8 @@ class MultivariateParameters(Parameters):
             An array of the pdf values at each parameter vector.
         """
         if len(x.shape) == 1:  # one-dimensional
-            x = np.atleast_2d(x)
-        x = np.asarray([self.transformation.to_search(m) for m in x])
+            x = np.atleast_2d(x).T
+        x = np.asarray([self.transformation.to_search(m) for m in x]).T
         return self.distribution.pdf(x)
 
     def sample_from_distribution(
@@ -77,7 +77,7 @@ class MultivariateParameters(Parameters):
         samples = self.distribution.rvs(n_samples, random_state=random_state)
         if samples.ndim < 2:
             samples = np.atleast_2d(samples)
-
+        samples = samples.T
         if apply_transform:
             samples = np.asarray([self.transformation.to_model(s) for s in samples])
 
