@@ -1,14 +1,13 @@
 import copy
-from dataclasses import dataclass
 import time
-import torch
+from collections.abc import Callable
 from contextlib import redirect_stderr, redirect_stdout
+from dataclasses import dataclass
+from os import cpu_count
 from sys import stderr, stdout
 
-from collections.abc import Callable
-
 import numpy as np
-from os import cpu_count
+import torch
 from pybamm import citations
 from torch import tensor
 
@@ -82,7 +81,7 @@ class SOBER_BASQ(BaseOptimiser):
             pages={16533-16547},
             year={2022}
         }""")
-    
+
     def evaluate_problem(self, inputs_array):
         sim = self.problem._simulator
         inputs = {k: i for k, i in zip(self.problem.parameters.keys(), inputs_array.T)}
@@ -113,11 +112,9 @@ class SOBER_BASQ(BaseOptimiser):
         # ToDo: generalise to other transformations (has to be PyTorch,
         # else the vmap-vectorisation for that within SoberWrapper fails).
         self.transform_parameters = [
-            (
-                torch.log, torch.exp
-            ) if isinstance(par.transformation, pybop.LogTransformation) else (
-                torch.nn.Identity(), torch.nn.Identity()
-            )
+            (torch.log, torch.exp)
+            if isinstance(par.transformation, pybop.LogTransformation)
+            else (torch.nn.Identity(), torch.nn.Identity())
             for par in self.problem.parameters.values()
         ]
 
@@ -196,7 +193,9 @@ class SOBER_BASQ(BaseOptimiser):
             for entry in x_list
         ]
         self._logger.cost = cost_list
-        self._logger.iterations = [i // (self._options.sober_iterations) for i in range(len(cost_list))]
+        self._logger.iterations = [
+            i // (self._options.sober_iterations) for i in range(len(cost_list))
+        ]
         self._logger.evaluations = [i + 1 for i in range(len(cost_list))]
         self._logger.x_model_best = x_best[-1]
         x_search_best_over_time = [
@@ -212,14 +211,19 @@ class SOBER_BASQ(BaseOptimiser):
             self.problem.parameters,
             distribution=pybop.MultivariateNonparametric(
                 self.optimiser.denormalize_input(raw_taken_samples).T
-            )
+            ),
         )
 
         self._logger.iteration = {"SOBER iterations": self._options.sober_iterations}
-        self._logger.evaluations = {"model evaluations": self._options.sober_iterations * self._options.model_samples_per_iteration}
+        self._logger.evaluations = {
+            "model evaluations": self._options.sober_iterations
+            * self._options.model_samples_per_iteration
+        }
 
         if self._options.normalise_evidence:
-            log_expected_marginal_likelihood *= (2 * np.pi)**(len(self.problem.parameters) / 2)
+            log_expected_marginal_likelihood *= (2 * np.pi) ** (
+                len(self.problem.parameters) / 2
+            )
 
         return BayesianOptimisationResult(
             optim=self,
@@ -235,9 +239,7 @@ class SOBER_BASQ(BaseOptimiser):
         )
 
     def name(self):
-        return (
-            "Solving Optimisation as Bayesian Estimation via Recombination"
-        )
+        return "Solving Optimisation as Bayesian Estimation via Recombination"
 
 
 @dataclass
@@ -254,15 +256,20 @@ class SOBER_BASQ_EPLFI_Options(SOBER_BASQ_Options):
         super().validate()
 
         if self.maximise:
-            raise ValueError("EP-LFI only minimises; consider negating the cost function.")
+            raise ValueError(
+                "EP-LFI only minimises; consider negating the cost function."
+            )
         if self.weights is not None:
-            raise ValueError("EP-LFI performs automatic importance weighting; you can't set the weights.")
+            raise ValueError(
+                "EP-LFI performs automatic importance weighting; you can't set the weights."
+            )
         if self.custom_objective_and_loglikelihood is not None:
-            raise ValueError("EP-LFI builds a custom objective from the features already; you can't set your own.")
+            raise ValueError(
+                "EP-LFI builds a custom objective from the features already; you can't set your own."
+            )
 
 
 class SOBER_BASQ_EPLFI(SOBER_BASQ):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         citations.register("""@article{
@@ -278,10 +285,14 @@ class SOBER_BASQ_EPLFI(SOBER_BASQ):
 
     def _collect_functions(self, inputs_array):
         inputs = {k: i for k, i in zip(self.problem.parameters.keys(), inputs_array.T)}
-        return np.array([
-            problem._simulator.solve(inputs)[problem._simulator.output_variables[0]].data
-            for problem in self.problem.problems
-        ]).T
+        return np.array(
+            [
+                problem._simulator.solve(inputs)[
+                    problem._simulator.output_variables[0]
+                ].data
+                for problem in self.problem.problems
+            ]
+        ).T
 
     def _features(self, y):
         # Since in PyBOP, costs are already part of the problems, just report y.
@@ -310,11 +321,9 @@ class SOBER_BASQ_EPLFI(SOBER_BASQ):
         # ToDo: generalise to other transformations (has to be PyTorch,
         # else the vmap-vectorisation for that within SoberWrapper fails).
         self.transform_parameters = [
-            (
-                torch.log, torch.exp
-            ) if isinstance(par.transformation, pybop.LogTransformation) else (
-                torch.nn.Identity(), torch.nn.Identity()
-            )
+            (torch.log, torch.exp)
+            if isinstance(par.transformation, pybop.LogTransformation)
+            else (torch.nn.Identity(), torch.nn.Identity())
             for par in self.problem.parameters.values()
         ]
 
@@ -322,7 +331,14 @@ class SOBER_BASQ_EPLFI(SOBER_BASQ):
         # multiprocessing breaks.
         self.optimiser = sober.ExpectationPropagationLFI(
             self._collect_functions,
-            tensor(np.asarray([list(problem.target_data.values())[0] for problem in self.problem.problems])),
+            tensor(
+                np.asarray(
+                    [
+                        list(problem.target_data.values())[0]
+                        for problem in self.problem.problems
+                    ]
+                )
+            ),
             self._features,
             self._options.model_initial_samples,
             self.mean,
@@ -355,7 +371,7 @@ class SOBER_BASQ_EPLFI(SOBER_BASQ):
                     model_samples_per_iteration=self._options.model_samples_per_iteration,
                     integration_nodes=self._options.ep_integration_nodes,
                     visualizations=False,
-                    verbose=False
+                    verbose=False,
                 )
                 (
                     raw_taken_samples,
@@ -388,7 +404,9 @@ class SOBER_BASQ_EPLFI(SOBER_BASQ):
             for entry in x_list
         ]
         self._logger.cost = cost_list
-        self._logger.iterations = [i // (self._options.sober_iterations) for i in range(len(cost_list))]
+        self._logger.iterations = [
+            i // (self._options.sober_iterations) for i in range(len(cost_list))
+        ]
         self._logger.evaluations = [i + 1 for i in range(len(cost_list))]
         self._logger.x_model_best = x_best[-1]
         x_search_best_over_time = [
@@ -405,11 +423,14 @@ class SOBER_BASQ_EPLFI(SOBER_BASQ):
             self.problem.parameters,
             distribution=pybop.MultivariateNonparametric(
                 self.optimiser.denormalize_input(raw_taken_samples).T
-            )
+            ),
         )
-    
+
         self._logger.iteration = {"SOBER iterations": self._options.sober_iterations}
-        self._logger.evaluations = {"model evaluations": self._options.sober_iterations * self._options.model_samples_per_iteration}
+        self._logger.evaluations = {
+            "model evaluations": self._options.sober_iterations
+            * self._options.model_samples_per_iteration
+        }
 
         return BayesianOptimisationResult(
             optim=self,
@@ -423,7 +444,7 @@ class SOBER_BASQ_EPLFI(SOBER_BASQ):
             log_evidence_mean=log_expected_marginal_likelihood,
             log_evidence_variance=log_approx_variance_marginal_likelihood,
         )
-    
+
     def name(self):
         return (
             "Solving Optimisation as Bayesian Estimation via Recombination "

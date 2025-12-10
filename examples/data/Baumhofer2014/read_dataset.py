@@ -1,6 +1,7 @@
 from pybamm import citations
-from pybop import Datasets
 from scipy.io import loadmat
+
+from pybop import Datasets
 
 citations.register("""@article{
     Baumhöfer2014,
@@ -23,11 +24,16 @@ citations.register("""@article{
     doi={10.1149/1945-7111/ac6d13}
 }""")
 
-matlab_degradation_data = loadmat("../../data/Baumhofer2014/baumhofer.mat")['lifetime'][0][0]
-degradation_data = Datasets([
-    {
-        "Time [s]": dataset[0][0][0],
-        "Capacity fade": dataset[0][0][1] / dataset[0][0][1][0]
-    }
-    for dataset in matlab_degradation_data
-], domain="Time [s]")
+matlab_degradation_data = loadmat("../../data/Baumhofer2014/baumhofer.mat")["lifetime"][
+    0
+][0]
+degradation_data = Datasets(
+    [
+        {
+            "Time [s]": dataset[0][0][0],
+            "Capacity fade": dataset[0][0][1] / dataset[0][0][1][0],
+        }
+        for dataset in matlab_degradation_data
+    ],
+    domain="Time [s]",
+)

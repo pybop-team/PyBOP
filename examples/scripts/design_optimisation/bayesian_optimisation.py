@@ -1,30 +1,27 @@
 # Miscellaneous imports for plotting, arithmetic, and statistics.
 from copy import deepcopy
-from matplotlib.colors import Normalize
-from matplotlib.cm import ScalarMappable
-import matplotlib.pyplot as plt
-from matplotlib.ticker import PercentFormatter
-import numpy as np
-
-import pybop
-from pybop.optimisers.sober_basq_optimiser import SOBER_BASQ_Options, SOBER_BASQ
-import pybamm
 
 # In this example, we use parallel processing.
 from multiprocessing import Pool
 
-# Imports the SOBER interface and ensures that calculations are on CPU.
-from torch import device, float64, set_default_dtype
+import matplotlib.pyplot as plt
+import numpy as np
+import pybamm
+from matplotlib.ticker import PercentFormatter
+from pybamm import citations, print_citations
 from sober import setting_parameters
 
-from pybop.costs.feature_distances import indices_of
-from pybop import BaseSimulator, Solution, Parameters
+# Imports the SOBER interface and ensures that calculations are on CPU.
+from torch import device, float64, set_default_dtype
 
-from pybamm import citations, print_citations
+import pybop
+from pybop import BaseSimulator, Parameters, Solution
+from pybop.costs.feature_distances import indices_of
+from pybop.optimisers.sober_basq_optimiser import SOBER_BASQ, SOBER_BASQ_Options
 
 set_default_dtype(float64)
-setting_parameters(dtype=float64, device=device('cpu'))
-np.seterr(divide='ignore')
+setting_parameters(dtype=float64, device=device("cpu"))
+np.seterr(divide="ignore")
 
 
 class SEIGrowthVonKolzenberg(BaseSimulator):
@@ -36,7 +33,13 @@ class SEIGrowthVonKolzenberg(BaseSimulator):
     Currents are assumed to be slightly higher to account for this.
     """
 
-    def __init__(self, parameters, fixed_parameters, timepoints: np.ndarray | None = None, currents: np.ndarray | None = None):
+    def __init__(
+        self,
+        parameters,
+        fixed_parameters,
+        timepoints: np.ndarray | None = None,
+        currents: np.ndarray | None = None,
+    ):
         citations.register("""@article{
             vonKolzenberg2020,
             title={{Solid-Electrolyte Interphase During Battery Cycling: Theory of Growth Regimes}},
@@ -55,7 +58,6 @@ class SEIGrowthVonKolzenberg(BaseSimulator):
         self.output_variables = ["SEI thickness [m]"]
 
     def sei_growth(self, inputs, timepoints=None, currents=None):
-
         timepoints = timepoints if timepoints is not None else self.timepoints
         currents = currents if currents is not None else self.currents
         delta_t = np.diff(timepoints, append=timepoints[-1] - timepoints[-2])
@@ -81,20 +83,36 @@ class SEIGrowthVonKolzenberg(BaseSimulator):
         R = 8.314462618  # Ideal gas constant
         T = local_parameters["Ambient temperature [K]"]
         F = 96485.33212  # Faraday's constant
-        eff_surface_area = 3 * (1 - local_parameters["Negative electrode porosity"]) / local_parameters["Negative particle radius [m]"]
+        eff_surface_area = (
+            3
+            * (1 - local_parameters["Negative electrode porosity"])
+            / local_parameters["Negative particle radius [m]"]
+        )
         # Assumption: exchange-current density is given as the pre-factor without concentration dependencies.
-        exchange_current_density = local_parameters["Negative electrode exchange-current density [A.m-2]"](
+        exchange_current_density = local_parameters[
+            "Negative electrode exchange-current density [A.m-2]"
+        ](
             local_parameters["Initial concentration in electrolyte [mol.m-3]"],
             0.5,
             local_parameters["Maximum concentration in negative electrode [mol.m-3]"],
-            local_parameters["Ambient temperature [K]"]
+            local_parameters["Ambient temperature [K]"],
         ).value
         # Approximation: electrolyte concentration remains constant.
-        exchange_current_densities = exchange_current_density * (1 - socs)**0.5 * socs**0.5
+        exchange_current_densities = (
+            exchange_current_density * (1 - socs) ** 0.5 * socs**0.5
+        )
 
         # Approximation: the current sinked in the SEI is much smaller than the intercalation current.
-        intercalation_currents = currents / (eff_surface_area * local_parameters["Negative electrode thickness [m]"])
-        intercalation_overpotential = R * T / F * 2 * np.arcsinh(0.5 * intercalation_currents / exchange_current_densities)
+        intercalation_currents = currents / (
+            eff_surface_area * local_parameters["Negative electrode thickness [m]"]
+        )
+        intercalation_overpotential = (
+            R
+            * T
+            / F
+            * 2
+            * np.arcsinh(0.5 * intercalation_currents / exchange_current_densities)
+        )
 
         diffusion_critical_thicknesses = (
             local_parameters["Initial concentration in electrolyte [mol.m-3]"]
@@ -103,7 +121,9 @@ class SEIGrowthVonKolzenberg(BaseSimulator):
             / local_parameters["SEI formation rate constant [A.m-2]"]
             * np.exp(
                 -(1 - local_parameters["SEI formation symmetry factor"])
-                * F / (R * T) * (
+                * F
+                / (R * T)
+                * (
                     intercalation_overpotential
                     + ocps
                     + local_parameters["SEI lithium reference potential [J.mol-1]"] / F
@@ -111,35 +131,50 @@ class SEIGrowthVonKolzenberg(BaseSimulator):
             )
         )
         migration_critical_thicknesses = (
-            2 * R * T * local_parameters["SEI ionic conductivity [S.m-1]"]
+            2
+            * R
+            * T
+            * local_parameters["SEI ionic conductivity [S.m-1]"]
             / (F * np.abs(intercalation_currents))
         )
 
-        sei_thicknesses = [local_parameters["Inital SEI thickness [m]"]] + [0.0 for _ in range(len(socs))]
+        sei_thicknesses = [local_parameters["Inital SEI thickness [m]"]] + [
+            0.0 for _ in range(len(socs))
+        ]
         for i, dt in enumerate(delta_t):
             current_sei_thickness = sei_thicknesses[i]
             # This is basically SEI thickness minus tunneling effects,
             # but adjusted to allow for SEIs thinner than the tunneling length.
             apparent_sei_thickness = (
-                (current_sei_thickness - local_parameters["SEI tunneling length [m]"]) / 2
-                + (
-                    ((current_sei_thickness - local_parameters["SEI tunneling length [m]"]) / 2)**10
-                    + local_parameters["Reference apparent SEI thickness [m]"]**10
-                )**0.1
-            )
+                current_sei_thickness - local_parameters["SEI tunneling length [m]"]
+            ) / 2 + (
+                (
+                    (
+                        current_sei_thickness
+                        - local_parameters["SEI tunneling length [m]"]
+                    )
+                    / 2
+                )
+                ** 10
+                + local_parameters["Reference apparent SEI thickness [m]"] ** 10
+            ) ** 0.1
             sei_current = (
                 -local_parameters["SEI formation rate constant [A.m-2]"]
                 * np.exp(
                     -local_parameters["SEI formation symmetry factor"]
-                    * F / (R * T) * (
+                    * F
+                    / (R * T)
+                    * (
                         intercalation_overpotential[i]
                         + ocps[i]
-                        + local_parameters["SEI lithium reference potential [J.mol-1]"] / F
+                        + local_parameters["SEI lithium reference potential [J.mol-1]"]
+                        / F
                     )
-                ) * (
-                    1 + apparent_sei_thickness / migration_critical_thicknesses[i]
-                ) / (
-                    1 + apparent_sei_thickness / migration_critical_thicknesses[i]
+                )
+                * (1 + apparent_sei_thickness / migration_critical_thicknesses[i])
+                / (
+                    1
+                    + apparent_sei_thickness / migration_critical_thicknesses[i]
                     + apparent_sei_thickness / diffusion_critical_thicknesses[i]
                 )
             )
@@ -172,7 +207,9 @@ class IdealisedSolarBatteryDegradation(BaseSimulator):
         self.capacity_cutoff = capacity_cutoff
         # Calculate the reference case of a minimally sized battery.
         timepoints, currents = self.day_night_cycle(1.0)
-        self.sei_growth_model = SEIGrowthVonKolzenberg(Parameters(), self.fixed_parameters, timepoints, currents)
+        self.sei_growth_model = SEIGrowthVonKolzenberg(
+            Parameters(), self.fixed_parameters, timepoints, currents
+        )
         self.eol_reference = self.eol(1.0)
         self.output_variables = ["EOL [d]", "SEI thickness [m]"]
 
@@ -188,9 +225,16 @@ class IdealisedSolarBatteryDegradation(BaseSimulator):
         # With 1 hour per timestep, each cycle lasts 24 hours: discharge from
         # 17:00 to 7:00, rest until 9:00, charge until 15:00, and rest until 17:00.
         dt = 3600
-        currents = np.asarray((
-            [reference_current * 14 / 20] * 6 + [0.0] * 2 + [-reference_current * 6 / 20] * 14 + [0.0] * 2
-        ) * 365 * 10)  # roughly 10 years
+        currents = np.asarray(
+            (
+                [reference_current * 14 / 20] * 6
+                + [0.0] * 2
+                + [-reference_current * 6 / 20] * 14
+                + [0.0] * 2
+            )
+            * 365
+            * 10
+        )  # roughly 10 years
         timepoints = np.asarray(range(len(currents))) * dt
         return timepoints, currents
 
@@ -203,10 +247,15 @@ class IdealisedSolarBatteryDegradation(BaseSimulator):
 
     def eol_formula(self, sei_thicknesses):
         relative_capacity_loss = (
-            sei_thicknesses - sei_thicknesses[0]
-        ) * (
-            3 * (1 - self.fixed_parameters["Negative electrode porosity"]) / self.fixed_parameters["Negative particle radius [m]"]
-        ) * 96485.33212 / (3600 * self.fixed_parameters["Nominal cell capacity [A.h]"])
+            (sei_thicknesses - sei_thicknesses[0])
+            * (
+                3
+                * (1 - self.fixed_parameters["Negative electrode porosity"])
+                / self.fixed_parameters["Negative particle radius [m]"]
+            )
+            * 96485.33212
+            / (3600 * self.fixed_parameters["Nominal cell capacity [A.h]"])
+        )
         eol_day = indices_of(relative_capacity_loss, self.capacity_cutoff)[0] / 24
         return eol_day
 
@@ -215,7 +264,9 @@ class IdealisedSolarBatteryDegradation(BaseSimulator):
         return self.eol_formula(sei_thicknesses)
 
     def relative_eol_gain_formula(self, sei_thicknesses, oversize_factor):
-        gain_vs_offset = (self.eol_formula(sei_thicknesses) - self.eol_reference) / (oversize_factor - 1)
+        gain_vs_offset = (self.eol_formula(sei_thicknesses) - self.eol_reference) / (
+            oversize_factor - 1
+        )
         return gain_vs_offset
 
     def relative_eol_gain(self, oversize_factor):
@@ -228,46 +279,61 @@ class IdealisedSolarBatteryDegradation(BaseSimulator):
             sol = Solution(entry)
             sei_thicknesses = self.sei_growth(entry["Oversize factor"])
             sol.set_solution_variable("SEI thickness [m]", sei_thicknesses)
-            sol.set_solution_variable("EOL [d]", [self.relative_eol_gain_formula(sei_thicknesses, entry["Oversize factor"])])
+            sol.set_solution_variable(
+                "EOL [d]",
+                [
+                    self.relative_eol_gain_formula(
+                        sei_thicknesses, entry["Oversize factor"]
+                    )
+                ],
+            )
             sols.append(sol)
         return sols
 
 
 if __name__ == "__main__":
-
     battery_parameters = pybamm.ParameterValues("Marquis2019")
 
     # We append parameters from a cell we know the SEI parameters for.
-    battery_parameters.update({
-        "Electrolyte diffusivity [m2.s-1]": 2.8e-10,
-        "Electrode width [m]": (1 / 24) ** 0.5,
-        "Electrode height [m]": (1 / 24) ** 0.5,
-        "Nominal cell capacity [A.h]": 0.05,
-        "SEI formation rate constant [A.m-2]": 1e-5,
-        "SEI ionic conductivity [S.m-1]": 1e-8,
-        "Initial concentration in negative electrode [mol.m-3]": (
-            0.11 * battery_parameters["Maximum concentration in negative electrode [mol.m-3]"]
-        ),
-        "Initial concentration in positive electrode [mol.m-3]": (
-            0.83 * battery_parameters["Maximum concentration in positive electrode [mol.m-3]"]
-        ),
-        "SEI formation symmetry factor": 0.22,
-        "Inital SEI thickness [m]": 2e-9,
-        "Reference apparent SEI thickness [m]": 0.05e-9,
-        "SEI tunneling length [m]": 2.05e-9,
-        "SEI molar volume [m3.mol-1]": 1.078e-5,
-        "SEI diffusivity [m2.s-1]": 1e-15,
-        "SEI thickness [m]": 67e-9,
-        "SEI relative permittivity": 131,
-        "SEI lithium reference potential [J.mol-1]": 17400,
-        "Anion transference number in SEI": 1 - 0.063,  # t_plus is 0.063
-        "SEI porosity": 0.1,
-        "SEI Bruggeman coefficient": 4.54,
-    }, check_already_exists=False)
+    battery_parameters.update(
+        {
+            "Electrolyte diffusivity [m2.s-1]": 2.8e-10,
+            "Electrode width [m]": (1 / 24) ** 0.5,
+            "Electrode height [m]": (1 / 24) ** 0.5,
+            "Nominal cell capacity [A.h]": 0.05,
+            "SEI formation rate constant [A.m-2]": 1e-5,
+            "SEI ionic conductivity [S.m-1]": 1e-8,
+            "Initial concentration in negative electrode [mol.m-3]": (
+                0.11
+                * battery_parameters[
+                    "Maximum concentration in negative electrode [mol.m-3]"
+                ]
+            ),
+            "Initial concentration in positive electrode [mol.m-3]": (
+                0.83
+                * battery_parameters[
+                    "Maximum concentration in positive electrode [mol.m-3]"
+                ]
+            ),
+            "SEI formation symmetry factor": 0.22,
+            "Inital SEI thickness [m]": 2e-9,
+            "Reference apparent SEI thickness [m]": 0.05e-9,
+            "SEI tunneling length [m]": 2.05e-9,
+            "SEI molar volume [m3.mol-1]": 1.078e-5,
+            "SEI diffusivity [m2.s-1]": 1e-15,
+            "SEI thickness [m]": 67e-9,
+            "SEI relative permittivity": 131,
+            "SEI lithium reference potential [J.mol-1]": 17400,
+            "Anion transference number in SEI": 1 - 0.063,  # t_plus is 0.063
+            "SEI porosity": 0.1,
+            "SEI Bruggeman coefficient": 4.54,
+        },
+        check_already_exists=False,
+    )
 
     pybop_prior = pybop.MultivariateParameters(
         {"Oversize factor": pybop.Parameter(initial_value=1.1, bounds=[1.0, 1.2])},
-        distribution=pybop.MultivariateUniform(np.asarray([[1.0, 1.2]]))
+        distribution=pybop.MultivariateUniform(np.asarray([[1.0, 1.2]])),
     )
     # In this simple example, we first plot the whole target function.
     # A note, as this is a common point of confusion: this plot solves
@@ -278,26 +344,24 @@ if __name__ == "__main__":
     # landscape of the target function becomes much more complex,
     # such a plot can not be reasonably produced, but the optimiser
     # still works just as well.
-    solar_battery_model = IdealisedSolarBatteryDegradation(pybop_prior, battery_parameters)
+    solar_battery_model = IdealisedSolarBatteryDegradation(
+        pybop_prior, battery_parameters
+    )
     oversize_factors = np.asarray([1 + 0.002 * i for i in range(101)])
     with Pool() as p:
         eol_days = p.map(solar_battery_model.eol, oversize_factors)
     oversize_factors = oversize_factors.flatten()
     # End-Of-Life is chosen to be at 40% of capacity lost.
-    fig_kde, ax_kde = plt.subplots(figsize=(3 * 2**0.5, 3), layout='constrained')
+    fig_kde, ax_kde = plt.subplots(figsize=(3 * 2**0.5, 3), layout="constrained")
     ax_eol = ax_kde.twinx()
     eol_plot = ax_eol.plot(
-        oversize_factors,
-        eol_days,
-        label="Time to End-Of-Life  /  d"
+        oversize_factors, eol_days, label="Time to End-Of-Life  /  d"
     )[0]
-    gain = [float('NaN')] + list(
+    gain = [float("NaN")] + list(
         (eol_days[1:] - eol_days[0]) / (oversize_factors[1:] - 1)
     )
     gain_plot = ax_eol.plot(
-        oversize_factors,
-        gain,
-        label="Gain per extra capacity  /  d"
+        oversize_factors, gain, label="Gain per extra capacity  /  d"
     )[0]
     ax_kde.set_xlabel("Oversize factor")
     ax_eol.set_ylabel("Time  /  d")
@@ -381,7 +445,7 @@ if __name__ == "__main__":
         maximise=True,
         sober_iterations=7,
         model_samples_per_iteration=16,
-        integration_nodes=128
+        integration_nodes=128,
     )
     sober_basq_wrapper = SOBER_BASQ(pybop_problem, pybop_options)
     pybop_result = sober_basq_wrapper.run()
@@ -401,7 +465,7 @@ if __name__ == "__main__":
     post_norm = sum(post_approx) * (1.2 - 1.0)
     post_approx /= post_norm
     kde_plot = ax_kde.plot(
-        eval_kde, post_approx, label="Posterior for optimal sizing", ls='--'
+        eval_kde, post_approx, label="Posterior for optimal sizing", ls="--"
     )[0]
     ax_kde.set_xlabel("Oversize factor")
     ax_kde.set_ylabel("Posterior probability density")
@@ -410,7 +474,7 @@ if __name__ == "__main__":
     fig_kde.legend(
         plots_for_legend,
         [p.get_label() for p in plots_for_legend],
-        loc='outside lower center',
+        loc="outside lower center",
         # borderpad=0.3,
         # handlelength=0.5,
         # handletextpad=0.3,

@@ -1,21 +1,20 @@
 from copy import deepcopy
-from ep_bolfi.models.solversetup import (
-    solver_setup, spectral_mesh_pts_and_method
-)
-from ep_bolfi.utility.preprocessing import calculate_desired_voltage
+from multiprocessing import Pool
+
 import matplotlib
 import matplotlib.pyplot as plt
+import pybamm
+import sober
+import torch
+from ep_bolfi.models.solversetup import solver_setup, spectral_mesh_pts_and_method
+from ep_bolfi.utility.preprocessing import calculate_desired_voltage
+from numpy import arange, logspace, set_printoptions
 from pandas import DataFrame
+from scipy.stats import norm
 from seaborn import kdeplot, pairplot
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 from sober import InverseModel
-from multiprocessing import Pool
-from numpy import arange, argmin, logspace, set_printoptions, sum
-import pybamm
-from scipy.stats import norm
-import sober
-import torch
 
 # torch.set_default_dtype(torch.float64)
 # sober.setting_parameters(device=torch.device('cpu'))
@@ -27,8 +26,8 @@ def visualise_correlation(
     correlation,
     names=None,
     title=None,
-    cmap=plt.get_cmap('BrBG'),
-    entry_color='w'
+    cmap=plt.get_cmap("BrBG"),
+    entry_color="w",
 ):
     """
     Produces a heatmap of a correlation matrix.
@@ -60,22 +59,33 @@ def visualise_correlation(
         ax.set_xticklabels(names)
         ax.set_yticklabels(names)
         # Rotate the labels at the x-axis for better readability.
-        plt.setp(ax.get_xticklabels(), rotation=45, ha='right', rotation_mode='anchor')
+        plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
 
     # Plot the correlation matrix entries on the heatmap.
     for i in range(len(correlation)):
         for j in range(len(correlation)):
             if i == j:
-                color = 'w'
+                color = "w"
             else:
                 color = entry_color
-            ax.text(j, i, '{:3.2f}'.format(correlation[i][j]), ha='center',
-                    va='center', color=color, in_layout=False)
+            ax.text(
+                j,
+                i,
+                f"{correlation[i][j]:3.2f}",
+                ha="center",
+                va="center",
+                color=color,
+                in_layout=False,
+            )
 
     ax.set_title(title or "Correlation matrix")
-    fig.colorbar(matplotlib.cm.ScalarMappable(
-        norm=matplotlib.colors.Normalize(-1, 1), cmap=cmap
-    ), ax=ax, label="correlation")
+    fig.colorbar(
+        matplotlib.cm.ScalarMappable(
+            norm=matplotlib.colors.Normalize(-1, 1), cmap=cmap
+        ),
+        ax=ax,
+        label="correlation",
+    )
     fig.tight_layout()
 
 
@@ -101,14 +111,18 @@ def simulator(parameters):
     kappa_e_spread = 1.0
 
     def thermodynamic_factor(c_e, T):
-        return 1 + tdf_curvature * (c_e / 1000)**2
+        return 1 + tdf_curvature * (c_e / 1000) ** 2
 
     def electrolyte_diff(c_e, T):
         return D_e_magnitude * pybamm.exp(-D_e_scaling * (c_e / 1000 - 1))
 
     def electrolyte_cond(c_e, T):
-        return kappa_e_magnitude / (c_e / 1000) * pybamm.exp(
-            -(pybamm.log(c_e / 1000 / kappa_e_peak) / kappa_e_spread)**2
+        return (
+            kappa_e_magnitude
+            / (c_e / 1000)
+            * pybamm.exp(
+                -((pybamm.log(c_e / 1000 / kappa_e_peak) / kappa_e_spread) ** 2)
+            )
         )
 
     model_parameters = pybamm.ParameterValues("Ramadass2004")
@@ -117,9 +131,13 @@ def simulator(parameters):
     model_parameters["Electrolyte diffusivity [m2.s-1]"] = electrolyte_diff
     model_parameters["Electrolyte conductivity [S.m-1]"] = electrolyte_cond
     discretization = {
-        'order_s_n': 10, 'order_s_p': 10, 'order_e': 10,
-        'volumes_e_n': 1, 'volumes_e_s': 1, 'volumes_e_p': 1,
-        'halfcell': False
+        "order_s_n": 10,
+        "order_s_p": 10,
+        "order_e": 10,
+        "volumes_e_n": 1,
+        "volumes_e_s": 1,
+        "volumes_e_p": 1,
+        "halfcell": False,
     }
     solver = solver_setup(
         deepcopy(model),
@@ -163,24 +181,31 @@ def clustering(data, max_number_of_clusters=10):
 if __name__ == "__main__":
     # Ramadass2004 values: D_e = 7.5e-10, kappa_e = 1.0, TDF = 1.0.
     # _, _, solution = simulator([1.0, 0.7, 7.5e-10, 1.0, 1.0, 1.0])
-    bounds = torch.tensor([
-        [0.1, 0.2, 3e-10, 0.5],  # , 0.7, 0.7],
-        [4.0, 2, 1e-9, 2.0]  # , 1.3, 1.5],
-    ])
+    bounds = torch.tensor(
+        [
+            [0.1, 0.2, 3e-10, 0.5],  # , 0.7, 0.7],
+            [4.0, 2, 1e-9, 2.0],  # , 1.3, 1.5],
+        ]
+    )
     transforms = [(lambda x: torch.log(x), lambda x: torch.exp(x))] * 4  # 6
-    names = ["TDF curv.", "Dₑ scaling", "Dₑ magn.", "κₑ magn."]   # "κₑ peak", "κₑ spread",
+    names = [
+        "TDF curv.",
+        "Dₑ scaling",
+        "Dₑ magn.",
+        "κₑ magn.",
+    ]  # "κₑ peak", "κₑ spread",
 
     inverse_modelling = InverseModel(
         training_simulator,
         model_initial_samples=2**5,
         bounds=bounds,
-        prior='Uniform',
+        prior="Uniform",
         transforms=transforms,
         seed=seed,
         disable_numpy_mode=True,
         parallelization=False,
         visualizations=False,
-        names=names
+        names=names,
     )
     inverse_modelling.optimize_inverse_model_with_SOBER(
         stopping_criterion_variance=1e-8,
@@ -190,7 +215,7 @@ if __name__ == "__main__":
         model_samples_per_iteration=2**5,
         integration_nodes=2**5,
         visualizations=False,
-        verbose=True
+        verbose=True,
     )
 
     relaxation_t, relaxation_U, solution = simulator(
@@ -222,9 +247,7 @@ if __name__ == "__main__":
     """
 
     samples = [
-        s[0] for s in inverse_modelling.sample(
-            features, 64
-        ).detach().cpu().numpy()
+        s[0] for s in inverse_modelling.sample(features, 64).detach().cpu().numpy()
     ]
     with Pool() as p:
         simulations = p.map(simulator, samples)
@@ -249,11 +272,11 @@ if __name__ == "__main__":
             ),
             alpha=0.5,
             lw=0.5,
-            color='orange'
+            color="orange",
         )
     ax.set_xlabel("Time  /  h")
     ax.set_ylabel("Cell overpotential  /  mV")
-    ax.set_xscale('log')
+    ax.set_xscale("log")
 
     # Get the whole multivariate normal distribution for correlations.
     prediction = inverse_modelling(features)
@@ -267,7 +290,7 @@ if __name__ == "__main__":
         correlation.detach().cpu().numpy(),
         names,
         "Electrolyte characterization from pulse test",
-        entry_color='black'
+        entry_color="black",
     )
 
     set_printoptions(precision=3)
@@ -275,10 +298,16 @@ if __name__ == "__main__":
     normalized_X = inverse_modelling.tm.numpy(inverse_modelling.X_all)
     observations = inverse_modelling.tm.numpy(inverse_modelling.observations_all)
     clusterings, labellings, scores = clustering(normalized_X, max_number_of_clusters=4)
-    for i, (clustering, labels, score) in enumerate(zip(clusterings, labellings, scores)):
+    for i, (clustering, labels, score) in enumerate(
+        zip(clusterings, labellings, scores)
+    ):
         print()
         print("Silhouette score of #" + str(i + 2) + " clusters:", score)
-        labelled_X = DataFrame(normalized_X).set_axis(names, axis='columns').assign(labels=labels)
+        labelled_X = (
+            DataFrame(normalized_X)
+            .set_axis(names, axis="columns")
+            .assign(labels=labels)
+        )
         correlation_plot = pairplot(labelled_X, height=1.25, hue="labels")
         correlation_plot.map_lower(kdeplot, levels=4)
         centers = clustering.cluster_centers_
@@ -290,20 +319,33 @@ if __name__ == "__main__":
             # Create new observations.
             features = training_simulator(torch.tensor(center).unsqueeze(0))
             prediction = inverse_modelling(features)
-            model_center = inverse_modelling.reverse_transform(
-                inverse_modelling.denormalize_input(
-                    torch.tensor(
-                        center, dtype=inverse_modelling.tm.dtype
-                    ).unsqueeze(0)
-                )
-            )[0].detach().cpu().numpy()
-            model_prediction = inverse_modelling.reverse_transform(
-                inverse_modelling.denormalize_input(prediction.mean)
-            )[0].detach().cpu().numpy()
+            model_center = (
+                inverse_modelling.reverse_transform(
+                    inverse_modelling.denormalize_input(
+                        torch.tensor(
+                            center, dtype=inverse_modelling.tm.dtype
+                        ).unsqueeze(0)
+                    )
+                )[0]
+                .detach()
+                .cpu()
+                .numpy()
+            )
+            model_prediction = (
+                inverse_modelling.reverse_transform(
+                    inverse_modelling.denormalize_input(prediction.mean)
+                )[0]
+                .detach()
+                .cpu()
+                .numpy()
+            )
             print(
-                "Parameters ", model_center,
-                " - Prediction ", model_prediction,
-                " = ", model_center - model_prediction
+                "Parameters ",
+                model_center,
+                " - Prediction ",
+                model_prediction,
+                " = ",
+                model_center - model_prediction,
             )
             covariance = prediction.covariance_matrix
             std = prediction.variance[0].sqrt()
@@ -315,6 +357,6 @@ if __name__ == "__main__":
                 correlation.detach().cpu().numpy(),
                 names,
                 str(i + 2) + " clusters, label " + str(j) + ", " + str(center),
-                entry_color='black'
+                entry_color="black",
             )
     plt.show()

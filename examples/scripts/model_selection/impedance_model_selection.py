@@ -1,32 +1,35 @@
 import importlib.util
-import sober
 import json
+import sys
+from contextlib import redirect_stdout
+from multiprocessing import Pool
+
 import matplotlib.pyplot as plt
 import pybamm
 import pybammeis
-import sys
-import time
-
 from botorch.acquisition.active_learning import qNegIntegratedPosteriorVariance
-from contextlib import redirect_stdout
 from ep_bolfi.models.solversetup import spectral_mesh_pts_and_method
 from ep_bolfi.utility.dataset_formatting import read_parquet_table
 from ep_bolfi.utility.fitting_functions import fit_drt
 from ep_bolfi.utility.preprocessing import find_occurrences
 from ep_bolfi.utility.visualization import (
-    interactive_drt_finetuning, interactive_impedance_model, nyquist_plot
+    interactive_impedance_model,
+    nyquist_plot,
 )
-from multiprocessing import Pool
 from numpy import sqrt, tan
 from scipy import constants
 from scipy.stats import gaussian_kde
-from torch import device, float64, pi, set_default_dtype, tensor, zeros
+from torch import pi, tensor, zeros
 
-spec_gunther = importlib.util.spec_from_file_location("gunther", "../../data/Gunther2025/parameters.py")
+spec_gunther = importlib.util.spec_from_file_location(
+    "gunther", "../../data/Gunther2025/parameters.py"
+)
 gunther = importlib.util.module_from_spec(spec_gunther)
 sys.modules["gunther"] = gunther
 spec_gunther.loader.exec_module(gunther)
-spec_kuhn = importlib.util.spec_from_file_location("kuhn", "../../data/Kuhn2026/parameters.py")
+spec_kuhn = importlib.util.spec_from_file_location(
+    "kuhn", "../../data/Kuhn2026/parameters.py"
+)
 kuhn = importlib.util.module_from_spec(spec_kuhn)
 sys.modules["kuhn"] = kuhn
 spec_kuhn.loader.exec_module(kuhn)
@@ -60,128 +63,133 @@ parameter_ranges = {
         "Positive electrode exchange-current density [A.m-2]": (2e-2, 8e-2),
         "SEI relative permittivity": (10.0, 50.0),
         "SEI Bruggeman coefficient": (4.3, 4.8),
-    }
+    },
 }
 
 parameter_transforms = {
     "pouch_SPM": {
-        "Positive particle diffusivity [m2.s-1]": (
-            lambda x: log(x), lambda x: exp(x)
-        ),
+        "Positive particle diffusivity [m2.s-1]": (lambda x: log(x), lambda x: exp(x)),
         "Positive electrode double-layer capacity [F.m-2]": (
-            lambda x: log(x), lambda x: exp(x)
+            lambda x: log(x),
+            lambda x: exp(x),
         ),
         "Positive electrode exchange-current density [A.m-2]": (
-            lambda x: log(x), lambda x: exp(x)
+            lambda x: log(x),
+            lambda x: exp(x),
         ),
     },
     "pouch_DFN": {
         "Positive electrode Bruggeman coefficient": (lambda x: x, lambda x: x),
-        "Positive electrode conductivity [S.m-1]": (
-            lambda x: log(x), lambda x: exp(x)
-        ),
-        "Electrolyte diffusivity [m2.s-1]": (
-            lambda x: log(x), lambda x: exp(x)
-        ),
-        "Positive particle diffusivity [m2.s-1]": (
-            lambda x: log(x), lambda x: exp(x)
-        ),
+        "Positive electrode conductivity [S.m-1]": (lambda x: log(x), lambda x: exp(x)),
+        "Electrolyte diffusivity [m2.s-1]": (lambda x: log(x), lambda x: exp(x)),
+        "Positive particle diffusivity [m2.s-1]": (lambda x: log(x), lambda x: exp(x)),
         "Positive electrode double-layer capacity [F.m-2]": (
-            lambda x: log(x), lambda x: exp(x)
+            lambda x: log(x),
+            lambda x: exp(x),
         ),
         "Positive electrode exchange-current density [A.m-2]": (
-            lambda x: log(x), lambda x: exp(x)
+            lambda x: log(x),
+            lambda x: exp(x),
         ),
     },
     "LG_MJ1_variant_1": {
         "Positive electrode double-layer capacity [F.m-2]": (
-            lambda x: log(x), lambda x: exp(x)
+            lambda x: log(x),
+            lambda x: exp(x),
         ),
         "Positive electrode exchange-current density [A.m-2]": (
-            lambda x: log(x), lambda x: exp(x)
+            lambda x: log(x),
+            lambda x: exp(x),
         ),
         "SEI relative permittivity": (lambda x: log(x), lambda x: exp(x)),
         "SEI Bruggeman coefficient": (lambda x: x, lambda x: x),
     },
     "LG_MJ1_variant_2": {
         "Positive electrode double-layer capacity [F.m-2]": (
-            lambda x: log(x), lambda x: exp(x)
+            lambda x: log(x),
+            lambda x: exp(x),
         ),
         "Positive electrode exchange-current density [A.m-2]": (
-            lambda x: log(x), lambda x: exp(x)
+            lambda x: log(x),
+            lambda x: exp(x),
         ),
         "SEI relative permittivity": (lambda x: log(x), lambda x: exp(x)),
         "SEI Bruggeman coefficient": (lambda x: x, lambda x: x),
-    }
+    },
 }
 parameter_transforms_numpy = {
     "pouch_SPM": {
         "Positive particle diffusivity [m2.s-1]": (
-            lambda x: np.log(x), lambda x: np.exp(x)
+            lambda x: np.log(x),
+            lambda x: np.exp(x),
         ),
         "Positive electrode double-layer capacity [F.m-2]": (
-            lambda x: np.log(x), lambda x: np.exp(x)
+            lambda x: np.log(x),
+            lambda x: np.exp(x),
         ),
         "Positive electrode exchange-current density [A.m-2]": (
-            lambda x: np.log(x), lambda x: np.exp(x)
+            lambda x: np.log(x),
+            lambda x: np.exp(x),
         ),
     },
     "pouch_DFN": {
         "Positive electrode Bruggeman coefficient": (lambda x: x, lambda x: x),
         "Positive electrode conductivity [S.m-1]": (
-            lambda x: np.log(x), lambda x: np.exp(x)
+            lambda x: np.log(x),
+            lambda x: np.exp(x),
         ),
-        "Electrolyte diffusivity [m2.s-1]": (
-            lambda x: np.log(x), lambda x: np.exp(x)
-        ),
+        "Electrolyte diffusivity [m2.s-1]": (lambda x: np.log(x), lambda x: np.exp(x)),
         "Positive particle diffusivity [m2.s-1]": (
-            lambda x: np.log(x), lambda x: np.exp(x)
+            lambda x: np.log(x),
+            lambda x: np.exp(x),
         ),
         "Positive electrode double-layer capacity [F.m-2]": (
-            lambda x: np.log(x), lambda x: np.exp(x)
+            lambda x: np.log(x),
+            lambda x: np.exp(x),
         ),
         "Positive electrode exchange-current density [A.m-2]": (
-            lambda x: np.log(x), lambda x: np.exp(x)
+            lambda x: np.log(x),
+            lambda x: np.exp(x),
         ),
     },
     "LG_MJ1_variant_1": {
         "Positive electrode double-layer capacity [F.m-2]": (
-            lambda x: np.log(x), lambda x: np.exp(x)
+            lambda x: np.log(x),
+            lambda x: np.exp(x),
         ),
         "Positive electrode exchange-current density [A.m-2]": (
-            lambda x: np.log(x), lambda x: np.exp(x)
+            lambda x: np.log(x),
+            lambda x: np.exp(x),
         ),
-        "SEI relative permittivity": (
-            lambda x: np.log(x), lambda x: np.exp(x)
-        ),
+        "SEI relative permittivity": (lambda x: np.log(x), lambda x: np.exp(x)),
         "SEI Bruggeman coefficient": (lambda x: x, lambda x: x),
     },
     "LG_MJ1_variant_2": {
         "Positive electrode double-layer capacity [F.m-2]": (
-            lambda x: np.log(x), lambda x: np.exp(x)
+            lambda x: np.log(x),
+            lambda x: np.exp(x),
         ),
         "Positive electrode exchange-current density [A.m-2]": (
-            lambda x: np.log(x), lambda x: np.exp(x)
+            lambda x: np.log(x),
+            lambda x: np.exp(x),
         ),
-        "SEI relative permittivity": (
-            lambda x: np.log(x), lambda x: np.exp(x)
-        ),
+        "SEI relative permittivity": (lambda x: np.log(x), lambda x: np.exp(x)),
         "SEI Bruggeman coefficient": (lambda x: x, lambda x: x),
-    }
+    },
 }
 
 
 def Z_SEI(f, parameters):
     """
-        Impedance of the Solid-Electrolyte Interphase (Single2019).
+    Impedance of the Solid-Electrolyte Interphase (Single2019).
 
-        :param f:
-            An array of the frequencies to evaluate.
-        :param parameters:
-            A dictionary of the model parameters.
-        :returns:
-            The evaluated impedances as an array.
-        """
+    :param f:
+        An array of the frequencies to evaluate.
+    :param parameters:
+        A dictionary of the model parameters.
+    :returns:
+        The evaluated impedances as an array.
+    """
 
     εₙ = parameters["Negative electrode porosity"]
     βₙ = parameters["Negative electrode Bruggeman coefficient (electrolyte)"]
@@ -217,33 +225,38 @@ def Z_SEI(f, parameters):
     k_electrolyte = (1 - 1j) * sqrt(εₙ ** (-βₙ) * 2 * pi * f / (2 * Dₑ))
     k_SEI = (1 - 1j) * sqrt(ε_SEI ** (1 - β_SEI) * 2 * pi * f / (2 * Dₑ))
     Theta = (
-        - (nₚ + nₙ) / (nₚ * nₙ) / (zₚ_salt * zₙ_salt * F**2)
-        * ρₑ**2 / (ρ_N * tilde_ρ_N) * one_plus_dlnf_dlnc
+        -(nₚ + nₙ)
+        / (nₚ * nₙ)
+        / (zₚ_salt * zₙ_salt * F**2)
+        * ρₑ**2
+        / (ρ_N * tilde_ρ_N)
+        * one_plus_dlnf_dlnc
     )
-    Psi = (
-        1 - ε_SEI ** ((1 + β_SEI) / 2)
-        * tan(k_electrolyte * L_electrolyte_for_SEI_model) * tan(k_SEI * L_SEI)
-    )
+    Psi = 1 - ε_SEI ** ((1 + β_SEI) / 2) * tan(
+        k_electrolyte * L_electrolyte_for_SEI_model
+    ) * tan(k_SEI * L_SEI)
     Z_D_SEI = (
-        L_SEI * Theta / (Dₑ * ε_SEI ** β_SEI) * (t_SEI_minus - ρₑ_plus / ρₑ)**2
-        * tan(k_SEI * L_SEI) / (Psi * k_SEI * L_SEI)
+        L_SEI
+        * Theta
+        / (Dₑ * ε_SEI**β_SEI)
+        * (t_SEI_minus - ρₑ_plus / ρₑ) ** 2
+        * tan(k_SEI * L_SEI)
+        / (Psi * k_SEI * L_SEI)
     )
 
     return 1 / (2 * pi * 1j * f * C_SEI + 1 / (R_SEI + Z_D_SEI))
 
 
 def preprocess_data(data_index, electrode, cell_name):
-    with open('../../data/Gunther2025/impedance_ocv_alignment.json', 'r') as f:
+    with open("../../data/Gunther2025/impedance_ocv_alignment.json") as f:
         ocv_alignment = json.load(f)[cell_name]
-    raw_data_index = ocv_alignment['indices'].index(data_index)
-    soc = ocv_alignment[electrode.capitalize() + ' electrode SOC [-]'][
-        raw_data_index
-    ]
+    raw_data_index = ocv_alignment["indices"].index(data_index)
+    soc = ocv_alignment[electrode.capitalize() + " electrode SOC [-]"][raw_data_index]
     if cell_name == "18650_LG_3500_MJ1_EIS_anode_discharge":
         directory = "../../Kuhn2026/"
     else:
         directory = "../../Gunther2025/"
-    data = read_parquet_table(directory + cell_name + '.parquet', 'impedance')
+    data = read_parquet_table(directory + cell_name + ".parquet", "impedance")
 
     frequencies = tensor(data.frequencies[raw_data_index])
     impedances = tensor(data.complex_impedances[raw_data_index])
@@ -268,16 +281,20 @@ def composed_model(
     # "surface form": "differential" enables surface capacitance.
     model_options = {
         "surface form": "differential",
-        "working electrode": working_electrode
+        "working electrode": working_electrode,
     }
     if electrolyte:
         model = pybamm.lithium_ion.DFN(options=model_options)
     else:
         model = pybamm.lithium_ion.SPM(options=model_options)
     discretization = {
-        'order_s_n': 10, 'order_s_p': 10, 'order_e': 10,
-        'volumes_e_n': 1, 'volumes_e_s': 1, 'volumes_e_p': 1,
-        'halfcell': False
+        "order_s_n": 10,
+        "order_s_p": 10,
+        "order_e": 10,
+        "volumes_e_n": 1,
+        "volumes_e_s": 1,
+        "volumes_e_p": 1,
+        "halfcell": False,
     }
     eis_sim = pybammeis.EISSimulation(
         model,
@@ -352,10 +369,11 @@ def drt_simulator(
     results = []
     for drt_tau, drt_resistance, _ in drt_results:
         num_data_peaks = num_data_peaks or len(drt_tau)
-        results.append(tensor([
-            [[dr, dt]] * num_data_peaks
-            for dr, dt in zip(drt_tau, drt_resistance)
-        ]).log())
+        results.append(
+            tensor(
+                [[[dr, dt]] * num_data_peaks for dr, dt in zip(drt_tau, drt_resistance)]
+            ).log()
+        )
     return results
 
 
@@ -415,7 +433,7 @@ def automated_model_assessment(
         model_initial_samples=48,
         mean=mean,
         bounds=bounds,
-        prior='Uniform',
+        prior="Uniform",
         use_bolfi=False,
         transforms=transforms,
         disable_numpy_mode=True,
@@ -440,18 +458,18 @@ def automated_model_assessment(
     def distance_function_all(observations):
         # Distance of every simulator peak to every data peak.
         num_sim_peaks = observations.shape[1]
-        return (
-            (observations - sober_wrapper.data) * sober_wrapper.weights
-        ).view(observations.shape[0], -1).norm(dim=1).to(
+        return ((observations - sober_wrapper.data) * sober_wrapper.weights).view(
+            observations.shape[0], -1
+        ).norm(dim=1).to(
             device=sober_wrapper.tm.device, dtype=sober_wrapper.tm.dtype
-        ) / (num_sim_peaks / num_data_peaks)**0.5
+        ) / (num_sim_peaks / num_data_peaks) ** 0.5
 
     def distance_function_nearest(observations):
         # Distance of every simulator peak to its nearest data peak.
         num_sim_peaks = observations.shape[1]
         peak_distances = (
             (observations - sober_wrapper.data) * sober_wrapper.weights
-        ).norm(dim=3) / (num_sim_peaks / num_data_peaks)**0.5
+        ).norm(dim=3) / (num_sim_peaks / num_data_peaks) ** 0.5
         distances = zeros(observations.shape[0]).to(
             device=sober_wrapper.tm.device, dtype=sober_wrapper.tm.dtype
         )
@@ -459,7 +477,9 @@ def automated_model_assessment(
             pd_entry = peak_distances[i].tolist()
             for _ in range(num_sim_peaks):
                 nearest = tensor(pd_entry).argmin()
-                distances[i] += pd_entry[nearest // num_data_peaks][nearest % num_data_peaks]
+                distances[i] += pd_entry[nearest // num_data_peaks][
+                    nearest % num_data_peaks
+                ]
                 pd_entry.pop(nearest // num_data_peaks)
         return distances
 
@@ -475,7 +495,7 @@ def automated_model_assessment(
 
     for _ in range(18):
         raw_taken_samples = sober_wrapper.run_BASQ(
-            integration_nodes=3**len(variable_parameters),
+            integration_nodes=3 ** len(variable_parameters),
             visualizations=False,
             return_raw_samples=True,
             verbose=True,
@@ -491,7 +511,7 @@ def automated_model_assessment(
             verbose=True,
         )
     basq_results = sober_wrapper.run_BASQ(
-        integration_nodes=3**len(variable_parameters),
+        integration_nodes=3 ** len(variable_parameters),
         visualizations=False,
         return_raw_samples=True,
         verbose=True,
@@ -518,26 +538,31 @@ def visualize_automated_assessment(
         log_approx_variance_marginal_likelihood,
     ) = basq_results
     filename = (
-        cell_name + "_" + prior_name
-        + "_soc_" + '{:.3g}'.format(soc) + "_"
+        cell_name
+        + "_"
+        + prior_name
+        + "_soc_"
+        + f"{soc:.3g}"
+        + "_"
         + ("lithiation" if lithiation else "delithiation")
     )
-    with open(filename + "_posterior.json", 'w') as f:
-        json.dump({
-            "variable_parameters": variable_parameters,
-            "diagonalization": sober_wrapper.diagonalization.tolist(),
-            "bounds": sober_wrapper.bounds.tolist(),
-            "diag_order": sober_wrapper.diag_order,
-            "raw_taken_samples": raw_taken_samples.numpy().tolist(),
-        }, f)
+    with open(filename + "_posterior.json", "w") as f:
+        json.dump(
+            {
+                "variable_parameters": variable_parameters,
+                "diagonalization": sober_wrapper.diagonalization.tolist(),
+                "bounds": sober_wrapper.bounds.tolist(),
+                "diag_order": sober_wrapper.diag_order,
+                "raw_taken_samples": raw_taken_samples.numpy().tolist(),
+            },
+            f,
+        )
     kde_posterior = gaussian_kde(raw_taken_samples.numpy().T)
     raw_posterior_resamples = kde_posterior.resample(32)
     posterior_resamples_pdf = kde_posterior(raw_posterior_resamples)
     alphas = posterior_resamples_pdf * (0.5 / posterior_resamples_pdf.max())
     posterior_resamples = sober_wrapper.reverse_transform(
-        sober_wrapper.denormalize_input(
-            tensor(raw_posterior_resamples.T)
-        )
+        sober_wrapper.denormalize_input(tensor(raw_posterior_resamples.T))
     )
     parallel_arguments = [
         (trial, frequencies, cell_name, soc, electrolyte, variable_parameters)
@@ -556,10 +581,10 @@ def visualize_automated_assessment(
         ax_imp,
         frequencies.detach().numpy(),
         impedances.detach().numpy(),
-        ls=':',
+        ls=":",
         lw=2,
         title_text=title_text,
-        legend_text="experiment"
+        legend_text="experiment",
     )
     nyquist_plot(
         fig_imp,
@@ -596,7 +621,7 @@ def visualize_automated_assessment(
         ax_imp.set_xlim(0, 12.9)
         ax_imp.set_ylim(0, 12.9)
     """
-    fig_imp.savefig(filename + ".pdf", bbox_inches='tight', pad_inches=0.0)
+    fig_imp.savefig(filename + ".pdf", bbox_inches="tight", pad_inches=0.0)
     plt.show()
 
 
@@ -634,10 +659,12 @@ if __name__ == "__main__":
         three_electrode = "positive"
         reference_electrode_location = 1.0
     if "variant_2" in prior_name:
-        parameters.update({
-            "Positive electrode double-layer capacity [F.m-2]": 3e-2,
-            "SEI relative permittivity": 20.0,
-        })
+        parameters.update(
+            {
+                "Positive electrode double-layer capacity [F.m-2]": 3e-2,
+                "SEI relative permittivity": 20.0,
+            }
+        )
 
     parameter_range = parameter_ranges[prior_name]
     parameter_transform = parameter_transforms[prior_name]
@@ -658,9 +685,9 @@ if __name__ == "__main__":
     frequencies, impedances, soc = preprocess_data(data_index, electrode, cell_name)
     parameters[electrode.capitalize() + " electrode SOC"] = soc
 
-    with open('impedance_ocv_alignment.json', 'r') as f:
+    with open("impedance_ocv_alignment.json") as f:
         ocv_alignment = json.load(f)[cell_name]
-    raw_data_index = ocv_alignment['indices'].index(data_index)
+    raw_data_index = ocv_alignment["indices"].index(data_index)
     with open("drt_finetuning.json") as f:
         drt_settings = json.load(f)
         lambda_value = drt_settings[cell_name]["lambda"][raw_data_index]
@@ -684,15 +711,13 @@ if __name__ == "__main__":
 
     start = find_occurrences(frequencies, start_frequency)[0]
     end = find_occurrences(frequencies, end_frequency)[0]
-    optimizer_frequencies = frequencies[start:end + 1:subsampling]
-    optimizer_impedances = impedances[start:end + 1:subsampling]
+    optimizer_frequencies = frequencies[start : end + 1 : subsampling]
+    optimizer_impedances = impedances[start : end + 1 : subsampling]
 
     unknowns = {key: parameter_range[key] for key in variable_parameters}
     transform_unknowns = {
-        key: (
-            parameter_transform_numpy[key][1],
-            parameter_transform_numpy[key][0]
-        ) for key in variable_parameters
+        key: (parameter_transform_numpy[key][1], parameter_transform_numpy[key][0])
+        for key in variable_parameters
     }
 
     # Make sure that no function parameters try to get passed as numbers.
@@ -700,15 +725,17 @@ if __name__ == "__main__":
         if "function" in str(type(parameters[key])):
             forward = transform_unknowns[key][0]
             backward = transform_unknowns[key][1]
-            parameters[key] = forward(0.5 * (
-                backward(unknowns[key][0]) + backward(unknowns[key][1])
-            ))
+            parameters[key] = forward(
+                0.5 * (backward(unknowns[key][0]) + backward(unknowns[key][1]))
+            )
 
     mean = tensor([parameters[key] for key in variable_parameters])
-    bounds = tensor([
-        [parameter_range[key][0] for key in variable_parameters],
-        [parameter_range[key][1] for key in variable_parameters],
-    ])
+    bounds = tensor(
+        [
+            [parameter_range[key][0] for key in variable_parameters],
+            [parameter_range[key][1] for key in variable_parameters],
+        ]
+    )
     transforms = [parameter_transform[key] for key in variable_parameters]
 
     ######################################
@@ -736,12 +763,16 @@ if __name__ == "__main__":
     ############################################
 
     filename = (
-        cell_name + "_" + prior_name
-        + "_soc_" + '{:.3g}'.format(soc) + "_"
+        cell_name
+        + "_"
+        + prior_name
+        + "_soc_"
+        + f"{soc:.3g}"
+        + "_"
         + ("lithiation" if lithiation else "delithiation")
         + ".log"
     )
-    with open(filename, 'w') as f:
+    with open(filename, "w") as f:
         with redirect_stdout(f):
             sober_wrapper, basq_results = automated_model_assessment(
                 optimizer_frequencies,
