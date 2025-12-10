@@ -30,7 +30,7 @@ from ._utils import add_spaces, is_numeric, FailedVariable, FailedSolution, Symb
 #
 # Dataset class
 #
-from ._dataset import Dataset, import_pyprobe_result
+from ._dataset import Dataset, Datasets, import_pyprobe_result
 
 #
 # Transformation classes

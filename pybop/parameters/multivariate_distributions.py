@@ -6,6 +6,25 @@ from scipy.linalg import sqrtm
 from pybop.parameters.distributions import Distribution
 
 
+def insert_x_at_dim(other, x, dim):
+    """
+    Inserts each element of x at dim in other.
+
+    Parameters
+    ----------
+    other : numpy.ndarray
+        The fixed other variables in all dimensions but dim.
+    x : numpy.ndarray
+        The point(s) at which to evaluate in dim.
+    dim : int
+        The dimension at which to insert x.
+    """
+    x = np.atleast_1d(x)
+    return np.array(
+        [np.concatenate(other[: dim - 1], [entry], other[dim - 1 :]) for entry in x]
+    )
+
+
 class BaseMultivariateDistribution(Distribution):
     """
     A base class for defining multivariate parameter distributions.
@@ -29,8 +48,51 @@ class BaseMultivariateDistribution(Distribution):
     def pdf(self, x):
         return self.distribution.pdf(x, **self.properties)
 
+    def pdf_marginal(self, x, dim):
+        """
+        Integrates the probability density function (PDF) at x down to
+        one variable.
+
+        Parameters
+        ----------
+        x : numpy.ndarray
+            The point(s) at which to evaluate the pdf.
+        dim : int
+            The dimension to which to reduce the pdf to.
+
+        Returns
+        -------
+        float
+            The marginal probability density function value at x in dim.
+        """
+        unnormalized_pdf = integrate.nquad(
+            lambda y: self.pdf(insert_x_at_dim(y, x, dim)),
+            [[-np.inf, np.inf] * (self._n_parameters - 1)],
+        )[0]
+        return unnormalized_pdf / np.sum(unnormalized_pdf)
+
     def logpdf(self, x):
         return self.distribution.logpdf(x, **self.properties)
+
+    def logpdf_marginal(self, x, dim):
+        """
+        Integrates the logarithm of the probability density function
+        (PDF) at x down to one variable.
+
+        Parameters
+        ----------
+        x : numpy.ndarray
+            The point(s) at which to evaluate the PDF.
+        dim : int
+            The dimension to which to reduce the PDF to.
+
+        Returns
+        -------
+        float
+            The log marginal probability density function value at x in
+            dim.
+        """
+        return np.log(self.pdf_marginal(x, dim))
 
     icdf = None
     """Multivariate distributions have no invertible CDF."""
@@ -155,6 +217,7 @@ class MultivariateGaussian(BaseMultivariateDistribution):
         super().__init__(distribution=stats.multivariate_normal)
         self.name = "MultivariateGaussian"
         self.properties = {"mean": mean, "cov": covariance}
+        self.bounds = bounds
         self.sigma2 = covariance
         self._n_parameters = len(mean)
 

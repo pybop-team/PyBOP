@@ -179,6 +179,44 @@ class Dataset:
         return Dataset(data, domain=self.domain)
 
 
+class Datasets:
+    """
+    Represents a collection of experimental observations.
+    """
+
+    def __init__(
+        self, datasets: list, domain="Time [s]", control_variable="Current function [A]"
+    ):
+        self.datasets = []
+        self.domain = domain
+        self.control_variable = control_variable
+        for dataset in datasets:
+            if not isinstance(dataset, Dataset):
+                dataset = Dataset(data_dictionary=dataset, domain=domain)
+            self.datasets.append(dataset)
+
+    def get_subset(self, indices):
+        return Datasets(
+            [self.datasets[i] for i in indices], self.domain, self.control_variable
+        )
+
+    def __iter__(self):
+        self.count = -1
+        return self
+
+    def __next__(self):
+        self.count += 1
+        if self.count >= len(self):
+            raise StopIteration
+        return self.datasets[self.count]
+
+    def __len__(self):
+        return len(self.datasets)
+
+    def __getitem__(self, i):
+        return self.datasets[i]
+
+
 def import_pyprobe_result(
     result: PyprobeResult,
     pybop_columns: list[str] | None = None,
