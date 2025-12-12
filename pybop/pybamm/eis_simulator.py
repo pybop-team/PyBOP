@@ -256,7 +256,7 @@ class EISSimulator(BaseSimulator):
 
         return self._catch_errors(inputs)
 
-    def batch_solve(
+    def solve_batch(
         self, inputs: "list[Inputs]" = None, calculate_sensitivities: bool = False
     ) -> list[Solution | FailedSolution]:
         """

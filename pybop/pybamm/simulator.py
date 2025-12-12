@@ -290,11 +290,11 @@ class Simulator(BaseSimulator):
         # Convert and standardise inputs as a list of candidate dictionaries
         inputs = inputs or {}
         if not isinstance(inputs, list):
-            return self.batch_solve([inputs], calculate_sensitivities)[0]
+            return self.solve_batch([inputs], calculate_sensitivities)[0]
 
-        return self.batch_solve(inputs, calculate_sensitivities)
+        return self.solve_batch(inputs, calculate_sensitivities)
 
-    def batch_solve(
+    def solve_batch(
         self,
         inputs: "list[Inputs]",
         calculate_sensitivities: bool = False,
