@@ -87,6 +87,7 @@ class Simulator(BaseSimulator):
         for name, param in parameter_values.items():
             if isinstance(param, Parameter):
                 parameters.add(name, param)
+                self._parameter_values.update({name: "[input]"})
             elif isinstance(param, pybamm.InputParameter):
                 parameters.add(name, Parameter())
         super().__init__(parameters=parameters)
@@ -129,10 +130,8 @@ class Simulator(BaseSimulator):
         self.verbose = False
 
         # State
-        self._built_model = None
-        self._sim_experiment = None
+        self._simulation = None
         self._solve = None
-        self._calculate_sensitivities = False
 
         # Build
         self._input_parameter_names = self.parameters.names
@@ -199,21 +198,18 @@ class Simulator(BaseSimulator):
         if self._experiment is None and self._initial_state is not None:
             return True
 
-        # Test whether the model needs rebuilding by marking parameters as inputs
-        unmodified_parameter_values = self._parameter_values.copy()
-        for param in self._input_parameter_names:
-            self._parameter_values.update({param: "[input]"})
-
-        # If the model builds successfully with inputs, it does not need rebuilding
+        # If the model builds successfully with empty inputs, it does not need rebuilding
         try:
-            self.build_model()
+            self.create_simulation()
+            self._simulation.build(initial_soc=self._initial_state, inputs=None)
             requires_model_rebuild = False
         except (ValueError, TypeError, IndexError):
-            self._built_model = None
             requires_model_rebuild = True
 
+        # Reset
+        self._simulation = None
+
         if requires_model_rebuild or build_every_time:
-            self._parameter_values = unmodified_parameter_values  # reset
             return True
         return False
 
@@ -257,24 +253,18 @@ class Simulator(BaseSimulator):
         # Speed up the solver with output_variables if provided
         self._solver.output_variables = output_variables or []
 
-        if self._experiment is not None:
-            # Build if only building once, otherwise build on evalution
-            if not self._requires_model_rebuild:
-                self._sim_experiment = self._create_experiment_simulation()
-                self._solve = self._simulate_experiment_without_rebuild
-            else:
-                self._solve = self._simulate_experiment_with_rebuild
-
-        else:
-            # Remove all voltage-based events when not using an experiment
+        # Remove all voltage-based events when not using an experiment
+        if self._experiment is None:
             self._model.events = [e for e in self._model.events if "[V]" not in e.name]
 
-            # Build if only building once, otherwise build on evalution
-            if not self._requires_model_rebuild:
-                self.build_model()
-                self._solve = self._solve_in_time_without_rebuild
-            else:
-                self._solve = self._solve_in_time_with_rebuild
+        # Build if only building once, otherwise build on evaluation
+        if not self._requires_model_rebuild:
+            self.create_simulation()
+            if self._experiment is None:
+                self._simulation.build(initial_soc=self._initial_state)
+            self._solve = self._simulate_without_rebuild
+        else:
+            self._solve = self._simulate_with_rebuild
 
     def solve(
         self,
@@ -339,12 +329,19 @@ class Simulator(BaseSimulator):
         # Set whether to compute the sensitivities
         if calculate_sensitivities and not self.has_sensitivities:
             raise ValueError("Sensitivities are not available.")
-        self._calculate_sensitivities = calculate_sensitivities
 
-        # The underlying solve method is one of four methods set during initialisation
-        return self._process_solutions(self._catch_errors(inputs))
+        # Gather solve options
+        options = {
+            "initial_soc": self._initial_state,
+            "calculate_sensitivities": calculate_sensitivities,
+        }
+        if self._experiment is None:
+            options.update({"t_eval": self._t_eval, "t_interp": self._t_interp})
 
-    def _catch_errors(self, inputs: "list[Inputs]"):
+        # The underlying solve method is one of two methods set during initialisation
+        return self._process_solutions(self._catch_errors(inputs, options))
+
+    def _catch_errors(self, inputs: "list[Inputs]", options: dict):
         if not self.debug_mode:
             try:
                 with warnings.catch_warnings():
@@ -352,7 +349,7 @@ class Simulator(BaseSimulator):
                         warnings.filterwarnings(
                             "error", category=UserWarning, message=pattern
                         )
-                    return self._solve(inputs)
+                    return self._solve(inputs, options)
 
             except (
                 SolverError,
@@ -371,7 +368,7 @@ class Simulator(BaseSimulator):
                     solutions = []
                     for x in inputs:
                         try:
-                            solutions += self._solve([x])
+                            solutions += self._solve([x], options)
                         except (
                             SolverError,
                             ZeroDivisionError,
@@ -398,117 +395,47 @@ class Simulator(BaseSimulator):
                             )
                     return solutions
 
-        return self._solve(inputs)
+        return self._solve(inputs, options)
 
-    """ ______ ______ ATTRIBUTES FOR SOLVING IN TIME, WITHOUT AN EXPERIMENT ______ ______  """
-
-    def rebuild_model(self, inputs: "Inputs") -> None:
-        """Update the parameter values and rebuild the model, if required."""
-        if not self._requires_model_rebuild:
-            # Parameter values will be passed to the solver as inputs
-            return
-
-        # Update the parameter values and build again
-        self._parameter_values.update(inputs)
-        self.build_model()
-
-    def build_model(self) -> None:
-        """Build the model using the given parameter values."""
-        # Build pybamm model if not already built
-        if not self._model.built:
-            self._model.build_model()
-
-        model = self._model.new_copy()
-        geometry = deepcopy(self._geometry)
-
-        if self._experiment is None and self._initial_state is not None:
-            self._parameter_values.set_initial_state(
-                self._initial_state, param=model.param, options=model.options
-            )
-
-        self._parameter_values.process_geometry(geometry)
-        self._parameter_values.process_model(model)
-
-        mesh = pybamm.Mesh(geometry, self._submesh_types, self._var_pts)
-        disc = pybamm.Discretisation(
-            mesh, self._spatial_methods, **self._discretisation_kwargs
-        )
-        disc.process_model(model)
-
-        self._built_model = model
-        self._solver = self._solver.copy()  # reset solver for new model
-
-    def _solve_in_time_without_rebuild(
-        self, inputs: "list[Inputs]"
-    ) -> list[pybamm.Solution]:
-        """Solve in time without rebuilding the PyBaMM model."""
-        if len(inputs) == 1:
-            solutions = [self._pybamm_solve(inputs=inputs[0])]
-        else:
-            solutions = self._pybamm_solve(inputs=inputs)
-        return solutions
-
-    def _solve_in_time_with_rebuild(
-        self, inputs: "list[Inputs]"
-    ) -> list[pybamm.Solution]:
-        """Solve in time, rebuilding the model for each set of inputs."""
-        solutions = []
-        for x in inputs:
-            self.rebuild_model(x)
-            solutions.append(self._pybamm_solve(inputs=None))
-        return solutions
-
-    def _pybamm_solve(
-        self, inputs: "Inputs | list[Inputs] | None"
-    ) -> pybamm.Solution | list[pybamm.Solution]:
-        """A function that runs the simulation using the built model."""
-        return self._solver.solve(
-            model=self._built_model,
-            inputs=inputs,
-            t_eval=self._t_eval,
-            t_interp=self._t_interp,
-            calculate_sensitivities=self._calculate_sensitivities,
-        )
-
-    """ ______ ______ ______ ATTRIBUTES FOR SIMULATING AN EXPERIMENT ______ ______ ______  """
-
-    def _create_experiment_simulation(self) -> pybamm.Simulation:
-        """Create a simulation with current configuration and an experiment."""
-        return pybamm.Simulation(
-            self._model,
+    def create_simulation(self) -> pybamm.Simulation:
+        """Create a simulation with current configuration and optional experiment."""
+        self._simulation = pybamm.Simulation(
+            self._model.new_copy(),
             parameter_values=self._parameter_values,
             experiment=self._experiment,
-            solver=self._solver,
-            geometry=self._geometry,
+            solver=self._solver.copy(),
+            geometry=deepcopy(self._geometry),
             submesh_types=self._submesh_types,
             var_pts=self._var_pts,
             spatial_methods=self._spatial_methods,
             discretisation_kwargs=self._discretisation_kwargs,
         )
 
-    def _simulate_experiment_without_rebuild(
-        self, inputs: "list[Inputs]"
+    def _simulate_without_rebuild(
+        self, inputs: "list[Inputs]", options: dict
     ) -> list[pybamm.Solution]:
-        """Simulate an experiment without rebuilding the PyBaMM model."""
-        solutions = []
-        for x in inputs:
-            sol = self._sim_experiment.solve(inputs=x, initial_soc=self._initial_state)
-            solutions.append(sol)
-        return solutions
+        """Simulate without rebuilding the PyBaMM model."""
+        if len(inputs) == 1:
+            return [self._simulation.solve(inputs=inputs[0], **options)]
 
-    def _simulate_experiment_with_rebuild(
-        self, inputs: "list[Inputs]"
+        return self._simulation.solve(inputs=inputs, **options)
+
+    def _simulate_with_rebuild(
+        self, inputs: "list[Inputs]", options: dict
     ) -> list[pybamm.Solution]:
-        """Simulate an experiment, rebuilding the simulation for each set of inputs."""
+        """Simulate, rebuilding the simulation for each set of inputs."""
+        unmodified_parameter_values = self._parameter_values.copy()
+
         solutions = []
         for x in inputs:
             # Update parameters and create new simulation
             self._parameter_values.update(x)
-            sim = self._create_experiment_simulation()
-            solutions.append(sim.solve(initial_soc=self._initial_state))
-        return solutions
+            self.create_simulation()
+            solutions.append(self._simulation.solve(**options))
 
-    """ ______ ______ ______ ______ GENERAL ATTRIBUTES ______ ______ ______ ______ ______  """
+        self._simulation = None
+        self._parameter_values = unmodified_parameter_values
+        return solutions
 
     def _process_solutions(
         self, solutions: list[pybamm.Solution]
@@ -527,7 +454,7 @@ class Simulator(BaseSimulator):
 
     @property
     def built_model(self):
-        return self._built_model
+        return None if self._simulation is None else self._simulation._built_model  # noqa: SLF001
 
     @property
     def input_parameter_names(self):
@@ -559,8 +486,7 @@ class Simulator(BaseSimulator):
 
     def set_output_variables(self, value: list[str] | None):
         self._output_variables = value
-        if self.experiment is None:
-            self._set_up_solution_method(output_variables=value)
+        self._set_up_solution_method(output_variables=value)
 
     @property
     def requires_model_rebuild(self):
