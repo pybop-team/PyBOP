@@ -1,4 +1,3 @@
-import warnings
 from copy import copy, deepcopy
 from typing import TYPE_CHECKING
 
@@ -118,20 +117,11 @@ class Simulator(BaseSimulator):
         self._spatial_methods = spatial_methods or model.default_spatial_methods
         self._discretisation_kwargs = discretisation_kwargs or {"check_model": True}
 
-        # Warnings
-        self.exception = [
-            "These parameter values are infeasible."
-        ]  # TODO: Update to a utility function and add to it on exception creation
-        self.warning_patterns = [
-            "Ah is greater than",
-            "Non-physical point encountered",
-        ]
-        self.debug_mode = False
-        self.verbose = False
-
         # State
         self._simulation = None
         self._solve = None
+        self.debug_mode = False
+        self.verbose = False
 
         # Build
         self._input_parameter_names = self.parameters.names
@@ -249,12 +239,11 @@ class Simulator(BaseSimulator):
         self, output_variables: list[str] | None = None
     ) -> None:
         """Configure the mode of operation."""
-
-        # Speed up the solver with output_variables if provided
-        self._solver.output_variables = output_variables or []
-
-        # Remove all voltage-based events when not using an experiment
         if self._experiment is None:
+            # Speed up the solver with output_variables if provided
+            self._solver.output_variables = output_variables or []
+
+            # Remove all voltage-based events when not using an experiment
             self._model.events = [e for e in self._model.events if "[V]" not in e.name]
 
         # Build if only building once, otherwise build on evaluation
@@ -344,56 +333,35 @@ class Simulator(BaseSimulator):
     def _catch_errors(self, inputs: "list[Inputs]", options: dict):
         if not self.debug_mode:
             try:
-                with warnings.catch_warnings():
-                    for pattern in self.warning_patterns:
-                        warnings.filterwarnings(
-                            "error", category=UserWarning, message=pattern
-                        )
-                    return self._solve(inputs, options)
+                return self._solve(inputs, options)
 
             except (
                 SolverError,
                 ZeroDivisionError,
                 RuntimeError,
                 ValueError,
-                UserWarning,
                 Exception,
             ):
                 # Try separately
-                with warnings.catch_warnings():
-                    for pattern in self.warning_patterns:
-                        warnings.filterwarnings(
-                            "error", category=UserWarning, message=pattern
+                solutions = []
+                for x in inputs:
+                    try:
+                        solutions += self._solve([x], options)
+                    except (
+                        SolverError,
+                        ZeroDivisionError,
+                        RuntimeError,
+                        ValueError,
+                        Exception,
+                    ) as e:
+                        if self.verbose:
+                            print(f"Ignoring this sample due to: {e}")
+                        solutions.append(
+                            FailedSolution(
+                                self.output_variables, self._input_parameter_names
+                            )
                         )
-                    solutions = []
-                    for x in inputs:
-                        try:
-                            solutions += self._solve([x], options)
-                        except (
-                            SolverError,
-                            ZeroDivisionError,
-                            RuntimeError,
-                            ValueError,
-                        ) as e:
-                            if (
-                                isinstance(e, ValueError)
-                                and str(e) not in self.exception
-                            ):
-                                raise  # Raise the error if it doesn't match the expected list
-                            solutions.append(
-                                FailedSolution(
-                                    self.output_variables, self._input_parameter_names
-                                )
-                            )
-                        except (UserWarning, Exception) as e:
-                            if self.verbose:
-                                print(f"Ignoring this sample due to: {e}")
-                            solutions.append(
-                                FailedSolution(
-                                    self.output_variables, self._input_parameter_names
-                                )
-                            )
-                    return solutions
+                return solutions
 
         return self._solve(inputs, options)
 
@@ -486,7 +454,8 @@ class Simulator(BaseSimulator):
 
     def set_output_variables(self, value: list[str] | None):
         self._output_variables = value
-        self._set_up_solution_method(output_variables=value)
+        if self.experiment is None:
+            self._set_up_solution_method(output_variables=value)
 
     @property
     def requires_model_rebuild(self):

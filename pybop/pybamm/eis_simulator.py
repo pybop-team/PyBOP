@@ -100,7 +100,6 @@ class EISSimulator(BaseSimulator):
             discretisation_kwargs=discretisation_kwargs,
             build_every_time=build_every_time,
         )
-
         self.debug_mode = False
 
         # Initialise
@@ -289,9 +288,7 @@ class EISSimulator(BaseSimulator):
             for x in inputs:
                 try:
                     simulations.append(self._solve(x))
-                except (ZeroDivisionError, RuntimeError, ValueError) as e:
-                    if isinstance(e, ValueError) and str(e) not in self.exception:
-                        raise  # Raise the error if it doesn't match the expected list
+                except (ZeroDivisionError, RuntimeError, ValueError):
                     simulations.append(
                         FailedSolution(["Impedance"], [k for k in x.keys()])
                     )
@@ -372,8 +369,13 @@ class EISSimulator(BaseSimulator):
         return False
 
     @property
-    def exception(self):
-        return self._simulator.exception
+    def debug_mode(self):
+        return self._debug_mode
+
+    @debug_mode.setter
+    def debug_mode(self, value: bool):
+        self._debug_mode = value
+        self._simulator.debug_mode = value
 
     def copy(self):
         """Return a copy of the simulation."""
