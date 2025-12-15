@@ -184,10 +184,6 @@ class Simulator(BaseSimulator):
         if not self._input_parameter_names:
             return False
 
-        # All non-experiment protocols with an initial state require model rebuilding
-        if self._experiment is None and self._initial_state is not None:
-            return True
-
         # If the model builds successfully with empty inputs, it does not need rebuilding
         try:
             self.create_simulation()
