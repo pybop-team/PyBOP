@@ -8,7 +8,7 @@ import pytest
 from pints import PopulationBasedOptimiser
 
 import pybop
-from pybop._result import OptimisationResult
+from pybop.optimisers.base_optimiser import OptimisationResult
 from pybop.optimisers.pints_optimisers import AdamWImpl, IRPropPlusImpl
 
 

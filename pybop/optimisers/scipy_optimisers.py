@@ -6,9 +6,9 @@ import numpy as np
 from scipy.optimize import Bounds, OptimizeResult, differential_evolution, minimize
 
 import pybop
-from pybop import BaseOptimiser, PopulationEvaluator, ScalarEvaluator
+from pybop._evaluation import PopulationEvaluator, ScalarEvaluator
 from pybop._logging import Logger
-from pybop._result import OptimisationResult
+from pybop.optimisers.base_optimiser import BaseOptimiser, OptimisationResult
 from pybop.problems.problem import Problem
 
 __all__: list[str] = [
