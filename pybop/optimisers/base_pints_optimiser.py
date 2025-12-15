@@ -8,8 +8,9 @@ from pints import Optimiser as PintsOptimiser
 from pints import RectangularBoundaries as PintsRectangularBoundaries
 from pints import strfloat as PintsStrFloat
 
-from pybop import OptimisationResult, PopulationEvaluator, SequentialEvaluator
+from pybop._evaluation import PopulationEvaluator, SequentialEvaluator
 from pybop._logging import Logger
+from pybop._result import OptimisationResult
 from pybop.optimisers._adamw import AdamWImpl
 from pybop.optimisers._gradient_descent import GradientDescentImpl
 from pybop.optimisers.base_optimiser import BaseOptimiser, OptimiserOptions
@@ -230,7 +231,7 @@ class BasePintsOptimiser(BaseOptimiser):
 
         Returns
         -------
-        result : pybop.OptimisationResult
+        result : OptimisationResult
             The result of the optimisation including the optimised parameter values and cost.
 
         See Also

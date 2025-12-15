@@ -4,42 +4,40 @@ import numpy as np
 
 if TYPE_CHECKING:
     from pybop import BaseOptimiser, BaseSampler
-from pybop import Logger, plot
+from pybop import Logger, Problem, plot
 from pybop.parameters.multivariate_parameters import MultivariateParameters
 
 
-class OptimisationResult:
+class Result:
     """
-    Stores the result of the optimisation.
+    Stores the result produced by an optimiser or sampler.
 
     Attributes
     ----------
-    optim : pybop.BaseOptimiser
-        The optimisation object used to generate the results.
+    problem : pybop.Problem
+        The optimisation problem used to generate the results.
     logger : pybop.Logger
-        The log of the optimisation process.
+        The log of the optimisation or sampling process.
     time : float
         The time taken.
-    optim_name : str
-        The name of the optimiser.
+    method_name : str
+        The name of the optimiser or sampler.
     message : str
-        The reason for stopping given by the optimiser.
-    scipy_result : scipy.optimize.OptimizeResult, optional
-        The result obtained from a SciPy optimiser.
+        The reason for stopping given by the optimiser or sampler.
     """
 
     def __init__(
         self,
-        optim: "BaseOptimiser",
+        problem: Problem,
         logger: Logger,
         time: float,
-        optim_name: str | None = None,
+        method_name: str | None = None,
         message: str | None = None,
         scipy_result=None,
     ):
-        self._optim = optim
-        self._minimising = optim.problem.minimising
-        self.optim_name = optim_name
+        self._problem = problem
+        self._minimising = problem.minimising
+        self.method_name = method_name
         self.n_runs = 0
         self._best_run = None
         self._x = [logger.x_model_best]
@@ -58,19 +56,19 @@ class OptimisationResult:
         self._validate()
 
     @staticmethod
-    def combine(results: list["OptimisationResult"]) -> "OptimisationResult":
+    def combine(results: list["Result"]) -> "Result":
         """
-        Combine multiple OptimisationResult objects into a single one.
+        Combine multiple Result objects into a single one.
 
         Parameters
         ----------
-        results : list[OptimisationResult]
-            List of OptimisationResult objects to combine.
+        results : list[Result]
+            List of Result objects to combine.
 
         Returns
         -------
-        OptimisationResult
-            Combined OptimisationResult object.
+        Result
+            Combined Result object.
         """
         if len(results) == 0:
             raise ValueError("No results to combine.")
@@ -139,18 +137,18 @@ class OptimisationResult:
         """
         if not any(np.isfinite(self._best_cost)):
             raise ValueError(
-                f"Optimised parameters {self._optim.problem.parameters.to_dict(self._x[-1])} do not produce a finite cost value."
+                f"Optimised parameters {self._problem.parameters.to_dict(self._x[-1])} do not produce a finite cost value."
             )
 
     def __str__(self) -> str:
         """
-        A string representation of the OptimisationResult object.
+        A string representation of the Result object.
 
         Returns:
             str: A formatted string containing optimisation result information.
         """
         return (
-            f"OptimisationResult:\n"
+            f"Result:\n"
             f"  Best result from {self.n_runs} run(s).\n"
             f"  Initial parameters: {self.x0}\n"
             f"  Optimised parameters: {self.x}\n"
@@ -197,7 +195,7 @@ class OptimisationResult:
     @property
     def best_inputs(self) -> dict[str, np.ndarray]:
         """The best parameters as a dictionary."""
-        return self._optim.problem.parameters.to_dict(self.x)
+        return self._problem.parameters.to_dict(self.x)
 
     @property
     def best_cost(self) -> float:
@@ -230,9 +228,9 @@ class OptimisationResult:
         return self._get_single_or_all("_n_evaluations")
 
     @property
-    def optim(self) -> "BaseOptimiser":
+    def problem(self) -> Problem:
         """The optimisation problem."""
-        return self._optim
+        return self._problem
 
     @property
     def minimising(self) -> bool:
@@ -323,7 +321,57 @@ class OptimisationResult:
         return plot.contour(call_object=self, **kwargs)
 
 
-class SamplingResult(OptimisationResult):
+class OptimisationResult(Result):
+    """
+    Stores the result of the optimisation.
+
+    Attributes
+    ----------
+    optim : pybop.BaseOptimiser
+        The optimisation object used to generate the results.
+    logger : pybop.Logger
+        The log of the optimisation process.
+    time : float
+        The time taken.
+    optim_name : str
+        The name of the optimiser.
+    message : str
+        The reason for stopping given by the optimiser.
+    scipy_result : scipy.optimize.OptimizeResult, optional
+        The result obtained from a SciPy optimiser.
+    """
+
+    def __init__(
+        self,
+        optim: "BaseOptimiser",
+        logger: Logger,
+        time: float,
+        optim_name: str | None = None,
+        message: str | None = None,
+        scipy_result=None,
+    ):
+        self._optim = optim
+        super().__init__(
+            problem=self._optim.problem,
+            logger=logger,
+            time=time,
+            method_name=optim_name,
+            message=message,
+            scipy_result=scipy_result,
+        )
+
+    @property
+    def optim(self) -> "BaseOptimiser":
+        """The optimisation problem."""
+        return self._optim
+
+    @property
+    def optim_name(self) -> str:
+        """The name of the optimiser."""
+        return self.method_name
+
+
+class SamplingResult(Result):
     """
     Stores the result of the sampling.
 
@@ -352,12 +400,12 @@ class SamplingResult(OptimisationResult):
         sampler_name: str | None = None,
         message: str | None = None,
     ):
-        sampler.problem = sampler.log_pdf
+        self._sampler = sampler
         super().__init__(
-            optim=sampler,
+            problem=self._sampler.log_pdf,
             logger=logger,
             time=time,
-            optim_name=sampler_name,
+            method_name=sampler_name,
             message=message,
         )
         self.chains = chains
@@ -371,10 +419,10 @@ class BayesianOptimisationResult(OptimisationResult):
     Attributes
     ----------
     problem: pybop.Problem
-        The optimisation object used to generate the results.
+        The optimisation problem used to generate the results.
     x : ndarray
         The solution of the optimisation (in model space).
-    final_cost : float
+    best_cost : float
         The cost associated with the solution x.
     n_iterations : int or dict
         Number of iterations performed by the optimiser. Since Bayesian

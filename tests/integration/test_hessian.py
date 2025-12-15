@@ -95,11 +95,10 @@ class TestClassification:
         x = self.ground_truth
         bounds = problem.parameters.get_bounds()
         x0 = np.clip(x, bounds["lower"], bounds["upper"])
-        optim = pybop.XNES(problem)
         logger = pybop.Logger(minimising=problem.minimising)
         logger.iteration = 1
         logger.extend_log(x_search=[x0], x_model=[x0], cost=[problem(x0)])
-        result = pybop.OptimisationResult(optim=optim, logger=logger, time=1.0)
+        result = pybop.Result(problem=problem, logger=logger, time=1.0)
 
         info = pybop.classify_using_hessian(result)
         pybop.plot_hessian_eigenvectors(info, steps=3)
@@ -201,11 +200,10 @@ class TestClassification:
         if np.all(x == np.asarray([0.05, 0.05])):
             cost = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=0.002)
             problem = pybop.Problem(simulator, cost)
-            optim = pybop.XNES(problem)
             logger = pybop.Logger(minimising=problem.minimising)
             logger.iteration = 1
             logger.extend_log(x_search=[x], x_model=[x], cost=[problem(x)])
-            result = pybop.OptimisationResult(optim=optim, logger=logger, time=1.0)
+            result = pybop.Result(problem=problem, logger=logger, time=1.0)
 
             info = pybop.classify_using_hessian(result)
             assert info["message"] == "The optimiser has located a maximum."
@@ -242,11 +240,10 @@ class TestClassification:
         cost = pybop.SumOfPower(dataset, p=1)
         problem = pybop.Problem(simulator, cost)
         x = [0.001, 0]
-        optim = pybop.XNES(problem)
         logger = pybop.Logger(minimising=problem.minimising)
         logger.iteration = 1
         logger.extend_log(x_search=[x], x_model=[x], cost=[problem(x)])
-        result = pybop.OptimisationResult(optim=optim, logger=logger, time=1.0)
+        result = pybop.Result(problem=problem, logger=logger, time=1.0)
 
         info = pybop.classify_using_hessian(result)
         expected1 = (

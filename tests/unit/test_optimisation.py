@@ -8,6 +8,7 @@ import pytest
 from pints import PopulationBasedOptimiser
 
 import pybop
+from pybop._result import OptimisationResult
 from pybop.optimisers.pints_optimisers import AdamWImpl, IRPropPlusImpl
 
 
@@ -642,7 +643,7 @@ class TestOptimisation:
         assert result.n_iterations == 2
 
         assert (
-            str(result) == f"OptimisationResult:\n"
+            str(result) == f"Result:\n"
             f"  Best result from {result.n_runs} run(s).\n"
             f"  Initial parameters: {result.x0}\n"
             f"  Optimised parameters: {result.x}\n"
@@ -726,7 +727,7 @@ class TestOptimisation:
         )
 
         # Construct OptimisationResult
-        result = pybop.OptimisationResult(
+        result = OptimisationResult(
             optim=pybop.XNES(problem),
             optim_name="Test name",
             logger=logger,

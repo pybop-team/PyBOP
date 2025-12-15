@@ -51,7 +51,7 @@ class GITTPulseFit(BaseApplication):
         self,
         gitt_pulse: pybop.Dataset,
         initial_parameter_values: dict[str, float] | None = None,
-    ) -> pybop.OptimisationResult:
+    ) -> pybop.Result:
         # Update parameter values
         parameter_values = self.parameter_values.copy()
         if initial_parameter_values is not None:

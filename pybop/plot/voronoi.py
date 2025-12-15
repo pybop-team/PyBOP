@@ -4,7 +4,7 @@ import numpy as np
 from scipy.spatial import Voronoi, cKDTree
 
 if TYPE_CHECKING:
-    from pybop._result import OptimisationResult
+    from pybop._result import Result
 from pybop.plot.plotly_manager import PlotlyManager
 
 
@@ -227,7 +227,7 @@ def assign_nearest_value(x, y, f, xi, yi):
 
 
 def surface(
-    result: "OptimisationResult",
+    result: "Result",
     bounds=None,
     normalise=True,
     resolution=250,
@@ -239,7 +239,7 @@ def surface(
 
     Parameters:
     -----------
-    result : pybop.OptimisationResult
+    result : pybop.Result
         Optimisation result containing the history of parameter values and associated cost.
     bounds : numpy.ndarray, optional
         A 2x2 array specifying the [min, max] bounds for each parameter. If None, uses
@@ -257,7 +257,7 @@ def surface(
         `xaxis={"title": "Time [s]", font={"size":14}}`
     """
     points = result.x_model
-    parameters = result.optim.problem.parameters
+    parameters = result.problem.parameters
 
     if points[0].shape[0] != 2:
         raise ValueError("This plot method requires two parameters.")

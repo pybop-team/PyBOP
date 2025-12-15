@@ -106,7 +106,7 @@ from ._evaluation import PopulationEvaluator, ScalarEvaluator, SequentialEvaluat
 # Optimisation logging and result
 #
 from ._logging import Logger
-from ._result import OptimisationResult
+from ._result import Result
 
 #
 # Optimiser classes
