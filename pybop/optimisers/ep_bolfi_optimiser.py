@@ -409,7 +409,6 @@ class EP_BOLFI(BaseOptimiser):
         }
         return BayesianOptimisationResult(
             optim=self,
-            logger=self._logger,
             time=end - start,
             optim_name="EP-BOLFI",
             posterior=posterior,

@@ -252,7 +252,6 @@ class BasePintsSampler(BaseSampler):
 
         return SamplingResult(
             sampler=self,
-            logger=self._logger,
             time=self._total_time,
             chains=self._samples,
             sampler_name=self._samplers[0].name(),

@@ -375,7 +375,6 @@ class BasePintsOptimiser(BaseOptimiser):
 
         return OptimisationResult(
             optim=self,
-            logger=self._logger,
             time=total_time,
             optim_name=self.name,
             message=halt_message,

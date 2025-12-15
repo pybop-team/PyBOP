@@ -725,12 +725,13 @@ class TestOptimisation:
         logger.extend_log(
             x_search=[np.asarray([1e-3])], x_model=[np.asarray([1e-3])], cost=[0.1]
         )
+        optim = pybop.XNES(problem)
+        optim._logger = logger
 
         # Construct OptimisationResult
         result = OptimisationResult(
-            optim=pybop.XNES(problem),
+            optim=optim,
             optim_name="Test name",
-            logger=logger,
             time=0.1,
             message="Test message",
         )

@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from pybop._logging import Logger
 from pybop._result import SamplingResult
 from pybop.problems.problem import Problem
 
@@ -53,6 +54,7 @@ class BaseSampler:
         options: SamplerOptions | None = None,
     ):
         self._log_pdf = log_pdf
+        self._logger = None
         self._options = options or self.default_options()
         self._options.validate()
 
@@ -116,3 +118,7 @@ class BaseSampler:
             raise ValueError("Number of iterations must be greater than 0.")
 
         self._warm_up = iterations
+
+    @property
+    def logger(self) -> Logger | None:
+        return self._logger

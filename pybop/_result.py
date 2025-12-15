@@ -329,8 +329,6 @@ class OptimisationResult(Result):
     ----------
     optim : pybop.BaseOptimiser
         The optimisation object used to generate the results.
-    logger : pybop.Logger
-        The log of the optimisation process.
     time : float
         The time taken.
     optim_name : str
@@ -344,7 +342,6 @@ class OptimisationResult(Result):
     def __init__(
         self,
         optim: "BaseOptimiser",
-        logger: Logger,
         time: float,
         optim_name: str | None = None,
         message: str | None = None,
@@ -353,7 +350,7 @@ class OptimisationResult(Result):
         self._optim = optim
         super().__init__(
             problem=self._optim.problem,
-            logger=logger,
+            logger=self._optim.logger,
             time=time,
             method_name=optim_name,
             message=message,
@@ -379,8 +376,6 @@ class SamplingResult(Result):
     ----------
     sampler : pybop.BaseSampler
         The sampler used to generate the results.
-    logger : pybop.Logger
-        The log of the optimisation process.
     time : float
         The time taken.
     chains : np.ndarray, optional
@@ -394,7 +389,6 @@ class SamplingResult(Result):
     def __init__(
         self,
         sampler: "BaseSampler",
-        logger: Logger,
         time: float,
         chains: np.ndarray,
         sampler_name: str | None = None,
@@ -403,7 +397,7 @@ class SamplingResult(Result):
         self._sampler = sampler
         super().__init__(
             problem=self._sampler.log_pdf,
-            logger=logger,
+            logger=self._sampler.logger,
             time=time,
             method_name=sampler_name,
             message=message,
@@ -456,7 +450,6 @@ class BayesianOptimisationResult(OptimisationResult):
     def __init__(
         self,
         optim: "BaseOptimiser",
-        logger: Logger,
         time: float | dict,
         optim_name: str | None = None,
         message: str | None = None,
@@ -469,7 +462,6 @@ class BayesianOptimisationResult(OptimisationResult):
     ):
         super().__init__(
             optim=optim,
-            logger=logger,
             time=time,
             optim_name=optim_name,
             message=message,
