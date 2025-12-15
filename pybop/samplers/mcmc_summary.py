@@ -1,25 +1,53 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
 import pints
 import scipy
 
+from pybop._result import Result
 from pybop.plot import PlotlyManager
 
+if TYPE_CHECKING:
+    from pybop import BaseSampler
 
-class PosteriorSummary:
-    def __init__(self, chains: np.ndarray, significant_digits: int = 4):
-        """
-        Initialize with chains of posterior samples.
 
-        Parameters:
-        chains (np.ndarray): List where each element is a NumPy array representing
-                                     a chain of posterior samples for a parameter.
-        significant_digits (int): Number of significant digits to display for summary statistics.
-        """
+class SamplingResult(Result):
+    """
+    Stores the result of the sampling.
+
+    Attributes
+    ----------
+    sampler : pybop.BaseSampler
+        The sampler used to generate the results.
+    time : float
+        The time taken.
+    chains : np.ndarray, optional
+        An array containing the samples from the posterior distribution, or None.
+    sampler_name : str
+        The name of the sampler.
+    message : str
+        The reason for stopping given by the sampler.
+    """
+
+    def __init__(
+        self,
+        sampler: "BaseSampler",
+        time: float,
+        chains: np.ndarray,
+        sampler_name: str | None = None,
+        message: str | None = None,
+    ):
+        self._sampler = sampler
+        super().__init__(
+            problem=self._sampler.log_pdf,
+            logger=self._sampler.logger,
+            time=time,
+            method_name=sampler_name,
+            message=message,
+        )
         self.chains = chains
         self.all_samples = np.concatenate(chains, axis=0)
         self.num_parameters = self.chains.shape[2]
-        self.sig_digits = significant_digits
-        self.get_summary_statistics()
         self.go = PlotlyManager().go
 
     def signif(self, x, p: int):
@@ -42,13 +70,21 @@ class PosteriorSummary:
             setattr(self, attr_name, stat)
         return self.signif(stat, self.sig_digits)
 
-    def get_summary_statistics(self):
+    def get_summary_statistics(self, significant_digits: int = 4):
         """
         Calculate summary statistics for the posterior samples.
 
-        Returns:
-        dict: Summary statistics including mean, median, standard deviation, and 95% credible interval.
+        Parameters
+        ----------
+        significant_digits : int
+            Number of significant digits to display for summary statistics.
+
+        Returns
+        -------
+        dict
+            Summary statistics including mean, median, standard deviation, and 95% credible interval.
         """
+        self.sig_digits = significant_digits
         summary_funs = {
             "mean": np.mean,
             "median": np.median,

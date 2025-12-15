@@ -26,6 +26,7 @@ from pybop import (
     SliceRankShrinkingMCMC,
     SliceStepoutMCMC,
 )
+from pybop.samplers.mcmc_summary import SamplingResult
 
 
 class TestPintsSamplers:
@@ -143,26 +144,39 @@ class TestPintsSamplers:
         assert result.chains is not None
         assert result.chains.shape == (n_chains, 1, 2)
 
-    def test_effective_sample_size(self, posterior_problem):
-        chains = np.asarray([[[0, 0]]])
-        summary = pybop.PosteriorSummary(chains)
+    def test_effective_sample_size(self, posterior_problem, MCMC):
+        if MCMC is NUTS:
+            # Test sample size error only once
+            logger = pybop.Logger(minimising=True)
+            logger.iteration = 1
+            logger.extend_log(
+                x_search=[np.asarray([1e-3])], x_model=[np.asarray([1e-3])], cost=[0.1]
+            )
+            sampler = MCMC(posterior_problem)
+            sampler._logger = logger
+            result = SamplingResult(
+                sampler=sampler,
+                sampler_name="Test name",
+                chains=np.asarray([[[0, 0]]]),
+                time=0.1,
+                message="Test message",
+            )
 
-        with pytest.raises(ValueError, match="At least two samples must be given."):
-            summary.effective_sample_size()
+            with pytest.raises(ValueError, match="At least two samples must be given."):
+                result.effective_sample_size()
 
         n_chains = 3
         options = pybop.PintsSamplerOptions(n_chains=n_chains, max_iterations=3)
         sampler = pybop.HaarioBardenetACMC(log_pdf=posterior_problem, options=options)
         result = sampler.run()
-        summary = pybop.PosteriorSummary(result.chains)
 
         # Non mixed chains
-        ess = summary.effective_sample_size()
+        ess = result.effective_sample_size()
         assert len(ess) == posterior_problem.n_parameters * n_chains
         assert all(e > 0 for e in ess)  # ESS should be positive
 
         # Mixed chains
-        ess = summary.effective_sample_size(mixed_chains=True)
+        ess = result.effective_sample_size(mixed_chains=True)
         assert len(ess) == posterior_problem.n_parameters
         assert all(e > 0 for e in ess)
 
@@ -194,8 +208,10 @@ class TestPintsSamplers:
         )
         sampler = MCMC(log_pdf=posterior, options=options)
         result = sampler.run()
-        summary = pybop.PosteriorSummary(result.chains)
-        autocorr = summary.autocorrelation(result.chains[0, :, 0])
+        summary = result.get_summary_statistics()
+        assert isinstance(summary, dict)
+
+        autocorr = result.autocorrelation(result.chains[0, :, 0])
         assert autocorr.shape == (result.chains[0, :, 0].shape[0] - 2,)
 
     def test_invalid_initialisation(self, posterior_problem):

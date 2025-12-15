@@ -12,9 +12,9 @@ from pybop import (
     SingleChainProcessor,
 )
 from pybop._logging import Logger
-from pybop._result import SamplingResult
 from pybop.problems.problem import Problem
 from pybop.samplers.base_sampler import SamplerOptions
+from pybop.samplers.mcmc_summary import SamplingResult
 
 
 @dataclass

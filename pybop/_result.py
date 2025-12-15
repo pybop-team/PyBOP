@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 if TYPE_CHECKING:
-    from pybop import BaseOptimiser, BaseSampler
+    from pybop import BaseOptimiser
 from pybop import Logger, Problem, plot
 from pybop.parameters.multivariate_parameters import MultivariateParameters
 
@@ -366,43 +366,6 @@ class OptimisationResult(Result):
     def optim_name(self) -> str:
         """The name of the optimiser."""
         return self.method_name
-
-
-class SamplingResult(Result):
-    """
-    Stores the result of the sampling.
-
-    Attributes
-    ----------
-    sampler : pybop.BaseSampler
-        The sampler used to generate the results.
-    time : float
-        The time taken.
-    chains : np.ndarray, optional
-        An array containing the samples from the posterior distribution, or None.
-    sampler_name : str
-        The name of the sampler.
-    message : str
-        The reason for stopping given by the sampler.
-    """
-
-    def __init__(
-        self,
-        sampler: "BaseSampler",
-        time: float,
-        chains: np.ndarray,
-        sampler_name: str | None = None,
-        message: str | None = None,
-    ):
-        self._sampler = sampler
-        super().__init__(
-            problem=self._sampler.log_pdf,
-            logger=self._sampler.logger,
-            time=time,
-            method_name=sampler_name,
-            message=message,
-        )
-        self.chains = chains
 
 
 class BayesianOptimisationResult(OptimisationResult):

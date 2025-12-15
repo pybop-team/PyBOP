@@ -183,7 +183,6 @@ from .applications.gitt_methods import GITTPulseFit, GITTFit
 # Plotting classes
 #
 from . import plot as plot
-from .samplers.mcmc_summary import PosteriorSummary
 
 #
 # Remove any imported modules, so we don't expose them as part of pybop

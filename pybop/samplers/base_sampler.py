@@ -3,8 +3,8 @@ from dataclasses import dataclass
 import numpy as np
 
 from pybop._logging import Logger
-from pybop._result import SamplingResult
 from pybop.problems.problem import Problem
+from pybop.samplers.mcmc_summary import SamplingResult
 
 
 @dataclass
