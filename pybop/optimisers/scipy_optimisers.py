@@ -241,7 +241,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         return OptimisationResult(
             optim=self,
             time=total_time,
-            optim_name=self.name,
+            method_name=self.name,
             message=result.message,
             scipy_result=result,
         )
@@ -458,7 +458,7 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
         return OptimisationResult(
             optim=self,
             time=total_time,
-            optim_name=self.name,
+            method_name=self.name,
             message=result.message,
             scipy_result=result,
         )

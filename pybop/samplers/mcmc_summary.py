@@ -23,7 +23,7 @@ class SamplingResult(Result):
         The time taken.
     chains : np.ndarray, optional
         An array containing the samples from the posterior distribution, or None.
-    sampler_name : str
+    method_name : str
         The name of the sampler.
     message : str
         The reason for stopping given by the sampler.
@@ -34,7 +34,7 @@ class SamplingResult(Result):
         sampler: "BaseSampler",
         time: float,
         chains: np.ndarray,
-        sampler_name: str | None = None,
+        method_name: str | None = None,
         message: str | None = None,
     ):
         self._sampler = sampler
@@ -42,7 +42,7 @@ class SamplingResult(Result):
             problem=self._sampler.log_pdf,
             logger=self._sampler.logger,
             time=time,
-            method_name=sampler_name,
+            method_name=method_name,
             message=message,
         )
         self.chains = chains

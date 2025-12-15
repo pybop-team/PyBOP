@@ -154,7 +154,7 @@ class TestPintsSamplers:
             sampler._logger = logger
             result = SamplingResult(
                 sampler=sampler,
-                sampler_name="Test name",
+                method_name="Test name",
                 chains=np.asarray([[[0, 0]]]),
                 time=0.1,
                 message="Test message",

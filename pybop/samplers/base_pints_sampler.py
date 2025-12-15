@@ -254,7 +254,7 @@ class BasePintsSampler(BaseSampler):
             sampler=self,
             time=self._total_time,
             chains=self._samples,
-            sampler_name=self._samplers[0].name(),
+            method_name=self._samplers[0].name(),
             message=halt_message,
         )
 

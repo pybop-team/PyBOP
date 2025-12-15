@@ -410,7 +410,7 @@ class EP_BOLFI(BaseOptimiser):
         return BayesianOptimisationResult(
             optim=self,
             time=end - start,
-            optim_name="EP-BOLFI",
+            method_name="EP-BOLFI",
             posterior=posterior,
             lower_bounds=lower_bounds,
             upper_bounds=upper_bounds,

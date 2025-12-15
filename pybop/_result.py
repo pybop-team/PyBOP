@@ -331,7 +331,7 @@ class OptimisationResult(Result):
         The optimisation object used to generate the results.
     time : float
         The time taken.
-    optim_name : str
+    method_name : str
         The name of the optimiser.
     message : str
         The reason for stopping given by the optimiser.
@@ -343,7 +343,7 @@ class OptimisationResult(Result):
         self,
         optim: "BaseOptimiser",
         time: float,
-        optim_name: str | None = None,
+        method_name: str | None = None,
         message: str | None = None,
         scipy_result=None,
     ):
@@ -352,7 +352,7 @@ class OptimisationResult(Result):
             problem=self._optim.problem,
             logger=self._optim.logger,
             time=time,
-            method_name=optim_name,
+            method_name=method_name,
             message=message,
             scipy_result=scipy_result,
         )
@@ -361,11 +361,6 @@ class OptimisationResult(Result):
     def optim(self) -> "BaseOptimiser":
         """The optimisation problem."""
         return self._optim
-
-    @property
-    def optim_name(self) -> str:
-        """The name of the optimiser."""
-        return self.method_name
 
 
 class BayesianOptimisationResult(OptimisationResult):
@@ -414,7 +409,7 @@ class BayesianOptimisationResult(OptimisationResult):
         self,
         optim: "BaseOptimiser",
         time: float | dict,
-        optim_name: str | None = None,
+        method_name: str | None = None,
         message: str | None = None,
         lower_bounds: np.ndarray | None = None,
         upper_bounds: np.ndarray | None = None,
@@ -426,7 +421,7 @@ class BayesianOptimisationResult(OptimisationResult):
         super().__init__(
             optim=optim,
             time=time,
-            optim_name=optim_name,
+            method_name=method_name,
             message=message,
         )
         self.lower_bounds = lower_bounds

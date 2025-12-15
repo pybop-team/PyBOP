@@ -731,13 +731,13 @@ class TestOptimisation:
         # Construct OptimisationResult
         result = OptimisationResult(
             optim=optim,
-            optim_name="Test name",
+            method_name="Test name",
             time=0.1,
             message="Test message",
         )
 
         # Asserts
-        assert result.optim_name == "Test name"
+        assert result.method_name == "Test name"
         assert result.x[0] == 1e-3
         assert result.n_iterations == 1
         assert result.message == "Test message"
