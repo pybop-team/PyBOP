@@ -6,6 +6,8 @@
 
 ## Optimisations
 
+- [#860](https://github.com/pybop-team/PyBOP/pull/860) - Create a parent `pybop.Result` class for attributes shared by optimisation and sampling results.
+
 ## Bug Fixes
 
 - [#847](https://github.com/pybop-team/PyBOP/pull/847) - Update readme and diagram of pybop components so that the diagram is displayed correctly in the readme.
