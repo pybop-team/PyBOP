@@ -10,7 +10,6 @@ from pybop import (
     DREAM,
     MALAMCMC,
     NUTS,
-    AdaptiveCovarianceMCMC,
     DifferentialEvolutionMCMC,
     DramACMC,
     EmceeHammerMCMC,
@@ -95,7 +94,6 @@ class TestPintsSamplers:
         params=[
             NUTS,
             DREAM,
-            AdaptiveCovarianceMCMC,
             DifferentialEvolutionMCMC,
             DramACMC,
             EmceeHammerMCMC,
@@ -217,13 +215,13 @@ class TestPintsSamplers:
     def test_invalid_initialisation(self, posterior_problem):
         with pytest.raises(ValueError, match="Number of chains must be greater than 0"):
             options = pybop.PintsSamplerOptions(n_chains=0)
-            AdaptiveCovarianceMCMC(log_pdf=posterior_problem, options=options)
+            HaarioBardenetACMC(log_pdf=posterior_problem, options=options)
 
     # SingleChain & MultiChain Sampler
     @pytest.mark.parametrize(
         "sampler",
         [
-            AdaptiveCovarianceMCMC,
+            HaarioBardenetACMC,
             DifferentialEvolutionMCMC,
         ],
     )
@@ -247,11 +245,11 @@ class TestPintsSamplers:
     def test_initialise_logging(
         self, mock_info, mock_basicConfig, posterior_problem, n_chains
     ):
-        options = AdaptiveCovarianceMCMC.default_options()
+        options = HaarioBardenetACMC.default_options()
         options.n_chains = n_chains
         options.evaluation_files = ["eval1.txt", "eval2.txt"]
         options.chain_files = ["chain1.txt", "chain2.txt"]
-        sampler = AdaptiveCovarianceMCMC(posterior_problem, options=options)
+        sampler = HaarioBardenetACMC(posterior_problem, options=options)
         sampler._initialise_logging()
 
         # Check if basicConfig was called with correct arguments
@@ -275,7 +273,7 @@ class TestPintsSamplers:
 
     def test_check_stopping_criteria(self, posterior_problem, n_chains):
         options = pybop.PintsSamplerOptions(n_chains=n_chains)
-        sampler = AdaptiveCovarianceMCMC(log_pdf=posterior_problem, options=options)
+        sampler = HaarioBardenetACMC(log_pdf=posterior_problem, options=options)
         # Set stopping criteria
         sampler.set_max_iterations(10)
         assert sampler._max_iterations == 10

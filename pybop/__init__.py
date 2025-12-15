@@ -149,7 +149,6 @@ from .samplers.base_pints_sampler import BasePintsSampler, PintsSamplerOptions
 from .samplers.pints_samplers import (
     NUTS,
     DREAM,
-    AdaptiveCovarianceMCMC,
     DifferentialEvolutionMCMC,
     DramACMC,
     EmceeHammerMCMC,
