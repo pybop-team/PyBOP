@@ -37,10 +37,9 @@ class SamplingResult(Result):
         method_name: str | None = None,
         message: str | None = None,
     ):
-        self._sampler = sampler
         super().__init__(
-            problem=self._sampler.log_pdf,
-            logger=self._sampler.logger,
+            problem=sampler.log_pdf,
+            logger=sampler.logger,
             time=time,
             method_name=method_name,
             message=message,

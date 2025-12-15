@@ -347,20 +347,14 @@ class OptimisationResult(Result):
         message: str | None = None,
         scipy_result=None,
     ):
-        self._optim = optim
         super().__init__(
-            problem=self._optim.problem,
-            logger=self._optim.logger,
+            problem=optim.problem,
+            logger=optim.logger,
             time=time,
             method_name=method_name,
             message=message,
             scipy_result=scipy_result,
         )
-
-    @property
-    def optim(self) -> "BaseOptimiser":
-        """The optimisation problem."""
-        return self._optim
 
 
 class BayesianOptimisationResult(OptimisationResult):
