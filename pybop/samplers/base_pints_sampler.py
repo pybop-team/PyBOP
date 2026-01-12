@@ -13,8 +13,7 @@ from pybop import (
 )
 from pybop._logging import Logger
 from pybop.problems.problem import Problem
-from pybop.samplers.base_sampler import SamplerOptions
-from pybop.samplers.mcmc_summary import SamplingResult
+from pybop.samplers.base_sampler import SamplerOptions, SamplingResult
 
 
 @dataclass

@@ -25,7 +25,7 @@ from pybop import (
     SliceRankShrinkingMCMC,
     SliceStepoutMCMC,
 )
-from pybop.samplers.mcmc_summary import SamplingResult
+from pybop.samplers.base_sampler import SamplingResult
 
 
 class TestPintsSamplers:
