@@ -132,7 +132,7 @@ class InverseOCV:
                 super().__init__(parameters=parameters)
                 self.ocv_value = ocv_value
 
-            def batch_solve(self, inputs, calculate_sensitivities: bool = False):
+            def solve_batch(self, inputs, calculate_sensitivities: bool = False):
                 solutions = []
                 for x in inputs:
                     diff = np.abs(ocv_function(x["Root"]) - self.ocv_value)

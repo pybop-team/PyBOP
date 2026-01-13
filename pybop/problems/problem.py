@@ -258,7 +258,7 @@ class Problem:
             the sensitivities dy/dx(t) for output variable(s) y, domain t and parameter(s) x.
         """
         model_inputs = [self.get_model_inputs(x) for x in inputs]
-        return self._simulator.batch_solve(
+        return self._simulator.solve_batch(
             inputs=model_inputs, calculate_sensitivities=calculate_sensitivities
         )
 

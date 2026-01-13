@@ -182,7 +182,7 @@ class OCPAverage(BaseApplication):
 
             if self.allow_stretching:
 
-                def batch_solve(self, inputs, calculate_sensitivities: bool = False):
+                def solve_batch(self, inputs, calculate_sensitivities: bool = False):
                     solutions = []
                     for x in inputs:
                         sol = pybop.Solution()
@@ -203,7 +203,7 @@ class OCPAverage(BaseApplication):
                     return solutions
             else:
 
-                def batch_solve(self, inputs, calculate_sensitivities: bool = False):
+                def solve_batch(self, inputs, calculate_sensitivities: bool = False):
                     solutions = []
                     for x in inputs:
                         sol = pybop.Solution()
@@ -333,7 +333,7 @@ class OCPCapacityToStoichiometry(BaseApplication):
                 super().__init__(parameters=parameters)
                 self.domain_data = domain_data
 
-            def batch_solve(self, inputs, calculate_sensitivities: bool = False):
+            def solve_batch(self, inputs, calculate_sensitivities: bool = False):
                 solutions = []
                 for x in inputs:
                     sol = pybop.Solution()
