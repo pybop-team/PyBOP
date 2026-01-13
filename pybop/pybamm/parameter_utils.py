@@ -29,7 +29,7 @@ def set_formation_concentrations(parameter_values: ParameterValues) -> None:
                 Parameter("Positive electrode active material volume fraction")
                 * Parameter("Positive electrode thickness [m]")
                 * electrode_area()
-                * Parameter("Faraday constant [C.mol-1]")
+                * pybamm.constants.F.value
             )
         )
 
@@ -51,7 +51,7 @@ def set_formation_concentrations(parameter_values: ParameterValues) -> None:
             * Parameter("Positive electrode active material volume fraction")
             * Parameter("Positive electrode thickness [m]")
             * electrode_area()
-            * Parameter("Faraday constant [C.mol-1]")
+            * pybamm.constants.F.value
         ) / 3600
 
         # Define an initial lithium inventory that scales with the maximum theoretical lithium inventory

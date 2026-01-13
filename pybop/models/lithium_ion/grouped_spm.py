@@ -9,14 +9,13 @@ from pybamm import (
     Scalar,
     Variable,
 )
-from pybamm import lithium_ion as pybamm_lithium_ion
 from pybamm import t as pybamm_t
 from pybamm.models.full_battery_models.lithium_ion.electrode_soh import (
     get_min_max_stoichiometries,
 )
 
 
-class GroupedSPM(pybamm_lithium_ion.BaseModel):
+class GroupedSPM(pybamm.lithium_ion.BaseModel):
     """
     A grouped parameter version of the single particle model (SPM).
 
@@ -421,7 +420,7 @@ class GroupedSPM(pybamm_lithium_ion.BaseModel):
         param = parameter_values
 
         # Unpack physical parameters
-        F = param["Faraday constant [C.mol-1]"]
+        F = pybamm.constants.F.value
         alpha_p = param["Positive electrode active material volume fraction"]
         alpha_n = param["Negative electrode active material volume fraction"]
         c_max_p = param["Maximum concentration in positive electrode [mol.m-3]"]
