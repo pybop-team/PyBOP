@@ -52,8 +52,7 @@ class TestWeightedCost:
                 ),
                 "Cell mass [kg]": pybop.pybamm.cell_mass(),
                 "Cell volume [m3]": pybop.pybamm.cell_volume(),
-            },
-            check_already_exists=False,
+            }
         )
         x = self.ground_truth
         parameter_values.update(

@@ -33,8 +33,7 @@ parameter_values.update(
             "Positive electrode density [kg.m-3]"
         ),
         "Cell mass [kg]": pybop.pybamm.cell_mass(),
-    },
-    check_already_exists=False,
+    }
 )
 
 # Add and link parameters
@@ -42,8 +41,7 @@ parameter_values.update(
     {
         "Positive electrode binder fraction": 0.02,
         "Negative electrode binder fraction": 0.02,
-    },
-    check_already_exists=False,
+    }
 )
 parameter_values.update(
     {

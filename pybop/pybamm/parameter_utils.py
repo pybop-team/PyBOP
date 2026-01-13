@@ -41,8 +41,7 @@ def set_formation_concentrations(parameter_values: ParameterValues) -> None:
             {
                 "Initial cyclable lithium inventory to positive electrode capacity ratio": c_init
                 / c_p_max
-            },
-            check_already_exists=False,
+            }
         )
 
         # Define the maximum theoretical lithium inventory [A.h]

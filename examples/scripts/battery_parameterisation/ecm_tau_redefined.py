@@ -50,8 +50,7 @@ parameter_values.update(
         "R2 [Ohm]": 0.0003,
         "C2 [F]": 5000,
         "Element-2 initial overpotential [V]": 0,
-    },
-    check_already_exists=False,
+    }
 )
 
 # PyBaMM wants to see capacitances, but it's better to fit time-constants, so let's introduce
@@ -60,8 +59,7 @@ parameter_values.update(
     {
         "tau1 [s]": parameter_values["R1 [Ohm]"] * parameter_values["C1 [F]"],
         "tau2 [s]": parameter_values["R2 [Ohm]"] * parameter_values["C2 [F]"],
-    },
-    check_already_exists=False,
+    }
 )
 parameter_values.update(
     {
