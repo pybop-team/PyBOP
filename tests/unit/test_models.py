@@ -15,6 +15,7 @@ class TestModels:
     @pytest.fixture(
         params=[
             pybop.ExponentialDecayModel(),
+            pybop.lithium_ion.CellTemperature(),
             pybop.lithium_ion.WeppnerHuggins(),
             pybop.lithium_ion.SPDiffusion(),
             pybop.lithium_ion.GroupedSPM(),
