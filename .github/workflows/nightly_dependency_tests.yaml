@@ -70,7 +70,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          python -m uv pip install --resolution lowest-direct -e .[all,dev]
+          uv pip install --resolution lowest-direct -e .[all,dev]
 
 
       - name: Run ${{ matrix.suite }} tests
