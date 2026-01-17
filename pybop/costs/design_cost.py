@@ -1,7 +1,7 @@
-from pybop._utils import FailedSolution
 from pybop.costs.base_cost import BaseCost
 from pybop.parameters.parameter import Inputs
 from pybop.simulators.base_simulator import Solution
+from pybop.simulators.failed_solution import FailedSolution
 
 
 class DesignCost(BaseCost):

@@ -1,12 +1,12 @@
 import numpy as np
 
-from pybop._utils import FailedSolution
 from pybop.analysis.sensitivity_analysis import sensitivity_analysis
 from pybop.costs.base_cost import BaseCost
 from pybop.costs.evaluation import Evaluation
 from pybop.costs.likelihoods import LogPosterior
 from pybop.parameters.parameter import Inputs, Parameters
 from pybop.simulators.base_simulator import BaseSimulator, Solution
+from pybop.simulators.failed_solution import FailedSolution
 
 
 class Problem:

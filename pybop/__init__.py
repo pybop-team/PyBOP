@@ -25,7 +25,7 @@ script_path = path.dirname(__file__)
 #
 # Utilities
 #
-from ._utils import add_spaces, is_numeric, FailedVariable, FailedSolution, SymbolReplacer, RecommendedSolver
+from ._utils import add_spaces, is_numeric
 
 #
 # Dataset class
@@ -74,6 +74,7 @@ from .problems.meta_problem import MetaProblem
 #
 from .simulators.base_simulator import BaseSimulator
 from .simulators.solution import Solution
+from .simulators.failed_solution import FailedVariable, FailedSolution
 
 #
 # Cost classes
