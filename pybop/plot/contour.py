@@ -8,11 +8,11 @@ from pybop.plot.plotly_manager import PlotlyManager
 from pybop.problems.problem import Problem
 
 if TYPE_CHECKING:
-    from pybop._result import OptimisationResult
+    from pybop._result import Result
 
 
 def contour(
-    call_object: "Problem | OptimisationResult",
+    call_object: "Problem | Result",
     gradient: bool = False,
     bounds: np.ndarray | None = None,
     transformed: bool = False,
@@ -28,7 +28,7 @@ def contour(
 
     Parameters
     ----------
-    call_object : pybop.Problem | pybop.OptimisationResult
+    call_object : pybop.Problem | pybop.Result
         Either:
         - the cost function to be evaluated. Must accept a list of parameter values and return a cost value.
         - an optimiser result which provides a specific optimisation trace overlaid on the cost landscape.
@@ -65,7 +65,7 @@ def contour(
     if not isinstance(call_object, Callable):
         plot_optim = True
         result = call_object
-        problem = result.optim.problem
+        problem = result.problem
 
     parameters = problem.parameters
     names = parameters.names

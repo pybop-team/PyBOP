@@ -22,11 +22,11 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.mathjax",
     "sphinx.ext.todo",
-    "sphinx.ext.viewcode",
     "sphinx_design",
     "sphinx_copybutton",
-    "autoapi.extension",
+    "autoapi.extension",  # before ext.viewcode, sphinx-autoapi/issues/422
     "sphinx_automodapi.automodapi",
+    "sphinx.ext.viewcode",
     # custom extensions
     "_extension.gallery_directive",
     # For extension examples and demos

@@ -4,16 +4,16 @@ from pybop import GaussianLogLikelihood
 from pybop.plot.standard_plots import StandardSubplot
 
 if TYPE_CHECKING:
-    from pybop._result import OptimisationResult
+    from pybop._result import Result
 
 
-def parameters(result: "OptimisationResult", show=True, **layout_kwargs):
+def parameters(result: "Result", show=True, **layout_kwargs):
     """
     Plot the evolution of parameters during the optimisation process using Plotly.
 
     Parameters
     ----------
-    result : pybop.OptimisationResult
+    result : pybop.Result
         Optimisation result containing the history of parameter values and associated cost.
     show : bool, optional
         If True, the figure is shown upon creation (default: True).
@@ -29,7 +29,7 @@ def parameters(result: "OptimisationResult", show=True, **layout_kwargs):
     """
 
     # Extract parameters and log from the optimisation object
-    parameters = result.optim.problem.parameters
+    parameters = result.problem.parameters
     x = list(range(len(result.x_model)))
     y = [list(item) for item in zip(*result.x_model, strict=False)]
 
@@ -39,7 +39,7 @@ def parameters(result: "OptimisationResult", show=True, **layout_kwargs):
     for name in trace_names:
         axis_titles.append(("Evaluation", name))
 
-    if isinstance(result.optim.problem, GaussianLogLikelihood):
+    if isinstance(result.problem, GaussianLogLikelihood):
         axis_titles.append(("Evaluation", "Sigma"))
         trace_names.append("Sigma")
 

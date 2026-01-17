@@ -6,13 +6,9 @@ import numpy as np
 from scipy.optimize import Bounds, OptimizeResult, differential_evolution, minimize
 
 import pybop
-from pybop import (
-    BaseOptimiser,
-    OptimisationResult,
-    PopulationEvaluator,
-    ScalarEvaluator,
-)
+from pybop._evaluation import PopulationEvaluator, ScalarEvaluator
 from pybop._logging import Logger
+from pybop.optimisers.base_optimiser import BaseOptimiser, OptimisationResult
 from pybop.problems.problem import Problem
 
 __all__: list[str] = [
@@ -244,9 +240,8 @@ class SciPyMinimize(BaseSciPyOptimiser):
 
         return OptimisationResult(
             optim=self,
-            logger=self._logger,
             time=total_time,
-            optim_name=self.name,
+            method_name=self.name,
             message=result.message,
             scipy_result=result,
         )
@@ -462,9 +457,8 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
 
         return OptimisationResult(
             optim=self,
-            logger=self._logger,
             time=total_time,
-            optim_name=self.name,
+            method_name=self.name,
             message=result.message,
             scipy_result=result,
         )

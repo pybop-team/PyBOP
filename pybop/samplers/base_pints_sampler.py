@@ -12,9 +12,8 @@ from pybop import (
     SingleChainProcessor,
 )
 from pybop._logging import Logger
-from pybop._result import SamplingResult
 from pybop.problems.problem import Problem
-from pybop.samplers.base_sampler import SamplerOptions
+from pybop.samplers.base_sampler import SamplerOptions, SamplingResult
 
 
 @dataclass
@@ -252,10 +251,9 @@ class BasePintsSampler(BaseSampler):
 
         return SamplingResult(
             sampler=self,
-            logger=self._logger,
             time=self._total_time,
             chains=self._samples,
-            sampler_name=self._samplers[0].name(),
+            method_name=self._samplers[0].name(),
             message=halt_message,
         )
 

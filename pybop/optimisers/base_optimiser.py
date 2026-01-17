@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from pybop._logging import Logger
-from pybop._result import OptimisationResult
+from pybop._result import Result
 from pybop.problems.problem import Problem
 
 
@@ -108,7 +108,7 @@ class BaseOptimiser:
         """
         raise NotImplementedError
 
-    def _run(self) -> OptimisationResult:
+    def _run(self) -> "OptimisationResult":
         """
         Contains the logic for the optimisation algorithm.
 
@@ -132,13 +132,13 @@ class BaseOptimiser:
         """
         raise NotImplementedError  # pragma: no cover
 
-    def run(self) -> OptimisationResult:
+    def run(self) -> "OptimisationResult":
         """
         Run the optimisation and return the optimised parameters and final cost.
 
         Returns
         -------
-        results: OptimisationResult
+        result: OptimisationResult
             The pybop optimisation result class.
         """
         results = []
@@ -161,3 +161,39 @@ class BaseOptimiser:
     @property
     def logger(self) -> Logger | None:
         return self._logger
+
+
+class OptimisationResult(Result):
+    """
+    Stores the result of the optimisation.
+
+    Attributes
+    ----------
+    optim : pybop.BaseOptimiser
+        The optimisation object used to generate the results.
+    time : float
+        The time taken.
+    method_name : str
+        The name of the optimiser.
+    message : str
+        The reason for stopping given by the optimiser.
+    scipy_result : scipy.optimize.OptimizeResult, optional
+        The result obtained from a SciPy optimiser.
+    """
+
+    def __init__(
+        self,
+        optim: BaseOptimiser,
+        time: float,
+        method_name: str | None = None,
+        message: str | None = None,
+        scipy_result=None,
+    ):
+        super().__init__(
+            problem=optim.problem,
+            logger=optim.logger,
+            time=time,
+            method_name=method_name,
+            message=message,
+            scipy_result=scipy_result,
+        )

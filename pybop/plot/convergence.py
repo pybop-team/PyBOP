@@ -3,16 +3,16 @@ from typing import TYPE_CHECKING
 from pybop.plot.standard_plots import StandardPlot
 
 if TYPE_CHECKING:
-    from pybop._result import OptimisationResult
+    from pybop._result import Result
 
 
-def convergence(result: "OptimisationResult", show=True, **layout_kwargs):
+def convergence(result: "Result", show=True, **layout_kwargs):
     """
     Plot the convergence of the optimisation algorithm.
 
     Parameters
     -----------
-    result : pybop.OptimisationResult
+    result : pybop.Result
         Optimisation result containing the history of parameter values and associated cost.
     show : bool, optional
         If True, the figure is shown upon creation (default: True).
@@ -42,7 +42,7 @@ def convergence(result: "OptimisationResult", show=True, **layout_kwargs):
             yaxis_title="Cost",
             title="Convergence",
         ),
-        trace_names=result.optim_name,
+        trace_names=result.method_name,
     )
 
     # Generate and display the figure
