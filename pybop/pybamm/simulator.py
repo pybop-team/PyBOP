@@ -7,8 +7,8 @@ from pybamm import SolverError
 
 if TYPE_CHECKING:
     from pybop.parameters.parameter import Inputs
-from pybop._dataset import Dataset
 from pybop.parameters.parameter import Parameter, Parameters
+from pybop.processing.dataset import Dataset
 from pybop.pybamm.utils import RecommendedSolver
 from pybop.simulators.base_simulator import BaseSimulator
 from pybop.simulators.failed_solution import FailedSolution

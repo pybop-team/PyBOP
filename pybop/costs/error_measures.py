@@ -1,9 +1,9 @@
 import numpy as np
 import pybamm
 
-from pybop._dataset import Dataset
 from pybop.costs.base_cost import BaseCost
 from pybop.parameters.parameter import Inputs
+from pybop.processing.dataset import Dataset
 from pybop.simulators.failed_solution import FailedSolution
 from pybop.simulators.solution import Solution
 

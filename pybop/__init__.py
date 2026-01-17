@@ -30,7 +30,7 @@ from ._utils import add_spaces, is_numeric
 #
 # Dataset class
 #
-from ._dataset import Dataset, import_pyprobe_result
+from .processing.dataset import Dataset, import_pyprobe_result
 
 #
 # Transformation classes

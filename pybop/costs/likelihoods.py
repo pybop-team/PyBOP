@@ -1,10 +1,10 @@
 import numpy as np
 import scipy.stats as stats
 
-from pybop._dataset import Dataset
 from pybop.costs.error_measures import ErrorMeasure
 from pybop.parameters.distributions import Distribution, JointDistribution, Uniform
 from pybop.parameters.parameter import Inputs, Parameter, Parameters
+from pybop.processing.dataset import Dataset
 
 
 class LogLikelihood(ErrorMeasure):
