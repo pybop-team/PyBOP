@@ -1,5 +1,4 @@
 from pints import MALAMCMC as PintsMALAMCMC
-from pints import AdaptiveCovarianceMCMC as PintsAdaptiveCovarianceMCMC
 from pints import DifferentialEvolutionMCMC as PintsDifferentialEvolutionMCMC
 from pints import DramACMC as PintsDramACMC
 from pints import DreamMCMC as PintsDREAM
@@ -23,7 +22,6 @@ from pybop.problems.problem import Problem
 __all__: list[str] = [
     "NUTS",
     "DREAM",
-    "AdaptiveCovarianceMCMC",
     "DifferentialEvolutionMCMC",
     "DramACMC",
     "EmceeHammerMCMC",
@@ -81,26 +79,6 @@ class DREAM(BasePintsSampler):
 
     def __init__(self, log_pdf: Problem, options: PintsSamplerOptions | None = None):
         super().__init__(log_pdf, PintsDREAM, options=options)
-
-
-class AdaptiveCovarianceMCMC(BasePintsSampler):
-    """
-    Implements the Adaptive Covariance Markov Chain Monte Carlo (MCMC) algorithm.
-
-    This class wraps the Adaptive Covariance MCMC sampler from the PINTS library.
-    The proposal distribution's covariance matrix is adapted during sampling
-    to improve efficiency and convergence.
-
-    Parameters
-    ----------
-    log_pdf : pybop.Problem
-        The log-posterior to sample.
-    options : pybop.PintsSamplerOptions, optional
-        Additional options for the sampler.
-    """
-
-    def __init__(self, log_pdf: Problem, options: PintsSamplerOptions | None = None):
-        super().__init__(log_pdf, PintsAdaptiveCovarianceMCMC, options=options)
 
 
 class DifferentialEvolutionMCMC(BasePintsSampler):

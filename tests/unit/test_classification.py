@@ -31,14 +31,13 @@ class SeparableParaboloidProblem(pybop.Problem):
 
 
 @pytest.fixture(params=[np.asarray([0.0, 0.0]), np.asarray([0.05, 0.05])])
-def optimisation_result(request):
+def result(request):
     """
     Build a result where result.x is the true minimiser (the paraboloid centre).
     That ensures classify_using_hessian computes a finite Hessian and eigenvalues.
     """
     centre = np.asarray(request.param, dtype=float)
     problem = SeparableParaboloidProblem(centre=centre, c=1.0)  # small offset c
-    optim = pybop.XNES(problem)
 
     logger = pybop.Logger(minimising=True)
     logger.iteration = 1
@@ -47,13 +46,11 @@ def optimisation_result(request):
         x_model=[centre],
         cost=problem.evaluate(centre).values,
     )
-    return pybop.OptimisationResult(optim=optim, logger=logger, time=1.0)
+    return pybop.Result(problem=problem, logger=logger, time=1.0)
 
 
 @pytest.mark.unit
-def test_classify_paraboloid_minimum_and_grid(optimisation_result):
-    result = optimisation_result
-
+def test_classify_paraboloid_minimum_and_grid(result):
     dx = np.asarray([1e-3, 1e-3])
     steps = 3
 

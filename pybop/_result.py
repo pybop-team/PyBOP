@@ -1,45 +1,38 @@
-from typing import TYPE_CHECKING
-
 import numpy as np
 
-if TYPE_CHECKING:
-    from pybop import BaseOptimiser, BaseSampler
-from pybop import Logger, plot
-from pybop.parameters.multivariate_parameters import MultivariateParameters
+from pybop import Logger, Problem, plot
 
 
-class OptimisationResult:
+class Result:
     """
-    Stores the result of the optimisation.
+    Stores the result produced by an optimiser or sampler.
 
     Attributes
     ----------
-    optim : pybop.BaseOptimiser
-        The optimisation object used to generate the results.
+    problem : pybop.Problem
+        The optimisation problem used to generate the results.
     logger : pybop.Logger
-        The log of the optimisation process.
+        The log of the optimisation or sampling process.
     time : float
         The time taken.
-    optim_name : str
-        The name of the optimiser.
+    method_name : str
+        The name of the optimiser or sampler.
     message : str
-        The reason for stopping given by the optimiser.
-    scipy_result : scipy.optimize.OptimizeResult, optional
-        The result obtained from a SciPy optimiser.
+        The reason for stopping given by the optimiser or sampler.
     """
 
     def __init__(
         self,
-        optim: "BaseOptimiser",
+        problem: Problem,
         logger: Logger,
         time: float,
-        optim_name: str | None = None,
+        method_name: str | None = None,
         message: str | None = None,
         scipy_result=None,
     ):
-        self._optim = optim
-        self._minimising = optim.problem.minimising
-        self.optim_name = optim_name
+        self._problem = problem
+        self._minimising = problem.minimising
+        self.method_name = method_name
         self.n_runs = 0
         self._best_run = None
         self._x = [logger.x_model_best]
@@ -58,19 +51,19 @@ class OptimisationResult:
         self._validate()
 
     @staticmethod
-    def combine(results: list["OptimisationResult"]) -> "OptimisationResult":
+    def combine(results: list["Result"]) -> "Result":
         """
-        Combine multiple OptimisationResult objects into a single one.
+        Combine multiple Result objects into a single one.
 
         Parameters
         ----------
-        results : list[OptimisationResult]
-            List of OptimisationResult objects to combine.
+        results : list[Result]
+            List of Result objects to combine.
 
         Returns
         -------
-        OptimisationResult
-            Combined OptimisationResult object.
+        Result
+            Combined Result object.
         """
         if len(results) == 0:
             raise ValueError("No results to combine.")
@@ -139,18 +132,18 @@ class OptimisationResult:
         """
         if not any(np.isfinite(self._best_cost)):
             raise ValueError(
-                f"Optimised parameters {self._optim.problem.parameters.to_dict(self._x[-1])} do not produce a finite cost value."
+                f"Optimised parameters {self._problem.parameters.to_dict(self._x[-1])} do not produce a finite cost value."
             )
 
     def __str__(self) -> str:
         """
-        A string representation of the OptimisationResult object.
+        A string representation of the Result object.
 
         Returns:
             str: A formatted string containing optimisation result information.
         """
         return (
-            f"OptimisationResult:\n"
+            f"Result:\n"
             f"  Best result from {self.n_runs} run(s).\n"
             f"  Initial parameters: {self.x0}\n"
             f"  Optimised parameters: {self.x}\n"
@@ -197,7 +190,7 @@ class OptimisationResult:
     @property
     def best_inputs(self) -> dict[str, np.ndarray]:
         """The best parameters as a dictionary."""
-        return self._optim.problem.parameters.to_dict(self.x)
+        return self._problem.parameters.to_dict(self.x)
 
     @property
     def best_cost(self) -> float:
@@ -230,9 +223,9 @@ class OptimisationResult:
         return self._get_single_or_all("_n_evaluations")
 
     @property
-    def optim(self) -> "BaseOptimiser":
+    def problem(self) -> Problem:
         """The optimisation problem."""
-        return self._optim
+        return self._problem
 
     @property
     def minimising(self) -> bool:
@@ -321,114 +314,3 @@ class OptimisationResult:
             Valid Plotly layout keys and their values.
         """
         return plot.contour(call_object=self, **kwargs)
-
-
-class SamplingResult(OptimisationResult):
-    """
-    Stores the result of the sampling.
-
-    Attributes
-    ----------
-    sampler : pybop.BaseSampler
-        The sampler used to generate the results.
-    logger : pybop.Logger
-        The log of the optimisation process.
-    time : float
-        The time taken.
-    chains : np.ndarray, optional
-        An array containing the samples from the posterior distribution, or None.
-    sampler_name : str
-        The name of the sampler.
-    message : str
-        The reason for stopping given by the sampler.
-    """
-
-    def __init__(
-        self,
-        sampler: "BaseSampler",
-        logger: Logger,
-        time: float,
-        chains: np.ndarray,
-        sampler_name: str | None = None,
-        message: str | None = None,
-    ):
-        sampler.problem = sampler.log_pdf
-        super().__init__(
-            optim=sampler,
-            logger=logger,
-            time=time,
-            optim_name=sampler_name,
-            message=message,
-        )
-        self.chains = chains
-
-
-class BayesianOptimisationResult(OptimisationResult):
-    """
-    Stores the result of a Bayesian optimisation or a Bayesian model
-    selection.
-
-    Attributes
-    ----------
-    problem: pybop.Problem
-        The optimisation object used to generate the results.
-    x : ndarray
-        The solution of the optimisation (in model space).
-    final_cost : float
-        The cost associated with the solution x.
-    n_iterations : int or dict
-        Number of iterations performed by the optimiser. Since Bayesian
-        optimisers tend to have layers of various optimisation
-        algorithms, their iteration counts may be put individually.
-    n_evaluations : int or dict
-        Number of evaluations performed by the optimiser. Since Bayesian
-        optimisers tend to have layers of various optimisation
-        algorithms, their evaluation counts my be put individually.
-    message : str
-        The reason for stopping given by the optimiser.
-    lower_bounds: ndarray
-        The lower confidence parameter boundaries.
-    upper_bounds: ndarray
-        The upper confidence parameter boundaries.
-    posterior : MultivariateParameters
-        The probability distribution of the optimisation.
-    maximum_a_posteriori : Inputs or ndarray
-        Complementing the best observed value in `x`, this is the
-        prediction for the best parameter value.
-    log_evidence_mean : float
-        The logarithm of the evidence of the parameterization. Higher
-        values are better. May only be interpreted relative to a
-        calibration case, e.g., a test-run with synthetic data.
-    log_evidence_variance : float
-        The logarithm of the variance in the calculation of the
-        evidence. For reliable comparisons based on the evidence, should
-        be at or below the scale of the evidence itself.
-    """
-
-    def __init__(
-        self,
-        optim: "BaseOptimiser",
-        logger: Logger,
-        time: float | dict,
-        optim_name: str | None = None,
-        message: str | None = None,
-        lower_bounds: np.ndarray | None = None,
-        upper_bounds: np.ndarray | None = None,
-        posterior: MultivariateParameters | None = None,
-        maximum_a_posteriori: np.ndarray | None = None,
-        log_evidence_mean: float | None = None,
-        log_evidence_variance: float | None = None,
-    ):
-        super().__init__(
-            optim=optim,
-            logger=logger,
-            time=time,
-            optim_name=optim_name,
-            message=message,
-        )
-        self.lower_bounds = lower_bounds
-        self.upper_bounds = upper_bounds
-        self.posterior = posterior
-        self.maximum_a_posteriori = maximum_a_posteriori
-        self.log_evidence_mean = log_evidence_mean
-        self.log_evidence_variance = log_evidence_variance

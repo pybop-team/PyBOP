@@ -9,10 +9,10 @@ import numpy as np
 from pybamm import citations
 
 import pybop
-from pybop import BaseOptimiser
 from pybop._logging import Logger
-from pybop._result import BayesianOptimisationResult
+from pybop.optimisers.base_optimiser import BaseOptimiser, OptimisationResult
 from pybop.parameters.multivariate_distributions import MultivariateGaussian
+from pybop.parameters.multivariate_parameters import MultivariateParameters
 
 
 def ep_bolfi_problem_processing(y, problem):
@@ -289,7 +289,7 @@ class EP_BOLFI(BaseOptimiser):
             verbose_print_rate=self.verbose_print_rate,
         )
 
-    def _run(self):
+    def _run(self) -> "BayesianOptimisationResult":
         verbose_log_target = stdout if self._options.verbose else None
         verbose_err_target = stderr if self._options.verbose else None
         with redirect_stdout(verbose_log_target):
@@ -409,9 +409,8 @@ class EP_BOLFI(BaseOptimiser):
         }
         return BayesianOptimisationResult(
             optim=self,
-            logger=self._logger,
             time=end - start,
-            optim_name="EP-BOLFI",
+            method_name="EP-BOLFI",
             posterior=posterior,
             lower_bounds=lower_bounds,
             upper_bounds=upper_bounds,
@@ -422,3 +421,72 @@ class EP_BOLFI(BaseOptimiser):
             "Expectation Propagation with Bayesian Optimization for "
             "Likelihood-Free Inference"
         )
+
+
+class BayesianOptimisationResult(OptimisationResult):
+    """
+    Stores the result of a Bayesian optimisation or a Bayesian model
+    selection.
+
+    Attributes
+    ----------
+    problem: pybop.Problem
+        The optimisation problem used to generate the results.
+    x : ndarray
+        The solution of the optimisation (in model space).
+    best_cost : float
+        The cost associated with the solution x.
+    n_iterations : int or dict
+        Number of iterations performed by the optimiser. Since Bayesian
+        optimisers tend to have layers of various optimisation
+        algorithms, their iteration counts may be put individually.
+    n_evaluations : int or dict
+        Number of evaluations performed by the optimiser. Since Bayesian
+        optimisers tend to have layers of various optimisation
+        algorithms, their evaluation counts my be put individually.
+    message : str
+        The reason for stopping given by the optimiser.
+    lower_bounds: ndarray
+        The lower confidence parameter boundaries.
+    upper_bounds: ndarray
+        The upper confidence parameter boundaries.
+    posterior : MultivariateParameters
+        The probability distribution of the optimisation.
+    maximum_a_posteriori : Inputs or ndarray
+        Complementing the best observed value in `x`, this is the
+        prediction for the best parameter value.
+    log_evidence_mean : float
+        The logarithm of the evidence of the parameterization. Higher
+        values are better. May only be interpreted relative to a
+        calibration case, e.g., a test-run with synthetic data.
+    log_evidence_variance : float
+        The logarithm of the variance in the calculation of the
+        evidence. For reliable comparisons based on the evidence, should
+        be at or below the scale of the evidence itself.
+    """
+
+    def __init__(
+        self,
+        optim: EP_BOLFI,
+        time: float | dict,
+        method_name: str | None = None,
+        message: str | None = None,
+        lower_bounds: np.ndarray | None = None,
+        upper_bounds: np.ndarray | None = None,
+        posterior: MultivariateParameters | None = None,
+        maximum_a_posteriori: np.ndarray | None = None,
+        log_evidence_mean: float | None = None,
+        log_evidence_variance: float | None = None,
+    ):
+        super().__init__(
+            optim=optim,
+            time=time,
+            method_name=method_name,
+            message=message,
+        )
+        self.lower_bounds = lower_bounds
+        self.upper_bounds = upper_bounds
+        self.posterior = posterior
+        self.maximum_a_posteriori = maximum_a_posteriori
+        self.log_evidence_mean = log_evidence_mean
+        self.log_evidence_variance = log_evidence_variance

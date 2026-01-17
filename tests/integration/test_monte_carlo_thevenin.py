@@ -150,11 +150,10 @@ class TestSamplingThevenin:
         sampler = sampler(log_pdf=posterior, options=options)
         result = sampler.run()
 
-        # Test PosteriorSummary
-        summary = pybop.PosteriorSummary(result.chains)
-        ess = summary.effective_sample_size()
+        # Test posterior summary
+        ess = result.effective_sample_size()
         np.testing.assert_array_less(0, ess)
-        np.testing.assert_array_less(0, summary.rhat())
+        np.testing.assert_array_less(0, result.rhat())
 
         # Assert both final sample and posterior mean
         x = np.mean(result.chains, axis=1)

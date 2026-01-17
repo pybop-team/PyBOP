@@ -106,7 +106,7 @@ from ._evaluation import PopulationEvaluator, ScalarEvaluator, SequentialEvaluat
 # Optimisation logging and result
 #
 from ._logging import Logger
-from ._result import OptimisationResult
+from ._result import Result
 
 #
 # Optimiser classes
@@ -149,7 +149,6 @@ from .samplers.base_pints_sampler import BasePintsSampler, PintsSamplerOptions
 from .samplers.pints_samplers import (
     NUTS,
     DREAM,
-    AdaptiveCovarianceMCMC,
     DifferentialEvolutionMCMC,
     DramACMC,
     EmceeHammerMCMC,
@@ -183,7 +182,6 @@ from .applications.gitt_methods import GITTPulseFit, GITTFit
 # Plotting classes
 #
 from . import plot as plot
-from .samplers.mcmc_summary import PosteriorSummary
 
 #
 # Remove any imported modules, so we don't expose them as part of pybop

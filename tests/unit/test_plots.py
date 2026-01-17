@@ -187,7 +187,7 @@ class TestPlots:
             result.plot_surface(bounds=[[0.5, 0.8], [0.7, 0.4]])
 
     @pytest.fixture
-    def posterior_summary(self, model, parameters, dataset):
+    def sampling_result(self, model, parameters, dataset):
         parameter_values = model.default_parameter_values
         parameter_values.update(parameters)
         simulator = pybop.pybamm.Simulator(
@@ -198,21 +198,22 @@ class TestPlots:
         problem = pybop.Problem(simulator, posterior)
         options = pybop.PintsSamplerOptions(n_chains=1, max_iterations=1)
         sampler = pybop.SliceStepoutMCMC(problem, options=options)
-        result = sampler.run()
-        return pybop.PosteriorSummary(result.chains)
+        return sampler.run()
 
-    def test_posterior_plots(self, posterior_summary):
+    def test_posterior_plots(self, sampling_result):
+        sampling_result.get_summary_statistics()
+
         # Plot trace
-        posterior_summary.plot_trace()
+        sampling_result.plot_trace()
 
         # Plot posterior
-        posterior_summary.plot_posterior()
+        sampling_result.plot_posterior()
 
         # Plot chains
-        posterior_summary.plot_chains()
+        sampling_result.plot_chains()
 
         # Plot summary table
-        posterior_summary.summary_table()
+        sampling_result.summary_table()
 
     def test_with_ipykernel(self, dataset, fitting_problem, result):
         import ipykernel
