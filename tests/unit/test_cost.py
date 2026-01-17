@@ -291,8 +291,7 @@ class TestCosts:
                 ),
                 "Cell mass [kg]": pybop.pybamm.cell_mass(),
                 "Cell volume [m3]": pybop.pybamm.cell_volume(),
-            },
-            check_already_exists=False,
+            }
         )
         parameter_values.update(parameters)
         return pybop.pybamm.Simulator(

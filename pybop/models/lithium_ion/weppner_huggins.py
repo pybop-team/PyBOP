@@ -1,9 +1,10 @@
 import numpy as np
-from pybamm import DummySolver, Parameter, ParameterValues, citations, lithium_ion
+import pybamm
+from pybamm import DummySolver, Parameter, ParameterValues
 from pybamm import t as pybamm_t
 
 
-class WeppnerHuggins(lithium_ion.BaseModel):
+class WeppnerHuggins(pybamm.lithium_ion.BaseModel):
     """
     Represents the Weppner & Huggins model to fit diffusion coefficients to GITT data.
 
@@ -25,7 +26,7 @@ class WeppnerHuggins(lithium_ion.BaseModel):
         super().__init__(name=name, **model_kwargs)
         self._summary_variables = []
 
-        citations.register("""
+        pybamm.citations.register("""
             @article{Weppner1977,
             title={{Determination of the kinetic parameters
             of mixed-conducting electrodes and application to the system Li3Sb}},
@@ -131,7 +132,7 @@ class WeppnerHuggins(lithium_ion.BaseModel):
         param = parameter_values
 
         # Unpack physical parameters
-        F = param["Faraday constant [C.mol-1]"]
+        F = pybamm.constants.F.value
         alpha = param["Positive electrode active material volume fraction"]
         c_max = param["Maximum concentration in positive electrode [mol.m-3]"]
         L = param["Positive electrode thickness [m]"]

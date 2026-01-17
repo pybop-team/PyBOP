@@ -38,8 +38,7 @@ parameter_values.update(
         ),
         "Cell mass [kg]": pybop.pybamm.cell_mass(),
         "Cell volume [m3]": pybop.pybamm.cell_volume(),
-    },
-    check_already_exists=False,
+    }
 )
 
 # Fitting parameters
