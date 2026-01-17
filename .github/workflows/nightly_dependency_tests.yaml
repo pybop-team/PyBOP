@@ -68,6 +68,7 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           python-version: ${{ matrix.python-version }}
+          activate-environment: "true"
       - name: Install dependencies
         run: |
           uv pip install --resolution lowest-direct -e .[all,dev]
