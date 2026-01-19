@@ -50,15 +50,17 @@ docs = [
     "myst-parser",
 ]
 dev = [
-    "nox[uv]",
-    "nbmake",
-    "pre-commit",
-    "pytest>=6",
-    "pytest-cov",
-    "pytest-mock",
-    "pytest-xdist",
-    "ruff",
-    ]
+    "nox[uv]>=2025",
+    "nbmake>=1.5.5",
+    "ipython>=9.9",  # for nbmake
+    "pyzmq>=27",  # for nbmake
+    "pre-commit>=4",
+    "pytest>=9",
+    "pytest-cov>=7",
+    "pytest-mock>=3.14",
+    "pytest-xdist>=3.7",
+    "ruff>=0.14",
+]
 scifem = [
     "scikit-fem>=8.1.0" # scikit-fem is a dependency for the multi-dimensional pybamm models
 ]
@@ -76,7 +78,7 @@ ep-bolfi = [
     "dask[distributed]>=2025.12",  # for elfi
     "networkx>=3",  # for elfi
     "pyimpspec>=4",  # for ep-bolfi
-    "defusedxml>=0.5",  # for pyimpspec
+    "defusedxml>=0.6",  # for pyimpspec
     "pillow>11",  # for pyimpspec
     "xmlhelpy>=0.14",  # for ep-bolfi
     "pyarrow>=14",  # for ep-bolfi
