@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#868](https://github.com/pybop-team/PyBOP/pull/868) - Adds support for Python3.13 (NumPy restricted to <2.4, EP-BOLFI optimiser and PyProBE do not support Python 3.13).
 - [#846](https://github.com/pybop-team/PyBOP/pull/846) - Adds Bayesian optimisation framework and, as an example, the EP-BOLFI optimiser
 
 ## Optimisations
