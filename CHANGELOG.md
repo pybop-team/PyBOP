@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#871](https://github.com/pybop-team/PyBOP/pull/871) - Adds a lumped thermal model called `CellTemperature`.
 - [#846](https://github.com/pybop-team/PyBOP/pull/846) - Adds Bayesian optimisation framework and, as an example, the EP-BOLFI optimiser
 
 ## Optimisations
