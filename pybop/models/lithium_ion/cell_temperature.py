@@ -225,7 +225,7 @@ class CellTemperature(pybamm_lithium_ion.BaseModel):
         param = parameter_values
 
         # Unpack physical parameters
-        F = param["Faraday constant [C.mol-1]"]
+        F = pybamm.constants.F.value
         alpha_p = param["Positive electrode active material volume fraction"]
         alpha_n = param["Negative electrode active material volume fraction"]
         c_max_p = param["Maximum concentration in positive electrode [mol.m-3]"]
