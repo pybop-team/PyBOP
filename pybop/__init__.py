@@ -31,6 +31,7 @@ from ._utils import add_spaces, is_numeric
 # Dataset class
 #
 from .processing.dataset import Dataset, import_pyprobe_result
+from .processing.interpolate_current import generate_consistent_current, downsample_constant_current
 
 #
 # Transformation classes

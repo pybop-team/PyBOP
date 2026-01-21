@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#869](https://github.com/pybop-team/PyBOP/issues/869) - Adds methods for pre-processing current data for linear interpolation.
 - [#846](https://github.com/pybop-team/PyBOP/pull/846) - Adds Bayesian optimisation framework and, as an example, the EP-BOLFI optimiser
 
 ## Optimisations
