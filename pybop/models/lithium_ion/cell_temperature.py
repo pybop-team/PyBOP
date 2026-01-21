@@ -169,7 +169,7 @@ class CellTemperature(pybamm_lithium_ion.BaseModel):
         param = ParameterValues("Chen2020")
         param.update(
             {
-                "Voltage function [V]": 3.0,
+                "Voltage function [V]": param.evaluate(self.param.ocv_init),
                 "Cell thermal mass [J/K]": 5.0,
                 "Heat transfer coefficient [W/K]": 0.05,
             },
