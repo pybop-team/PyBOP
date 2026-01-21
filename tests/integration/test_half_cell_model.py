@@ -56,8 +56,7 @@ class TestHalfCellModel:
                 "Positive electrode density [kg.m-3]": 3262.0,
                 "Separator density [kg.m-3]": 0.0,
                 "Cell mass [kg]": pybop.pybamm.cell_mass(),
-            },
-            check_already_exists=False,
+            }
         )
         x = self.ground_truth
         parameter_values.update(

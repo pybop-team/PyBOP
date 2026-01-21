@@ -54,8 +54,7 @@ class TestSamplingThevenin:
                 "Open-circuit voltage [V]": model.default_parameter_values[
                     "Open-circuit voltage [V]"
                 ]
-            },
-            check_already_exists=False,
+            }
         )
         parameter_values.update(
             {

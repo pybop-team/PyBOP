@@ -9,11 +9,10 @@ from pybamm import (
     SpatialVariable,
     Variable,
 )
-from pybamm import lithium_ion as pybamm_lithium_ion
 from pybamm import t as pybamm_t
 
 
-class SPDiffusion(pybamm_lithium_ion.BaseModel):
+class SPDiffusion(pybamm.lithium_ion.BaseModel):
     """
     Diffusion model for a single, spherical particle representing a half-cell for GITT.
 
@@ -220,7 +219,7 @@ class SPDiffusion(pybamm_lithium_ion.BaseModel):
         param = parameter_values
 
         # Unpack physical parameters
-        F = param["Faraday constant [C.mol-1]"]
+        F = pybamm.constants.F.value
         alpha = param["Positive electrode active material volume fraction"]
         c_max = param["Maximum concentration in positive electrode [mol.m-3]"]
         L = param["Positive electrode thickness [m]"]
