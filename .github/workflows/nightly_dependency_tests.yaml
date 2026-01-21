@@ -71,7 +71,8 @@ jobs:
           activate-environment: "true"
       - name: Install dependencies
         run: |
-          uv pip install --resolution lowest-direct -e .[all,dev]
+          uv pip install --resolution lowest-direct -e .[all]
+          uv pip install -e .[dev]
 
 
       - name: Run ${{ matrix.suite }} tests
