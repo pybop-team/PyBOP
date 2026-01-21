@@ -211,6 +211,7 @@ class BasePintsSampler(BaseSampler):
                 self._end_initial_phase()
 
             xs = self._ask_for_samples()
+            print("xs", xs)
 
             self.fxs = evaluator.evaluate(xs)
             self._process_chains()

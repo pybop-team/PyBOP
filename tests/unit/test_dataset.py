@@ -97,6 +97,9 @@ class TestDataset:
     @pytest.mark.skipif(
         sys.version_info < (3, 11), reason="requires python3.11 or higher"
     )
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 13), reason="requires python3.13 or lower"
+    )
     def test_pyprobe_import(self):
         """
         Function to test import of PyProBE Result into a pybop.Dataset.

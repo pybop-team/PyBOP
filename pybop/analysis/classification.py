@@ -223,7 +223,7 @@ def plot_hessian_eigenvectors(info, steps: int = 10):
         for j in range(steps):
             p = np.array([param0[i], param1[j]], dtype=float)
             try:
-                Z[i, j] = float(cost(p))
+                Z[i, j] = float(cost(p)[0])
             except Exception:
                 Z[i, j] = np.nan
 
