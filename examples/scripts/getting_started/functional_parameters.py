@@ -39,8 +39,7 @@ parameter_values.update(
     {
         "Positive electrode reference exchange-current density [A.m-2]": 1,
         "Positive electrode charge transfer coefficient": 0.5,
-    },
-    check_already_exists=False,
+    }
 )
 parameter_values["Positive electrode exchange-current density [A.m-2]"] = (
     positive_electrode_exchange_current_density

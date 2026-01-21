@@ -54,8 +54,7 @@ class TestClassification:
                 "Open-circuit voltage [V]": model.default_parameter_values[
                     "Open-circuit voltage [V]"
                 ]
-            },
-            check_already_exists=False,
+            }
         )
         parameter_values.update({"C1 [F]": 1000})
         parameter_values.update(
@@ -211,10 +210,7 @@ class TestClassification:
     def test_insensitive_classify_using_hessian(self, model, parameter_values):
         param_R0_a = pybop.Parameter(bounds=[0, 0.002])
         param_R0_b = pybop.Parameter(bounds=[-0.001, 0.001])
-        parameter_values.update(
-            {"R0_a [Ohm]": 0.001, "R0_b [Ohm]": 0},
-            check_already_exists=False,
-        )
+        parameter_values.update({"R0_a [Ohm]": 0.001, "R0_b [Ohm]": 0})
         parameter_values.update(
             {"R0 [Ohm]": Parameter("R0_a [Ohm]") + Parameter("R0_b [Ohm]")},
         )
