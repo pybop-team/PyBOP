@@ -29,7 +29,6 @@ dependencies = [
     "numpy>=1.26",
     "scipy>=1.12",
     "pints>=0.5.1",
-    "cma>=3",  # for pints
     "SALib>=1.5",
     "multiprocess>=0.70.13",  # for SALib
     "six>=1.16",  # for python-dateutil for pandas
