@@ -62,29 +62,16 @@ dev = [
     "ruff>=0.14",
 ]
 scifem = [
-    "scikit-fem>=8.1.0" # scikit-fem is a dependency for the multi-dimensional pybamm models
+   "scikit-fem>=8.1.0" # scikit-fem is a dependency for the multi-dimensional pybamm models
 ]
 bpx = [
     "bpx>=0.5, <0.6",
 ]
 ep-bolfi = [
     "ep-bolfi>=3.0.2",
-    "GPy>=1.13.2",  # for ep-bolfi
-    "cython>=3",  # for GPy
-    "wheel>=0.20",  # for ep-bolfi
-    "h5py>=3.10",  # for ep-bolfi
-    "elfi>=0.8.6",  # for ep-bolfi
-    "numdifftools>=0.9.41",  # for elfi
-    "dask[distributed]>=2025.12",  # for elfi
-    "networkx>=3",  # for elfi
-    "pyimpspec>=4",  # for ep-bolfi
-    "defusedxml>=0.6",  # for pyimpspec
-    "pillow>11",  # for pyimpspec
-    "xmlhelpy>=0.14",  # for ep-bolfi
-    "pyarrow>=14",  # for ep-bolfi
 ]
 pyprobe = [
-    "PyProBE-Data>=2.5.0;python_version>='3.11'"
+  "PyProBE-Data>=2.5.0;python_version>='3.11'"
 ]
 
 all = ["pybop[plot,scifem,bpx,pyprobe,ep-bolfi]"]
