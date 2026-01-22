@@ -39,7 +39,7 @@ class CellTemperature(pybamm_lithium_ion.BaseModel):
         Q = Variable("Discharge capacity [A.h]")
         Qt = Variable("Throughput capacity [A.h]")
 
-        T_cell = Variable("Cell temperature [degC]")
+        T_cell = Variable("Cell temperature [K]")
 
         ######################
         # Parameters
@@ -55,10 +55,8 @@ class CellTemperature(pybamm_lithium_ion.BaseModel):
         y_100 = Parameter("Minimum positive stoichiometry")
         y_0 = Parameter("Maximum positive stoichiometry")
 
-        kelvin = 273.15
-        T_init = Parameter("Initial temperature [K]") - kelvin
-        T_amb = Parameter("Ambient temperature [K]") - kelvin
-        T_ref = Parameter("Reference temperature [K]") - kelvin
+        T_init = Parameter("Initial temperature [K]")
+        T_ref = Parameter("Reference temperature [K]")
 
         S_n = Parameter("Negative electrode OCP entropic change [V.K-1]")
         S_p = Parameter("Positive electrode OCP entropic change [V.K-1]")
@@ -108,6 +106,9 @@ class CellTemperature(pybamm_lithium_ion.BaseModel):
         dUdT = S_p - S_n
         Q_rev = -I * T_cell * dUdT
 
+        # Ambient temperature
+        T_amb = pybamm.FunctionParameter("Ambient temperature [K]", {"Time [s]": pybamm.t})
+
         # Cell temperature
         self.rhs[T_cell] = (Q_irr + Q_rev - h * (T_cell - T_amb)) / c_th
         self.initial_conditions[T_cell] = T_init
@@ -126,8 +127,8 @@ class CellTemperature(pybamm_lithium_ion.BaseModel):
             "Throughput capacity [A.h]": Qt,
             "Voltage [V]": V,
             "Open-circuit voltage [V]": U,
-            "Cell temperature [degC]": T_cell,
-            # "Ambient temperature [degC]": T_amb,
+            "Ambient temperature [K]": T_amb,
+            "Cell temperature [K]": T_cell,
         }
 
     def U(self, sto, domain):
@@ -170,7 +171,7 @@ class CellTemperature(pybamm_lithium_ion.BaseModel):
         param.update(
             {
                 "Voltage function [V]": param.evaluate(self.param.ocv_init),
-                "Cell thermal mass [J/K]": 5.0,
+                "Cell thermal mass [J/K]": 20,
                 "Heat transfer coefficient [W/K]": 0.05,
             },
             check_already_exists=False,
@@ -185,7 +186,7 @@ class CellTemperature(pybamm_lithium_ion.BaseModel):
             "Current [A]",
             "SoC",
             {"Open-circuit voltage [V]", "Voltage [V]"},
-            "Cell temperature [degC]",  # {"Ambient temperature [degC]", "Cell temperature [degC]"},
+            {"Ambient temperature [K]", "Cell temperature [K]"},
         ]
 
     @property

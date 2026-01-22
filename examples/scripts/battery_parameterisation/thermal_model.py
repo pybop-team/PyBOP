@@ -28,7 +28,7 @@ solution = pybamm.Simulation(
 # Add thermal parameters and the voltage data
 parameter_values.update(
     {
-        "Cell thermal mass [J/K]": 5,
+        "Cell thermal mass [J/K]": 20,
         "Heat transfer coefficient [W/K]": 0.05,
         "Current function [A]": pybamm.Interpolant(
             solution.t, solution["Current [A]"].data, pybamm.t
@@ -45,7 +45,7 @@ grouped_parameter_values = pybop.lithium_ion.CellTemperature.create_grouped_para
     parameter_values
 )
 grouped_parameter_values.update(
-    {"OCV entropic change [V.K-1]": 0.001}, check_already_exists=False
+    {"OCV entropic change [V.K-1]": 2e-5}, check_already_exists=False
 )
 grouped_parameter_values.update(
     {
@@ -63,4 +63,4 @@ thermal_model = pybop.lithium_ion.CellTemperature()
 solution = pybamm.Simulation(
     thermal_model, parameter_values=grouped_parameter_values
 ).solve(initial_soc=init_soc, t_eval=solution.t)
-solution.plot(["Current [A]", "SoC", "Voltage [V]", "Cell temperature [degC]"])
+solution.plot(["Current [A]", "SoC", "Voltage [V]", "Cell temperature [K]"])
