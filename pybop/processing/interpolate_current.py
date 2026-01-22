@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.integrate import trapezoid
 
 import pybop
 
@@ -154,7 +155,7 @@ def downsample_constant_current(dataset, tolerance=1e-3):
             # points and replace the second and second-to-last points with a constant current
             keep[i + 1 : i + j - 1] = False
             constant_current = (
-                2 * np.trapz(y=current[i - 1 : i + j + 1], x=time[i - 1 : i + j + 1])
+                2 * trapezoid(y=current[i - 1 : i + j + 1], x=time[i - 1 : i + j + 1])
                 - current[i - 1] * delta_time
                 - current[i + j] * (time[i + j] - time[i + j - 1])
             ) / (time[i + j] + time[i + j - 1] - time[i] - time[i - 1])
