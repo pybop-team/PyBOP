@@ -107,7 +107,9 @@ class CellTemperature(pybamm_lithium_ion.BaseModel):
         Q_rev = -I * T_cell * dUdT
 
         # Ambient temperature
-        T_amb = pybamm.FunctionParameter("Ambient temperature [K]", {"Time [s]": pybamm.t})
+        T_amb = pybamm.FunctionParameter(
+            "Ambient temperature [K]", {"Time [s]": pybamm.t}
+        )
 
         # Cell temperature
         self.rhs[T_cell] = (Q_irr + Q_rev - h * (T_cell - T_amb)) / c_th
