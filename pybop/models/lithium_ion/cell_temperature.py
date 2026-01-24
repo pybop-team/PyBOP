@@ -29,7 +29,7 @@ class CellTemperature(pybamm_lithium_ion.BaseModel):
             If True, the model is built upon creation (default: False).
     """
 
-    def __init__(self, name="Surface Temperature Model", **model_kwargs):
+    def __init__(self, name="Cell Temperature Model", **model_kwargs):
         super().__init__(name=name, **model_kwargs)
 
         ######################
@@ -210,10 +210,8 @@ class CellTemperature(pybamm_lithium_ion.BaseModel):
     @staticmethod
     def create_grouped_parameters(parameter_values: ParameterValues) -> ParameterValues:
         """
-        Create a parameter set for the Single Particle Diffusion Model from a
+        Create a parameter set for the Cell Temperature Model from a
         PyBaMM lithium-ion ParameterValues object.
-
-        Note: the working electrode is the positive electrode.
 
         Parameters
         ----------
