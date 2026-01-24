@@ -4,7 +4,7 @@ from scipy.integrate import trapezoid
 import pybop
 
 
-def generate_consistent_current(dataset, tolerance=1e-3):
+def generate_consistent_current(dataset: pybop.Dataset, tolerance: float = 1e-3):
     """
     Generate a new dataset with additional data points inserted, where necessary, between
     the provided data points to ensure that the total charge throughput matches the intergral
@@ -102,7 +102,7 @@ def generate_consistent_current(dataset, tolerance=1e-3):
     )
 
 
-def downsample_constant_current(dataset, tolerance=1e-3):
+def downsample_constant_current(dataset: pybop.Dataset, tolerance: float = 1e-3):
     """
     Generate a new dataset retaining only the informative points and consistency between the
     charge throughput and a linear interpolation of the current.
