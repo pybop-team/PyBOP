@@ -3,7 +3,7 @@ import sys
 import numpy as np
 import pybamm
 import pytest
-from scipy.integrate import cumulative_trapezoid
+from scipy.integrate import cumulative_trapezoid, trapezoid
 
 import pybop
 
@@ -293,4 +293,29 @@ class TestProcessing:
         )
         assert np.allclose(
             downsampled_dataset["Discharge capacity [A.h]"][1:], charge_throughput
+        )
+
+        # Test downsampling of constant current sections without charge throughput data
+        dataset_wo_ct = pybop.Dataset(
+            {
+                "Time [s]": dataset["Time [s]"],
+                "Current function [A]": dataset["Current function [A]"],
+            }
+        )
+        ds_dataset = pybop.downsample_constant_current(dataset_wo_ct, tolerance=1e-4)
+        assert len(ds_dataset["Time [s]"]) < len(dataset["Time [s]"])
+
+        for var in ["Time [s]", "Current function [A]"]:
+            assert ds_dataset[var][0] == dataset_wo_ct[var][0]
+            assert ds_dataset[var][-1] == dataset_wo_ct[var][-1]
+
+        assert np.allclose(
+            trapezoid(
+                y=ds_dataset["Current function [A]"],
+                x=ds_dataset["Time [s]"],
+            ),
+            trapezoid(
+                y=dataset_wo_ct["Current function [A]"],
+                x=dataset_wo_ct["Time [s]"],
+            ),
         )
