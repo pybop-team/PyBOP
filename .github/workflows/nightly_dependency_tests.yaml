@@ -1,4 +1,4 @@
-name: Nightly dependencies at develop
+name: Nightly dependencies
 
 on:
   workflow_dispatch:
@@ -36,7 +36,7 @@ jobs:
         run: |
           python -m pip install -e .[all,dev]
           python -m pip uninstall -y pybamm
-          python -m pip install "pybamm[all] @ git+https://github.com/pybamm-team/PyBaMM@develop"
+          python -m pip install "pybamm[all] @ git+https://github.com/pybamm-team/PyBaMM@main"
 
 
       - name: Run ${{ matrix.suite }} tests
@@ -71,7 +71,8 @@ jobs:
           activate-environment: "true"
       - name: Install dependencies
         run: |
-          uv pip install --resolution lowest-direct -e .[all,dev]
+          uv pip install -e .[dev]
+          uv pip install --resolution lowest-direct -e .[all]
 
 
       - name: Run ${{ matrix.suite }} tests
