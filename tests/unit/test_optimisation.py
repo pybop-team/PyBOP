@@ -1,11 +1,15 @@
 import io
+import json
+import pickle
 import re
 import sys
 
 import numpy as np
+import pandas as pd
 import pybamm
 import pytest
 from pints import PopulationBasedOptimiser
+from scipy.io import loadmat
 
 import pybop
 from pybop.optimisers.base_optimiser import OptimisationResult
@@ -774,3 +778,99 @@ class TestOptimisation:
             RuntimeError, match="Distributions must be provided for multi-start"
         ):
             optim.run()
+
+    def test_save_result(self, problem, tmp_path):
+        test_stub = tmp_path / "test"
+
+        logger = pybop.Logger(minimising=True)
+        logger.iteration = 1
+        logger.extend_log(
+            x_search=[np.asarray([1e-3])], x_model=[np.asarray([1e-3])], cost=[0.1]
+        )
+        optim = pybop.XNES(problem)
+        optim._logger = logger
+
+        # Construct OptimisationResult
+        result = OptimisationResult(
+            optim=optim,
+            method_name="Test name",
+            time=0.1,
+            message="Test message",
+        )
+
+        # Test save result
+        with pytest.raises(ValueError, match=r"pickle"):
+            result.save_data(to_format="pickle")
+        result.save_data(f"{test_stub}.pickle")
+
+        with open(f"{test_stub}.pickle", "rb") as f:
+            result_load = pickle.load(f)
+
+        for name in result.problem.parameters.names:
+            np.testing.assert_approx_equal(result_load[name], result.best_inputs[name])
+
+        # To matlab with bad variable names fails
+        with pytest.raises(ValueError, match=r"Invalid character"):
+            result.save_data(f"{test_stub}.mat", to_format="matlab")
+
+        # To matlab with appropriate short_names
+        short_names = {
+            "Positive electrode active material volume fraction": "pe_vf",
+        }
+        result.save_data(
+            f"{test_stub}.mat", to_format="matlab", short_names=short_names
+        )
+
+        result_load = loadmat(f"{test_stub}.mat")
+
+        for name in result._problem._parameters.names:
+            # savemat turns 1-d array into 2-d array
+            np.testing.assert_array_equal(
+                result_load[short_names[name]].flatten(), result.best_inputs[name]
+            )
+
+        # To csv
+        result.save_data(f"{test_stub}.csv", to_format="csv")
+        csv_str = result.save_data(to_format="csv")
+
+        # check string is the same as the file
+        with open(f"{test_stub}.csv") as f:
+            # need to strip \r chars for windows
+            assert csv_str.replace("\r", "") == f.read()
+
+        # read csv
+        df = pd.read_csv(f"{test_stub}.csv")
+        for name in result._problem._parameters.names:
+            np.testing.assert_array_equal(df[name], result.best_inputs[name])
+
+        # check string is the same as the file
+        with open(f"{test_stub}.csv") as f:
+            # need to strip \r chars for windows
+            assert csv_str.replace("\r", "") == f.read()
+
+        # to json
+        result.save_data(f"{test_stub}.json", to_format="json")
+        json_str = result.save_data(to_format="json")
+
+        # check string is the same as the file
+        with open(f"{test_stub}.json") as f:
+            # need to strip \r chars for windows
+            assert json_str.replace("\r", "") == f.read()
+
+        # check if string has the right values
+        json_data = json.loads(json_str)
+        for name in result._problem._parameters.names:
+            np.testing.assert_allclose(
+                json_data[name], result.best_inputs[name], rtol=1e-7, atol=1e-6
+            )
+
+        # raise error if format is unknown
+        with pytest.raises(ValueError, match=r"format 'wrong_format' not recognised"):
+            result.save_data(f"{test_stub}.csv", to_format="wrong_format")
+
+        # test save whole result
+        result.save(f"{test_stub}.pickle")
+        with open(f"{test_stub}.pickle", "rb") as f:
+            result_load = pickle.load(f)
+        assert result.method_name == result_load.method_name
+        np.testing.assert_array_equal(result._x, result_load._x)

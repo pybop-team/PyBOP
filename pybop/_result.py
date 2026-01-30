@@ -1,6 +1,25 @@
+import json
+import pickle
+
 import numpy as np
+import pandas as pd
+from scipy.io import savemat
 
 from pybop import Logger, Problem, plot
+
+
+class NumpyEncoder(json.JSONEncoder):
+    """
+    Numpy serialiser helper class that converts numpy arrays to a list.
+    Numpy arrays cannot be directly converted to JSON, so the arrays are
+    converted to python list objects before encoding.
+    """
+
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        # won't be called since we only need to convert numpy arrays
+        return json.JSONEncoder.default(self, obj)  # pragma: no cover
 
 
 class Result:
@@ -314,3 +333,104 @@ class Result:
             Valid Plotly layout keys and their values.
         """
         return plot.contour(call_object=self, **kwargs)
+
+    def save(self, filename):
+        """Save the whole result using pickle"""
+
+        with open(filename, "wb") as f:
+            pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
+
+    def data_dict(self, short_names):
+        data = {}
+        for key, value in self.best_inputs.items():
+            if short_names is not None and key in short_names.keys():
+                data[short_names[key]] = value
+            else:
+                data[key] = value
+
+        return data
+
+    def save_data(
+        self, filename=None, variables=None, to_format="pickle", short_names=None
+    ):
+        """
+        Save result data (raw arrays)
+
+        Based on pybamm.Solution.save_data
+
+        Parameters
+        ----------
+        filename : str, optional
+            The name of the file to save data to. If None, then a str is returned
+        to_format : str, optional
+            The format to save to. Options are:
+
+            - 'pickle' (default): creates a pickle file with the data dictionary
+            - 'matlab': creates a .mat file, for loading in matlab
+            - 'csv': creates a csv file (0D variables only)
+            - 'json': creates a json file
+        short_names : dict, optional
+            Dictionary of shortened names to use when saving. This may be necessary when
+            saving to MATLAB, since no spaces or special characters are allowed in
+            MATLAB variable names. Note that not all the variables need to be given
+            a short name.
+
+        Returns
+        -------
+        data : str, optional
+            str if 'csv' or 'json' is chosen and filename is None, otherwise None
+        """
+
+        data = self.data_dict(short_names)
+
+        if to_format == "pickle":
+            if filename is None:
+                raise ValueError("pickle format must be written to a file")
+            with open(filename, "wb") as f:
+                pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+        elif to_format == "matlab":
+            if filename is None:
+                raise ValueError("matlab format must be written to a file")
+            # Check all the variable names only contain a-z, A-Z or _ or numbers
+            for name in data.keys():
+                # Check the string only contains the following ASCII:
+                # a-z (97-122)
+                # A-Z (65-90)
+                # _ (95)
+                # 0-9 (48-57) but not in the first position
+                for i, s in enumerate(name):
+                    if not (
+                        97 <= ord(s) <= 122
+                        or 65 <= ord(s) <= 90
+                        or ord(s) == 95
+                        or (i > 0 and 48 <= ord(s) <= 57)
+                    ):
+                        raise ValueError(
+                            f"Invalid character '{s}' found in '{name}'. "
+                            "MATLAB variable names must only contain a-z, A-Z, _, "
+                            "or 0-9 (except the first position). "
+                            "Use the 'short_names' argument to pass an alternative "
+                            "variable name, e.g. \n\n"
+                            "\tsolution.save_data(filename, "
+                            "['Electrolyte concentration'], to_format='matlab, "
+                            "short_names={'Electrolyte concentration': 'c_e'})"
+                        )
+            savemat(filename, data)
+        elif to_format == "csv":
+            for name, var in data.items():
+                if var.ndim == 0:
+                    data[name] = [var]
+                elif var.ndim >= 2:
+                    raise ValueError(
+                        f"only 0D variables can be saved to csv, but '{name}' is {var.ndim - 1}D"
+                    )
+            df = pd.DataFrame(data)
+            return df.to_csv(filename, index=False)
+        elif to_format == "json":
+            if filename is None:
+                return json.dumps(data, cls=NumpyEncoder)
+            else:
+                with open(filename, "w") as outfile:
+                    json.dump(data, outfile, cls=NumpyEncoder)
+        else:
+            raise ValueError(f"format '{to_format}' not recognised")

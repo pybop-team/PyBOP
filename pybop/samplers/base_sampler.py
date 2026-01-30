@@ -165,6 +165,21 @@ class SamplingResult(Result):
         self.num_parameters = self.chains.shape[2]
         self.go = PlotlyManager().go
 
+    def __getstate__(self):
+        # Copy the object's state from self.__dict__ which contains
+        # all our instance attributes. Always use the dict.copy()
+        # method to avoid modifying the original state.
+        state = self.__dict__.copy()
+        # Remove the unpicklable entries.
+        del state["go"]
+        return state
+
+    def __setstate__(self, state):
+        # Restore instance attributes .
+        self.__dict__.update(state)
+        # Restore unpickalable attributes
+        self.go = PlotlyManager().go
+
     def signif(self, x, p: int):
         """
         Rounds array `x` to `p` significant digits.
@@ -394,3 +409,15 @@ class SamplingResult(Result):
         stationary chains R-hat will be close to one, otherwise it is higher.
         """
         return pints.rhat(self.chains)
+
+    def data_dict(self, short_names):
+        names = self.problem.parameters.names
+        sample_data = {}
+        for j, name in enumerate(names):
+            val = self.all_samples[:, j]
+            if short_names is not None and name in short_names.keys():
+                sample_data[short_names[name]] = val
+            else:
+                sample_data[name] = val
+
+        return sample_data
