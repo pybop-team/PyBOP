@@ -340,6 +340,10 @@ class TestPintsSamplers:
         with pytest.raises(ValueError, match=r"Invalid character"):
             result.save_data(f"{test_stub}.mat", to_format="matlab")
 
+        # To matlab without filename
+        with pytest.raises(ValueError, match=r"matlab format"):
+            result.save_data(to_format="matlab")
+
         # To matlab with appropriate short_names
         short_names = {
             "Negative electrode active material volume fraction": "ne_vf",
@@ -402,3 +406,10 @@ class TestPintsSamplers:
             result_load = pickle.load(f)
         assert result.method_name == result_load.method_name
         np.testing.assert_array_equal(result._x, result_load._x)
+
+        # test csv with multi-d arrays
+        result.all_samples = result.all_samples.reshape(
+            (result.all_samples.shape[0], result.all_samples.shape[1], 1)
+        )
+        with pytest.raises(ValueError, match=r"only 0D variables"):
+            result.save_data(f"{test_stub}.csv", to_format="csv")
