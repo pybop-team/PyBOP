@@ -68,8 +68,8 @@ def generate_consistent_current(dataset: pybop.Dataset, tolerance: float = 1e-3)
                     - current[i]
                 )
             elif switch_time > time[i] - tol:
-                # The measured throughput has a magitude of the opposite sign than possible
-                # with a hold, so add a point just before the second time
+                # The measured throughput is not possible with a hold, so add a point just
+                # before the second time with a change in current of the opposite sign
                 extra_times.append(time[i] - tol)
                 extra_currents.append(
                     (2 * delta_throughput - (current[i] - current[i - 1]) * tol)
@@ -134,7 +134,6 @@ def downsample_constant_current(dataset: pybop.Dataset, tolerance: float = 1e-3)
     i = 1
     offset = 0
     while i + offset < time.shape[0] - 2:
-        delta_time = time[i] - time[i - 1]
         if abs(current[i] - current[i - 1]) > 2 * tolerance:
             i += 1
             continue
@@ -154,6 +153,7 @@ def downsample_constant_current(dataset: pybop.Dataset, tolerance: float = 1e-3)
             # Four or more points are within the current tolerance, so remove any central
             # points and replace the second and second-to-last points with a constant current
             keep[i + 1 : i + j - 1] = False
+            delta_time = time[i] - time[i - 1]
             constant_current = (
                 2 * trapezoid(y=current[i - 1 : i + j + 1], x=time[i - 1 : i + j + 1])
                 - current[i - 1] * delta_time
