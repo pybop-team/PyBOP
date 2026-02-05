@@ -1,5 +1,6 @@
 import os
 import runpy
+import sys
 
 import pytest
 
@@ -25,4 +26,10 @@ class TestExamples:
     @pytest.mark.parametrize("example", list_of_examples())
     @pytest.mark.examples
     def test_example_scripts(self, example):
-        runpy.run_path(example)
+        if (
+            sys.version_info >= (3, 13)
+            and os.path.basename(example) == "bayesian_feature_fitting.py"
+        ):
+            pytest.skip("This example requires a python version < 3.13")
+        else:
+            runpy.run_path(example)
