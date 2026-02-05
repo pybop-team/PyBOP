@@ -1,9 +1,11 @@
+import warnings
 from copy import copy, deepcopy
 from typing import TYPE_CHECKING
 
 import numpy as np
 import pybamm
 from pybamm import SolverError
+from scipy.integrate import cumulative_trapezoid
 
 if TYPE_CHECKING:
     from pybop.parameters.parameter import Inputs
@@ -164,11 +166,21 @@ class Simulator(BaseSimulator):
             self._t_eval = [time_data[0], time_data[-1]]
             self._t_interp = time_data
             control = "Current function [A]"
+            if "Discharge capacity [A.h]" in protocol.data.keys():
+                # Check that a linearly interpolated current matches the charge throughput
+                charge_throughput = cumulative_trapezoid(
+                    y=protocol[control], x=protocol["Time [s]"]
+                )
+                if not np.allclose(
+                    protocol["Discharge capacity [A.h]"][1:], charge_throughput / 3600
+                ):
+                    warnings.warn(
+                        "A linear interpolation of the current data does not reproduce the discharge capacity.",
+                        stacklevel=2,
+                    )
             if control in protocol.data.keys():
                 self._parameter_values[control] = pybamm.Interpolant(
-                    protocol["Time [s]"],
-                    protocol[control],
-                    pybamm.t,
+                    protocol["Time [s]"], protocol[control], pybamm.t
                 )
         else:
             self._experiment = None
