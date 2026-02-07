@@ -162,9 +162,9 @@ class Simulator(BaseSimulator):
             time_data = protocol[protocol.domain]
             self._t_eval = [time_data[0], time_data[-1]]
             self._t_interp = time_data
-            control_function = "Current function [A]"
-            control = control_function.replace(" function", "")
-            self._parameter_values[control_function] = protocol.get_interpolant(control)
+            for key in protocol.control_functions:
+                control = key.replace(" function", "")
+                self._parameter_values[key] = protocol.get_interpolant(control)
         else:
             self._experiment = None
             time_data = protocol

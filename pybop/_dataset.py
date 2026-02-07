@@ -33,14 +33,22 @@ class Dataset:
         The experimental data to store within the dataset.
     domain : str, optional
         The domain of the dataset. Defaults to "Time [s]".
+    control_functions : list[str], optional
+        A list of function names for the control variables. Defaults to ["Current function [A]"].
     """
 
-    def __init__(self, data_dictionary: dict, domain: str | None = None):
+    def __init__(
+        self,
+        data_dictionary: dict,
+        domain: str | None = None,
+        control_functions: list[str] | None = None,
+    ):
         """Initialise a Dataset instance with data and a set of names."""
         if not isinstance(data_dictionary, dict):
             raise TypeError("The input to pybop.Dataset must be a dictionary.")
         self.data = data_dictionary
         self.domain = domain or "Time [s]"
+        self.control_functions = control_functions or ["Current function [A]"]
 
     def __repr__(self):
         """Return a string representation of the Dataset instance."""
