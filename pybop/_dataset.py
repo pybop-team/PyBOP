@@ -137,7 +137,9 @@ class Dataset:
         for key in self.data.keys():
             data[key] = self[key][index]
 
-        return Dataset(data, domain=self.domain)
+        return Dataset(
+            data, domain=self.domain, control_functions=self.control_functions
+        )
 
     def get_interpolant(self, control: str = "Current [A]") -> Interpolant:
         """Returns a linear interpolant for the control as a function of the domain."""
@@ -146,8 +148,10 @@ class Dataset:
 
 def import_pybamm_solution(
     solution: Solution,
-    required_columns: list[str] | None = None,
-    original_columns: list[str] | None = None,
+    variables: list[str] | None = None,
+    t_interp: np.ndarray | None = None,
+    domain: str | None = None,
+    control_functions: list[str] | None = None,
 ) -> Dataset:
     """
     Import a pybamm.Solution into a pybop.Dataset.
@@ -156,41 +160,39 @@ def import_pybamm_solution(
     ----------
     solution : pybamm.Solution
         A pybamm.Solution object.
-    required_columns : list[str], optional
-        List of column names for the pybop.Dataset.
-    original_columns : list[str], optional
-        A list of the column names in the Result corresponding to the required column names.
-    If only one list of column names is provided, they are assumed to be identical.
+    variables : list[str], optional
+        A list of variables to include in the dataset.
+    t_interp : np.ndarray, optional
+        Time points at which to interpolate the solution, only when the solver supports it.
+    domain : str, optional
+        The domain of the dataset. Defaults to "Time [s]".
+    control_functions : list[str], optional
+        A list of function names for the control variables. Defaults to ["Current function [A]"].
     """
-    if required_columns is None and original_columns is None:
-        required_columns = [
+    if variables is None:
+        variables = [
             "Time [s]",
             "Current [A]",
             "Voltage [V]",
             "Discharge capacity [A.h]",
         ]
-        original_columns = [
-            "Time [s]",
-            "Current [A]",
-            "Voltage [V]",
-            "Discharge capacity [A.h]",
-        ]
-    elif required_columns is None:
-        required_columns = original_columns
-    elif original_columns is None:
-        original_columns = required_columns
 
-    data_dict = solution.get_data_dict(variables=original_columns)
+    if t_interp is None:
+        data_dict = solution.get_data_dict(variables=variables)
+    else:
+        data_dict = {}
+        for key in variables:
+            data_dict[key] = solution[key](t_interp)
 
-    for old_key, new_key in zip(original_columns, required_columns, strict=False):
-        data_dict[new_key] = data_dict.pop(old_key)
-    return Dataset(data_dict)
+    return Dataset(data_dict, domain=domain, control_functions=control_functions)
 
 
 def import_pyprobe_result(
     result: PyprobeResult,
-    required_columns: list[str] | None = None,
-    original_columns: list[str] | None = None,
+    variables: list[str] | None = None,
+    column_names: list[str] | None = None,
+    domain: str | None = None,
+    control_functions: list[str] | None = None,
 ) -> Dataset:
     """
     Import a pyprobe.Result into a pybop.Dataset.
@@ -199,34 +201,38 @@ def import_pyprobe_result(
     ----------
     result : PyprobeResult | pyprobe.Result
         A pyprobe.Result-like object.
-    required_columns : list[str], optional
-        List of column names for the pybop.Dataset.
-    original_columns : list[str], optional
-        A list of the column names in the Result corresponding to the required column names.
-    If only one list of column names is provided, they are assumed to be identical.
+    variables : list[str], optional
+        A list of variables to include in the dataset.
+    column_names : list[str], optional
+        A list of the column names in the Result corresponding to the variable names.
+        If only one list of names is provided, they are assumed to be identical.
+    domain : str, optional
+        The domain of the dataset. Defaults to "Time [s]".
+    control_functions : list[str], optional
+        A list of function names for the control variables. Defaults to ["Current function [A]"].
     """
-    if required_columns is None and original_columns is None:
-        required_columns = [
+    if variables is None and column_names is None:
+        variables = [
             "Time [s]",
             "Current [A]",
             "Voltage [V]",
             "Discharge capacity [A.h]",
         ]
-        original_columns = [
+        column_names = [
             "Time [s]",
             "Current [A]",
             "Voltage [V]",
             "Capacity [Ah]",
         ]
-    elif required_columns is None:
-        required_columns = original_columns
-    elif original_columns is None:
-        original_columns = required_columns
+    elif variables is None:
+        variables = column_names
+    elif column_names is None:
+        column_names = variables
 
     data_dict = {}
-    for i, col in enumerate(required_columns):
+    for i, col in enumerate(variables):
         if (
-            original_columns[i] == "Cycle"
+            column_names[i] == "Cycle"
             and "Cycle" not in result.columns
             and "Step" in result.columns
         ):
@@ -244,10 +250,10 @@ def import_pyprobe_result(
                     for i in range(1, len(cycle_ends))
                 ]
             )
-        elif original_columns[i] in ["Current [A]", "Capacity [Ah]"]:
+        elif column_names[i] in ["Current [A]", "Capacity [Ah]"]:
             # The sign convention in PyProBE is that positive current is charging,
             # the convention in PyBaMM is that positive current means discharging
-            data_dict[col] = -1.0 * result.get(original_columns[i])
+            data_dict[col] = -1.0 * result.get(column_names[i])
         else:
-            data_dict[col] = result.get(original_columns[i])
-    return Dataset(data_dict)
+            data_dict[col] = result.get(column_names[i])
+    return Dataset(data_dict, domain=domain, control_functions=control_functions)

@@ -81,7 +81,7 @@ class TestDataset:
 
         # Dataset constructed from pybamm solution
         dataset_pybamm = pybop.import_pybamm_solution(
-            solution, required_columns=["Time [s]", "Current [A]", "Voltage [V]"]
+            solution, variables=["Time [s]", "Current [A]", "Voltage [V]"]
         )
 
         # Manually create data dictionary
@@ -176,7 +176,7 @@ class TestDataset:
         # Import data from PyProBE into pybop.dataset
         dataset_pyprobe = pybop.import_pyprobe_result(
             cell.procedure["US06 DFN"],
-            required_columns=[
+            variables=[
                 "Time [s]",
                 "Current [A]",
                 "Voltage [V]",
@@ -184,7 +184,7 @@ class TestDataset:
                 "Cycle",
                 "Discharge capacity [A.h]",
             ],
-            original_columns=[
+            column_names=[
                 "Time [s]",
                 "Current [A]",
                 "Voltage [V]",
@@ -207,7 +207,7 @@ class TestDataset:
         # For comparison, import a pybamm.Solution directly into pybop.Dataset
         dataset_pybamm = pybop.import_pybamm_solution(
             solution,
-            required_columns=[
+            variables=[
                 "Time [s]",
                 "Current [A]",
                 "Voltage [V]",

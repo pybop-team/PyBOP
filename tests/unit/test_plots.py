@@ -74,14 +74,8 @@ class TestPlots:
     @pytest.fixture
     def dataset(self, model):
         t_eval = np.arange(0, 50, 2)
-        solution = pybamm.Simulation(model).solve(t_eval=t_eval)
-        return pybop.Dataset(
-            {
-                "Time [s]": t_eval,
-                "Current [A]": solution["Current [A]"](t_eval),
-                "Voltage [V]": solution["Voltage [V]"](t_eval),
-            }
-        )
+        solution = pybamm.Simulation(model).solve(t_eval=t_eval, t_interp=t_eval)
+        return pybop.import_pybamm_solution(solution)
 
     def test_dataset_plots(self, dataset):
         # Test plot of Dataset objects

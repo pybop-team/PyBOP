@@ -51,14 +51,10 @@ class TestGITTModels:
             config["model"],
             parameter_values=config["parameter_values"],
             solver=config["solver"],
-        ).solve(t_eval=t_eval)
+        ).solve(t_eval=t_eval, t_interp=t_eval)
 
-        return pybop.Dataset(
-            {
-                "Time [s]": t_eval,
-                "Current [A]": solution["Current [A]"](t_eval),
-                "Voltage [V]": solution["Voltage [V]"](t_eval),
-            }
+        return pybop.import_pybamm_solution(
+            solution, variables=["Time [s]", "Current [A]", "Voltage [V]"]
         )
 
     @pytest.fixture(scope="module")
