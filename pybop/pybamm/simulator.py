@@ -162,13 +162,9 @@ class Simulator(BaseSimulator):
             time_data = protocol[protocol.domain]
             self._t_eval = [time_data[0], time_data[-1]]
             self._t_interp = time_data
-            control = "Current function [A]"
-            if control in protocol.data.keys():
-                self._parameter_values[control] = pybamm.Interpolant(
-                    protocol["Time [s]"],
-                    protocol[control],
-                    pybamm.t,
-                )
+            control_function = "Current function [A]"
+            control = control_function.replace(" function", "")
+            self._parameter_values[control_function] = protocol.get_interpolant(control)
         else:
             self._experiment = None
             time_data = protocol

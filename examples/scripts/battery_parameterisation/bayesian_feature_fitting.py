@@ -53,7 +53,7 @@ synthetic_data = simulator.solve(
 dataset = pybop.Dataset(
     {
         "Time [s]": synthetic_data["Time [s]"].data,
-        "Current function [A]": synthetic_data["Current [A]"].data,
+        "Current [A]": synthetic_data["Current [A]"].data,
         "Voltage [V]": synthetic_data["Voltage [V]"].data,
     }
 )

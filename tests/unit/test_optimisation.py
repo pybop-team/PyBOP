@@ -24,7 +24,7 @@ class TestOptimisation:
         return pybop.Dataset(
             {
                 "Time [s]": np.linspace(0, 360, 10),
-                "Current function [A]": 1e-2 * np.ones(10),
+                "Current [A]": 1e-2 * np.ones(10),
                 "Voltage [V]": np.ones(10),
             }
         )

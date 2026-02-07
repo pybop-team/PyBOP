@@ -40,7 +40,7 @@ class TestPintsSamplers:
         return pybop.Dataset(
             {
                 "Time [s]": np.linspace(0, 360, 10),
-                "Current function [A]": np.zeros(10),
+                "Current [A]": np.zeros(10),
                 "Voltage [V]": np.ones(10),
             }
         )

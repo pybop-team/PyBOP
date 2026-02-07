@@ -65,7 +65,7 @@ class TestProblem:
         return pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
+                "Current [A]": solution["Current [A]"].data,
                 "Voltage [V]": solution["Terminal voltage [V]"].data,
             }
         )
@@ -135,7 +135,7 @@ class TestProblem:
         dataset = pybop.Dataset(
             {
                 "Frequency [Hz]": np.logspace(-4, 5, 30),
-                "Current function [A]": np.ones(30) * 0.0,
+                "Current [A]": np.ones(30) * 0.0,
                 "Impedance": np.ones(30) * 0.0,
             },
             domain="Frequency [Hz]",
@@ -179,7 +179,7 @@ class TestProblem:
         dataset_2 = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
+                "Current [A]": solution["Current [A]"].data,
                 "Voltage [V]": solution["Voltage [V]"].data,
             }
         )

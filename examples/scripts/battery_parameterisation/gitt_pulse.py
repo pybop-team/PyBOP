@@ -27,7 +27,7 @@ corrupt_values = solution["Voltage [V]"].data + np.random.normal(
 dataset = pybop.Dataset(
     {
         "Time [s]": solution.t,
-        "Current function [A]": solution["Current [A]"].data,
+        "Current [A]": solution["Current [A]"].data,
         "Discharge capacity [A.h]": solution["Discharge capacity [A.h]"].data,
         "Voltage [V]": corrupt_values,
     }

@@ -59,7 +59,7 @@ class TestGroupedModels:
         return pybop.Dataset(
             {
                 "Time [s]": t_eval,
-                "Current function [A]": solution["Current [A]"](t_eval),
+                "Current [A]": solution["Current [A]"](t_eval),
                 "Voltage [V]": solution["Voltage [V]"](t_eval),
             }
         )
@@ -73,7 +73,7 @@ class TestGroupedModels:
         return pybop.Dataset(
             {
                 "Frequency [Hz]": frequencies,
-                "Current function [A]": zeros,
+                "Current [A]": zeros,
                 "Impedance": zeros,
             },
             domain="Frequency [Hz]",
@@ -107,7 +107,9 @@ class TestGroupedModels:
         parameter_values = model_config["parameter_values"]
         parameter_values.update(parameters)
         simulator = pybop.pybamm.Simulator(
-            model_config["model"], parameter_values=parameter_values, protocol=dataset
+            model_config["model"],
+            parameter_values=parameter_values,
+            protocol=dataset["Time [s]"],
         )
         cost_1 = pybop.SumSquaredError(dataset)
         cost_2 = pybop.MeanAbsoluteError(dataset)

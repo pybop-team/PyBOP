@@ -44,7 +44,7 @@ def noisy(data, sigma):
 dataset = pybop.Dataset(
     {
         "Frequency [Hz]": f_eval,
-        "Current function [A]": np.zeros_like(f_eval),
+        "Current [A]": np.zeros_like(f_eval),
         "Impedance": noisy(solution["Impedance"].data, sigma0),
     },
     domain="Frequency [Hz]",

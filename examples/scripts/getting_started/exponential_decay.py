@@ -37,7 +37,7 @@ parameter_values.update(
 
 # Build the problem
 simulator = pybop.pybamm.Simulator(
-    model, parameter_values=parameter_values, protocol=dataset
+    model, parameter_values=parameter_values, protocol=dataset["Time [s]"]
 )
 cost = pybop.Minkowski(dataset, target=["y_0", "y_1"], p=2)
 problem = pybop.Problem(simulator, cost)

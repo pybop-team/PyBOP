@@ -52,7 +52,7 @@ class TestCosts:
         return pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
+                "Current [A]": solution["Current [A]"].data,
                 "Voltage [V]": solution["Terminal voltage [V]"].data,
             }
         )
@@ -184,7 +184,7 @@ class TestCosts:
         return pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
+                "Current [A]": solution["Current [A]"].data,
                 "Voltage [V]": solution["Terminal voltage [V]"].data,
             }
         )
@@ -336,7 +336,7 @@ class TestCosts:
         noisy_dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
+                "Current [A]": solution["Current [A]"].data,
                 "Voltage [V]": solution["Voltage [V]"].data
                 + np.random.normal(0, 0.02, len(solution["Time [s]"].data)),
             }

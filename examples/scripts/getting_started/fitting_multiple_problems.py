@@ -37,7 +37,7 @@ for init_soc, experiment in zip(init_socs, experiments, strict=False):
     dataset = pybop.Dataset(
         {
             "Time [s]": solution.t,
-            "Current function [A]": solution["Current [A]"].data,
+            "Current [A]": solution["Current [A]"].data,
             "Voltage [V]": solution["Voltage [V]"].data
             + np.random.normal(0, sigma, len(solution.t)),
         }

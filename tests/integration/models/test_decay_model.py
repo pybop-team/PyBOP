@@ -74,7 +74,7 @@ class TestDecayModel:
             model_config["model"],
             parameter_values=parameter_values,
             solver=model_config["solver"],
-            protocol=dataset,
+            protocol=dataset["Time [s]"],
         )
         cost_1 = pybop.SumSquaredError(dataset, target=["y_0"])
         cost_2 = pybop.MeanAbsoluteError(dataset, target=["y_0"])

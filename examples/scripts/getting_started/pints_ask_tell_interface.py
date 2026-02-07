@@ -19,7 +19,7 @@ solution = pybamm.Simulation(model, parameter_values=parameter_values).solve(
 dataset = pybop.Dataset(
     {
         "Time [s]": solution.t,
-        "Current function [A]": solution["Current [A]"].data,
+        "Current [A]": solution["Current [A]"].data,
         "Voltage [V]": solution["Voltage [V]"].data,
         "Bulk open-circuit voltage [V]": solution["Bulk open-circuit voltage [V]"].data,
     }

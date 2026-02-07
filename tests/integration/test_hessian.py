@@ -76,7 +76,7 @@ class TestClassification:
         return pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
+                "Current [A]": solution["Current [A]"].data,
                 "Voltage [V]": solution["Voltage [V]"].data,
             }
         )
@@ -224,7 +224,7 @@ class TestClassification:
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
+                "Current [A]": solution["Current [A]"].data,
                 "Voltage [V]": solution["Voltage [V]"].data,
             }
         )

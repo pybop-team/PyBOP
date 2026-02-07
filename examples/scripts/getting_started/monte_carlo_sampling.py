@@ -30,7 +30,7 @@ def noisy(data, sigma):
 dataset = pybop.Dataset(
     {
         "Time [s]": solution.t,
-        "Current function [A]": solution["Current [A]"].data,
+        "Current [A]": solution["Current [A]"].data,
         "Voltage [V]": noisy(solution["Voltage [V]"].data, sigma),
     }
 )

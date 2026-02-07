@@ -78,7 +78,7 @@ class TestPlots:
         return pybop.Dataset(
             {
                 "Time [s]": t_eval,
-                "Current function [A]": solution["Current [A]"](t_eval),
+                "Current [A]": solution["Current [A]"](t_eval),
                 "Voltage [V]": solution["Voltage [V]"](t_eval),
             }
         )
@@ -298,7 +298,7 @@ class TestPlots:
         dataset = pybop.Dataset(
             {
                 "Frequency [Hz]": np.logspace(-4, 5, 10),
-                "Current function [A]": np.ones(10) * 0.0,
+                "Current [A]": np.ones(10) * 0.0,
                 "Impedance": np.ones(10) * 0.0,
             },
             domain="Frequency [Hz]",

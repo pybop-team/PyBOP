@@ -51,7 +51,7 @@ class TestLikelihoods:
         return pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
+                "Current [A]": solution["Current [A]"].data,
                 "Voltage [V]": solution["Terminal voltage [V]"].data,
             }
         )

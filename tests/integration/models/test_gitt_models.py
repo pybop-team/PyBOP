@@ -56,7 +56,7 @@ class TestGITTModels:
         return pybop.Dataset(
             {
                 "Time [s]": t_eval,
-                "Current function [A]": solution["Current [A]"](t_eval),
+                "Current [A]": solution["Current [A]"](t_eval),
                 "Voltage [V]": solution["Voltage [V]"](t_eval),
             }
         )
@@ -89,7 +89,7 @@ class TestGITTModels:
             model_config["model"],
             parameter_values=parameter_values,
             solver=model_config["solver"],
-            protocol=dataset,
+            protocol=dataset["Time [s]"],
         )
         cost_1 = pybop.SumSquaredError(dataset)
         cost_2 = pybop.MeanAbsoluteError(dataset)

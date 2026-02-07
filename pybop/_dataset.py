@@ -2,11 +2,12 @@ import warnings
 from typing import Protocol
 
 import numpy as np
-from pybamm import solvers
+from pybamm import Interpolant, Solution
+from pybamm import t as pybamm_t
 
 
 class PyprobeResult(Protocol):
-    """Protocol defining required PyProBE Result interface"""
+    """Protocol defining required PyProBE Result interface."""
 
     def get(
         self,
@@ -28,75 +29,29 @@ class Dataset:
 
     Parameters
     ----------
-    data_dictionary : dict or instance of pybamm.solvers.solution.Solution
+    data_dictionary : dict
         The experimental data to store within the dataset.
     domain : str, optional
         The domain of the dataset. Defaults to "Time [s]".
     """
 
-    def __init__(
-        self,
-        data_dictionary,
-        domain: str | None = None,
-        variables: str | None = ["Time [s]", "Current [A]", "Voltage [V]"],
-    ):
-        """
-        Initialise a Dataset instance with data and a set of names.
-        """
-
-        if isinstance(data_dictionary, solvers.solution.Solution):
-            data_dictionary = data_dictionary.get_data_dict(variables=variables)
+    def __init__(self, data_dictionary: dict, domain: str | None = None):
+        """Initialise a Dataset instance with data and a set of names."""
         if not isinstance(data_dictionary, dict):
-            raise TypeError(
-                "The input to pybop.Dataset must be a dictionary or a pybamm.Solution object."
-            )
+            raise TypeError("The input to pybop.Dataset must be a dictionary.")
         self.data = data_dictionary
         self.domain = domain or "Time [s]"
 
     def __repr__(self):
-        """
-        Return a string representation of the Dataset instance.
-
-        Returns
-        -------
-        str
-            A string that includes the type and contents of the dataset.
-        """
+        """Return a string representation of the Dataset instance."""
         return f"Dataset: {type(self.data)} \n Contains: {self.data.keys()}"
 
     def __setitem__(self, key, value):
-        """
-        Set the data corresponding to a particular key.
-
-        Parameters
-        ----------
-        key : str
-            The name of the key to be set.
-
-        value : list or np.ndarray
-            The data series to be stored in the dataset.
-        """
+        """Set the data corresponding to a particular key."""
         self.data[key] = value
 
     def __getitem__(self, key):
-        """
-        Return the data corresponding to a particular key.
-
-        Parameters
-        ----------
-        key : str
-            The name of a data series within the dataset.
-
-        Returns
-        -------
-        list or np.ndarray
-            The data series corresponding to the key.
-
-        Raises
-        ------
-        ValueError
-            The key must exist in the dataset.
-        """
+        """Return the data corresponding to a particular key."""
         if key not in self.data.keys():
             raise ValueError(f"The key {key} does not exist in this dataset.")
 
@@ -169,56 +124,101 @@ class Dataset:
                 )
 
     def get_subset(self, index: list | np.ndarray):
-        """
-        Reduce the dataset to a subset defined by the list of indices.
-        """
+        """Reduce the dataset to a subset defined by the list of indices."""
         data = {}
         for key in self.data.keys():
             data[key] = self[key][index]
 
         return Dataset(data, domain=self.domain)
 
+    def get_interpolant(self, control: str = "Current [A]") -> Interpolant:
+        """Returns a linear interpolant for the control as a function of the domain."""
+        return Interpolant(self.data["Time [s]"], self.data[control], pybamm_t)
 
-def import_pyprobe_result(
-    result: PyprobeResult,
-    pybop_columns: list[str] | None = None,
-    pyprobe_columns: list[str] | None = None,
+
+def import_pybamm_solution(
+    solution: Solution,
+    required_columns: list[str] | None = None,
+    original_columns: list[str] | None = None,
 ) -> Dataset:
     """
-    Import a pyprobe.Result into a dictionary
+    Import a pybamm.Solution into a pybop.Dataset.
 
     Parameters
     ----------
-    result : str
-        A pyprobe.Result object.
-    pybop_columns : list[str]
-        List of pybop column names.
-    pyprobe_columns : list[str]
-        An list of pyprobe column names.
+    solution : pybamm.Solution
+        A pybamm.Solution object.
+    required_columns : list[str], optional
+        List of column names for the pybop.Dataset.
+    original_columns : list[str], optional
+        A list of the column names in the Result corresponding to the required column names.
     If only one list of column names is provided, they are assumed to be identical.
     """
-    if pybop_columns is None and pyprobe_columns is None:
-        pybop_columns = [
+    if required_columns is None and original_columns is None:
+        required_columns = [
             "Time [s]",
-            "Current function [A]",
+            "Current [A]",
             "Voltage [V]",
             "Discharge capacity [A.h]",
         ]
-        pyprobe_columns = [
+        original_columns = [
+            "Time [s]",
+            "Current [A]",
+            "Voltage [V]",
+            "Discharge capacity [A.h]",
+        ]
+    elif required_columns is None:
+        required_columns = original_columns
+    elif original_columns is None:
+        original_columns = required_columns
+
+    data_dict = solution.get_data_dict(variables=original_columns)
+
+    for old_key, new_key in zip(original_columns, required_columns, strict=False):
+        data_dict[new_key] = data_dict.pop(old_key)
+    return Dataset(data_dict)
+
+
+def import_pyprobe_result(
+    result: PyprobeResult,
+    required_columns: list[str] | None = None,
+    original_columns: list[str] | None = None,
+) -> Dataset:
+    """
+    Import a pyprobe.Result into a pybop.Dataset.
+
+    Parameters
+    ----------
+    result : PyprobeResult | pyprobe.Result
+        A pyprobe.Result-like object.
+    required_columns : list[str], optional
+        List of column names for the pybop.Dataset.
+    original_columns : list[str], optional
+        A list of the column names in the Result corresponding to the required column names.
+    If only one list of column names is provided, they are assumed to be identical.
+    """
+    if required_columns is None and original_columns is None:
+        required_columns = [
+            "Time [s]",
+            "Current [A]",
+            "Voltage [V]",
+            "Discharge capacity [A.h]",
+        ]
+        original_columns = [
             "Time [s]",
             "Current [A]",
             "Voltage [V]",
             "Capacity [Ah]",
         ]
-    elif pybop_columns is None:
-        pybop_columns = pyprobe_columns
-    elif pyprobe_columns is None:
-        pyprobe_columns = pybop_columns
+    elif required_columns is None:
+        required_columns = original_columns
+    elif original_columns is None:
+        original_columns = required_columns
 
     data_dict = {}
-    for i, col in enumerate(pybop_columns):
+    for i, col in enumerate(required_columns):
         if (
-            pyprobe_columns[i] == "Cycle"
+            original_columns[i] == "Cycle"
             and "Cycle" not in result.columns
             and "Step" in result.columns
         ):
@@ -236,13 +236,10 @@ def import_pyprobe_result(
                     for i in range(1, len(cycle_ends))
                 ]
             )
-        elif pyprobe_columns[i] in [
-            "Current [A]",
-            "Capacity [Ah]",
-        ]:
+        elif original_columns[i] in ["Current [A]", "Capacity [Ah]"]:
             # The sign convention in PyProBE is that positive current is charging,
             # the convention in PyBaMM is that positive current means discharging
-            data_dict[col] = -1.0 * result.get(pyprobe_columns[i])
+            data_dict[col] = -1.0 * result.get(original_columns[i])
         else:
-            data_dict[col] = result.get(pyprobe_columns[i])
+            data_dict[col] = result.get(original_columns[i])
     return Dataset(data_dict)

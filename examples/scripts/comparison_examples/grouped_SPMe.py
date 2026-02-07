@@ -58,7 +58,7 @@ for model, param, line_style in zip(
     dataset = pybop.Dataset(
         {
             "Time [s]": solution["Time [s]"].data,
-            "Current function [A]": solution["Current [A]"].data,
+            "Current [A]": solution["Current [A]"].data,
             "Voltage [V]": solution["Voltage [V]"].data,
         }
     )
