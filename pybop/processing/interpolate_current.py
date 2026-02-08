@@ -9,7 +9,7 @@ from .dataset import Dataset
 def generate_consistent_current(dataset: Dataset, tolerance: float = 1e-3) -> Dataset:
     """
     Generate a new dataset with additional data points inserted, where necessary, between
-    the provided data points to ensure that the total charge throughput matches the intergral
+    the provided data points to ensure that the total charge throughput matches the integral
     of a linear interpolation of the current data.
 
     Following PyBaMM, the current takes a positive value on discharge.
