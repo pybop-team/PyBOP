@@ -48,7 +48,9 @@ def generate_consistent_current(dataset: Dataset, tolerance: float = 1e-3) -> Da
 
         throughput_atol = tolerance * max(abs(current[i - 1]), abs(current[i]), 1.0)
 
-        if np.isclose(linear_throughput, delta_throughput, rtol=0, atol=throughput_atol):
+        if np.isclose(
+            linear_throughput, delta_throughput, rtol=0, atol=throughput_atol
+        ):
             # The linear and measured values of the charge throughput are in agreement
             pass
         else:
