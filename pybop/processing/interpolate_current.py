@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
-from scipy.integrate import cumulative_trapezoid, trapezoid
+from scipy.integrate import cumulative_trapezoid
 
 from pybop.processing.dataset import Dataset
 
@@ -131,10 +131,13 @@ def downsample_constant_current(dataset: Dataset, tolerance: float = 1e-3) -> Da
     time = np.asarray(dataset["Time [s]"])
     current = np.asarray(dataset["Current function [A]"]).copy()  # we mutate this
     try:
+        throughput: np.ndarray = dataset["Discharge capacity [A.h]"].copy() * 3600
         data_includes_throughput = True
-        throughput = dataset["Discharge capacity [A.h]"].copy() * 3600
-    except ValueError:
+    except (ValueError, KeyError):
+        throughput = np.array([])  # just to keep type check happy
         data_includes_throughput = False
+
+    Q = cumulative_trapezoid(y=current, x=time, initial=0.0)
 
     # Iterative over neighbouring pairs of data points [i-1,i] and determine any sets of
     # points that are uniformative and can be removed while keeping the same throughput
@@ -162,17 +165,24 @@ def downsample_constant_current(dataset: Dataset, tolerance: float = 1e-3) -> Da
             # points and replace the second and second-to-last points with a constant current
             keep[i + 1 : i + j - 1] = False
             delta_time = time[i] - time[i - 1]
+
+            segment_integral = Q[i + j] - Q[i - 1]
             constant_current = (
-                2 * trapezoid(y=current[i - 1 : i + j + 1], x=time[i - 1 : i + j + 1])
+                2 * segment_integral
                 - current[i - 1] * delta_time
                 - current[i + j] * (time[i + j] - time[i + j - 1])
             ) / (time[i + j] + time[i + j - 1] - time[i] - time[i - 1])
+
+            old_current_i = current[i]
+            old_current_j = current[i + j - 1]
+
             current[i] = constant_current
             current[i + j - 1] = constant_current
+
             if data_includes_throughput:
-                throughput[i:] += (constant_current - current[i]) * delta_time / 2
+                throughput[i:] += (constant_current - old_current_i) * delta_time / 2
                 throughput[i + j - 1 :] += (
-                    (constant_current - current[i + j - 1])
+                    (constant_current - old_current_j)
                     * (time[i + j] - time[i + j - 1])
                     / 2
                 )
