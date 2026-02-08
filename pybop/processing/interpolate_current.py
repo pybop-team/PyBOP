@@ -140,7 +140,7 @@ def downsample_constant_current(dataset: Dataset, tolerance: float = 1e-3) -> Da
     Q = cumulative_trapezoid(y=current, x=time, initial=0.0)
 
     # Iterative over neighbouring pairs of data points [i-1,i] and determine any sets of
-    # points that are uniformative and can be removed while keeping the same throughput
+    # points that are uninformative and can be removed while keeping the same throughput
     keep = np.full_like(time, True, dtype=bool)
     i = 1
     offset = 0
