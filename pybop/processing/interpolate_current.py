@@ -17,7 +17,7 @@ def generate_consistent_current(dataset: pybop.Dataset, tolerance: float = 1e-3)
     Arguments
     ---------
     dataset : pybop.Dataset
-        A dataset containg "Time [s]", "Current function [A]" and "Discharge capacity [A.h]".
+        A dataset containing "Time [s]", "Current function [A]" and "Discharge capacity [A.h]".
     tolerance : float
         A numerical tolerance in the units of time (seconds) used to determine if an extra
         point is necessary (default: 1e-3).
