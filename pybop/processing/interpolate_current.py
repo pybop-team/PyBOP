@@ -106,7 +106,7 @@ def generate_consistent_current(dataset: Dataset, tolerance: float = 1e-3) -> Da
     )
 
 
-def downsample_constant_current(dataset: pybop.Dataset, tolerance: float = 1e-3):
+def downsample_constant_current(dataset: Dataset, tolerance: float = 1e-3) -> Dataset:
     """
     Generate a new dataset retaining only the informative points and consistency between the
     charge throughput and a linear interpolation of the current.
@@ -114,8 +114,8 @@ def downsample_constant_current(dataset: pybop.Dataset, tolerance: float = 1e-3)
     Arguments
     ---------
     dataset : pybop.Dataset
-        A dataset containg "Time [s]", "Current function [A]" and "Discharge capacity [A.h]".
-    delta_t : float
+        A dataset containing "Time [s]", "Current function [A]" and "Discharge capacity [A.h]".
+    tolerance : float
         A numerical tolerance in the units of current (A) used to determine if a data point
         is informative relative to its neighbours.
 
