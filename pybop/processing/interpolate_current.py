@@ -92,16 +92,20 @@ def generate_consistent_current(dataset: Dataset, tolerance: float = 1e-3) -> Da
                 / 2
             )
 
+    extra_times = np.asarray(extra_times)
+    extra_currents = np.asarray(extra_currents)
+    extra_throughputs = np.asarray(extra_throughputs)
+
     time = np.concatenate((time, extra_times))
     current = np.concatenate((current, extra_currents))
     throughput = np.concatenate((throughput, extra_throughputs))
-    idx = np.argsort(time)
+    idx = np.argsort(time, kind="stable")
 
-    return pybop.Dataset(
+    return Dataset(
         {
-            "Time [s]": np.asarray(time)[idx],
-            "Current function [A]": np.asarray(current)[idx],
-            "Discharge capacity [A.h]": np.asarray(throughput)[idx] / 3600,
+            "Time [s]": time[idx],
+            "Current function [A]": current[idx],
+            "Discharge capacity [A.h]": throughput[idx] / 3600,
         }
     )
 
@@ -124,8 +128,8 @@ def downsample_constant_current(dataset: Dataset, tolerance: float = 1e-3) -> Da
     pybop.Dataset
         A new dataset containing the augmented time, current and charge throughput data.
     """
-    time = dataset["Time [s]"].copy()
-    current = dataset["Current function [A]"].copy()
+    time = np.asarray(dataset["Time [s]"])
+    current = np.asarray(dataset["Current function [A]"]).copy()  # we mutate this
     try:
         data_includes_throughput = True
         throughput = dataset["Discharge capacity [A.h]"].copy() * 3600
