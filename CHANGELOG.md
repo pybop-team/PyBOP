@@ -14,6 +14,7 @@
 
 ## Breaking Changes
 
+- [#878](https://github.com/pybop-team/PyBOP/pull/878) - Use "Current [A]" instead of "Current function [A]" in datasets and allow list of control functions.
 - [#864](https://github.com/pybop-team/PyBOP/pull/864) - Remove `check_already_exists` from `ParameterValues` following PyBaMM PR 5339.
 - [#860](https://github.com/pybop-team/PyBOP/pull/860) - Create a parent class for optimisation and sampling results, move `PosteriorSummary` attributes to the `SamplingResult` and deprecate the `pints.AdaptiveCovarianceMCMC` sampler.
 - [#857](https://github.com/pybop-team/PyBOP/pull/857) - Deprecate the custom PyBaMM model build process for a simulation without an experiment and rename `batch_solve` as `solve_batch` to align with other functions.
