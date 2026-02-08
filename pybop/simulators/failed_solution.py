@@ -17,7 +17,7 @@ class FailedVariable:
 
     name: str
     data: np.ndarray = field(default_factory=lambda: np.asarray([np.inf]))
-    sensitivities: {str, np.ndarray} = field(default_factory=dict)
+    sensitivities: dict[str, np.ndarray] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         """Validate inputs after initialisation."""
@@ -58,7 +58,7 @@ class FailedSolution:
         self._t_eval: np.ndarray = np.asarray([0.0])
 
         # Initialise failed variables
-        self._variables: {str, FailedVariable} = pybamm.FuzzyDict()
+        self._variables: dict[str, FailedVariable] = pybamm.FuzzyDict()
         self._initialise_variables()
 
     def _validate_inputs(
