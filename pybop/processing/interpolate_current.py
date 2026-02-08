@@ -1,7 +1,9 @@
-import numpy as np
-from scipy.integrate import trapezoid
+from __future__ import annotations
 
-import pybop
+import numpy as np
+from scipy.integrate import cumulative_trapezoid, trapezoid
+
+from .dataset import Dataset
 
 
 def generate_consistent_current(dataset: pybop.Dataset, tolerance: float = 1e-3):
