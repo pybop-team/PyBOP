@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 from scipy.integrate import cumulative_trapezoid, trapezoid
 
-from .dataset import Dataset
+from pybop.processing.dataset import Dataset
 
 
 def generate_consistent_current(dataset: Dataset, tolerance: float = 1e-3) -> Dataset:
