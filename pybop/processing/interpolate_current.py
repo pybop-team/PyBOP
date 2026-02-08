@@ -134,7 +134,7 @@ def downsample_constant_current(dataset: Dataset, tolerance: float = 1e-3) -> Da
 
     # Iterative over neighbouring pairs of data points [i-1,i] and determine any sets of
     # points that are uniformative and can be removed while keeping the same throughput
-    keep = np.full_like(time, True)
+    keep = np.full_like(time, True, dtype=bool)
     i = 1
     offset = 0
     while i + offset < time.shape[0] - 2:
@@ -177,15 +177,15 @@ def downsample_constant_current(dataset: Dataset, tolerance: float = 1e-3) -> Da
         i += j + 2
         offset = 0
 
-    return pybop.Dataset(
+    return Dataset(
         {
-            "Time [s]": np.extract(keep, time),
-            "Current function [A]": np.extract(keep, current),
-            "Discharge capacity [A.h]": np.extract(keep, throughput) / 3600,
+            "Time [s]": time[keep],
+            "Current function [A]": current[keep],
+            "Discharge capacity [A.h]": throughput[keep] / 3600,
         }
         if data_includes_throughput
         else {
-            "Time [s]": np.extract(keep, time),
-            "Current function [A]": np.extract(keep, current),
+            "Time [s]": time[keep],
+            "Current function [A]": current[keep],
         }
     )
