@@ -58,7 +58,7 @@ class BenchmarkParameterisation:
         dataset = pybop.Dataset(
             {
                 "Time [s]": t_eval,
-                "Current function [A]": solution["Current [A]"](t_eval),
+                "Current [A]": solution["Current [A]"](t_eval),
                 "Voltage [V]": corrupt_values,
             }
         )
