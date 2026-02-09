@@ -1,11 +1,9 @@
-import warnings
 from copy import copy, deepcopy
 from typing import TYPE_CHECKING
 
 import numpy as np
 import pybamm
 from pybamm import SolverError
-from scipy.integrate import cumulative_trapezoid
 
 if TYPE_CHECKING:
     from pybop.parameters.parameter import Inputs

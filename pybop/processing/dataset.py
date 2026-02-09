@@ -4,6 +4,7 @@ from typing import Protocol
 import numpy as np
 from pybamm import Interpolant, Solution
 from pybamm import t as pybamm_t
+from scipy.integrate import cumulative_trapezoid
 
 
 class PyprobeResult(Protocol):
@@ -143,6 +144,20 @@ class Dataset:
 
     def get_interpolant(self, control: str = "Current [A]") -> Interpolant:
         """Returns a linear interpolant for the control as a function of the domain."""
+
+        # Check if a linearly interpolated current will match the charge throughput
+        if control == "Current [A]" and "Discharge capacity [A.h]" in self.data.keys():
+            charge_throughput = cumulative_trapezoid(
+                y=self.data[control], x=self.data["Time [s]"]
+            )
+            if not np.allclose(
+                self.data["Discharge capacity [A.h]"][1:] * 3600, charge_throughput
+            ):
+                warnings.warn(
+                    "A linear interpolation of the current data does not reproduce the discharge capacity.",
+                    stacklevel=2,
+                )
+
         return Interpolant(self.data["Time [s]"], self.data[control], pybamm_t)
 
 
