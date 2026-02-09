@@ -1,13 +1,15 @@
+from __future__ import annotations
+
 import numpy as np
-from scipy.integrate import trapezoid
+from scipy.integrate import cumulative_trapezoid
 
-import pybop
+from pybop.processing.dataset import Dataset
 
 
-def generate_consistent_current(dataset: pybop.Dataset, tolerance: float = 1e-3):
+def generate_consistent_current(dataset: Dataset, tolerance: float = 1e-3) -> Dataset:
     """
     Generate a new dataset with additional data points inserted, where necessary, between
-    the provided data points to ensure that the total charge throughput matches the intergral
+    the provided data points to ensure that the total charge throughput matches the integral
     of a linear interpolation of the current data.
 
     Following PyBaMM, the current takes a positive value on discharge.
@@ -15,7 +17,7 @@ def generate_consistent_current(dataset: pybop.Dataset, tolerance: float = 1e-3)
     Arguments
     ---------
     dataset : pybop.Dataset
-        A dataset containg "Time [s]", "Current function [A]" and "Discharge capacity [A.h]".
+        A dataset containing "Time [s]", "Current function [A]" and "Discharge capacity [A.h]".
     tolerance : float
         A numerical tolerance in the units of time (seconds) used to determine if an extra
         point is necessary (default: 1e-3).
@@ -44,7 +46,7 @@ def generate_consistent_current(dataset: pybop.Dataset, tolerance: float = 1e-3)
 
         tol = min(tolerance, delta_time / 2)
 
-        if linear_throughput == delta_throughput:
+        if np.isclose(linear_throughput, delta_throughput, rtol=0, atol=1e-10):
             # The linear and measured values of the charge throughput are in agreement
             pass
         else:
@@ -88,21 +90,25 @@ def generate_consistent_current(dataset: pybop.Dataset, tolerance: float = 1e-3)
                 / 2
             )
 
+    extra_times = np.asarray(extra_times)
+    extra_currents = np.asarray(extra_currents)
+    extra_throughputs = np.asarray(extra_throughputs)
+
     time = np.concatenate((time, extra_times))
     current = np.concatenate((current, extra_currents))
     throughput = np.concatenate((throughput, extra_throughputs))
-    idx = np.argsort(time)
+    idx = np.argsort(time, kind="stable")
 
-    return pybop.Dataset(
+    return Dataset(
         {
-            "Time [s]": np.asarray(time)[idx],
-            "Current function [A]": np.asarray(current)[idx],
-            "Discharge capacity [A.h]": np.asarray(throughput)[idx] / 3600,
+            "Time [s]": time[idx],
+            "Current function [A]": current[idx],
+            "Discharge capacity [A.h]": throughput[idx] / 3600,
         }
     )
 
 
-def downsample_constant_current(dataset: pybop.Dataset, tolerance: float = 1e-3):
+def downsample_constant_current(dataset: Dataset, tolerance: float = 1e-3) -> Dataset:
     """
     Generate a new dataset retaining only the informative points and consistency between the
     charge throughput and a linear interpolation of the current.
@@ -110,8 +116,8 @@ def downsample_constant_current(dataset: pybop.Dataset, tolerance: float = 1e-3)
     Arguments
     ---------
     dataset : pybop.Dataset
-        A dataset containg "Time [s]", "Current function [A]" and "Discharge capacity [A.h]".
-    delta_t : float
+        A dataset containing "Time [s]", "Current function [A]" and "Discharge capacity [A.h]".
+    tolerance : float
         A numerical tolerance in the units of current (A) used to determine if a data point
         is informative relative to its neighbours.
 
@@ -120,17 +126,20 @@ def downsample_constant_current(dataset: pybop.Dataset, tolerance: float = 1e-3)
     pybop.Dataset
         A new dataset containing the augmented time, current and charge throughput data.
     """
-    time = dataset["Time [s]"].copy()
-    current = dataset["Current function [A]"].copy()
+    time = np.asarray(dataset["Time [s]"])
+    current = np.asarray(dataset["Current function [A]"]).copy()  # we mutate this
     try:
+        throughput: np.ndarray = dataset["Discharge capacity [A.h]"].copy() * 3600
         data_includes_throughput = True
-        throughput = dataset["Discharge capacity [A.h]"].copy() * 3600
-    except ValueError:
+    except (ValueError, KeyError):
+        throughput = np.array([])  # just to keep type check happy
         data_includes_throughput = False
 
+    Q = cumulative_trapezoid(y=current, x=time, initial=0.0)
+
     # Iterative over neighbouring pairs of data points [i-1,i] and determine any sets of
-    # points that are uniformative and can be removed while keeping the same throughput
-    keep = np.full_like(time, True)
+    # points that are uninformative and can be removed while keeping the same throughput
+    keep = np.full_like(time, True, dtype=bool)
     i = 1
     offset = 0
     while i + offset < time.shape[0] - 2:
@@ -154,17 +163,24 @@ def downsample_constant_current(dataset: pybop.Dataset, tolerance: float = 1e-3)
             # points and replace the second and second-to-last points with a constant current
             keep[i + 1 : i + j - 1] = False
             delta_time = time[i] - time[i - 1]
+
+            segment_integral = Q[i + j] - Q[i - 1]
             constant_current = (
-                2 * trapezoid(y=current[i - 1 : i + j + 1], x=time[i - 1 : i + j + 1])
+                2 * segment_integral
                 - current[i - 1] * delta_time
                 - current[i + j] * (time[i + j] - time[i + j - 1])
             ) / (time[i + j] + time[i + j - 1] - time[i] - time[i - 1])
+
+            old_current_i = current[i]
+            old_current_j = current[i + j - 1]
+
             current[i] = constant_current
             current[i + j - 1] = constant_current
+
             if data_includes_throughput:
-                throughput[i:] += (constant_current - current[i]) * delta_time / 2
+                throughput[i:] += (constant_current - old_current_i) * delta_time / 2
                 throughput[i + j - 1 :] += (
-                    (constant_current - current[i + j - 1])
+                    (constant_current - old_current_j)
                     * (time[i + j] - time[i + j - 1])
                     / 2
                 )
@@ -173,15 +189,15 @@ def downsample_constant_current(dataset: pybop.Dataset, tolerance: float = 1e-3)
         i += j + 2
         offset = 0
 
-    return pybop.Dataset(
+    return Dataset(
         {
-            "Time [s]": np.extract(keep, time),
-            "Current function [A]": np.extract(keep, current),
-            "Discharge capacity [A.h]": np.extract(keep, throughput) / 3600,
+            "Time [s]": time[keep],
+            "Current function [A]": current[keep],
+            "Discharge capacity [A.h]": throughput[keep] / 3600,
         }
         if data_includes_throughput
         else {
-            "Time [s]": np.extract(keep, time),
-            "Current function [A]": np.extract(keep, current),
+            "Time [s]": time[keep],
+            "Current function [A]": current[keep],
         }
     )
