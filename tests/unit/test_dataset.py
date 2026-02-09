@@ -264,15 +264,12 @@ class TestProcessing:
             assert consistent_dataset[var][0] == dataset[var][0]
             assert consistent_dataset[var][-1] == dataset[var][-1]
 
-        charge_throughput = (
-            cumulative_trapezoid(
-                y=consistent_dataset["Current function [A]"],
-                x=consistent_dataset["Time [s]"],
-            )
-            / 3600
+        charge_throughput = cumulative_trapezoid(
+            y=consistent_dataset["Current function [A]"],
+            x=consistent_dataset["Time [s]"],
         )
         assert np.allclose(
-            consistent_dataset["Discharge capacity [A.h]"][1:], charge_throughput
+            consistent_dataset["Discharge capacity [A.h]"][1:] * 3600, charge_throughput
         )
 
         # Test downsampling of constant current sections
@@ -287,15 +284,13 @@ class TestProcessing:
         consistent_dataset = pybop.generate_consistent_current(dataset, tolerance=1e-2)
         downsampled_dataset = pybop.downsample_constant_current(consistent_dataset)
 
-        charge_throughput = (
-            cumulative_trapezoid(
-                y=downsampled_dataset["Current function [A]"],
-                x=downsampled_dataset["Time [s]"],
-            )
-            / 3600
+        charge_throughput = cumulative_trapezoid(
+            y=downsampled_dataset["Current function [A]"],
+            x=downsampled_dataset["Time [s]"],
         )
         assert np.allclose(
-            downsampled_dataset["Discharge capacity [A.h]"][1:], charge_throughput
+            downsampled_dataset["Discharge capacity [A.h]"][1:] * 3600,
+            charge_throughput,
         )
 
         # Test downsampling of constant current sections without charge throughput data
