@@ -53,7 +53,7 @@ jobs:
         if: matrix.dep-type == 'latest'
         run: |
           uv pip install -e .[all,dev]
-          uv pip uninstall -y pybamm
+          uv pip uninstall pybamm
           uv pip install "pybamm[all] @ git+https://github.com/pybamm-team/PyBaMM@main"
           uv pip install pytest-reportlog
 
