@@ -10,13 +10,13 @@ nox.needs_version = ">=2024.4.15"
 # Environment variables to control CI behaviour for nox sessions
 PYBOP_SCHEDULED = int(os.environ.get("PYBOP_SCHEDULED", 0))
 PYBAMM_VERSION = os.environ.get("PYBAMM_VERSION", None)
-PYPRPOJECT = nox.project.load_toml("pyproject.toml")
+PYPROJECT = nox.project.load_toml("pyproject.toml")
 
 
 @nox.session
 def unit(session):
     session.install("-e", ".[all]", "--upgrade", silent=False)
-    session.install(*nox.project.dependency_groups(PYPRPOJECT, "dev"), silent=False)
+    session.install(*nox.project.dependency_groups(PYPROJECT, "dev"), silent=False)
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
     session.run("pytest", "--unit")
@@ -25,7 +25,7 @@ def unit(session):
 @nox.session
 def coverage(session):
     session.install("-e", ".[all]", "--upgrade", silent=False)
-    session.install(*nox.project.dependency_groups(PYPRPOJECT, "dev"), silent=False)
+    session.install(*nox.project.dependency_groups(PYPROJECT, "dev"), silent=False)
     session.install("pip")
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
@@ -52,7 +52,7 @@ def coverage(session):
 def plots(session):
     """Run the tests that generate plots."""
     session.install("-e", ".[plot]", "--upgrade", silent=False)
-    session.install(*nox.project.dependency_groups(PYPRPOJECT, "dev"), silent=False)
+    session.install(*nox.project.dependency_groups(PYPROJECT, "dev"), silent=False)
     session.install("pip")
     session.run("pytest", "--plots", "-n", "0")
 
@@ -61,7 +61,7 @@ def plots(session):
 def integration(session):
     """Run the integration tests."""
     session.install("-e", ".[all]", "--upgrade", silent=False)
-    session.install(*nox.project.dependency_groups(PYPRPOJECT, "dev"), silent=False)
+    session.install(*nox.project.dependency_groups(PYPROJECT, "dev"), silent=False)
     session.run("pytest", "--integration")
 
 
@@ -69,7 +69,7 @@ def integration(session):
 def examples(session):
     """Run the example scripts."""
     session.install("-e", ".[all]", "--upgrade", silent=False)
-    session.install(*nox.project.dependency_groups(PYPRPOJECT, "dev"), silent=False)
+    session.install(*nox.project.dependency_groups(PYPROJECT, "dev"), silent=False)
     session.run("pytest", "--examples")
 
 
@@ -78,7 +78,7 @@ def notebooks(session):
     """Run the Jupyter notebooks."""
     session.install("openpyxl", "ipywidgets")
     session.install("-e", ".[all]", "--upgrade", silent=False)
-    session.install(*nox.project.dependency_groups(PYPRPOJECT, "dev"), silent=False)
+    session.install(*nox.project.dependency_groups(PYPROJECT, "dev"), silent=False)
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
     session.run(
@@ -95,7 +95,7 @@ def notebooks_overwrite(session):
     """Run the Jupyter notebooks."""
     session.install("openpyxl", "ipywidgets")
     session.install("-e", ".[all]", "--upgrade", silent=False)
-    session.install(*nox.project.dependency_groups(PYPRPOJECT, "dev"), silent=False)
+    session.install(*nox.project.dependency_groups(PYPROJECT, "dev"), silent=False)
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
     session.run(
@@ -113,7 +113,7 @@ def run_tests(session):
     """Run all or a user-defined set of tests."""
     session.install("openpyxl", "ipywidgets")
     session.install("-e", ".[all]", "--upgrade", silent=False)
-    session.install(*nox.project.dependency_groups(PYPRPOJECT, "dev"), silent=False)
+    session.install(*nox.project.dependency_groups(PYPROJECT, "dev"), silent=False)
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
     specific_tests = session.posargs if session.posargs else []
@@ -137,7 +137,7 @@ def run_doc_tests(session):
     """
     session.install("-e", ".[plot]", "--upgrade", silent=False)
     session.install(
-        *nox.project.dependency_groups(PYPRPOJECT, "dev", "docs"), silent=False
+        *nox.project.dependency_groups(PYPROJECT, "dev", "docs"), silent=False
     )
 
     session.run("pytest", "--docs", "-n", "0")
@@ -170,7 +170,7 @@ def run_quick(session):
 def benchmarks(session):
     """Run the benchmarks."""
     session.install("-e", ".[all]", "--upgrade", silent=False)
-    session.install(*nox.project.dependency_groups(PYPRPOJECT, "dev"), silent=False)
+    session.install(*nox.project.dependency_groups(PYPROJECT, "dev"), silent=False)
     session.install("asv[virtualenv]")
     session.run("asv", "run", "--show-stderr", "--python=same")
 
@@ -183,7 +183,7 @@ def docs(session):
     """
     envbindir = session.bin
     session.install("-e", ".[all]", "--upgrade", silent=False)
-    session.install(*nox.project.dependency_groups(PYPRPOJECT, "docs"), silent=False)
+    session.install(*nox.project.dependency_groups(PYPROJECT, "docs"), silent=False)
     session.chdir("docs")
     # Local development
     if session.interactive:
