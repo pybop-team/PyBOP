@@ -18,8 +18,3 @@ formats:
    - htmlzip
    - pdf
    - epub
-
-python:
-  install:
-    - method: pip
-      path: .[docs]
