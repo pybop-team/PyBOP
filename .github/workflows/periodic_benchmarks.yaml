@@ -43,7 +43,8 @@ jobs:
         run: |
             eval "$(pyenv init -)"
             pyenv activate pybop-312-bench
-            python -m pip install -e .[all,dev]
+            python -m pip install -e .[all]
+            python -m pip install --group dev
             python -m pip install asv[virtualenv]
             python -m asv machine --machine "SelfHostedRunner"
             python -m asv run --machine "SelfHostedRunner" NEW --show-stderr -v
