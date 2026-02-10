@@ -1,16 +1,19 @@
+import warnings
 from copy import copy, deepcopy
 from typing import TYPE_CHECKING
 
 import numpy as np
 import pybamm
 from pybamm import SolverError
+from scipy.integrate import cumulative_trapezoid
 
 if TYPE_CHECKING:
     from pybop.parameters.parameter import Inputs
-from pybop._dataset import Dataset
-from pybop._utils import FailedSolution, RecommendedSolver
 from pybop.parameters.parameter import Parameter, Parameters
+from pybop.processing.dataset import Dataset
+from pybop.pybamm.utils import RecommendedSolver
 from pybop.simulators.base_simulator import BaseSimulator
+from pybop.simulators.failed_solution import FailedSolution
 
 
 class Simulator(BaseSimulator):
@@ -38,7 +41,7 @@ class Simulator(BaseSimulator):
     protocol : pybamm.Experiment | Dataset | np.ndarray | None
         The protocol as an experiment, a 1D array of values or dataset containing (time) domain data.
     solver : pybamm.BaseSolver, optional
-        The solver to use to solve the model. If None, uses `pybop.RecommendedSolver`.
+        The solver to use to solve the model. If None, uses `pybop.pybamm.RecommendedSolver`.
     output_variables : list, optional
         A list of output variables to return.
     geometry : pybamm.Geometry, optional
@@ -163,11 +166,21 @@ class Simulator(BaseSimulator):
             self._t_eval = [time_data[0], time_data[-1]]
             self._t_interp = time_data
             control = "Current function [A]"
+            if "Discharge capacity [A.h]" in protocol.data.keys():
+                # Check that a linearly interpolated current matches the charge throughput
+                charge_throughput = cumulative_trapezoid(
+                    y=protocol[control], x=protocol["Time [s]"]
+                )
+                if not np.allclose(
+                    protocol["Discharge capacity [A.h]"][1:], charge_throughput / 3600
+                ):
+                    warnings.warn(
+                        "A linear interpolation of the current data does not reproduce the discharge capacity.",
+                        stacklevel=2,
+                    )
             if control in protocol.data.keys():
                 self._parameter_values[control] = pybamm.Interpolant(
-                    protocol["Time [s]"],
-                    protocol[control],
-                    pybamm.t,
+                    protocol["Time [s]"], protocol[control], pybamm.t
                 )
         else:
             self._experiment = None

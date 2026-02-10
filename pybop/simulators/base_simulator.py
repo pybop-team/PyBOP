@@ -1,7 +1,7 @@
 from copy import copy
 
-from pybop._utils import FailedSolution
 from pybop.parameters.parameter import Inputs, Parameter, Parameters
+from pybop.simulators.failed_solution import FailedSolution
 from pybop.simulators.solution import Solution
 
 

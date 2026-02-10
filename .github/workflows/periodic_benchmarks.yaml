@@ -27,7 +27,9 @@ jobs:
           rm -rf ./* || true
           rm -rf ./.??* || true
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Install python & create virtualenv
         shell: bash
@@ -47,7 +49,7 @@ jobs:
             python -m asv run --machine "SelfHostedRunner" NEW --show-stderr -v
 
       - name: Upload results as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: asv_periodic_results
           path: results
@@ -67,7 +69,7 @@ jobs:
     if: github.repository == 'pybop-team/PyBOP'
     steps:
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: 3.12
 
@@ -75,13 +77,13 @@ jobs:
         run: pip install asv
 
       - name: Checkout pybop-bench repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           repository: pybop-team/pybop-bench
           token: ${{ secrets.PUSH_BENCH_TOKEN }}
 
       - name: Download results artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: asv_periodic_results
           path: new_results

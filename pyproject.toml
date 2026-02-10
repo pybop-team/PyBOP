@@ -24,6 +24,8 @@ classifiers = [
   "Intended Audience :: Science/Research",
   "Topic :: Scientific/Engineering",
 ]
+# When updating the Python version ranges, please also bump the Python
+# versions in the tests in nightly_dependency_tests.yml as appropriate
 requires-python = ">=3.10, <3.14"
 dependencies = [
     "pybamm>=25.12.0",
