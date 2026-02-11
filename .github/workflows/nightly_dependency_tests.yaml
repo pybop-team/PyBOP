@@ -53,15 +53,16 @@ jobs:
       - name: Install dependencies (latest)
         if: matrix.dep-type == 'latest'
         run: |
-          uv pip install -e .[all,dev]
-          uv pip uninstall -y pybamm
+          uv pip install -e .[all]
+          uv pip install --group dev
+          uv pip uninstall pybamm
           uv pip install "pybamm[all] @ git+https://github.com/pybamm-team/PyBaMM@main"
           uv pip install pytest-reportlog
 
       - name: Install dependencies (lowest)
         if: matrix.dep-type == 'lowest'
         run: |
-          uv pip install -e .[dev]
+          uv pip install --group dev
           uv pip install --resolution lowest-direct -e .[all]
           uv pip install pytest-reportlog
 
@@ -81,7 +82,7 @@ jobs:
           fi
 
       - name: Create issues from pytest logs
-        uses: scientific-python/issue-from-pytest-log-action@558a3dfdd251069b328d3fded994824ddbefc47b # v1.4.0
+        uses: scientific-python/issue-from-pytest-log-action@8e905db353437cda1d6a773de245343fbfc940dd # v1.5.0
         if: |
           failure()
           && steps.pytest.outcome == 'failure'
