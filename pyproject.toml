@@ -20,13 +20,16 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Intended Audience :: Science/Research",
   "Topic :: Scientific/Engineering",
 ]
-requires-python = ">=3.10, <3.13"
+# When updating the Python version ranges, please also bump the Python
+# versions in the tests in nightly_dependency_tests.yml as appropriate
+requires-python = ">=3.10, <3.14"
 dependencies = [
     "pybamm>=25.12.0",
-    "numpy>=1.26",
+    "numpy>=1.26, <2.4.0",
     "scipy>=1.12",
     "pints>=0.5.1",
     "SALib>=1.5",
@@ -34,6 +37,22 @@ dependencies = [
 
 [project.optional-dependencies]
 plot = ["plotly>=6"]
+scifem = [
+  "scikit-fem>=8.1.0" # scikit-fem is a dependency for the multi-dimensional pybamm models
+]
+bpx = [
+    "bpx>=0.5, <0.6",
+]
+ep-bolfi = [
+    "GPy>=1.13.2; python_version < '3.13'",
+    "ep-bolfi>=3.0.2; python_version < '3.13'"
+]
+pyprobe = [
+  "PyProBE-Data>=2.5.0;python_version >= '3.11' and python_version < '3.13'"
+]
+all = ["pybop[plot,scifem,bpx,pyprobe,ep-bolfi]"]
+
+[dependency-groups]
 docs = [
     "pydata-sphinx-theme",
     "sphinx>=6",
@@ -55,21 +74,6 @@ dev = [
     "pytest-xdist",
     "ruff",
 ]
-scifem = [
-  "scikit-fem>=8.1.0" # scikit-fem is a dependency for the multi-dimensional pybamm models
-]
-bpx = [
-    "bpx>=0.5, <0.6",
-]
-ep-bolfi = [
-    "GPy>=1.13.2",
-    "ep-bolfi>=3.0.2",
-]
-pyprobe = [
-  "PyProBE-Data>=2.5.0;python_version>='3.11'"
-]
-
-all = ["pybop[plot,scifem,bpx,pyprobe,ep-bolfi]"]
 
 [tool.setuptools.packages.find]
 include = ["pybop", "pybop.*"]

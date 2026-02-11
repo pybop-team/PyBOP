@@ -25,12 +25,13 @@ script_path = path.dirname(__file__)
 #
 # Utilities
 #
-from ._utils import add_spaces, is_numeric, FailedVariable, FailedSolution, SymbolReplacer, RecommendedSolver
+from ._utils import add_spaces, is_numeric
 
 #
 # Dataset class
 #
-from ._dataset import Dataset, import_pyprobe_result
+from .processing.dataset import Dataset, import_pyprobe_result
+from .processing.interpolate_current import generate_consistent_current, downsample_constant_current
 
 #
 # Transformation classes
@@ -74,6 +75,7 @@ from .problems.meta_problem import MetaProblem
 #
 from .simulators.base_simulator import BaseSimulator
 from .simulators.solution import Solution
+from .simulators.failed_solution import FailedVariable, FailedSolution
 
 #
 # Cost classes
