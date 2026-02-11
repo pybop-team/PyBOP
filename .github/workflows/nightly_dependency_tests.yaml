@@ -53,8 +53,7 @@ jobs:
       - name: Install dependencies (latest)
         if: matrix.dep-type == 'latest'
         run: |
-          uv pip install -e .[all]
-          uv pip install --group dev
+          uv pip install -e .[all,dev]
           uv pip uninstall pybamm
           uv pip install "pybamm[all] @ git+https://github.com/pybamm-team/PyBaMM@main"
           uv pip install pytest-reportlog
@@ -62,7 +61,7 @@ jobs:
       - name: Install dependencies (lowest)
         if: matrix.dep-type == 'lowest'
         run: |
-          uv pip install --group dev
+          uv pip install -e .[dev]
           uv pip install --resolution lowest-direct -e .[all]
           uv pip install pytest-reportlog
 
