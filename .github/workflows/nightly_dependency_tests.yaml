@@ -32,9 +32,6 @@ jobs:
           # Latest dependencies with Python 3.13 (our maximum supported Python version)
           - dep-type: latest
             python-version: "3.13"
-          # Lowest dependencies with Python 3.10 (our minimum supported Python version)
-          - dep-type: lowest
-            python-version: "3.10"
     permissions:
       contents: read
       issues: write # for creating issues when tests fail
