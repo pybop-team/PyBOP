@@ -51,7 +51,9 @@ jobs:
 
       - name: Install dependencies (latest)
         if: matrix.dep-type == 'latest'
+        # uv pip install pip needed to allow %pip install within notebooks
         run: |
+          uv pip install pip
           uv pip install -e .[all]
           uv pip install --group dev
           uv pip uninstall pybamm
@@ -61,6 +63,7 @@ jobs:
       - name: Install dependencies (lowest)
         if: matrix.dep-type == 'lowest'
         run: |
+          uv pip install pip
           uv pip install --group dev
           uv pip install --resolution lowest-direct -e .[all]
           uv pip install pytest-reportlog
