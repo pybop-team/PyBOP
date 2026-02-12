@@ -25,13 +25,16 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        suite: ["notebooks"]
-        dep-type: ["latest"]
+        suite: ["unit", "integration", "examples", "notebooks"]
+        dep-type: ["latest", "lowest"]
         # The following must remain in sync with our Python version support as defined in pyproject.toml
         include:
           # Latest dependencies with Python 3.13 (our maximum supported Python version)
           - dep-type: latest
             python-version: "3.13"
+          # Lowest dependencies with Python 3.10 (our minimum supported Python version)
+          - dep-type: lowest
+            python-version: "3.10"
     permissions:
       contents: read
       issues: write # for creating issues when tests fail
@@ -55,16 +58,38 @@ jobs:
           uv pip install --group dev
           uv pip uninstall pybamm
           uv pip install "pybamm[all] @ git+https://github.com/pybamm-team/PyBaMM@main"
+          uv pip install pytest-reportlog
 
+      - name: Install dependencies (lowest)
+        if: matrix.dep-type == 'lowest'
+        run: |
+          uv pip install pip
+          uv pip install --group dev
+          uv pip install --resolution lowest-direct -e .[all]
+          uv pip install pytest-reportlog
 
       - name: Run ${{ matrix.suite }} tests
+        id: pytest
+        env:
+          PYTEST: "pytest --report-log=pytest-log.jsonl"
         run: |
           if [[ "${{ matrix.suite }}" == "unit" ]]; then
-              python -m pytest --unit
+              python -m $PYTEST --unit
           elif [[ "${{ matrix.suite }}" == "integration" ]]; then
-              python -m pytest --integration
+              python -m $PYTEST --integration
           elif [[ "${{ matrix.suite }}" == "examples" ]]; then
-              python -m pytest --examples
+              python -m $PYTEST --examples
           elif [[ "${{ matrix.suite }}" == "notebooks" ]]; then
-              python -m pytest --notebooks --nbmake --nbmake-timeout=1000 examples/
+              python -m $PYTEST --notebooks --nbmake --nbmake-timeout=1000 examples/
           fi
+
+      - name: Create issues from pytest logs
+        uses: scientific-python/issue-from-pytest-log-action@8e905db353437cda1d6a773de245343fbfc940dd # v1.5.0
+        if: |
+          failure()
+          && steps.pytest.outcome == 'failure'
+          && github.repository == 'pybop-team/PyBOP'
+          && github.event_name == 'schedule'
+        with:
+          log-path: pytest-log.jsonl
+          issue-title: "Nightly ${{ matrix.dep-type }} dependencies ${{ matrix.suite }} tests failed (${{ matrix.os }} Python ${{ matrix.python-version }})"
