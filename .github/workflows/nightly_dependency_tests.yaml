@@ -50,7 +50,7 @@ jobs:
       - name: Install dependencies (latest)
         if: matrix.dep-type == 'latest'
         run: |
-          uv pip install pip 
+          uv pip install pip
           uv pip install -e .[all]
           uv pip install --group dev
           uv pip uninstall pybamm
