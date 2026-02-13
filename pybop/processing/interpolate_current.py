@@ -17,7 +17,7 @@ def generate_consistent_current(dataset: Dataset, tolerance: float = 1e-3) -> Da
     Arguments
     ---------
     dataset : pybop.Dataset
-        A dataset containing "Time [s]", "Current function [A]" and "Discharge capacity [A.h]".
+        A dataset containing "Time [s]", "Current [A]" and "Discharge capacity [A.h]".
     tolerance : float
         A numerical tolerance in the units of time (seconds) used to determine if an extra
         point is necessary (default: 1e-3).
@@ -28,7 +28,7 @@ def generate_consistent_current(dataset: Dataset, tolerance: float = 1e-3) -> Da
         A new dataset containing the augmented time, current and charge throughput data.
     """
     time = dataset["Time [s]"]
-    current = dataset["Current function [A]"]
+    current = dataset["Current [A]"]
     throughput = dataset["Discharge capacity [A.h]"] * 3600
 
     extra_times = []
@@ -102,13 +102,13 @@ def generate_consistent_current(dataset: Dataset, tolerance: float = 1e-3) -> Da
     return Dataset(
         {
             "Time [s]": time[idx],
-            "Current function [A]": current[idx],
+            "Current [A]": current[idx],
             "Discharge capacity [A.h]": throughput[idx] / 3600,
         }
     )
 
 
-def downsample_constant_current(dataset: Dataset, tolerance: float = 1e-3) -> Dataset:
+def downsample_constant_current(dataset: Dataset, tolerance: float = 1e-6) -> Dataset:
     """
     Generate a new dataset retaining only the informative points and consistency between the
     charge throughput and a linear interpolation of the current.
@@ -116,7 +116,7 @@ def downsample_constant_current(dataset: Dataset, tolerance: float = 1e-3) -> Da
     Arguments
     ---------
     dataset : pybop.Dataset
-        A dataset containing "Time [s]", "Current function [A]" and "Discharge capacity [A.h]".
+        A dataset containing "Time [s]", "Current [A]" and "Discharge capacity [A.h]".
     tolerance : float
         A numerical tolerance in the units of current (A) used to determine if a data point
         is informative relative to its neighbours.
@@ -127,7 +127,7 @@ def downsample_constant_current(dataset: Dataset, tolerance: float = 1e-3) -> Da
         A new dataset containing the augmented time, current and charge throughput data.
     """
     time = np.asarray(dataset["Time [s]"])
-    current = np.asarray(dataset["Current function [A]"]).copy()  # we mutate this
+    current = np.asarray(dataset["Current [A]"]).copy()  # we mutate this
     try:
         throughput: np.ndarray = dataset["Discharge capacity [A.h]"].copy() * 3600
         data_includes_throughput = True
@@ -192,12 +192,12 @@ def downsample_constant_current(dataset: Dataset, tolerance: float = 1e-3) -> Da
     return Dataset(
         {
             "Time [s]": time[keep],
-            "Current function [A]": current[keep],
+            "Current [A]": current[keep],
             "Discharge capacity [A.h]": throughput[keep] / 3600,
         }
         if data_includes_throughput
         else {
             "Time [s]": time[keep],
-            "Current function [A]": current[keep],
+            "Current [A]": current[keep],
         }
     )
