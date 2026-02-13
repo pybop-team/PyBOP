@@ -46,3 +46,34 @@ class TestModels:
 
         fig = solution.plot()
         assert isinstance(fig, pybamm.QuickPlot)
+
+    def test_set_initial_state(self, model):
+        if not isinstance(
+            model, pybop.ExponentialDecayModel | pybop.lithium_ion.WeppnerHuggins
+        ):
+            if isinstance(model, pybop.lithium_ion.SPDiffusion):
+                initial_state = "Initial stoichiometry"
+            else:
+                initial_state = "Initial SoC"
+
+            param = model.default_parameter_values
+            param.set_initial_state(0.5)
+            assert param[initial_state] == 0.5
+
+            param.set_initial_state("2.8 V")
+            assert 0 <= param[initial_state] <= 1
+
+            with pytest.raises(
+                ValueError,
+                match="Initial value must be a float or a string ending in 'V'.",
+            ):
+                param.set_initial_state([1])
+
+            with pytest.raises(ValueError, match="should be between 0 and 1."):
+                param.set_initial_state(-1)
+
+            if not isinstance(model, pybop.lithium_ion.SPDiffusion):
+                with pytest.raises(
+                    ValueError, match=r"V is outside the voltage limits"
+                ):
+                    param.set_initial_state("-1 V")

@@ -11,6 +11,8 @@ from pybamm import (
 )
 from pybamm import t as pybamm_t
 
+from pybop.models.lithium_ion.utils import InverseOCV
+
 
 class SPDiffusion(pybamm.lithium_ion.BaseModel):
     """
@@ -290,12 +292,26 @@ def set_initial_state(
     """
     parameter_values = parameter_values if inplace else parameter_values.copy()
 
-    if isinstance(initial_value, int | float):
-        if not 0 <= initial_value <= 1:
-            raise ValueError("Initial SOC should be between 0 and 1")
-        parameter_values["Initial SoC"] = initial_value
+    if isinstance(initial_value, str) and initial_value.endswith("V"):
+        V_init = float(initial_value[:-1])
+
+        def ocv_function(sto):
+            U = FunctionParameter("Electrode OCP [V]", {"Particle stoichiometry": sto})
+
+            return parameter_values.evaluate(U, inputs=inputs)
+
+        inverse_ocv = InverseOCV(ocv_function)
+        sto = inverse_ocv(V_init)
+
+    elif isinstance(initial_value, int | float):
+        sto = initial_value
 
     else:
-        raise ValueError("Initial value must be a float between 0 and 1.")
+        raise ValueError("Initial value must be a float or a string ending in 'V'.")
+
+    if not 0 <= sto <= 1:
+        raise ValueError("Initial stoichiometry should be between 0 and 1.")
+
+    parameter_values["Initial stoichiometry"] = sto
 
     return parameter_values

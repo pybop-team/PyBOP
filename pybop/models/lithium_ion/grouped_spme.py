@@ -15,6 +15,8 @@ from pybamm.models.full_battery_models.lithium_ion.electrode_soh import (
     get_min_max_stoichiometries,
 )
 
+from pybop.models.lithium_ion.utils import InverseOCV
+
 
 class GroupedSPMe(pybamm.lithium_ion.BaseModel):
     """
@@ -692,12 +694,49 @@ def set_initial_state(
     """
     parameter_values = parameter_values if inplace else parameter_values.copy()
 
-    if isinstance(initial_value, int | float):
-        if not 0 <= initial_value <= 1:
-            raise ValueError("Initial SOC should be between 0 and 1")
-        parameter_values["Initial SoC"] = initial_value
+    if isinstance(initial_value, str) and initial_value.endswith("V"):
+        V_init = float(initial_value[:-1])
+        V_min = parameter_values.evaluate(
+            pybamm.Parameter("Lower voltage cut-off [V]"), inputs=inputs
+        )
+        V_max = parameter_values.evaluate(
+            pybamm.Parameter("Upper voltage cut-off [V]"), inputs=inputs
+        )
+
+        if not V_min - tol <= V_init <= V_max + tol:
+            raise ValueError(
+                f"Initial voltage {V_init}V is outside the voltage limits ({V_min}, {V_max})."
+            )
+
+        x_0 = Parameter("Minimum negative stoichiometry")
+        x_100 = Parameter("Maximum negative stoichiometry")
+        y_100 = Parameter("Minimum positive stoichiometry")
+        y_0 = Parameter("Maximum positive stoichiometry")
+
+        def ocv_function(soc):
+            sto_p = y_0 - soc * (y_0 - y_100)
+            sto_n = x_0 + soc * (x_100 - x_0)
+            U_p = FunctionParameter(
+                "Positive electrode OCP [V]", {"Positive particle stoichiometry": sto_n}
+            )
+            U_n = FunctionParameter(
+                "Negative electrode OCP [V]", {"Negative particle stoichiometry": sto_p}
+            )
+
+            return parameter_values.evaluate(U_p - U_n, inputs=inputs)
+
+        inverse_ocv = InverseOCV(ocv_function)
+        soc = inverse_ocv(V_init)
+
+    elif isinstance(initial_value, int | float):
+        soc = initial_value
 
     else:
-        raise ValueError("Initial value must be a float between 0 and 1.")
+        raise ValueError("Initial value must be a float or a string ending in 'V'.")
+
+    if not 0 <= soc <= 1:
+        raise ValueError("Initial SOC should be between 0 and 1.")
+
+    parameter_values["Initial SoC"] = soc
 
     return parameter_values

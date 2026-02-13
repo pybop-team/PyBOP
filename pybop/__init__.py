@@ -58,6 +58,7 @@ from .parameters.multivariate_distributions import MultivariateNonparametric, Mu
 #
 from .models import lithium_ion
 from .models._exponential_decay import ExponentialDecayModel
+from .models.lithium_ion.utils import Interpolant, InverseOCV
 
 #
 # PyBaMM utility classes
@@ -176,7 +177,7 @@ from .analysis.classification import classify_using_hessian, plot_hessian_eigenv
 #
 # Applications
 #
-from .applications.base_method import BaseApplication, Interpolant, InverseOCV
+from .applications.base_method import BaseApplication
 from .applications.ocp_methods import OCPMerge, OCPAverage, OCPCapacityToStoichiometry
 from .applications.gitt_methods import GITTPulseFit, GITTFit
 

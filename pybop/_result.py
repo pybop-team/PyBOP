@@ -1,6 +1,8 @@
 import numpy as np
 
-from pybop import Logger, Problem, plot
+from pybop import plot
+from pybop._logging import Logger
+from pybop.problems.problem import Problem
 
 
 class Result:
