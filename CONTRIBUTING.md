@@ -4,17 +4,19 @@ If you'd like to contribute to PyBOP, please have a look at the guidelines below
 
 ## Developer-Installation
 
-To install PyBOP for development purposes, which includes the plotting dependencies, use the `[all]` and the `[dev]` flags as demonstrated below:
+To install PyBOP for development purposes, which includes the plotting dependencies, use the `[all]` flag and the `dev` dependency group as demonstrated below:
 
 For `zsh`:
 
 ```sh
-pip install -e '.[all,dev]'
+pip install -e '.[all]'
+pip install --group dev
 ```
 
 For `bash`:
 ```sh
-pip install -e .[all,dev]
+pip install -e .[all]
+pip install --group dev
 ```
 
 ## Pre-commit checks
@@ -117,8 +119,8 @@ On the other hand... We _do_ want to compare several tools, to generate document
 
 1. Core PyBOP: A minimal set, including things like NumPy, SciPy, etc. All infrastructure should run against this set of dependencies, as well as any numerical methods we implement ourselves.
 2. Extras: Other inference packages and their dependencies. Methods we don't want to implement ourselves, but do want to provide an interface to can have their dependencies added here.
-3. Documentation generating code: Everything you need to generate and work on the docs. This is managed by the `[docs]` set of extras.
-4. Development code: Everything you need to do PyBOP development (so all of the above packages, plus ruff and other testing tools). This is managed by the `[dev]` set of extras.
+3. Documentation generating code: Everything you need to generate and work on the docs. This is managed by the `[docs]` dependency group.
+4. Development code: Everything you need to do PyBOP development (so all of the above packages, plus ruff and other testing tools). This is managed by the `[dev]` dependency group.
 
 Only 'core pybop' is installed by default. The others have to be specified explicitly when running the installation command.
 
