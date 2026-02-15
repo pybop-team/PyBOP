@@ -11,6 +11,7 @@
 
 ## Bug Fixes
 
+- [#890](https://github.com/pybop-team/PyBOP/pull/890) - Fix the assignment of parameters within a `MetaProblem`.
 - [#847](https://github.com/pybop-team/PyBOP/pull/847) - Update readme and diagram of pybop components so that the diagram is displayed correctly in the readme.
 
 ## Breaking Changes

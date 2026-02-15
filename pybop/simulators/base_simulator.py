@@ -10,7 +10,7 @@ class BaseSimulator:
     Base simulator.
     """
 
-    def __init__(self, parameters: Parameters | list | None = None):
+    def __init__(self, parameters: Parameters | dict | None = None):
         if parameters is None:
             parameters = Parameters()
         elif not isinstance(parameters, Parameters):
