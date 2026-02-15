@@ -54,6 +54,9 @@ class MetaProblem(Problem):
             self.weights = -self.weights
             self._minimising = False
 
+    def get_problem_inputs(self, inputs: Inputs, i: int):
+        return {key: inputs[key] for key in self.problems[i].parameters.keys()}
+
     def evaluate_batch(
         self,
         inputs: list[Inputs],
@@ -82,13 +85,14 @@ class MetaProblem(Problem):
         de = np.empty((n_inputs, len(self.parameters), n_problems))
 
         for i, problem in enumerate(self.problems):
+            problem_inputs = [self.get_problem_inputs(x, i) for x in inputs]
             if calculate_sensitivities:
                 e[:, i], de[:, :, i] = problem.evaluate_batch(
-                    inputs, calculate_sensitivities=calculate_sensitivities
+                    problem_inputs, calculate_sensitivities=calculate_sensitivities
                 ).get_values()
             else:
                 e[:, i] = problem.evaluate_batch(
-                    inputs, calculate_sensitivities=calculate_sensitivities
+                    problem_inputs, calculate_sensitivities=calculate_sensitivities
                 ).values
 
         e = np.dot(e, self.weights)

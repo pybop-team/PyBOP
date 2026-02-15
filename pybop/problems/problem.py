@@ -57,10 +57,8 @@ class Problem:
             self._cost.log_likelihood.parameters = self.parameters
             self._cost.set_joint_prior()
 
-    def get_model_inputs(self, inputs):
-        all_values = list(inputs.values())
-        n = len(self._simulator.parameters)
-        return self._simulator.parameters.to_dict(all_values[:n])
+    def get_model_inputs(self, inputs: Inputs):
+        return {key: inputs[key] for key in self._simulator.parameters.keys()}
 
     @property
     def target(self):
