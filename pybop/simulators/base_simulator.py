@@ -10,24 +10,28 @@ class BaseSimulator:
     Base simulator.
     """
 
-    def __init__(self, parameters: Parameters | dict | None = None):
+    def __init__(self, parameters: Parameters | list | None = None):
         if parameters is None:
             parameters = Parameters()
-        # Check if parameters is a list of pybop.Parameter objects
-        elif isinstance(parameters, dict):
-            if all(isinstance(param, Parameter) for param in parameters):
-                parameters = Parameters(*parameters)
-            else:
-                raise TypeError(
-                    "All elements in the list must be pybop.Parameter objects."
-                )
-        # Check if parameters is already a pybop.Parameters object
         elif not isinstance(parameters, Parameters):
-            raise TypeError(
-                "The input parameters must be a a dictionary of Parameter objects or a pybop.Parameters object."
-            )
+            try:
+                parameters = self.get_parameters_from_dict(parameters)
+            except Exception:
+                raise TypeError(
+                    "Parameters must be a dictionary of pybop.Parameter objects "
+                    "or a pybop.Parameters object."
+                ) from None
 
         self.parameters = parameters
+
+    def get_parameters_from_dict(self, parameter_values: dict):
+        """Extract any pybop.Parameter objects and replace with the "[input]" string."""
+        parameters = Parameters()
+        for name, param in parameter_values.items():
+            if isinstance(param, Parameter):
+                parameters.add(name, param)
+                parameter_values.update({name: "[input]"})
+        return parameters
 
     def set_output_variables(self, target: list[str]):
         return NotImplementedError

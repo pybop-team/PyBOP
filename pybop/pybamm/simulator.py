@@ -7,7 +7,7 @@ from pybamm import SolverError
 
 if TYPE_CHECKING:
     from pybop.parameters.parameter import Inputs
-from pybop.parameters.parameter import Parameter, Parameters
+from pybop.parameters.parameter import Parameter
 from pybop.processing.dataset import Dataset
 from pybop.pybamm.utils import RecommendedSolver
 from pybop.simulators.base_simulator import BaseSimulator
@@ -82,15 +82,12 @@ class Simulator(BaseSimulator):
         )
         self._output_variables = output_variables
 
-        # Unpack the uncertain parameters from the parameter values
-        parameters = Parameters()
-        for name, param in parameter_values.items():
-            if isinstance(param, Parameter):
-                parameters.add(name, param)
-                self._parameter_values.update({name: "[input]"})
-            elif isinstance(param, pybamm.InputParameter):
-                parameters.add(name, Parameter())
-        super().__init__(parameters=parameters)
+        # Replace any PyBaMM InputParameter with a PyBOP Parameter
+        for name, param in self._parameter_values.items():
+            if isinstance(param, pybamm.InputParameter):
+                self._parameter_values[name] = Parameter()
+
+        super().__init__(parameters=self._parameter_values)
 
         # Simulation params
         self._initial_state = self.convert_to_pybamm_initial_state(initial_state)

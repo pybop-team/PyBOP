@@ -10,7 +10,6 @@ from scipy.sparse.linalg import spsolve
 
 if TYPE_CHECKING:
     from pybop.parameters.parameter import Inputs
-from pybop.parameters.parameter import Parameter, Parameters
 from pybop.pybamm.simulator import Simulator
 from pybop.pybamm.utils import SymbolReplacer
 from pybop.simulators.base_simulator import BaseSimulator, Solution
@@ -81,12 +80,7 @@ class EISSimulator(BaseSimulator):
         parameter_values = parameter_values or model.default_parameter_values
         parameter_values["Current function [A]"] = 0
 
-        # Unpack the uncertain parameters from the parameter values
-        parameters = Parameters()
-        for name, param in parameter_values.items():
-            if isinstance(param, Parameter):
-                parameters.add(name, param)
-        super().__init__(parameters=parameters)
+        super().__init__(parameters=parameter_values)
 
         # Set up a simulation
         self._simulator = Simulator(
