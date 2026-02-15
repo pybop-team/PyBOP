@@ -717,10 +717,10 @@ def set_initial_state(
             sto_p = y_0 - soc * (y_0 - y_100)
             sto_n = x_0 + soc * (x_100 - x_0)
             U_p = FunctionParameter(
-                "Positive electrode OCP [V]", {"Positive particle stoichiometry": sto_n}
+                "Positive electrode OCP [V]", {"Positive particle stoichiometry": sto_p}
             )
             U_n = FunctionParameter(
-                "Negative electrode OCP [V]", {"Negative particle stoichiometry": sto_p}
+                "Negative electrode OCP [V]", {"Negative particle stoichiometry": sto_n}
             )
 
             return parameter_values.evaluate(U_p - U_n, inputs=inputs)
