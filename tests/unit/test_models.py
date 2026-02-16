@@ -77,3 +77,34 @@ class TestModels:
                     ValueError, match=r"V is outside the voltage limits"
                 ):
                     param.set_initial_state("-1 V")
+
+
+class TestUtils:
+    """
+    A class to test PyBOP models utility functions.
+    """
+
+    pytestmark = pytest.mark.unit
+
+    def test_inverse_ocv(self):
+        def ocv_function(x):
+            return x**3
+
+        inverse_ocv = pybop.models.lithium_ion.utils.InverseOCV(ocv_function)
+
+        root = inverse_ocv(0.125)
+        assert np.isclose(root, 0.5)
+
+    def test_interpolant(self):
+        x = np.linspace(-2, 2, 100)
+        y = x**2
+        interpolant = pybop.models.lithium_ion.utils.Interpolant(x, y)
+
+        # Test numeric evaluation
+        np.testing.assert_almost_equal(interpolant(0.5), 0.25, decimal=3)
+        np.testing.assert_almost_equal(interpolant(-1.5), 2.25, decimal=3)
+
+        # Test symbolic evaluation
+        x_sym = pybamm.Scalar(0.5)
+        interp_sym = interpolant(x_sym)
+        assert isinstance(interp_sym, pybamm.Interpolant)
