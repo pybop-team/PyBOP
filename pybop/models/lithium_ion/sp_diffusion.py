@@ -11,11 +11,11 @@ from pybamm import (
 )
 from pybamm import t as pybamm_t
 
-from pybop.models.lithium_ion.base_model import BaseModel
+from pybop.models.lithium_ion.base_model import BaseGroupedModel
 from pybop.models.lithium_ion.utils import InverseOCV
 
 
-class SPDiffusion(BaseModel):
+class SPDiffusion(BaseGroupedModel):
     """
     Diffusion model for a single, spherical particle representing a half-cell for GITT.
 

@@ -8,7 +8,7 @@ from pybamm import lithium_ion as pybamm_lithium_ion
 from pybop.models.lithium_ion.utils import InverseOCV
 
 
-class BaseModel(pybamm_lithium_ion.BaseModel):
+class BaseGroupedModel(pybamm_lithium_ion.BaseModel):
     """
     A base model for PyBOP's lithium-ion battery models.
 

@@ -15,10 +15,10 @@ from pybamm.models.full_battery_models.lithium_ion.electrode_soh import (
     get_min_max_stoichiometries,
 )
 
-from pybop.models.lithium_ion.base_model import BaseModel
+from pybop.models.lithium_ion.base_model import BaseGroupedModel
 
 
-class GroupedSPMe(BaseModel):
+class GroupedSPMe(BaseGroupedModel):
     """
     A grouped parameter version of the single particle model with electrolyte (SPMe).
 
