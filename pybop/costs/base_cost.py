@@ -33,7 +33,7 @@ class BaseCost:
 
     def evaluate(
         self,
-        sol: Solution,
+        solution: Solution,
         inputs: Inputs | None = None,
         calculate_sensitivities: bool = False,
     ) -> float | tuple[float, np.ndarray]:
@@ -42,7 +42,7 @@ class BaseCost:
 
         Parameters
         ----------
-        sol : pybop.Solution | pybamm.Solution
+        solution : pybop.Solution | pybamm.Solution
             The simulation result.
         inputs : Inputs, optional
             Input parameters (default: None).
@@ -57,7 +57,7 @@ class BaseCost:
         """
         raise NotImplementedError
 
-    def stack_sensitivities(self, sol: Solution) -> np.ndarray:
+    def stack_sensitivities(self, solution: Solution) -> np.ndarray:
         """
         Stack the sensitivities for each output variable and parameter into a single array.
 
@@ -74,8 +74,8 @@ class BaseCost:
         """
         return np.stack(
             [
-                np.row_stack([sol[var].sensitivities[p] for var in self.target])
-                for p in sol.all_inputs[0].keys()
+                np.row_stack([solution[var].sensitivities[p] for var in self.target])
+                for p in solution.all_inputs[0].keys()
             ],
             axis=0,
         )

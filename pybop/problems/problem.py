@@ -176,9 +176,9 @@ class Problem:
         valid_indices = [i for i, valid in enumerate(validity) if valid]
         # TODO: Parallelise the cost computations
         if calculate_sensitivities:
-            for i, sol in enumerate(solutions):
+            for i, solution in enumerate(solutions):
                 e, de = self._cost.evaluate(
-                    sol,
+                    solution,
                     inputs=valid_inputs[i],
                     calculate_sensitivities=calculate_sensitivities,
                 )
@@ -186,9 +186,9 @@ class Problem:
                     i=valid_indices[i], value=np.asarray(e).item(), sensitivities=de
                 )
         else:
-            for i, sol in enumerate(solutions):
+            for i, solution in enumerate(solutions):
                 e = self._cost.evaluate(
-                    sol,
+                    solution,
                     inputs=valid_inputs[i],
                     calculate_sensitivities=calculate_sensitivities,
                 )

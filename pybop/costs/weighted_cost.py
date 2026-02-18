@@ -59,7 +59,7 @@ class WeightedCost(BaseCost):
 
     def evaluate(
         self,
-        sol: Solution,
+        solution: Solution,
         inputs: Inputs | None = None,
         calculate_sensitivities: bool = False,
     ) -> float | tuple[float, np.ndarray]:
@@ -68,7 +68,7 @@ class WeightedCost(BaseCost):
 
         Parameters
         ----------
-        sol : pybop.Solution | pybamm.Solution
+        solution : pybop.Solution | pybamm.Solution
             The simulation result.
         inputs : Inputs, optional
             Input parameters (default: None).
@@ -87,11 +87,15 @@ class WeightedCost(BaseCost):
         for i, cost in enumerate(self.costs):
             if calculate_sensitivities:
                 e[i], de[:, i] = cost.evaluate(
-                    sol, inputs=inputs, calculate_sensitivities=calculate_sensitivities
+                    solution,
+                    inputs=inputs,
+                    calculate_sensitivities=calculate_sensitivities,
                 )
             else:
                 e[i] = cost.evaluate(
-                    sol, inputs=inputs, calculate_sensitivities=calculate_sensitivities
+                    solution,
+                    inputs=inputs,
+                    calculate_sensitivities=calculate_sensitivities,
                 )
 
         e = np.dot(e, self.weights)

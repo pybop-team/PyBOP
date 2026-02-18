@@ -91,7 +91,7 @@ class ErrorMeasure(BaseCost):
 
     def evaluate(
         self,
-        sol: Solution | pybamm.Solution | FailedSolution,
+        solution: Solution | pybamm.Solution | FailedSolution,
         inputs: Inputs | None = None,
         calculate_sensitivities: bool = False,
     ) -> float | tuple[float, np.ndarray]:
@@ -100,7 +100,7 @@ class ErrorMeasure(BaseCost):
 
         Parameters
         ----------
-        sol : pybop.Solution | pybamm.Solution
+        solution : pybop.Solution | pybamm.Solution
             The simulation result.
         inputs : Inputs, optional
             Input parameters (default: None).
@@ -114,33 +114,35 @@ class ErrorMeasure(BaseCost):
             gradient with dimension (len(parameters)), otherwise returns only the cost.
         """
         # Return failure cost if the solution failed
-        if isinstance(sol, FailedSolution):
+        if isinstance(solution, FailedSolution):
             return self.failure(calculate_sensitivities)
 
-        if not isinstance(sol, (Solution, pybamm.Solution)):
+        if not isinstance(solution, (Solution, pybamm.Solution)):
             raise ValueError(
-                f"sol must be a pybop.Solution object, got type {type(sol)} with value {sol}."
+                f"solution must be a pybop.Solution object, got type {type(solution)} with value {solution}."
             )
 
         # Early return if the prediction is not verified
-        if not self.verify_prediction(sol):
+        if not self.verify_prediction(solution):
             return self.failure(calculate_sensitivities)
 
         # Compute the residual for all output variables
-        r = np.asarray([sol[var].data - self._target_data[var] for var in self.target])
+        r = np.asarray(
+            [solution[var].data - self._target_data[var] for var in self.target]
+        )
 
         # Extract the sensitivities for all output variables and parameters
-        dy = self.stack_sensitivities(sol) if calculate_sensitivities else None
+        dy = self.stack_sensitivities(solution) if calculate_sensitivities else None
 
         return self.__call__(r=r, dy=dy, inputs=inputs)
 
-    def verify_prediction(self, sol: Solution):
+    def verify_prediction(self, solution: Solution):
         """
         Verify that the prediction matches the target data.
 
         Parameters
         ----------
-        sol : pybop.Solution | pybamm.Solution
+        solution : pybop.Solution | pybamm.Solution
             The simulation result.
 
         Returns
@@ -149,7 +151,7 @@ class ErrorMeasure(BaseCost):
             True if the prediction matches the target data, otherwise False.
         """
         if any(
-            len(sol[key].data) != len(self._target_data.get(key, []))
+            len(solution[key].data) != len(self._target_data.get(key, []))
             for key in self.target
         ):
             return False
