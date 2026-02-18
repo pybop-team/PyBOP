@@ -156,4 +156,18 @@ class WeppnerHuggins(BaseGroupedModel):
             "Particle diffusion time scale [s]": tau_d,
         }
         parameter_values = ParameterValues(values=parameter_dictionary)
+        parameter_values._set_initial_state = WeppnerHuggins.set_initial_state  # noqa: SLF001
         return parameter_values
+
+    @staticmethod
+    def set_initial_state(
+        initial_value,
+        parameter_values,
+        direction=None,
+        param=None,
+        inplace=True,
+        options=None,
+        inputs=None,
+        tol=1e-6,
+    ):
+        raise ValueError("The Weppner & Huggins model does not have an initial state.")

@@ -1,8 +1,5 @@
 import pybamm
-from pybamm import (
-    FunctionParameter,
-    Parameter,
-)
+from pybamm import FunctionParameter, Parameter
 from pybamm import lithium_ion as pybamm_lithium_ion
 
 from pybop.models.lithium_ion.utils import InverseOCV
@@ -10,7 +7,7 @@ from pybop.models.lithium_ion.utils import InverseOCV
 
 class BaseGroupedModel(pybamm_lithium_ion.BaseModel):
     """
-    A base model for PyBOP's lithium-ion battery models.
+    A base model for PyBOP's grouped-parameter lithium-ion battery models.
 
     Parameters
     ----------

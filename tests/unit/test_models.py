@@ -48,9 +48,18 @@ class TestModels:
         assert isinstance(fig, pybamm.QuickPlot)
 
     def test_set_initial_state(self, model):
-        if not isinstance(
-            model, pybop.ExponentialDecayModel | pybop.lithium_ion.WeppnerHuggins
-        ):
+        if isinstance(model, pybop.ExponentialDecayModel):
+            pass  # Only testing the battery models for now
+
+        elif isinstance(model, pybop.lithium_ion.WeppnerHuggins):
+            param = model.default_parameter_values
+            with pytest.raises(
+                ValueError,
+                match="The Weppner & Huggins model does not have an initial state.",
+            ):
+                param.set_initial_state(0.5)
+
+        else:
             if isinstance(model, pybop.lithium_ion.SPDiffusion):
                 initial_state = "Initial stoichiometry"
             else:
