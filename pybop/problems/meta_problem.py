@@ -1,8 +1,8 @@
 import numpy as np
 
-from pybop import Problem
 from pybop.costs.evaluation import Evaluation
 from pybop.parameters.parameter import Inputs, Parameters
+from pybop.problems.problem import Problem
 
 
 class MetaProblem(Problem):

@@ -11,8 +11,11 @@ from pybamm import (
 )
 from pybamm import t as pybamm_t
 
+from pybop.models.lithium_ion.base_model import BaseGroupedModel
+from pybop.models.lithium_ion.utils import InverseOCV
 
-class SPDiffusion(pybamm.lithium_ion.BaseModel):
+
+class SPDiffusion(BaseGroupedModel):
     """
     Diffusion model for a single, spherical particle representing a half-cell for GITT.
 
@@ -156,16 +159,6 @@ class SPDiffusion(pybamm.lithium_ion.BaseModel):
         inputs = {"Particle surface stoichiometry": sto}
         return FunctionParameter("Series resistance [Ohm]", inputs)
 
-    def build_model(self):
-        """
-        Build model variables and equations
-        Credit: PyBaMM
-        """
-        self._build_model()
-
-        self._built = True
-        pybamm.logger.info(f"Finish building {self.name}")
-
     @property
     def default_parameter_values(self) -> ParameterValues:
         param = ParameterValues("Xu2019")
@@ -247,55 +240,71 @@ class SPDiffusion(pybamm.lithium_ion.BaseModel):
             "Series resistance [Ohm]": 1,
         }
         parameter_values = ParameterValues(values=parameter_dictionary)
-        parameter_values._set_initial_state = set_initial_state  # noqa: SLF001
+        parameter_values._set_initial_state = SPDiffusion.set_initial_state  # noqa: SLF001
         return parameter_values
 
+    @staticmethod
+    def set_initial_state(
+        initial_value,
+        parameter_values,
+        direction=None,
+        param=None,
+        inplace=True,
+        options=None,
+        inputs=None,
+        tol=1e-6,
+    ):
+        """
+        Set the value of the initial state of charge.
 
-def set_initial_state(
-    initial_value,
-    parameter_values,
-    direction=None,
-    param=None,
-    inplace=True,
-    options=None,
-    inputs=None,
-    tol=1e-6,
-):
-    """
-    Set the value of the initial state of charge.
+        Parameters
+        ----------
+        initial_value : float
+            Target initial value.
+            If float, interpreted as SOC, must be between 0 and 1.
+            If string e.g. "4 V", interpreted as voltage, must be between V_min and V_max.
+        parameter_values : :class:`pybamm.ParameterValues`
+            Parameters and their corresponding values.
+        param : :class:`pybamm.LithiumIonParameters`, optional
+            The symbolic parameter set to use for the simulation.
+            If not provided, the default parameter set will be used.
+        inplace: bool, optional
+            If True, replace the parameters values in place. Otherwise, return a new set of
+            parameter values. Default is True.
+        options : dict-like, optional
+            A dictionary of options to be passed to the model, see
+            :class:`pybamm.BatteryModelOptions`.
+        inputs : dict, optional
+            A dictionary of input parameters to pass to the model when solving.
+        tol : float, optional
+            The tolerance for the solver used to compute the initial stoichiometries.
+            A lower value results in higher precision but may increase computation time.
+            Default is 1e-6.
+        """
+        parameter_values = parameter_values if inplace else parameter_values.copy()
 
-    Parameters
-    ----------
-    initial_value : float
-        Target initial value.
-        If float, interpreted as SOC, must be between 0 and 1.
-        If string e.g. "4 V", interpreted as voltage, must be between V_min and V_max.
-    parameter_values : :class:`pybamm.ParameterValues`
-        Parameters and their corresponding values.
-    param : :class:`pybamm.LithiumIonParameters`, optional
-        The symbolic parameter set to use for the simulation.
-        If not provided, the default parameter set will be used.
-    inplace: bool, optional
-        If True, replace the parameters values in place. Otherwise, return a new set of
-        parameter values. Default is True.
-    options : dict-like, optional
-        A dictionary of options to be passed to the model, see
-        :class:`pybamm.BatteryModelOptions`.
-    inputs : dict, optional
-        A dictionary of input parameters to pass to the model when solving.
-    tol : float, optional
-        The tolerance for the solver used to compute the initial stoichiometries.
-        A lower value results in higher precision but may increase computation time.
-        Default is 1e-6.
-    """
-    parameter_values = parameter_values if inplace else parameter_values.copy()
+        if isinstance(initial_value, str) and initial_value.endswith("V"):
+            V_init = float(initial_value[:-1])
 
-    if isinstance(initial_value, int | float):
-        if not 0 <= initial_value <= 1:
-            raise ValueError("Initial SOC should be between 0 and 1")
-        parameter_values["Initial SoC"] = initial_value
+            def ocv_function(sto):
+                U = FunctionParameter(
+                    "Electrode OCP [V]", {"Particle stoichiometry": sto}
+                )
 
-    else:
-        raise ValueError("Initial value must be a float between 0 and 1.")
+                return parameter_values.evaluate(U, inputs=inputs)
 
-    return parameter_values
+            inverse_ocv = InverseOCV(ocv_function)
+            sto = inverse_ocv(V_init)
+
+        elif isinstance(initial_value, int | float):
+            sto = initial_value
+
+        else:
+            raise ValueError("Initial value must be a float or a string ending in 'V'.")
+
+        if not 0 <= sto <= 1:
+            raise ValueError("Initial stoichiometry should be between 0 and 1.")
+
+        parameter_values["Initial stoichiometry"] = sto
+
+        return parameter_values

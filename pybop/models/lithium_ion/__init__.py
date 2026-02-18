@@ -1,5 +1,5 @@
 #
-# Import lithium ion based models
+# Import lithium ion models
 #
 from .sp_diffusion import SPDiffusion
 from .grouped_spm import GroupedSPM

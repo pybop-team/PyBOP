@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#889](https://github.com/pybop-team/PyBOP/pull/889) - Adds methods for setting the initial state from a voltage to the grouped models.
 - [#869](https://github.com/pybop-team/PyBOP/issues/869) - Adds methods for pre-processing current data for linear interpolation.
 - [#868](https://github.com/pybop-team/PyBOP/pull/868) - Adds support for Python3.13 (NumPy restricted to <2.4, EP-BOLFI optimiser and PyProBE do not support Python 3.13).
 - [#871](https://github.com/pybop-team/PyBOP/pull/871) - Adds a lumped thermal model called `CellTemperature`.
