@@ -620,7 +620,7 @@ class Parameters:
         )
         return f"Parameters({len(self)}):\n{param_summary}"
 
-    def to_inputs(self, values: np.ndarray | list[np.ndarray]) -> list[Inputs]:
+    def to_inputs_list(self, values: np.ndarray | list[np.ndarray]) -> list[Inputs]:
         """
         Return parameter values as a list of dictionaries, as required for multiprocessing.
         """
