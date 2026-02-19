@@ -29,7 +29,7 @@ class TestTransformation:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.sigma0 = 2e-3
+        self.sigma = 2e-3
         self.ground_truth = np.clip(
             np.asarray([0.05, 0.05]) + np.random.normal(loc=0.0, scale=0.01, size=2),
             a_min=0.0,
@@ -107,7 +107,7 @@ class TestTransformation:
 
         # Construct the cost
         if cost_class is pybop.LogPosterior:
-            likelihood = pybop.GaussianLogLikelihood(dataset, sigma0=self.sigma0)
+            likelihood = pybop.GaussianLogLikelihood(dataset, sigma=self.sigma)
             cost = cost_class(likelihood)
         else:
             cost = cost_class(dataset)
@@ -151,10 +151,10 @@ class TestTransformation:
 
         # Noise levels are very hard to gauge; removed for test consistency.
         """
-        # Add sigma0 to ground truth for GaussianLogLikelihood
+        # Add sigma to ground truth for GaussianLogLikelihood
         if isinstance(problem.cost, pybop.GaussianLogLikelihood | pybop.LogPosterior):
             self.ground_truth = np.concatenate(
-                (self.ground_truth, np.asarray([self.sigma0]))
+                (self.ground_truth, np.asarray([self.sigma]))
             )
         """
         # Assertions
@@ -182,6 +182,6 @@ class TestTransformation:
             {
                 "Time [s]": solution["Time [s]"].data,
                 "Current [A]": solution["Current [A]"].data,
-                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma0),
+                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma),
             }
         )

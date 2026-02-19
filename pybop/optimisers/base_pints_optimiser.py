@@ -181,20 +181,18 @@ class BasePintsOptimiser(BaseOptimiser):
                     bounds["lower"], bounds["upper"]
                 )
 
-        # Set the covariance / step size parameter
-        self._sigma0 = self.problem.parameters.get_sigma0(transformed=True)
+        # Set the initial standard deviation / step size parameter
+        self._std0 = self.problem.parameters.get_std(transformed=True)
 
         # Create an instance of the PINTS optimiser class
         if issubclass(self._pints_optimiser, PintsOptimiser):
             x0 = self.problem.parameters.get_initial_values(transformed=True)
-            if np.isscalar(self._sigma0):
+            if np.isscalar(self._std0):
                 param_dims = len(self.problem.parameters)
-                self._sigma0 = np.ones(param_dims) * self._sigma0
+                self._std0 = np.ones(param_dims) * self._std0
 
             self._optimiser = self._pints_optimiser(
-                x0,
-                sigma0=self._sigma0,
-                boundaries=self._boundaries,
+                x0=x0, sigma0=self._std0, boundaries=self._boundaries
             )
         else:
             raise ValueError("The optimiser is not a recognised PINTS optimiser class.")

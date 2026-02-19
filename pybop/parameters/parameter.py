@@ -557,7 +557,7 @@ class Parameters:
 
             return np.column_stack(all_samples)
 
-    def get_sigma0(self, transformed: bool = False) -> list:
+    def get_std(self, transformed: bool = False) -> list:
         """
         Get the standard deviation, for either all or no parameters.
 
@@ -566,7 +566,7 @@ class Parameters:
         transformed : bool
             If True, the transformation is applied to the output (default: False).
         """
-        sigma0 = []
+        std = []
 
         for param in self._parameters.values():
             sig = None
@@ -585,8 +585,8 @@ class Parameters:
                     )
                 )
 
-            sigma0.extend([sig or 0.05])
-        return sigma0
+            std.extend([sig or 0.05])
+        return std
 
     def distribution(self) -> list:
         """Return the initial distribution of each parameter."""

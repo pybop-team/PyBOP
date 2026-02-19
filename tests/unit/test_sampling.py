@@ -75,7 +75,7 @@ class TestPintsSamplers:
         simulator = pybop.pybamm.Simulator(
             model, parameter_values=parameter_values, protocol=dataset
         )
-        likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=0.01)
+        likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma=0.01)
         prior1 = pybop.Gaussian(0.7, 0.02)
         prior2 = pybop.Gaussian(0.6, 0.02)
         composed_prior = pybop.JointDistribution(prior1, prior2)
@@ -190,7 +190,7 @@ class TestPintsSamplers:
         simulator = pybop.pybamm.Simulator(
             model, parameter_values=parameter_values, protocol=dataset
         )
-        likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=0.01)
+        likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma=0.01)
         posterior = pybop.LogPosterior(likelihood)
         posterior = pybop.Problem(simulator, posterior)
 

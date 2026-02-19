@@ -233,14 +233,12 @@ class TestParameters:
     def test_get_sigma(self, name):
         parameter = pybop.Parameter(stats.norm(loc=0.6, scale=0.02))
         params = pybop.Parameters({name: parameter})
-        assert params.get_sigma0() == pytest.approx([0.02])
+        assert params.get_std() == pytest.approx([0.02])
 
         parameter = pybop.Parameter(bounds=(0.375, 0.7))
         parameter._distribution = None
         params = pybop.Parameters({name: parameter})
-        assert params.get_sigma0() == [
-            0.05 * (parameter.bounds[1] - parameter.bounds[0])
-        ]
+        assert params.get_std() == [0.05 * (parameter.bounds[1] - parameter.bounds[0])]
 
     def test_initial_values_without_attributes(self):
         # Test without initial values

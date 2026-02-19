@@ -62,7 +62,7 @@ class TestLogPosterior:
 
     @pytest.fixture
     def likelihood(self, dataset):
-        return pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=0.01)
+        return pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma=0.01)
 
     @pytest.fixture
     def prior(self):

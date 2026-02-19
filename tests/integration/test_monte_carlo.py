@@ -80,7 +80,7 @@ class Test_Sampling_SPM:
         simulator = pybop.pybamm.Simulator(
             model, parameter_values=parameter_values, protocol=dataset
         )
-        likelihood = pybop.GaussianLogLikelihood(dataset, sigma0=0.002 * 1.2)
+        likelihood = pybop.GaussianLogLikelihood(dataset, sigma=0.002 * 1.2)
         posterior = pybop.LogPosterior(likelihood)
         return pybop.Problem(simulator, posterior)
 
