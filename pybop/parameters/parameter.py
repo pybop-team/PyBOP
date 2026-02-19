@@ -544,11 +544,7 @@ class Parameters:
         transformed: bool = False,
     ) -> NDArray[np.floating] | None:
         """
-        Sample from each parameter distribution.
-
-        or
-
-        Draw random samples from the joint parameters distribution for multivariate parameters.
+        Sample from a joint or multivariate distribution.
 
         Parameters
         ----------
@@ -564,32 +560,16 @@ class Parameters:
         NDArray[np.floating] or None
             Array of shape (n_samples, n_parameters) or None if any distribution is missing
         """
+        if self._distribution is None:
+            return None
 
-        if self._multivariate:
-            # use multivariate distribution to sample all parameters
-            samples = self.distribution.rvs(n_samples, random_state=random_state)
-            if samples.ndim < 2:
-                samples = np.atleast_2d(samples)
+        samples = self._distribution.rvs(n_samples, random_state=random_state)
+        samples = np.atleast_2d(samples)
 
-            if transformed:
-                samples = np.asarray(
-                    [self.transformation.to_search(s) for s in samples]
-                )
+        if transformed:
+            samples = np.asarray([self.transformation.to_search(s) for s in samples])
 
-            return samples
-        else:
-            # sample each parameter individually
-            all_samples = []
-
-            for param in self._parameters.values():
-                samples = param.sample_from_distribution(
-                    n_samples, random_state=random_state, transformed=transformed
-                )
-                if samples is None:
-                    return None
-                all_samples.append(samples)
-
-            return np.column_stack(all_samples)
+        return samples
 
     def get_std(self, transformed: bool = False) -> list:
         """
