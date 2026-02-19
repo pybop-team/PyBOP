@@ -146,7 +146,7 @@ class TestParameters:
         with pytest.raises(ParameterNotFoundError, match="not found"):
             params["not a parameter"] = pybop.Parameter(initial_value=0.8)
         with pytest.raises(
-            TypeError, match="Paremeter must be of type pybop.Parameter"
+            TypeError, match="Parameter must be of type pybop.Parameter"
         ):
             params[name] = pybop.Gaussian(0.5, 0.02)
 

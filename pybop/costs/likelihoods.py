@@ -2,7 +2,7 @@ import numpy as np
 import scipy.stats as stats
 
 from pybop.costs.error_measures import ErrorMeasure
-from pybop.parameters.distributions import Distribution, JointDistribution, Uniform
+from pybop.parameters.distributions import Distribution, Uniform
 from pybop.parameters.parameter import Inputs, Parameter, Parameters
 from pybop.processing.dataset import Dataset
 
@@ -218,7 +218,7 @@ class LogPosterior(LogLikelihood):
 
     def set_joint_prior(self):
         if self.prior is None:
-            self.joint_prior = JointDistribution(*self.parameters.distribution())
+            self.joint_prior = self.parameters.distribution()
         elif isinstance(self.prior, (stats.distributions.rv_frozen)):
             self.joint_prior = Distribution(self.prior)
         elif isinstance(self.prior, Parameter):

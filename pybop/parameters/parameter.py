@@ -10,8 +10,9 @@ import numpy as np
 import scipy.stats as stats
 from numpy.typing import NDArray
 
-from pybop.parameters.distributions import Distribution
+from pybop.parameters.distributions import Distribution, JointDistribution
 from pybop.parameters.multivariate_distributions import (
+    BaseMultivariateDistribution,
     MarginalDistribution,
 )
 from pybop.transformation.base_transformation import Transformation
@@ -305,7 +306,8 @@ class Parameters:
         self._add(name, parameter, check_multivariate=check_multivariate)
 
     def check_multivariate(self):
-        """Method to determin whether parameters have a MultivariateDistribution
+        """
+        Method to determine whether parameters have a MultivariateDistribution.
         Multivariate distributions are passed to individual parameters via the corresponding marginal distribution.
         The pybop.MarginalDistribution class retains the underlying pybop.MultivariateDistribution in the parent_distribution property
         """
@@ -401,7 +403,7 @@ class Parameters:
         if name not in self._parameters:
             raise ParameterNotFoundError(f"Parameter for '{name}' not found")
         if not isinstance(param, Parameter):
-            raise TypeError({"Paremeter must be of type pybop.Parameter"})
+            raise TypeError({"Parameter must be of type pybop.Parameter"})
         self._parameters[name] = param
         if check_multivariate:
             self.check_multivariate()
@@ -521,9 +523,8 @@ class Parameters:
             The number of samples to draw (default: 1).
         random_state : int, optional
             The random state seed for reproducibility (default: None).
-        transformed: bool
-            If True, the transformation is applied to the output
-            (default: False).
+        transformed: bool, optional
+            If True, the transformation is applied to the output (default: False).
 
         Returns
         -------
@@ -532,7 +533,7 @@ class Parameters:
         """
 
         if self._multivariate:
-            # use multivariate distribution for to sample all parameters
+            # use multivariate distribution to sample all parameters
             samples = self.distribution.rvs(n_samples, random_state=random_state)
             if samples.ndim < 2:
                 samples = np.atleast_2d(samples)
@@ -563,7 +564,7 @@ class Parameters:
 
         Parameters
         ----------
-        transformed : bool
+        transformed : bool, optional
             If True, the transformation is applied to the output (default: False).
         """
         std = []
@@ -588,13 +589,20 @@ class Parameters:
             std.extend([sig or 0.05])
         return std
 
-    def distribution(self) -> list:
+    def distribution(self) -> BaseMultivariateDistribution | JointDistribution | None:
         """Return the initial distribution of each parameter."""
-        return [
+        if self._multivariate:
+            return self._parameters[self.names[0]].distribution.parent_distribution
+
+        list_of_distributions = [
             param.distribution
             for param in self._parameters.values()
             if param.distribution is not None
         ]
+        if len(list_of_distributions) == len(self):
+            return JointDistribution(*list_of_distributions)
+
+        return None
 
     def get_initial_values(self, *, transformed: bool = False) -> NDArray[np.floating]:
         """
@@ -699,8 +707,7 @@ class Parameters:
         valid = True
         for name, param in self._parameters.items():
             if param.bounds is not None:
-                input_value = inputs[name]
-                if input_value < param.bounds[0] or input_value > param.bounds[1]:
+                if not param._bounds.contains(inputs[name]):  # noqa: SLF001
                     valid = False
         return valid
 
