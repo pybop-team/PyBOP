@@ -104,9 +104,7 @@ class TestLogPosterior:
         problem._cost.set_joint_prior()
         assert problem._cost.joint_prior is not None
         assert isinstance(problem._cost.joint_prior, pybop.JointDistribution)
-
-        for i, p in enumerate(problem.parameters.distribution()):
-            assert p == problem._cost.joint_prior._distribution[i]
+        assert problem._cost.joint_prior == problem.parameters.distribution
 
     @pytest.fixture
     def problem(self, simulator, likelihood, prior):
