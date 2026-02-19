@@ -2,7 +2,7 @@ import copy
 import json
 import time
 from contextlib import redirect_stderr, redirect_stdout
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from sys import stderr, stdout
 
 import numpy as np
@@ -59,6 +59,10 @@ class EPBOLFIOptions(pybop.OptimiserOptions):
     # Defaults to calculating a final effective fraction of 0.5.
     ep_stepwise_dampener: float | None = None
     ep_total_dampening: float | None = None
+
+    # Parameter boundaries in the model space. Samples are not taken
+    # from outside these boundaries.
+    model_parameter_boundaries: dict = field(default_factory=dict)
 
     # Adjusts the hard parameter boundaries relative to their
     # standard deviations. Defaults to 95 % confidence regions.
@@ -237,13 +241,6 @@ class EP_BOLFI(BaseOptimiser):
     def _set_up_optimiser(self):
         import ep_bolfi
 
-        transposed_boundaries = {}
-        model_bounds = self.problem.parameters.get_bounds(transformed=False)  # noqa: SLF001
-        for i, name in enumerate(self.problem.parameters.keys()):  # noqa: SLF001
-            transposed_boundaries[name] = [
-                model_bounds["lower"][i],
-                model_bounds["upper"][i],
-            ]
         # Use the first output variable to pass to EP-BOLFI; define separate simulators
         # for multiple output variables.
         simulators = [
@@ -269,7 +266,7 @@ class EP_BOLFI(BaseOptimiser):
                 for name, par in self.problem.parameters.items()  # noqa: SLF001
             },
             initial_covariance=self.problem.parameters.get_covariance(transformed=True),
-            free_parameters_boundaries=transposed_boundaries,
+            free_parameters_boundaries=self._options.model_parameter_boundaries,
             boundaries_in_deviations=self._options.boundaries_in_standard_deviations,
             Q=self._options.precision_matrix,
             r=self._options.covariance_scaled_mean,
