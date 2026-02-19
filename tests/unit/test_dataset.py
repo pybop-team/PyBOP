@@ -24,6 +24,7 @@ class TestDataset:
         data_dictionary = {
             "Time [s]": solution["Time [s]"].data,
             "Current [A]": solution["Current [A]"].data,
+            "Discharge capacity [A.h]": solution["Discharge capacity [A.h]"].data,
             "Voltage [V]": solution["Voltage [V]"].data,
         }
         dataset = pybop.Dataset(data_dictionary)
@@ -46,7 +47,7 @@ class TestDataset:
             pybop.Dataset(solution["Time [s]"].data)
 
         # Test conversion of pybamm solution into dictionary
-        assert dataset.data == pybop.Dataset(solution).data
+        assert dataset.data == pybop.import_pybamm_solution(solution).data
 
         # Test set and get item
         test_current = solution["Current [A]"].data + np.ones_like(
@@ -80,7 +81,7 @@ class TestDataset:
         solution = pybamm.Simulation(model=model).solve(t_eval=np.linspace(0, 10, 100))
 
         # Dataset constructed from pybamm solution
-        dataset_pybamm = pybop.Dataset(
+        dataset_pybamm = pybop.import_pybamm_solution(
             solution, variables=["Time [s]", "Current [A]", "Voltage [V]"]
         )
 
@@ -176,7 +177,7 @@ class TestDataset:
         # Import data from PyProBE into pybop.dataset
         dataset_pyprobe = pybop.import_pyprobe_result(
             cell.procedure["US06 DFN"],
-            [
+            variables=[
                 "Time [s]",
                 "Current [A]",
                 "Voltage [V]",
@@ -184,7 +185,7 @@ class TestDataset:
                 "Cycle",
                 "Discharge capacity [A.h]",
             ],
-            pyprobe_columns=[
+            column_names=[
                 "Time [s]",
                 "Current [A]",
                 "Voltage [V]",
@@ -204,8 +205,8 @@ class TestDataset:
             ],
         )
 
-        # For comparison, import pybamm solution directly into pybop.dataset
-        dataset_pybamm = pybop.Dataset(
+        # For comparison, import a pybamm.Solution directly into pybop.Dataset
+        dataset_pybamm = pybop.import_pybamm_solution(
             solution,
             variables=[
                 "Time [s]",
@@ -245,7 +246,7 @@ class TestProcessing:
                 "Time [s]": np.cumsum(
                     np.concatenate(([0, 1, 2], 2 * np.random.rand(25)))
                 ),
-                "Current function [A]": np.concatenate(
+                "Current [A]": np.concatenate(
                     ([0, 0, 2], np.random.normal(0, 1, 20), np.repeat(1, 5))
                 ),
                 "Discharge capacity [A.h]": np.cumsum(
@@ -260,12 +261,12 @@ class TestProcessing:
         consistent_dataset = pybop.generate_consistent_current(dataset, tolerance=1e-2)
         assert len(consistent_dataset["Time [s]"]) >= len(dataset["Time [s]"])
 
-        for var in ["Time [s]", "Current function [A]", "Discharge capacity [A.h]"]:
+        for var in ["Time [s]", "Current [A]", "Discharge capacity [A.h]"]:
             assert consistent_dataset[var][0] == dataset[var][0]
             assert consistent_dataset[var][-1] == dataset[var][-1]
 
         charge_throughput = cumulative_trapezoid(
-            y=consistent_dataset["Current function [A]"],
+            y=consistent_dataset["Current [A]"],
             x=consistent_dataset["Time [s]"],
         )
         assert np.allclose(
@@ -276,7 +277,7 @@ class TestProcessing:
         downsampled_dataset = pybop.downsample_constant_current(dataset, tolerance=1e-4)
         assert len(downsampled_dataset["Time [s]"]) < len(dataset["Time [s]"])
 
-        for var in ["Time [s]", "Current function [A]", "Discharge capacity [A.h]"]:
+        for var in ["Time [s]", "Current [A]", "Discharge capacity [A.h]"]:
             assert downsampled_dataset[var][0] == dataset[var][0]
             assert downsampled_dataset[var][-1] == dataset[var][-1]
 
@@ -285,7 +286,7 @@ class TestProcessing:
         downsampled_dataset = pybop.downsample_constant_current(consistent_dataset)
 
         charge_throughput = cumulative_trapezoid(
-            y=downsampled_dataset["Current function [A]"],
+            y=downsampled_dataset["Current [A]"],
             x=downsampled_dataset["Time [s]"],
         )
         assert np.allclose(
@@ -297,23 +298,17 @@ class TestProcessing:
         dataset_wo_ct = pybop.Dataset(
             {
                 "Time [s]": dataset["Time [s]"],
-                "Current function [A]": dataset["Current function [A]"],
+                "Current [A]": dataset["Current [A]"],
             }
         )
         ds_dataset = pybop.downsample_constant_current(dataset_wo_ct, tolerance=1e-4)
         assert len(ds_dataset["Time [s]"]) < len(dataset["Time [s]"])
 
-        for var in ["Time [s]", "Current function [A]"]:
+        for var in ["Time [s]", "Current [A]"]:
             assert ds_dataset[var][0] == dataset_wo_ct[var][0]
             assert ds_dataset[var][-1] == dataset_wo_ct[var][-1]
 
         assert np.allclose(
-            trapezoid(
-                y=ds_dataset["Current function [A]"],
-                x=ds_dataset["Time [s]"],
-            ),
-            trapezoid(
-                y=dataset_wo_ct["Current function [A]"],
-                x=dataset_wo_ct["Time [s]"],
-            ),
+            trapezoid(y=ds_dataset["Current [A]"], x=ds_dataset["Time [s]"]),
+            trapezoid(y=dataset_wo_ct["Current [A]"], x=dataset_wo_ct["Time [s]"]),
         )

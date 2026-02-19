@@ -5,7 +5,9 @@ import numpy as np
 import pandas as pd
 from scipy.io import savemat
 
-from pybop import Logger, Problem, plot
+from pybop import plot
+from pybop._logging import Logger
+from pybop.problems.problem import Problem
 
 
 class NumpyEncoder(json.JSONEncoder):

@@ -16,13 +16,15 @@ parameter_values = pybamm.ParameterValues("Chen2020")
 solution = pybamm.Simulation(model, parameter_values=parameter_values).solve(
     t_eval=np.linspace(0, 100, 100)
 )
-dataset = pybop.Dataset(
-    {
-        "Time [s]": solution.t,
-        "Current function [A]": solution["Current [A]"].data,
-        "Voltage [V]": solution["Voltage [V]"].data,
-        "Bulk open-circuit voltage [V]": solution["Bulk open-circuit voltage [V]"].data,
-    }
+dataset = pybop.import_pybamm_solution(
+    solution,
+    variables=[
+        "Time [s]",
+        "Current [A]",
+        "Discharge capacity [A.h]",
+        "Voltage [V]",
+        "Bulk open-circuit voltage [V]",
+    ],
 )
 
 # Fitting parameters

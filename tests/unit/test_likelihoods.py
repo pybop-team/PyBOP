@@ -48,13 +48,7 @@ class TestLikelihoods:
         solution = pybamm.Simulation(
             model, parameter_values=parameter_values, experiment=experiment
         ).solve()
-        return pybop.Dataset(
-            {
-                "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": solution["Terminal voltage [V]"].data,
-            }
-        )
+        return pybop.import_pybamm_solution(solution)
 
     @pytest.fixture
     def simulator(self, model_and_parameter_values, parameters, dataset):

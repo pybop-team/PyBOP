@@ -23,12 +23,8 @@ class TestClassifier:
             ]
         )
         solution = pybamm.Simulation(model, experiment=experiment).solve()
-        dataset = pybop.Dataset(
-            {
-                "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": solution["Voltage [V]"].data,
-            }
+        dataset = pybop.import_pybamm_solution(
+            solution, variables=["Time [s]", "Current [A]", "Voltage [V]"]
         )
 
         parameter_values = model.default_parameter_values

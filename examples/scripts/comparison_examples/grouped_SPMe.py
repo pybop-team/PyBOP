@@ -55,13 +55,7 @@ for model, param, line_style in zip(
     solution = pybamm.Simulation(
         model, parameter_values=param, experiment=experiment
     ).solve(initial_soc=init_soc)
-    dataset = pybop.Dataset(
-        {
-            "Time [s]": solution["Time [s]"].data,
-            "Current function [A]": solution["Current [A]"].data,
-            "Voltage [V]": solution["Voltage [V]"].data,
-        }
-    )
+    dataset = pybop.import_pybamm_solution(solution)
     plot_dict.add_traces(
         dataset["Time [s]"], dataset["Voltage [V]"], line_dash=line_style
     )

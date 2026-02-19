@@ -2,11 +2,13 @@ import warnings
 from typing import Protocol
 
 import numpy as np
-from pybamm import solvers
+from pybamm import Interpolant, Solution
+from pybamm import t as pybamm_t
+from scipy.integrate import cumulative_trapezoid
 
 
 class PyprobeResult(Protocol):
-    """Protocol defining required PyProBE Result interface"""
+    """Protocol defining required PyProBE Result interface."""
 
     def get(
         self,
@@ -28,75 +30,37 @@ class Dataset:
 
     Parameters
     ----------
-    data_dictionary : dict or instance of pybamm.solvers.solution.Solution
+    data_dictionary : dict
         The experimental data to store within the dataset.
     domain : str, optional
         The domain of the dataset. Defaults to "Time [s]".
+    control_functions : list[str], optional
+        A list of function names for the control variables. Defaults to ["Current function [A]"].
     """
 
     def __init__(
         self,
-        data_dictionary,
+        data_dictionary: dict,
         domain: str | None = None,
-        variables: str | None = ["Time [s]", "Current [A]", "Voltage [V]"],
+        control_functions: list[str] | None = None,
     ):
-        """
-        Initialise a Dataset instance with data and a set of names.
-        """
-
-        if isinstance(data_dictionary, solvers.solution.Solution):
-            data_dictionary = data_dictionary.get_data_dict(variables=variables)
+        """Initialise a Dataset instance with data and a set of names."""
         if not isinstance(data_dictionary, dict):
-            raise TypeError(
-                "The input to pybop.Dataset must be a dictionary or a pybamm.Solution object."
-            )
+            raise TypeError("The input to pybop.Dataset must be a dictionary.")
         self.data = data_dictionary
         self.domain = domain or "Time [s]"
+        self.control_functions = control_functions or ["Current function [A]"]
 
     def __repr__(self):
-        """
-        Return a string representation of the Dataset instance.
-
-        Returns
-        -------
-        str
-            A string that includes the type and contents of the dataset.
-        """
+        """Return a string representation of the Dataset instance."""
         return f"Dataset: {type(self.data)} \n Contains: {self.data.keys()}"
 
     def __setitem__(self, key, value):
-        """
-        Set the data corresponding to a particular key.
-
-        Parameters
-        ----------
-        key : str
-            The name of the key to be set.
-
-        value : list or np.ndarray
-            The data series to be stored in the dataset.
-        """
+        """Set the data corresponding to a particular key."""
         self.data[key] = value
 
     def __getitem__(self, key):
-        """
-        Return the data corresponding to a particular key.
-
-        Parameters
-        ----------
-        key : str
-            The name of a data series within the dataset.
-
-        Returns
-        -------
-        list or np.ndarray
-            The data series corresponding to the key.
-
-        Raises
-        ------
-        ValueError
-            The key must exist in the dataset.
-        """
+        """Return the data corresponding to a particular key."""
         if key not in self.data.keys():
             raise ValueError(f"The key {key} does not exist in this dataset.")
 
@@ -169,56 +133,121 @@ class Dataset:
                 )
 
     def get_subset(self, index: list | np.ndarray):
-        """
-        Reduce the dataset to a subset defined by the list of indices.
-        """
+        """Reduce the dataset to a subset defined by the list of indices."""
         data = {}
         for key in self.data.keys():
             data[key] = self[key][index]
 
-        return Dataset(data, domain=self.domain)
+        return Dataset(
+            data, domain=self.domain, control_functions=self.control_functions
+        )
+
+    def get_interpolant(self, control: str = "Current [A]") -> Interpolant:
+        """Returns a linear interpolant for the control as a function of the domain."""
+
+        # Check if a linearly interpolated current will match the charge throughput
+        if control == "Current [A]" and "Discharge capacity [A.h]" in self.data.keys():
+            charge_throughput = cumulative_trapezoid(
+                y=self.data[control], x=self.data["Time [s]"]
+            )
+            if not np.allclose(
+                self.data["Discharge capacity [A.h]"][1:] * 3600, charge_throughput
+            ):
+                warnings.warn(
+                    "A linear interpolation of the current data does not reproduce the discharge capacity.",
+                    stacklevel=2,
+                )
+
+        return Interpolant(self.data["Time [s]"], self.data[control], pybamm_t)
+
+
+def import_pybamm_solution(
+    solution: Solution,
+    variables: list[str] | None = None,
+    t_interp: np.ndarray | None = None,
+    domain: str | None = None,
+    control_functions: list[str] | None = None,
+) -> Dataset:
+    """
+    Import a pybamm.Solution into a pybop.Dataset.
+
+    Parameters
+    ----------
+    solution : pybamm.Solution
+        A pybamm.Solution object.
+    variables : list[str], optional
+        A list of variables to include in the dataset.
+    t_interp : np.ndarray, optional
+        Time points at which to interpolate the solution, only when the solver supports it.
+    domain : str, optional
+        The domain of the dataset. Defaults to "Time [s]".
+    control_functions : list[str], optional
+        A list of function names for the control variables. Defaults to ["Current function [A]"].
+    """
+    if variables is None:
+        variables = [
+            "Time [s]",
+            "Current [A]",
+            "Voltage [V]",
+            "Discharge capacity [A.h]",
+        ]
+
+    if t_interp is None:
+        data_dict = solution.get_data_dict(variables=variables)
+    else:
+        data_dict = {}
+        for key in variables:
+            data_dict[key] = solution[key](t_interp)
+
+    return Dataset(data_dict, domain=domain, control_functions=control_functions)
 
 
 def import_pyprobe_result(
     result: PyprobeResult,
-    pybop_columns: list[str] | None = None,
-    pyprobe_columns: list[str] | None = None,
+    variables: list[str] | None = None,
+    column_names: list[str] | None = None,
+    domain: str | None = None,
+    control_functions: list[str] | None = None,
 ) -> Dataset:
     """
-    Import a pyprobe.Result into a dictionary
+    Import a pyprobe.Result into a pybop.Dataset.
 
     Parameters
     ----------
-    result : str
-        A pyprobe.Result object.
-    pybop_columns : list[str]
-        List of pybop column names.
-    pyprobe_columns : list[str]
-        An list of pyprobe column names.
-    If only one list of column names is provided, they are assumed to be identical.
+    result : PyprobeResult | pyprobe.Result
+        A pyprobe.Result-like object.
+    variables : list[str], optional
+        A list of variables to include in the dataset.
+    column_names : list[str], optional
+        A list of the column names in the Result corresponding to the variable names.
+        If only one list of names is provided, they are assumed to be identical.
+    domain : str, optional
+        The domain of the dataset. Defaults to "Time [s]".
+    control_functions : list[str], optional
+        A list of function names for the control variables. Defaults to ["Current function [A]"].
     """
-    if pybop_columns is None and pyprobe_columns is None:
-        pybop_columns = [
+    if variables is None and column_names is None:
+        variables = [
             "Time [s]",
-            "Current function [A]",
+            "Current [A]",
             "Voltage [V]",
             "Discharge capacity [A.h]",
         ]
-        pyprobe_columns = [
+        column_names = [
             "Time [s]",
             "Current [A]",
             "Voltage [V]",
             "Capacity [Ah]",
         ]
-    elif pybop_columns is None:
-        pybop_columns = pyprobe_columns
-    elif pyprobe_columns is None:
-        pyprobe_columns = pybop_columns
+    elif variables is None:
+        variables = column_names
+    elif column_names is None:
+        column_names = variables
 
     data_dict = {}
-    for i, col in enumerate(pybop_columns):
+    for i, col in enumerate(variables):
         if (
-            pyprobe_columns[i] == "Cycle"
+            column_names[i] == "Cycle"
             and "Cycle" not in result.columns
             and "Step" in result.columns
         ):
@@ -236,13 +265,10 @@ def import_pyprobe_result(
                     for i in range(1, len(cycle_ends))
                 ]
             )
-        elif pyprobe_columns[i] in [
-            "Current [A]",
-            "Capacity [Ah]",
-        ]:
+        elif column_names[i] in ["Current [A]", "Capacity [Ah]"]:
             # The sign convention in PyProBE is that positive current is charging,
             # the convention in PyBaMM is that positive current means discharging
-            data_dict[col] = -1.0 * result.get(pyprobe_columns[i])
+            data_dict[col] = -1.0 * result.get(column_names[i])
         else:
-            data_dict[col] = result.get(pyprobe_columns[i])
-    return Dataset(data_dict)
+            data_dict[col] = result.get(column_names[i])
+    return Dataset(data_dict, domain=domain, control_functions=control_functions)

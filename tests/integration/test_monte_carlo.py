@@ -141,7 +141,7 @@ class Test_Sampling_SPM:
         return pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
+                "Current [A]": solution["Current [A]"].data,
                 "Voltage [V]": self.noisy(solution["Voltage [V]"].data, 0.002),
             }
         )

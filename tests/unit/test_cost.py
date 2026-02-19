@@ -49,13 +49,7 @@ class TestCosts:
         solution = pybamm.Simulation(
             model, parameter_values=parameter_values, experiment=experiment
         ).solve()
-        return pybop.Dataset(
-            {
-                "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": solution["Terminal voltage [V]"].data,
-            }
-        )
+        return pybop.import_pybamm_solution(solution)
 
     @pytest.fixture
     def gitt_like_dataset(self):
@@ -178,16 +172,9 @@ class TestCosts:
             ([0], np.random.normal(0, 1, 29), [0])
         )
         solution = pybamm.Simulation(model, parameter_values=parameter_values).solve(
-            t_eval=t_eval,
-            t_interp=t_eval,
+            t_eval=t_eval, t_interp=t_eval
         )
-        return pybop.Dataset(
-            {
-                "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": solution["Terminal voltage [V]"].data,
-            }
-        )
+        return pybop.import_pybamm_solution(solution)
 
     @pytest.mark.parametrize(
         "cost_class",
@@ -336,7 +323,7 @@ class TestCosts:
         noisy_dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
+                "Current [A]": solution["Current [A]"].data,
                 "Voltage [V]": solution["Voltage [V]"].data
                 + np.random.normal(0, 0.02, len(solution["Time [s]"].data)),
             }

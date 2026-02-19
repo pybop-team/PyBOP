@@ -123,57 +123,50 @@ def dataset(plotly_installed):
     # Construct and simulate model
     model = pybamm.lithium_ion.SPM()
     solution = pybamm.Simulation(model).solve(t_eval=np.linspace(0, 10, 100))
-
-    # Form dataset
-    data_dictionary = {
-        "Time [s]": solution["Time [s]"].data,
-        "Current [A]": solution["Current [A]"].data,
-        "Terminal voltage [V]": solution["Terminal voltage [V]"].data,
-    }
-    return pybop.Dataset(data_dictionary)
+    return pybop.import_pybamm_solution(solution)
 
 
 @pytest.mark.unit
 def test_standard_plot(dataset, plotly_installed):
     # Check the StandardPlot class
-    pybop.plot.StandardPlot(dataset["Time [s]"], dataset["Terminal voltage [V]"])
+    pybop.plot.StandardPlot(dataset["Time [s]"], dataset["Voltage [V]"])
 
     # Check the StandardSubplot class
     pybop.plot.StandardSubplot(
         dataset["Time [s]"],
-        [dataset["Terminal voltage [V]"], dataset["Current [A]"]],
+        [dataset["Voltage [V]"], dataset["Current [A]"]],
         num_rows=1,
     )
     pybop.plot.StandardSubplot(
         dataset["Time [s]"],
-        [dataset["Terminal voltage [V]"], dataset["Current [A]"]],
+        [dataset["Voltage [V]"], dataset["Current [A]"]],
         num_cols=1,
     )
 
     # Check plot numpy arrays, lists, and lists of numpy arrays
-    pybop.plot.trajectories(dataset["Time [s]"], dataset["Terminal voltage [V]"])
+    pybop.plot.trajectories(dataset["Time [s]"], dataset["Voltage [V]"])
     pybop.plot.trajectories(
-        dataset["Time [s]"].tolist(), dataset["Terminal voltage [V]"].tolist()
+        dataset["Time [s]"].tolist(), dataset["Voltage [V]"].tolist()
     )
     pybop.plot.trajectories(
         [dataset["Time [s]"]],
-        [dataset["Terminal voltage [V]"], dataset["Current [A]"]],
+        [dataset["Voltage [V]"], dataset["Current [A]"]],
     )
     pybop.plot.trajectories(
         [dataset["Time [s]"], dataset["Time [s]"]],
-        [dataset["Terminal voltage [V]"], dataset["Current [A]"]],
+        [dataset["Voltage [V]"], dataset["Current [A]"]],
     )
 
     # Test incorrect dimensions
     with pytest.raises(ValueError):
         pybop.plot.trajectories(
             [dataset["Time [s]"], dataset["Current [A]"]],
-            dataset["Terminal voltage [V]"],
+            dataset["Voltage [V]"],
         )
 
 
 @pytest.mark.unit
 def test_plot_dataset(dataset, plotly_installed):
     # Test plot of a dataset
-    pybop.plot.dataset(dataset, signal=["Terminal voltage [V]"])
-    pybop.plot.dataset(dataset, signal=["Terminal voltage [V]", "Current [A]"])
+    pybop.plot.dataset(dataset, signal=["Voltage [V]"])
+    pybop.plot.dataset(dataset, signal=["Voltage [V]", "Current [A]"])

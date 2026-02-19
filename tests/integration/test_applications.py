@@ -180,7 +180,7 @@ class TestApplications:
         return pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data[start:],
-                "Current function [A]": solution["Current [A]"].data[start:],
+                "Current [A]": solution["Current [A]"].data[start:],
                 "Discharge capacity [A.h]": solution["Discharge capacity [A.h]"].data[
                     start:
                 ],
@@ -216,14 +216,14 @@ class TestApplications:
         ):
             gitt_fit = pybop.GITTFit(
                 gitt_dataset=pulse_data,
-                pulse_index=[np.arange(2, len(pulse_data["Current function [A]"]))],
+                pulse_index=[np.arange(2, len(pulse_data["Current [A]"]))],
                 parameter_values=parameter_values,
             )
             gitt_fit()
 
         gitt_fit = pybop.GITTFit(
             gitt_dataset=pulse_data,
-            pulse_index=[np.arange(len(pulse_data["Current function [A]"]))],
+            pulse_index=[np.arange(len(pulse_data["Current [A]"]))],
             parameter_values=parameter_values,
         )
         gitt_parameter_data = gitt_fit()

@@ -62,13 +62,7 @@ class TestProblem:
         solution = pybamm.Simulation(
             model, parameter_values=parameter_values, experiment=experiment
         ).solve()
-        return pybop.Dataset(
-            {
-                "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": solution["Terminal voltage [V]"].data,
-            }
-        )
+        return pybop.import_pybamm_solution(solution)
 
     def test_base_problem(self, parameters, model, dataset):
         # Construct Problem
@@ -135,7 +129,7 @@ class TestProblem:
         dataset = pybop.Dataset(
             {
                 "Frequency [Hz]": np.logspace(-4, 5, 30),
-                "Current function [A]": np.ones(30) * 0.0,
+                "Current [A]": np.ones(30) * 0.0,
                 "Impedance": np.ones(30) * 0.0,
             },
             domain="Frequency [Hz]",
@@ -176,13 +170,7 @@ class TestProblem:
         solution = pybamm.Simulation(model, experiment=experiment).solve(
             initial_soc=0.8
         )
-        dataset_2 = pybop.Dataset(
-            {
-                "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": solution["Voltage [V]"].data,
-            }
-        )
+        dataset_2 = pybop.import_pybamm_solution(solution)
         simulator = pybop.pybamm.Simulator(
             model, parameter_values=parameter_values, protocol=dataset_2
         )

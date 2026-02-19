@@ -5,10 +5,13 @@ from time import time
 import numpy as np
 from scipy.optimize import Bounds, OptimizeResult, differential_evolution, minimize
 
-import pybop
 from pybop._evaluation import PopulationEvaluator, ScalarEvaluator
 from pybop._logging import Logger
-from pybop.optimisers.base_optimiser import BaseOptimiser, OptimisationResult
+from pybop.optimisers.base_optimiser import (
+    BaseOptimiser,
+    OptimisationResult,
+    OptimiserOptions,
+)
 from pybop.problems.problem import Problem
 
 __all__: list[str] = [
@@ -32,7 +35,7 @@ class BaseSciPyOptimiser(BaseOptimiser):
     def __init__(
         self,
         problem: Problem,
-        options: pybop.OptimiserOptions | None,
+        options: OptimiserOptions | None,
     ):
         super().__init__(problem, options=options)
 
@@ -76,7 +79,7 @@ class BaseSciPyOptimiser(BaseOptimiser):
 
 
 @dataclass
-class SciPyMinimizeOptions(pybop.OptimiserOptions):
+class SciPyMinimizeOptions(OptimiserOptions):
     """
     Options for the SciPy minimize method.
 
@@ -253,7 +256,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
 
 
 @dataclass
-class SciPyDifferentialEvolutionOptions(pybop.OptimiserOptions):
+class SciPyDifferentialEvolutionOptions(OptimiserOptions):
     """
     Options for the SciPy differential evolution method.
 

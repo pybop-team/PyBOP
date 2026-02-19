@@ -50,13 +50,7 @@ synthetic_data = simulator.solve(
         "Positive particle diffusivity [m2.s-1]": original_D_p,
     }
 )
-dataset = pybop.Dataset(
-    {
-        "Time [s]": synthetic_data["Time [s]"].data,
-        "Current function [A]": synthetic_data["Current [A]"].data,
-        "Voltage [V]": synthetic_data["Voltage [V]"].data,
-    }
-)
+dataset = pybop.import_pybamm_solution(synthetic_data)
 
 # Override the forced univariate Parameters
 simulator.parameters = pybop.MultivariateParameters(

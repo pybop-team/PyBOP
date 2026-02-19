@@ -36,13 +36,13 @@ class TestDecayModel:
     @pytest.fixture(scope="module")
     def dataset(self, model_config):
         """Generate dataset"""
-        sol = pybamm.Simulation(
+        solution = pybamm.Simulation(
             model_config["model"],
             parameter_values=model_config["parameter_values"],
             solver=model_config["solver"],
         ).solve(t_eval=np.linspace(0, TIME_MAX, TIME_POINTS))
 
-        return pybop.Dataset({"Time [s]": sol.t, "y_0": sol["y_0"].data})
+        return pybop.import_pybamm_solution(solution, variables=["Time [s]", "y_0"])
 
     @pytest.fixture(scope="module")
     def parameters(self):
@@ -74,7 +74,7 @@ class TestDecayModel:
             model_config["model"],
             parameter_values=parameter_values,
             solver=model_config["solver"],
-            protocol=dataset,
+            protocol=dataset["Time [s]"],
         )
         cost_1 = pybop.SumSquaredError(dataset, target=["y_0"])
         cost_2 = pybop.MeanAbsoluteError(dataset, target=["y_0"])

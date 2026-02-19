@@ -185,7 +185,7 @@ class TestEISParameterisation:
         return pybop.Dataset(
             {
                 "Frequency [Hz]": f_eval,
-                "Current function [A]": np.zeros_like(f_eval),
+                "Current [A]": np.zeros_like(f_eval),
                 "Impedance": self.noisy(solution["Impedance"].data, self.sigma0),
             },
             domain="Frequency [Hz]",

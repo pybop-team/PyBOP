@@ -27,7 +27,7 @@ corrupt_values = solution["Voltage [V]"].data + np.random.normal(
 dataset = pybop.Dataset(
     {
         "Time [s]": solution.t,
-        "Current function [A]": solution["Current [A]"].data,
+        "Current [A]": solution["Current [A]"].data,
         "Discharge capacity [A.h]": solution["Discharge capacity [A.h]"].data,
         "Voltage [V]": corrupt_values,
     }
@@ -35,11 +35,7 @@ dataset = pybop.Dataset(
 
 # Determine the indices corresponding to each pulse in the dataset
 nonzero_index = np.concatenate(
-    (
-        [-1],
-        np.flatnonzero(dataset["Current function [A]"]),
-        [len(dataset["Current function [A]"]) + 1],
-    )
+    ([-1], np.flatnonzero(dataset["Current [A]"]), [len(dataset["Current [A]"]) + 1])
 )
 pulse_starts = np.extract(
     nonzero_index[1:] - nonzero_index[:-1] != 1,  # check if there is a gap
@@ -74,7 +70,7 @@ pybop.plot.dataset(gitt_parameter_data, signal=["Series resistance [Ohm]"])
 identified_model = pybop.lithium_ion.SPDiffusion(build=True)
 grouped_parameter_values.update(gitt_fit.best_inputs)
 grouped_parameter_values["Current function [A]"] = pybamm.Interpolant(
-    dataset["Time [s]"], dataset["Current function [A]"], pybamm.t
+    dataset["Time [s]"], dataset["Current [A]"], pybamm.t
 )
 fitted_values = pybamm.Simulation(
     identified_model, parameter_values=grouped_parameter_values

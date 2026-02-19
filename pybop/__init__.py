@@ -30,7 +30,7 @@ from ._utils import add_spaces, is_numeric
 #
 # Dataset class
 #
-from .processing.dataset import Dataset, import_pyprobe_result
+from .processing.dataset import Dataset, import_pybamm_solution, import_pyprobe_result
 from .processing.interpolate_current import generate_consistent_current, downsample_constant_current
 
 #
@@ -58,6 +58,7 @@ from .parameters.multivariate_distributions import MultivariateNonparametric, Mu
 #
 from .models import lithium_ion
 from .models._exponential_decay import ExponentialDecayModel
+from .models.lithium_ion.utils import Interpolant, InverseOCV
 
 #
 # PyBaMM utility classes
@@ -176,7 +177,7 @@ from .analysis.classification import classify_using_hessian, plot_hessian_eigenv
 #
 # Applications
 #
-from .applications.base_method import BaseApplication, Interpolant, InverseOCV
+from .applications.base_method import BaseApplication
 from .applications.ocp_methods import OCPMerge, OCPAverage, OCPCapacityToStoichiometry
 from .applications.gitt_methods import GITTPulseFit, GITTFit
 

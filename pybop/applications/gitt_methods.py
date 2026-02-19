@@ -80,7 +80,7 @@ class GITTFit(BaseApplication):
     Parameters
     ----------
     gitt_dataset : pybop.Dataset
-        A dataset containing the "Time [s]", "Current function [A]" and "Voltage [V]"
+        A dataset containing the "Time [s]", "Current [A]" and "Voltage [V]"
         for a GITT measurement.
     pulse_index : list[np.ndarray]
         A nested list of integers representing the indices of each pulse in the dataset.
@@ -133,7 +133,7 @@ class GITTFit(BaseApplication):
             try:
                 # Check that initial current is zero
                 pulse_data = self.gitt_dataset.get_subset(index)
-                if pulse_data["Current function [A]"][0] != 0:
+                if pulse_data["Current [A]"][0] != 0:
                     raise ValueError(
                         "The initial current in the pulse dataset must be zero."
                     )

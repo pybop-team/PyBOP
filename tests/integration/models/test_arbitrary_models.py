@@ -148,7 +148,7 @@ class TestArbitraryModels:
 
         # Build the problem
         simulator = pybop.pybamm.Simulator(
-            model, parameter_values=parameter_values, protocol=dataset
+            model, parameter_values=parameter_values, protocol=dataset["Time [s]"]
         )
         cost = pybop.SumSquaredError(dataset, target=["u at x_0.5"])
         problem = pybop.Problem(simulator, cost)
@@ -182,7 +182,7 @@ class TestArbitraryModels:
 
         # Build the problem
         simulator = pybop.pybamm.Simulator(
-            model, parameter_values=parameter_values, protocol=dataset
+            model, parameter_values=parameter_values, protocol=dataset["Time [s]"]
         )
         cost = pybop.SumSquaredError(dataset, target=["u", "v"])
         problem = pybop.Problem(simulator, cost)
@@ -221,7 +221,7 @@ class TestArbitraryModels:
 
         # Build the problem
         simulator = pybop.pybamm.Simulator(
-            model, parameter_values=parameter_values, protocol=dataset
+            model, parameter_values=parameter_values, protocol=dataset["Time [s]"]
         )
         cost = pybop.SumSquaredError(dataset, target=["u", "v"])
         problem = pybop.Problem(simulator, cost)

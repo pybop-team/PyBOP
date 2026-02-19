@@ -54,13 +54,7 @@ class TestEvaluation:
         solution = pybamm.Simulation(
             model, experiment=experiment, solver=solver
         ).solve()
-        return pybop.Dataset(
-            {
-                "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": solution["Terminal voltage [V]"].data,
-            }
-        )
+        return pybop.import_pybamm_solution(solution)
 
     @pytest.fixture
     def simulator(self, model, parameters, dataset, solver, request):

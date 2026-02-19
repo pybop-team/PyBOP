@@ -136,13 +136,7 @@ class TestModelAndExperimentChanges:
 
     def final_cost(self, simulator, solution):
         # Compute the cost corresponding to a particular solution
-        dataset = pybop.Dataset(
-            {
-                "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": solution["Voltage [V]"].data,
-            }
-        )
+        dataset = pybop.import_pybamm_solution(solution)
         cost = pybop.RootMeanSquaredError(dataset)
         problem = pybop.Problem(simulator, cost)
         optim = pybop.NelderMead(problem)
@@ -222,10 +216,4 @@ class TestModelAndExperimentChanges:
             experiment=experiment,
             solver=solver,
         ).solve()
-        return pybop.Dataset(
-            {
-                "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": solution["Voltage [V]"].data,
-            }
-        )
+        return pybop.import_pybamm_solution(solution)
