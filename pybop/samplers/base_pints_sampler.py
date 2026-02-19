@@ -25,8 +25,6 @@ class PintsSamplerOptions(SamplerOptions):
     ----------
     n_chains : int
         The number of chains to concurrently sample from (default: 1).
-    cov : float | np.ndarray
-        Covariance matrix (default: 0.05).
     max_iterations : int
         Maximum number of iterations to run (default: 500).
     verbose : bool
@@ -65,8 +63,6 @@ class PintsSamplerOptions(SamplerOptions):
             If the options are invalid.
         """
         super().validate()
-        if self.cov is not None and any(np.atleast_1d(self.cov) <= 0):
-            raise ValueError("Covariance values must be positive.")
         if self.warm_up_iterations < 0:
             raise ValueError("Number of warm-up steps must be non-negative.")
         if self.max_iterations < 1:
@@ -111,7 +107,6 @@ class BasePintsSampler(BaseSampler):
         self._initial_phase_iterations = options.initial_phase_iterations
         self._verbose = options.verbose
         self._warm_up = options.warm_up_iterations
-        self._n_parameters = len(self._log_pdf.parameters)
         self._chain_files = options.chain_files
         self._evaluation_files = options.evaluation_files
         self._loop_iters = 0

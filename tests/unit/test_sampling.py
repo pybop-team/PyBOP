@@ -292,7 +292,7 @@ class TestPintsSamplers:
             sampler.set_max_iterations(-1)
 
     def test_base_sampler(self, posterior_problem):
-        options = pybop.SamplerOptions(n_chains=1, cov=0.1)
+        options = pybop.SamplerOptions(n_chains=1)
         sampler = pybop.BaseSampler(log_pdf=posterior_problem, options=options)
         with pytest.raises(NotImplementedError):
             sampler.run()

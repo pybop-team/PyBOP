@@ -589,6 +589,25 @@ class Parameters:
             std.extend([sig or 0.05])
         return std
 
+    def get_covariance(self, transformed: bool = False):
+        """
+        Get the covariance matrix.
+
+        Parameters
+        ----------
+        transformed : bool, optional
+            If True, the transformation is applied to the output (default: False).
+        """
+        if self._multivariate:
+            if transformed:
+                return self.transformed_distribution_properties["cov"]
+            else:
+                return self.distribution.properties["cov"]
+
+        else:
+            standard_deviations = self.get_std(transformed=transformed)
+            return (np.eye(len(self)) * np.asarray(standard_deviations)) ** 2
+
     def distribution(self) -> BaseMultivariateDistribution | JointDistribution | None:
         """Return the initial distribution of each parameter."""
         if self._multivariate:

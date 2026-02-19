@@ -141,7 +141,6 @@ class TestSamplingThevenin:
         options = pybop.PintsSamplerOptions(
             n_chains=2,
             warm_up_iterations=50,
-            cov=[6e-3, 6e-3],
             max_iterations=350,
         )
 
