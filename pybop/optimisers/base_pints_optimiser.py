@@ -167,19 +167,18 @@ class BasePintsOptimiser(BaseOptimiser):
             print(f"NOTE: Boundaries ignored by {self._pints_optimiser}")
         else:
             bounds = self.problem.parameters.get_bounds(transformed=True)
-            if bounds is not None:
-                if issubclass(self._pints_optimiser, PSO):
-                    if not all(
-                        np.isfinite(value)
-                        for sublist in bounds.values()
-                        for value in sublist
-                    ):
-                        raise ValueError(
-                            f"Either all bounds or no bounds must be set for {self._pints_optimiser.__name__}."
-                        )
-                self._boundaries = PintsRectangularBoundaries(
-                    bounds["lower"], bounds["upper"]
-                )
+            if issubclass(self._pints_optimiser, PSO):
+                if not all(
+                    np.isfinite(value)
+                    for sublist in bounds.values()
+                    for value in sublist
+                ):
+                    raise ValueError(
+                        f"Either all bounds or no bounds must be set for {self._pints_optimiser.__name__}."
+                    )
+            self._boundaries = PintsRectangularBoundaries(
+                bounds["lower"], bounds["upper"]
+            )
 
         # Set the initial standard deviation / step size parameter
         self._std0 = self.problem.parameters.get_std(transformed=True)
