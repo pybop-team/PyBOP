@@ -265,7 +265,7 @@ class EP_BOLFI(BaseOptimiser):
             feature_extractors,
             fixed_parameters={},  # probably baked into self.problem.model
             free_parameters={
-                name: par.get_initial_value_transformed()
+                name: par.get_initial_value(transformed=True)
                 for name, par in self.problem.parameters.items()  # noqa: SLF001
             },
             initial_covariance=self.problem.parameters.transformed_distribution_properties[

@@ -99,7 +99,7 @@ class Parameter:
 
     Parameters
     ----------
-    distribution : stats.distribution.rv_frozen | Distribution
+    distribution : stats.distribution.rv_frozen | Distribution, optional
         Distribution of the parameter
     bounds : tuple[float, float], optional
         Parameter bounds as (lower, upper)
@@ -118,10 +118,12 @@ class Parameter:
     ) -> None:
         self._distribution = distribution
         self._bounds = None
+        self._initial_value = None
         self._transformation = transformation or IdentityTransformation()
 
-        # The ep-bolfi optimiser requires some distribution properties in the search space rather than the model space
-        # Some transformations are not suitable for some multivariate distributions as they are currently implemented in this context
+        # Some optimisers (EP-BOLFI) and all samplers require distribution properties in the search space
+        # rather than the model space. Some transformations are not suitable for some multivariate
+        # distributions as they are currently implemented in this context
         self._check_compatible_transformation()
 
         if self._distribution is not None:
@@ -134,7 +136,8 @@ class Parameter:
         if bounds is not None:
             if distribution is not None:
                 raise ParameterError(
-                    "Bounds can only be set if no distribution is provided. If a bounded distribution is needed, please ensure the distribution itself is bounded."
+                    "Bounds can only be set if no distribution is provided. If a bounded distribution "
+                    "is needed, please ensure the distribution itself is bounded."
                 )
             # Set bounds with validation
             self._bounds = Bounds(bounds[0], bounds[1])
@@ -144,18 +147,11 @@ class Parameter:
                     loc=bounds[0], scale=bounds[1] - bounds[0]
                 )
 
-        if initial_value is None and self._distribution is not None:
-            initial_value = self.sample_from_distribution()[0]
+        # Set and validate initial value
+        self.update_initial_value(value=initial_value)
 
-        # Validate and set values
-        self._initial_value = (
-            float(initial_value) if initial_value is not None else None
-        )
-
-        # Validate initial values are within bounds
-        self._validate_values_within_bounds()
-
-    def _check_compatible_transformation(self):
+    def _check_compatible_transformation(self) -> None:
+        """Raise an error if the transformation is not compatible with the distribution."""
         if isinstance(self._distribution, MarginalDistribution):
             allowed_transformations = (
                 self._distribution.parent_distribution.compatible_transformations
@@ -163,8 +159,8 @@ class Parameter:
 
             if not isinstance(self._transformation, allowed_transformations):
                 raise TypeError(
-                    f"The transformation provided is not compatible with pybop.{self._distribution.parent_distribution.name}. "
-                    "Only "
+                    "The transformation provided is not compatible with "
+                    f"pybop.{self._distribution.parent_distribution.name}. Only "
                     + ", ".join([trans.__name__ for trans in allowed_transformations])
                     + " are allowed."
                 )
@@ -185,7 +181,7 @@ class Parameter:
             Number of samples to draw (default: 1).
         random_state : int, optional
             Random seed for reproducibility.
-        transformed : bool
+        transformed : bool, optional
             Whether to apply transformation to samples (default: False).
 
         Returns
@@ -204,50 +200,53 @@ class Parameter:
 
         return samples
 
-    def update_initial_value(self, value: NumericValue) -> None:
-        """
-        Update the initial parameter value.
-
-        Parameters
-        ----------
-        value : NumericValue
-            New initial value
-        """
-        self._initial_value = float(value)
+    def update_initial_value(self, value: NumericValue | None) -> None:
+        """Update the initial parameter value."""
+        self._initial_value = float(value) if value is not None else None
+        self._validate_initial_value_within_bounds()
 
     def __repr__(self) -> str:
         """String representation of the parameter."""
-        return f"Parameter - Distribution: {self._distribution}, Bounds: ({self.bounds[0]}, {self.bounds[1]}), Initial value: {self.initial_value}"
+        return f"Parameter - Distribution: {self._distribution}, Bounds: {self.bounds}, Initial value: {self._initial_value}"
 
-    def _validate_values_within_bounds(self) -> None:
-        """Validate that initial values are within bounds."""
-        if self._bounds is None or self._initial_value is None:
-            return
+    def _validate_initial_value_within_bounds(self) -> None:
+        """Validate that the initial value is within the bounds."""
+        if self._initial_value is not None:
+            if self._bounds is None:
+                return
 
-        if not self._bounds.contains(self._initial_value):
-            raise ParameterValidationError(
-                f"Initial value {self._initial_value} is outside bounds {self.bounds}"
-            )
+            if not self._bounds.contains(self._initial_value):
+                raise ParameterValidationError(
+                    f"Initial value {self._initial_value} is outside bounds {self.bounds}"
+                )
 
-    def get_initial_value_transformed(self) -> NDArray | None:
-        """Get initial value in transformed space."""
+    def get_initial_value(self, transformed: bool = False) -> NDArray | None:
+        """Get initial value in either the model space or the transformed search space."""
+        if self._initial_value is None and self._distribution is not None:
+            # Try to sample from distribution if available
+            self.update_initial_value(self.sample_from_distribution(1)[0])
+
         if self._initial_value is None:
+            # If still None, just return this
             return None
-        return self._transformation.to_search(self._initial_value)[0]
 
-    def __call__(self, *unused_args, **unused_kwargs) -> float:
-        "Return the initial value. The unused arguments are to pass pybamm.ParameterValues checks."
+        if transformed:
+            return self._transformation.to_search(self._initial_value)[0]
+        return self._initial_value
+
+    def __call__(self, *unused_args, **unused_kwargs) -> float | None:
+        """Return the initial value. The unused arguments are to pass pybamm.ParameterValues checks."""
         return self._initial_value
 
     @property
-    def initial_value(self) -> float:
+    def initial_value(self) -> float | None:
         return self._initial_value
 
     @property
-    def bounds(self) -> BoundsPair | None:
+    def bounds(self) -> tuple | None:
         """Parameter bounds as (lower, upper) tuple."""
         return (
-            None if self._bounds is None else [self._bounds.lower, self._bounds.upper]
+            None if self._bounds is None else (self._bounds.lower, self._bounds.upper)
         )
 
     @property
@@ -581,7 +580,8 @@ class Parameters:
             if transformed and sig is not None and param.transformation is not None:
                 sig = np.ndarray.item(
                     param.transformation.convert_standard_deviation(
-                        sig, param.transformation.to_search(param.initial_value)[0]
+                        sig,
+                        param.transformation.to_search(param.get_initial_value())[0],
                     )
                 )
 
@@ -612,20 +612,9 @@ class Parameters:
         """
         values = []
         for name, param in self._parameters.items():
-            value = param.initial_value
+            value = param.get_initial_value(transformed=transformed)
             if value is None:
-                # Try to sample from distribution if available
-                if param.distribution is not None:
-                    samples = param.sample_from_distribution(1, transformed=transformed)
-                    if samples is not None:
-                        param.update_initial_value(samples[0])
-                        value = samples[0] if transformed else param.initial_value
-
-                if value is None:
-                    raise ParameterError(f"Parameter '{name}' has no initial value")
-
-            if transformed:
-                value = param.transformation.to_search(value)[0]
+                raise ParameterError(f"Parameter '{name}' has no initial value")
 
             values.append(value)
 
@@ -695,7 +684,7 @@ class Parameters:
         params = self._parameters.items()
 
         if isinstance(values, str) and values == "initial":
-            return {name: param.initial_value for name, param in params}
+            return {name: param.get_initial_value() for name, param in params}
         else:
             # Custom values array
             values_array = np.atleast_1d(values)

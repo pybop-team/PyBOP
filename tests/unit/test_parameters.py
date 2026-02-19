@@ -33,7 +33,7 @@ class TestParameter:
         return "Negative electrode active material volume fraction"
 
     def test_parameter_construction(self, parameter):
-        assert parameter.bounds == [0.375, 0.7]
+        assert parameter.bounds == (0.375, 0.7)
         assert parameter.initial_value == 0.6
         assert parameter() == 0.6
 
@@ -86,7 +86,7 @@ class TestParameter:
                 truncated_at=[0.375, 0.7],
             )
         )
-        sample = parameter._initial_value
+        sample = parameter.get_initial_value()
         assert (sample >= 0.375) and (sample <= 0.7)
 
 
