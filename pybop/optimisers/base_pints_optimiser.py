@@ -1,3 +1,4 @@
+import warnings
 from dataclasses import dataclass
 from time import time
 
@@ -162,9 +163,13 @@ class BasePintsOptimiser(BaseOptimiser):
         self._boundaries = None
 
         # Convert bounds to PINTS boundaries
+        bounds = self.problem.parameters.get_bounds(transformed=True)
         ignored_optimisers = (GradientDescentImpl, AdamWImpl, NelderMead)
         if issubclass(self._pints_optimiser, ignored_optimisers):
-            print(f"NOTE: Boundaries ignored by {self._pints_optimiser}")
+            warnings.warn(
+                f"NOTE: Boundaries ignored by {self._pints_optimiser}",
+                stacklevel=2,
+            )
         else:
             bounds = self.problem.parameters.get_bounds(transformed=True)
             if issubclass(self._pints_optimiser, PSO):

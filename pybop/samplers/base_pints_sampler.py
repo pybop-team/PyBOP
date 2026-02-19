@@ -1,5 +1,6 @@
 import logging
 import time
+import warnings
 from dataclasses import dataclass
 
 import numpy as np
@@ -111,6 +112,13 @@ class BasePintsSampler(BaseSampler):
         self._evaluation_files = options.evaluation_files
         self._loop_iters = 0
         self.iter_time = 0.0
+
+        if self.log_pdf.parameters.get_bounds(transformed=True):
+            warnings.warn(
+                "NOTE: Parameter bounds are ignored by PINTS samplers. "
+                "Samples that lie outside the bounds will return an infinite cost.",
+                stacklevel=2,
+            )
 
         # Single chain vs multiple chain samplers
         self._single_chain = issubclass(self._sampler, pints.SingleChainMCMC)
