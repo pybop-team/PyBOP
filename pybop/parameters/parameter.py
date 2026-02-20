@@ -393,18 +393,6 @@ class Parameters:
         if update_distribution:
             self.update_distribution()
 
-    def remove(self, name: str) -> Parameter:
-        """Remove parameter and return it."""
-        if not isinstance(name, str):
-            raise TypeError("The input name is not a string.")
-        if name not in self._parameters:
-            raise ParameterNotFoundError(f"Parameter for '{name}' not found")
-
-        removed_parameter = self._parameters.pop(name)
-        self._transform = self.construct_transformation()
-        self.update_distribution()
-        return removed_parameter
-
     def join(self, parameters=None):
         """
         Join two Parameters objects into the first by copying across each Parameter.

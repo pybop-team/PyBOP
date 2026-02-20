@@ -20,11 +20,7 @@ class TestParameter:
     @pytest.fixture
     def parameter(self):
         return pybop.Parameter(
-            distribution=pybop.Gaussian(
-                0.6,
-                0.02,
-                truncated_at=[0.375, 0.7],
-            ),
+            distribution=pybop.Gaussian(0.6, 0.02, truncated_at=[0.375, 0.7]),
             initial_value=0.6,
         )
 
@@ -80,11 +76,7 @@ class TestParameter:
 
     def test_sample_initial_values(self):
         parameter = pybop.Parameter(
-            distribution=pybop.Gaussian(
-                0.6,
-                0.02,
-                truncated_at=[0.375, 0.7],
-            )
+            distribution=pybop.Gaussian(0.6, 0.02, truncated_at=[0.375, 0.7])
         )
         sample = parameter.get_initial_value()
         assert (sample >= 0.375) and (sample <= 0.7)
@@ -100,11 +92,7 @@ class TestParameters:
     @pytest.fixture
     def parameter(self):
         return pybop.Parameter(
-            distribution=pybop.Gaussian(
-                0.6,
-                0.02,
-                truncated_at=[0.375, 0.7],
-            ),
+            distribution=pybop.Gaussian(0.6, 0.02, truncated_at=[0.375, 0.7]),
             initial_value=0.6,
         )
 
@@ -129,9 +117,7 @@ class TestParameters:
                     name: parameter,
                     "Positive electrode active material volume fraction": pybop.Parameter(
                         distribution=pybop.Gaussian(
-                            0.6,
-                            0.02,
-                            truncated_at=[0.375, 0.7],
+                            0.6, 0.02, truncated_at=[0.375, 0.7]
                         ),
                         initial_value=0.6,
                     ),
@@ -150,14 +136,8 @@ class TestParameters:
         ):
             params[name] = pybop.Gaussian(0.5, 0.02)
 
-        params.remove(name=name)
-        with pytest.raises(ParameterNotFoundError, match="not found"):
-            params.remove(name="Negative electrode active material volume fraction")
-
         with pytest.raises(TypeError, match="Expected Parameter instance"):
             params.add(name, parameter="Invalid string")
-        with pytest.raises(TypeError, match="The input name is not a string."):
-            params.remove(name=parameter)
 
     def test_parameters_naming(self, name, parameter):
         params = pybop.Parameters({name: parameter})
@@ -199,11 +179,7 @@ class TestParameters:
         params = pybop.Parameters(
             {
                 name: pybop.Parameter(
-                    distribution=pybop.Gaussian(
-                        0.01,
-                        0.2,
-                        truncated_at=[-1, 1],
-                    ),
+                    distribution=pybop.Gaussian(0.01, 0.2, truncated_at=[-1, 1]),
                     transformation=pybop.LogTransformation(),
                 )
             }
