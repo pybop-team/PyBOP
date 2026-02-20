@@ -50,19 +50,11 @@ class TestTheveninParameterisation:
     def parameters(self):
         return {
             "R0 [Ohm]": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    0.05,
-                    0.01,
-                    truncated_at=[1e-6, 0.1],
-                ),
+                distribution=pybop.Gaussian(0.05, 0.01, truncated_at=[1e-6, 0.1]),
                 transformation=pybop.LogTransformation(),
             ),
             "R1 [Ohm]": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    0.05,
-                    0.01,
-                    truncated_at=[1e-6, 0.1],
-                ),
+                distribution=pybop.Gaussian(0.05, 0.01, truncated_at=[1e-6, 0.1]),
                 transformation=pybop.LogTransformation(),
             ),
         }
@@ -117,7 +109,7 @@ class TestTheveninParameterisation:
         if isinstance(optimiser, pybop.BasePintsOptimiser):
             optim.set_max_unchanged_iterations(iterations=35, absolute_tolerance=1e-5)
 
-        initial_cost = optim.problem(optim.problem.parameters.get_initial_values())
+        initial_cost = optim.problem(x0)
         result = optim.run()
 
         # Assertions

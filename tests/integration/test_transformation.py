@@ -31,9 +31,9 @@ class TestTransformation:
     def setup(self):
         self.sigma = 2e-3
         self.ground_truth = np.clip(
-            np.asarray([0.05, 0.05]) + np.random.normal(loc=0.0, scale=0.01, size=2),
+            np.asarray([0.005, 0.005]) + np.random.normal(loc=0.0, scale=0.001, size=2),
             a_min=0.0,
-            a_max=0.1,
+            a_max=0.01,
         )
 
     @pytest.fixture
@@ -53,7 +53,7 @@ class TestTransformation:
         )
         parameter_values.update(
             {
-                "C1 [F]": 1000,
+                "C1 [F]": 50 / self.ground_truth[1],
                 "R0 [Ohm]": self.ground_truth[0],
                 "R1 [Ohm]": self.ground_truth[1],
             }
@@ -64,19 +64,11 @@ class TestTransformation:
     def parameters(self, transformation_r0, transformation_r1):
         return {
             "R0 [Ohm]": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    0.05,
-                    0.02,
-                    truncated_at=[1e-4, 0.1],
-                ),
+                distribution=pybop.Gaussian(0.005, 0.002, truncated_at=[1e-6, 0.01]),
                 transformation=transformation_r0,
             ),
             "R1 [Ohm]": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    0.05,
-                    0.02,
-                    truncated_at=[1e-4, 0.1],
-                ),
+                distribution=pybop.Gaussian(0.005, 0.002, truncated_at=[1e-6, 0.01]),
                 transformation=transformation_r1,
             ),
         }
@@ -124,7 +116,7 @@ class TestTransformation:
             itertools.product(
                 [
                     pybop.IdentityTransformation(),
-                    pybop.UnitHyperCube(0.001, 0.1),
+                    pybop.UnitHyperCube(1e-4, 0.01),
                     pybop.LogTransformation(),
                 ],
                 repeat=2,
@@ -166,13 +158,14 @@ class TestTransformation:
             if result.minimising
             else (initial_cost < result.best_cost)
         )
-        np.testing.assert_allclose(result.x[:2], self.ground_truth, atol=1.5e-2)
+        np.testing.assert_allclose(result.x[:2], self.ground_truth, atol=1.5e-3)
 
     def get_data(self, model, parameter_values):
         experiment = pybamm.Experiment(
             [
                 "Rest for 10 seconds (2 second period)",
-                "Discharge at 0.5C for 6 minutes (12 second period)",
+                "Discharge at 2C for 5 minutes (12 second period)",
+                "Rest for 10 seconds (2 second period)",
             ]
         )
         solution = pybamm.Simulation(
