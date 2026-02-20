@@ -337,9 +337,8 @@ class Parameters:
                     "A Parameters object with a MarginalDistribution cannot be combined with "
                     "parameters with other types of distributions"
                 )
-            parent_dist = next(
-                iter(self._parameters.values())
-            ).distribution.parent_distribution
+            # Get the parent distribution from the first Parameter object
+            parent_dist = next(iter(self)).distribution.parent_distribution
             if not all(
                 param.distribution.parent_distribution == parent_dist for param in self
             ):
@@ -347,6 +346,15 @@ class Parameters:
                     "All MarginalDistributions must share the same parent MultivariateDistribution."
                 )
             self._distribution = parent_dist
+
+            # Re-order all properties to match the position of each marginal distribution
+            parameter_list = self.names
+            index = np.argsort([p.distribution.position for p in self.__iter__()])
+            parameter_order = [parameter_list[i] for i in index]
+            self._parameters = {key: self._parameters[key] for key in parameter_order}
+            self._transform._transformations = [  # noqa: SLF001
+                self._transform.transformations[i] for i in index
+            ]
 
         else:
             list_of_distributions = [

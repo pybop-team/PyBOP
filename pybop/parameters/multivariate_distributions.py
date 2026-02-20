@@ -429,3 +429,7 @@ class MarginalDistribution(Distribution):
             return np.std(self.distribution.dataset, ddof=1)
         else:
             return self.distribution.std()
+
+    @property
+    def position(self):
+        return self._position
