@@ -60,9 +60,9 @@ class BaseSampler:
         self._options.validate()
 
         # Get initial conditions
-        self._x0 = self._log_pdf.parameters.get_initial_values(
-            transformed=True
-        ) * np.ones([self._options.n_chains, 1])
+        self._mean0 = self._log_pdf.parameters.get_mean(transformed=True) * np.ones(
+            [self._options.n_chains, 1]
+        )
         self._cov0 = self._log_pdf.parameters.get_covariance(transformed=True)
         self._validate_covariance_matrix()
 
@@ -83,8 +83,8 @@ class BaseSampler:
         return SamplerOptions()
 
     @property
-    def x0(self) -> np.ndarray:
-        return self._x0
+    def mean0(self) -> np.ndarray:
+        return self._mean0
 
     @property
     def cov0(self) -> np.ndarray:

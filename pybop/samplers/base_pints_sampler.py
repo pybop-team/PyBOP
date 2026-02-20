@@ -126,10 +126,16 @@ class BasePintsSampler(BaseSampler):
         # Construct the samplers object
         if self._single_chain:
             self._n_samplers = self.options.n_chains
-            self._samplers = [self._sampler(x0, sigma0=self.cov0) for x0 in self.x0]
+            self._samplers = [
+                self._sampler(x0=mean0, sigma0=self.cov0) for mean0 in self.mean0
+            ]
         else:
             self._n_samplers = 1
-            self._samplers = [self._sampler(self.options.n_chains, self.x0, self.cov0)]
+            self._samplers = [
+                self._sampler(
+                    chains=self.options.n_chains, x0=self.mean0, sigma0=self.cov0
+                )
+            ]
 
         # Check for sensitivities from sampler and set evaluation
         self._needs_sensitivities = self._samplers[0].needs_sensitivities()

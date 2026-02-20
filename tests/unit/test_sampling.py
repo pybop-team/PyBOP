@@ -125,11 +125,11 @@ class TestPintsSamplers:
         sampler = MCMC(log_pdf=posterior_problem, options=options)
         assert sampler.options.n_chains == n_chains
         assert sampler._log_pdf == posterior_problem
-        x0 = posterior_problem.parameters.get_initial_values()
+        mean0 = posterior_problem.parameters.get_mean()
         if isinstance(sampler, multi_samplers):
-            np.testing.assert_allclose(sampler._samplers[0]._x0[0], x0)
+            np.testing.assert_allclose(sampler._samplers[0]._x0[0], mean0)
         else:
-            np.testing.assert_allclose(sampler._samplers[0]._x0, x0)
+            np.testing.assert_allclose(sampler._samplers[0]._x0, mean0)
 
         # Test __setattr__
         sampler.some_attribute = 1

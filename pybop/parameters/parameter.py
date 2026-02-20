@@ -235,6 +235,38 @@ class Parameter:
             return self._transformation.to_search(self._initial_value)[0]
         return self._initial_value
 
+    def get_mean(self, transformed: bool = False):
+        """Get the mean of each parameter, or its initial value."""
+        if self.distribution is not None:
+            mean = self.distribution.mean()
+        elif self.bounds is not None and np.isfinite(self.bounds[1] - self.bounds[0]):
+            lower, upper = self.bounds
+            mean = (lower + upper) / 2
+        else:
+            mean = self.get_initial_value()
+
+        if transformed and mean is not None:
+            return self.transformation.to_search(np.asarray(mean))
+        return mean
+
+    def get_std(self, transformed: bool = False):
+        """Get the standard deviation, or an estimate of it."""
+        if self.distribution is not None:
+            std = self.distribution.std()
+        elif self.bounds is not None and np.isfinite(self.bounds[1] - self.bounds[0]):
+            lower, upper = self.bounds
+            std = 0.05 * (upper - lower)
+        else:
+            std = 0.05 * self.get_initial_value()
+
+        if transformed and std is not None:
+            return np.ndarray.item(
+                self.transformation.convert_standard_deviation(
+                    std, self.get_mean(transformed=True)
+                )
+            )
+        return std
+
     def __call__(self, *unused_args, **unused_kwargs) -> float | None:
         """Return the initial value. The unused arguments are to pass pybamm.ParameterValues checks."""
         return self._initial_value
@@ -450,11 +482,7 @@ class Parameters:
         for param in self._parameters.values():
             lower, upper = param.bounds or (-np.inf, np.inf)
 
-            if (
-                transformed
-                and param.bounds is not None
-                and param.transformation is not None
-            ):
+            if transformed and param.bounds is not None:
                 if isinstance(param.transformation, LogTransformation) and lower == 0:
                     bound_one = -np.inf
                 else:
@@ -567,6 +595,27 @@ class Parameters:
 
         return samples
 
+    def get_mean(self, transformed: bool = False):
+        """
+        Get the mean of each parameter, or its initial value.
+
+        Parameters
+        ----------
+        transformed : bool, optional
+            If True, the transformation is applied to the output (default: False).
+        """
+        if self._multivariate:
+            if transformed:
+                return self.transformed_distribution_properties["mean"]
+            else:
+                return self.distribution.properties["mean"]
+
+        else:
+            means = []
+            for param in self._parameters.values():
+                means.append(param.get_mean(transformed=transformed))
+            return np.asarray(means).T
+
     def get_std(self, transformed: bool = False) -> list:
         """
         Get the standard deviation, or an estimate of it, for each parameter.
@@ -579,25 +628,7 @@ class Parameters:
         standard_deviations = []
 
         for param in self._parameters.values():
-            if param.distribution is not None:
-                std = param.distribution.std()
-            elif param.bounds is not None and np.isfinite(
-                param.bounds[1] - param.bounds[0]
-            ):
-                lower, upper = param.bounds
-                std = 0.05 * (upper - lower)
-            else:
-                std = 0.05 * param.get_initial_value()
-
-            if transformed and param.transformation is not None:
-                std = np.ndarray.item(
-                    param.transformation.convert_standard_deviation(
-                        std,
-                        param.transformation.to_search(param.get_initial_value())[0],
-                    )
-                )
-
-            standard_deviations.append(std)
+            standard_deviations.append(param.get_std(transformed=transformed))
         return standard_deviations
 
     def get_covariance(self, transformed: bool = False):
