@@ -118,48 +118,31 @@ class TestOptimisation:
     @pytest.fixture
     def multivariate_simulator(self, model, dataset):
         parameter_values = model.default_parameter_values
-        # Put empty Parameter slots as placeholders
-        parameter_values["Negative electrode active material volume fraction"] = (
-            pybop.Parameter()
-        )
-        parameter_values["Positive electrode active material volume fraction"] = (
-            pybop.Parameter()
+        distribution = pybop.MultivariateGaussian(
+            mean=[0.6, 0.5], covariance=[[0.02, 0.0], [0.0, 0.05]]
         )
         parameter_values.update(
             {
                 "Negative electrode active material volume fraction": pybop.Parameter(
-                    distribution=pybop.Gaussian(0.6, 0.02)
+                    distribution=pybop.MarginalDistribution(distribution, 0),
+                    initial_value=0.6,
                 ),
                 "Positive electrode active material volume fraction": pybop.Parameter(
-                    distribution=pybop.Gaussian(0.5, 0.05)
+                    distribution=pybop.MarginalDistribution(distribution, 1),
+                    initial_value=0.5,
                 ),
             }
         )
         simulator = pybop.pybamm.Simulator(
             model, parameter_values=parameter_values, protocol=dataset
         )
-        # Override the forced univariate Parameters
-        simulator.parameters = pybop.MultivariateParameters(
-            {
-                "Negative electrode active material volume fraction": pybop.Parameter(
-                    initial_value=0.6, bounds=[0.001, 0.999]
-                ),
-                "Positive electrode active material volume fraction": pybop.Parameter(
-                    initial_value=0.5, bounds=[0.001, 0.999]
-                ),
-            },
-            distribution=pybop.MultivariateGaussian(
-                [0.6, 0.5], [[0.02, 0.0], [0.0, 0.05]]
-            ),
-        )
+
         return simulator
 
     @pytest.fixture
     def multivariate_problem(self, multivariate_simulator, dataset):
         cost = pybop.SumSquaredError(dataset)
         problem = pybop.Problem(multivariate_simulator, cost)
-        # Copy the MultivariateParameters to the problem
-        problem.parameters = multivariate_simulator.parameters
         return problem
 
     @pytest.fixture
@@ -182,8 +165,6 @@ class TestOptimisation:
             pybop.Problem(multivariate_simulator, sqrt_cost_1),
             pybop.Problem(multivariate_simulator, sqrt_cost_2),
         )
-        # Copy the MultivariateParameters to the problem
-        problem.parameters = multivariate_simulator.parameters
         return problem
 
     @pytest.mark.parametrize(

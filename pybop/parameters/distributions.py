@@ -319,7 +319,7 @@ class Uniform(Distribution):
         """
         Returns the mean of the distribution.
         """
-        return (self.upper - self.lower) / 2
+        return (self.lower + self.upper) / 2
 
     def __repr__(self):
         """
@@ -400,12 +400,20 @@ class JointDistribution(Distribution):
             )
 
         self._n_parameters = len(distributions)
-        self._distribution: list[Distribution] = [
+        self._distributions_list: list[Distribution] = [
             distribution
             if isinstance(distribution, Distribution)
             else Distribution(distribution)
             for distribution in distributions
         ]
+
+    def rvs(self, size=1, random_state=None):
+        """Sample each distribution individually and then compile."""
+        all_samples = []
+        for distribution in self._distributions_list:
+            samples = distribution.rvs(size=size, random_state=random_state)
+            all_samples.append(samples)
+        return np.column_stack(all_samples)
 
     def logpdf(self, x: float | np.ndarray) -> float:
         """
@@ -429,7 +437,7 @@ class JointDistribution(Distribution):
 
         return sum(
             distribution.logpdf(x)
-            for distribution, x in zip(self._distribution, x, strict=False)
+            for distribution, x in zip(self._distributions_list, x, strict=False)
         )
 
     def logpdfS1(self, x: float | np.ndarray) -> tuple[float, np.ndarray]:
@@ -455,7 +463,7 @@ class JointDistribution(Distribution):
         log_probs = []
         derivatives = []
 
-        for distribution, xi in zip(self._distribution, x, strict=False):
+        for distribution, xi in zip(self._distributions_list, x, strict=False):
             p, dp = distribution.logpdfS1(xi)
             log_probs.append(p)
             derivatives.append(dp)
@@ -470,6 +478,6 @@ class JointDistribution(Distribution):
 
     def __repr__(self) -> str:
         distributions_repr = "; ".join(
-            [repr(distribution) for distribution in self._distribution]
+            [repr(distribution) for distribution in self._distributions_list]
         )
         return f"{self.__class__.__name__}(distributions: [{distributions_repr}])"

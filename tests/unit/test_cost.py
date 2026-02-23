@@ -86,10 +86,10 @@ class TestCosts:
     )
     def test_fitting_costs(self, simulator, dataset, cost_class):
         if cost_class is pybop.LogPosterior:
-            likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=0.002)
+            likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma=0.002)
             cost = cost_class(likelihood)
         elif issubclass(cost_class, pybop.LogLikelihood):
-            cost = cost_class(dataset, sigma0=0.002)
+            cost = cost_class(dataset, sigma=0.002)
         else:
             cost = cost_class(dataset)
         problem = pybop.Problem(simulator, cost)

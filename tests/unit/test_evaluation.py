@@ -81,10 +81,10 @@ class TestEvaluation:
     def problem(self, simulator, dataset, request):
         cost_class = request.param
         if cost_class is pybop.GaussianLogLikelihoodKnownSigma:
-            cost = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=0.002)
+            cost = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma=0.002)
         elif cost_class is pybop.LogPosterior:
             cost = cost_class(
-                pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=0.002)
+                pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma=0.002)
             )
         else:
             cost = cost_class(dataset)
