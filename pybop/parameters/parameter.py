@@ -246,8 +246,9 @@ class Parameter:
             mean = self.get_initial_value()
 
         if transformed and mean is not None:
-            return self.transformation.to_search(np.asarray(mean))
-        return mean
+            mean = self.transformation.to_search(np.asarray(mean))
+
+        return np.asarray(mean).item()
 
     def get_std(self, transformed: bool = False):
         """Get the standard deviation, or an estimate of it."""
@@ -260,12 +261,11 @@ class Parameter:
             std = 0.05 * self.get_initial_value()
 
         if transformed and std is not None:
-            return np.ndarray.item(
-                self.transformation.convert_standard_deviation(
-                    std, self.get_mean(transformed=True)
-                )
+            std = self.transformation.convert_standard_deviation(
+                std, self.get_mean(transformed=True)
             )
-        return std
+
+        return np.asarray(std).item()
 
     def __call__(self, *unused_args, **unused_kwargs) -> float | None:
         """Return the initial value. The unused arguments are to pass pybamm.ParameterValues checks."""

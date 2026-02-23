@@ -262,8 +262,8 @@ class EP_BOLFI(BaseOptimiser):
             feature_extractors,
             fixed_parameters={},  # probably baked into self.problem.model
             free_parameters={
-                name: par.get_initial_value(transformed=True)
-                for name, par in self.problem.parameters.items()  # noqa: SLF001
+                name: par.get_mean(transformed=True)
+                for name, par in self.problem.parameters.items()
             },
             initial_covariance=self.problem.parameters.get_covariance(transformed=True),
             free_parameters_boundaries=self._options.model_parameter_boundaries,
@@ -274,11 +274,11 @@ class EP_BOLFI(BaseOptimiser):
             r_features=self._options.covariance_scaled_means_per_feature,
             transform_parameters={
                 name: (par.transformation.to_model, par.transformation.to_search)
-                for name, par in self.problem.parameters.items()  # noqa: SLF001
+                for name, par in self.problem.parameters.items()
             },
             weights=None,  # only applicable within vector-valued features and better handled within PyBOP costs
             display_current_feature=None,  # ToDo: costs with names
-            fixed_parameter_order=list(enumerate(self.problem.parameters.keys())),  # noqa: SLF001
+            fixed_parameter_order=list(enumerate(self.problem.parameters.keys())),
         )
         self._logger = Logger(
             minimising=True,
@@ -349,7 +349,7 @@ class EP_BOLFI(BaseOptimiser):
         self._logger.x_search = [
             [
                 par.transformation.to_search(e)[0]
-                for e, par in zip(entry, self.problem.parameters.values(), strict=False)  # noqa: SLF001
+                for e, par in zip(entry, self.problem.parameters.values(), strict=False)
             ]
             for entry in x_list
         ]
@@ -363,7 +363,7 @@ class EP_BOLFI(BaseOptimiser):
         x_search_best_over_time = [
             [
                 par.transformation.to_search(e)[0]
-                for e, par in zip(entry, self.problem.parameters.values(), strict=False)  # noqa: SLF001
+                for e, par in zip(entry, self.problem.parameters.values(), strict=False)
             ]
             for entry in x_best_over_time
         ]
@@ -378,7 +378,7 @@ class EP_BOLFI(BaseOptimiser):
             par.transformation.to_search(entry)[0]
             for entry, par in zip(
                 model_mean_array,
-                self.problem.parameters.values(),  # noqa: SLF001
+                self.problem.parameters.values(),
                 strict=False,
             )
         ]
@@ -389,14 +389,14 @@ class EP_BOLFI(BaseOptimiser):
             [bounds[1][0] for bounds in ep_bolfi_result["error bounds"].values()]
         )
         # The re-use of `parameters` makes transformations easily usable.
-        posterior = copy.deepcopy(self.problem.parameters)  # noqa: SLF001
+        posterior = copy.deepcopy(self.problem.parameters)
         posterior.prior = MultivariateGaussian(
             search_mean_array, np.array(ep_bolfi_result["covariance"])
         )
         self._logger.iteration = {
             "EP iterations": self._options.ep_iterations,
             "total feature iterations": self._options.ep_iterations
-            * len(self.problem.problems),  # noqa: SLF001
+            * len(self.problem.problems),
         }
         self._logger.evaluations = {
             "model evaluations": len(

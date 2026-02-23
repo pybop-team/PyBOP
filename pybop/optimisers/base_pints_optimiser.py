@@ -190,7 +190,10 @@ class BasePintsOptimiser(BaseOptimiser):
 
         # Create an instance of the PINTS optimiser class
         if issubclass(self._pints_optimiser, PintsOptimiser):
-            x0 = self.problem.parameters.get_initial_values(transformed=True)
+            if issubclass(self._pints_optimiser, PopulationBasedOptimiser):
+                x0 = self.problem.parameters.get_mean(transformed=True)
+            else:
+                x0 = self.problem.parameters.get_initial_values(transformed=True)
             if np.isscalar(self._std0):
                 param_dims = len(self.problem.parameters)
                 self._std0 = np.ones(param_dims) * self._std0
