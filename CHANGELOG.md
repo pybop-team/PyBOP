@@ -17,6 +17,7 @@
 
 ## Breaking Changes
 
+- [#894](https://github.com/pybop-team/PyBOP/pull/894) - Distinguish different uses of `sigma`, pass the covariance to the samplers, and add parameter `get_mean` and `get_std` functions.
 - [#862](https://github.com/pybop-team/PyBOP/pull/862) - Removes MultivariateParameters class. Instead allows multivariate parameters to be passed via pybamm.ParameterValues (as a pybop.Parameter with a pybop.MarginalDistribution). The pybop.Parameters class now handles multivariate parameters. Multivariate distributions are now defined in the model space instead of the search space.
 - [#878](https://github.com/pybop-team/PyBOP/pull/878) - Use "Current [A]" instead of "Current function [A]" in datasets and allow list of control functions.
 - [#864](https://github.com/pybop-team/PyBOP/pull/864) - Remove `check_already_exists` from `ParameterValues` following PyBaMM PR 5339.
