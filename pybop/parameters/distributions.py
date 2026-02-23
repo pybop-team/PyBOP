@@ -319,7 +319,7 @@ class Uniform(Distribution):
         """
         Returns the mean of the distribution.
         """
-        return (self.upper - self.lower) / 2
+        return (self.lower + self.upper) / 2
 
     def __repr__(self):
         """
