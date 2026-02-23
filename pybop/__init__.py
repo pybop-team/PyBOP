@@ -49,9 +49,8 @@ from .transformation.transformations import (
 # Parameter classes
 #
 from .parameters.parameter import Parameter, Parameters
-from .parameters.multivariate_parameters import MultivariateParameters
 from .parameters.distributions import Distribution, Gaussian, Uniform, Exponential, JointDistribution
-from .parameters.multivariate_distributions import MultivariateNonparametric, MultivariateUniform, MultivariateGaussian
+from .parameters.multivariate_distributions import MultivariateNonparametric, MultivariateUniform, MultivariateGaussian, MultivariateLogNormal, MarginalDistribution
 
 #
 # Model classes

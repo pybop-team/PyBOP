@@ -19,12 +19,9 @@ class SamplerOptions:
     ----------
     n_chains : int
         The number of chains to concurrently sample from.
-    cov : float | np.ndarray
-        Covariance matrix.
     """
 
     n_chains: int = 1
-    cov: float | np.ndarray = 0.05
 
     def validate(self):
         """
@@ -57,20 +54,28 @@ class BaseSampler:
         options: SamplerOptions | None = None,
     ):
         self._log_pdf = log_pdf
+        self._n_parameters = len(self._log_pdf.parameters)
         self._logger = None
         self._options = options or self.default_options()
         self._options.validate()
 
         # Get initial conditions
-        self._x0 = self._log_pdf.parameters.get_initial_values(
-            transformed=True
-        ) * np.ones([self._options.n_chains, 1])
+        self._mean0 = self._log_pdf.parameters.get_mean(transformed=True) * np.ones(
+            [self._options.n_chains, 1]
+        )
+        self._cov0 = self._log_pdf.parameters.get_covariance(transformed=True)
+        self._validate_covariance_matrix()
 
-        param_dims = len(self._log_pdf.parameters)
-        if np.isscalar(self._options.cov):
-            self._cov0 = np.eye(param_dims) * self._options.cov
+    def _validate_covariance_matrix(self) -> None:
+        """Check or create the initial covariance matrix."""
+        if self._cov0 is None:
+            self._cov0 = 0.05
+        if np.isscalar(self._cov0):
+            self._cov0 = np.eye(self._n_parameters) * self._cov0
         else:
-            self._cov0 = np.atleast_2d(self._options.cov)
+            self._cov0 = np.atleast_2d(self._cov0)
+        if (np.atleast_1d(self._cov0) < 0).any():
+            raise ValueError("Covariance values must be nonnegative.")
 
     @staticmethod
     def default_options() -> SamplerOptions:
@@ -78,8 +83,8 @@ class BaseSampler:
         return SamplerOptions()
 
     @property
-    def x0(self) -> np.ndarray:
-        return self._x0
+    def mean0(self) -> np.ndarray:
+        return self._mean0
 
     @property
     def cov0(self) -> np.ndarray:

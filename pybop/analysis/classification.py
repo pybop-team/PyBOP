@@ -66,13 +66,12 @@ def classify_using_hessian(
 
     def check_proximity_to_bounds(parameters, x, dx, names) -> str:
         bounds = parameters.get_bounds()
-        if bounds is not None:
-            for i, value in enumerate(x):
-                if value > bounds["upper"][i] - dx[i]:
-                    return f" The result is near the upper bound of {names[i]}."
+        for i, value in enumerate(x):
+            if value > bounds["upper"][i] - dx[i]:
+                return f" The result is near the upper bound of {names[i]}."
 
-                if value < bounds["lower"][i] + dx[i]:
-                    return f" The result is near the lower bound of {names[i]}."
+            if value < bounds["lower"][i] + dx[i]:
+                return f" The result is near the lower bound of {names[i]}."
         return ""
 
     # Classify the result

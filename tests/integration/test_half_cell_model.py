@@ -16,7 +16,7 @@ class TestHalfCellModel:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.sigma0 = 0.002
+        self.sigma = 0.002
         self.ground_truth = np.clip(
             np.asarray([0.5]) + np.random.normal(loc=0.0, scale=0.05, size=1),
             a_min=0.4,
@@ -158,6 +158,6 @@ class TestHalfCellModel:
             {
                 "Time [s]": solution["Time [s]"].data,
                 "Current [A]": solution["Current [A]"].data,
-                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma0),
+                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma),
             }
         )

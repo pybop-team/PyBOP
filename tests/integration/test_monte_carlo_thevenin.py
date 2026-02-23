@@ -27,7 +27,7 @@ class TestSamplingThevenin:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.sigma0 = 1e-3
+        self.sigma = 1e-3
         self.ground_truth = np.clip(
             np.asarray([0.05, 0.05]) + np.random.normal(loc=0.0, scale=0.01, size=2),
             a_min=1e-4,
@@ -105,7 +105,7 @@ class TestSamplingThevenin:
         simulator = pybop.pybamm.Simulator(
             model, parameter_values=parameter_values, protocol=dataset
         )
-        likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=self.sigma0)
+        likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma=self.sigma)
         posterior = pybop.LogPosterior(likelihood)
         return pybop.Problem(simulator, posterior)
 
@@ -141,7 +141,6 @@ class TestSamplingThevenin:
         options = pybop.PintsSamplerOptions(
             n_chains=2,
             warm_up_iterations=50,
-            cov=[6e-3, 6e-3],
             max_iterations=350,
         )
 
@@ -173,6 +172,6 @@ class TestSamplingThevenin:
             {
                 "Time [s]": solution["Time [s]"].data,
                 "Current [A]": solution["Current [A]"].data,
-                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma0),
+                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma),
             }
         )

@@ -1,5 +1,6 @@
 import logging
 import time
+import warnings
 from dataclasses import dataclass
 
 import numpy as np
@@ -25,8 +26,6 @@ class PintsSamplerOptions(SamplerOptions):
     ----------
     n_chains : int
         The number of chains to concurrently sample from (default: 1).
-    cov : float | np.ndarray
-        Covariance matrix (default: 0.05).
     max_iterations : int
         Maximum number of iterations to run (default: 500).
     verbose : bool
@@ -65,8 +64,6 @@ class PintsSamplerOptions(SamplerOptions):
             If the options are invalid.
         """
         super().validate()
-        if self.cov is not None and any(np.atleast_1d(self.cov) <= 0):
-            raise ValueError("Covariance values must be positive.")
         if self.warm_up_iterations < 0:
             raise ValueError("Number of warm-up steps must be non-negative.")
         if self.max_iterations < 1:
@@ -111,11 +108,17 @@ class BasePintsSampler(BaseSampler):
         self._initial_phase_iterations = options.initial_phase_iterations
         self._verbose = options.verbose
         self._warm_up = options.warm_up_iterations
-        self._n_parameters = len(self._log_pdf.parameters)
         self._chain_files = options.chain_files
         self._evaluation_files = options.evaluation_files
         self._loop_iters = 0
         self.iter_time = 0.0
+
+        if self.log_pdf.parameters.get_bounds(transformed=True):
+            warnings.warn(
+                "NOTE: Parameter bounds are ignored by PINTS samplers. "
+                "Samples that lie outside the bounds will return an infinite cost.",
+                stacklevel=2,
+            )
 
         # Single chain vs multiple chain samplers
         self._single_chain = issubclass(self._sampler, pints.SingleChainMCMC)
@@ -123,10 +126,16 @@ class BasePintsSampler(BaseSampler):
         # Construct the samplers object
         if self._single_chain:
             self._n_samplers = self.options.n_chains
-            self._samplers = [self._sampler(x0, sigma0=self.cov0) for x0 in self.x0]
+            self._samplers = [
+                self._sampler(x0=mean0, sigma0=self.cov0) for mean0 in self.mean0
+            ]
         else:
             self._n_samplers = 1
-            self._samplers = [self._sampler(self.options.n_chains, self.x0, self.cov0)]
+            self._samplers = [
+                self._sampler(
+                    chains=self.options.n_chains, x0=self.mean0, sigma0=self.cov0
+                )
+            ]
 
         # Check for sensitivities from sampler and set evaluation
         self._needs_sensitivities = self._samplers[0].needs_sensitivities()

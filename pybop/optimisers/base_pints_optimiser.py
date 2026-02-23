@@ -1,3 +1,4 @@
+import warnings
 from dataclasses import dataclass
 from time import time
 
@@ -162,39 +163,43 @@ class BasePintsOptimiser(BaseOptimiser):
         self._boundaries = None
 
         # Convert bounds to PINTS boundaries
+        bounds = self.problem.parameters.get_bounds(transformed=True)
         ignored_optimisers = (GradientDescentImpl, AdamWImpl, NelderMead)
         if issubclass(self._pints_optimiser, ignored_optimisers):
-            print(f"NOTE: Boundaries ignored by {self._pints_optimiser}")
+            warnings.warn(
+                f"NOTE: Boundaries ignored by {self._pints_optimiser}",
+                stacklevel=2,
+            )
         else:
             bounds = self.problem.parameters.get_bounds(transformed=True)
-            if bounds is not None:
-                if issubclass(self._pints_optimiser, PSO):
-                    if not all(
-                        np.isfinite(value)
-                        for sublist in bounds.values()
-                        for value in sublist
-                    ):
-                        raise ValueError(
-                            f"Either all bounds or no bounds must be set for {self._pints_optimiser.__name__}."
-                        )
-                self._boundaries = PintsRectangularBoundaries(
-                    bounds["lower"], bounds["upper"]
-                )
+            if issubclass(self._pints_optimiser, PSO):
+                if not all(
+                    np.isfinite(value)
+                    for sublist in bounds.values()
+                    for value in sublist
+                ):
+                    raise ValueError(
+                        f"Either all bounds or no bounds must be set for {self._pints_optimiser.__name__}."
+                    )
+            self._boundaries = PintsRectangularBoundaries(
+                bounds["lower"], bounds["upper"]
+            )
 
-        # Set the covariance / step size parameter
-        self._sigma0 = self.problem.parameters.get_sigma0(transformed=True)
+        # Set the initial standard deviation / step size parameter
+        self._std0 = self.problem.parameters.get_std(transformed=True)
 
         # Create an instance of the PINTS optimiser class
         if issubclass(self._pints_optimiser, PintsOptimiser):
-            x0 = self.problem.parameters.get_initial_values(transformed=True)
-            if np.isscalar(self._sigma0):
+            if issubclass(self._pints_optimiser, PopulationBasedOptimiser):
+                x0 = self.problem.parameters.get_mean(transformed=True)
+            else:
+                x0 = self.problem.parameters.get_initial_values(transformed=True)
+            if np.isscalar(self._std0):
                 param_dims = len(self.problem.parameters)
-                self._sigma0 = np.ones(param_dims) * self._sigma0
+                self._std0 = np.ones(param_dims) * self._std0
 
             self._optimiser = self._pints_optimiser(
-                x0,
-                sigma0=self._sigma0,
-                boundaries=self._boundaries,
+                x0=x0, sigma0=self._std0, boundaries=self._boundaries
             )
         else:
             raise ValueError("The optimiser is not a recognised PINTS optimiser class.")

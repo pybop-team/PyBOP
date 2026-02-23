@@ -52,7 +52,7 @@ parameter_values.update(
 simulator = pybop.pybamm.Simulator(
     model, parameter_values=parameter_values, protocol=dataset
 )
-likelihood = pybop.GaussianLogLikelihood(dataset, sigma0=8e-3)
+likelihood = pybop.GaussianLogLikelihood(dataset, sigma=8e-3)
 problem = pybop.Problem(simulator, likelihood)
 
 # Set up the optimiser
