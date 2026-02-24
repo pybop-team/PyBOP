@@ -51,7 +51,7 @@ problem = pybop.Problem(simulator, cost)
 # We construct the optimiser class the same as normal but will be using the `optimiser`
 # attribute directly for this example. This interface works for all PINTS-based
 # optimisers. Warning: not all arguments are supported via this interface.
-options = pybop.PintsOptions(verbose=True)
+options = pybop.PintsOptions(verbose=True, verbose_print_rate=10)
 optim = pybop.AdamW(problem, options=options)
 
 # Create storage vars
@@ -60,22 +60,14 @@ f_best = []
 
 # Run the optimisation
 for i in range(50):
+    optim.iteration = i
     x = optim.optimiser.ask()
-    f = [problem.evaluate(x[0], calculate_sensitivities=True).get_values()]
+    f = optim.evaluator.evaluate(x)
     optim.optimiser.tell(f)
-
-    # Store best solution so far
-    x_best.append(optim.optimiser.x_best())
-    f_best.append(optim.optimiser.x_best())
-
-    if i % 10 == 0:
-        print(
-            f"Iteration: {i} | Cost: {optim.optimiser.f_best()} | Parameters: {optim.optimiser.x_best()}"
-        )
 
 # Plot the timeseries output
 pybop.plot.problem(
     problem,
-    inputs=problem.parameters.to_dict(optim.optimiser.x_best()[0]),
+    inputs=problem.parameters.to_dict(optim.optimiser.x_best()),
     title="Optimised Comparison",
 )

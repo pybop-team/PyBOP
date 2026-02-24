@@ -229,6 +229,10 @@ class BasePintsOptimiser(BaseOptimiser):
             )
 
     @property
+    def evaluator(self) -> PopulationEvaluator | SequentialEvaluator:
+        return self._evaluator
+
+    @property
     def name(self):
         """Returns the name of the PINTS optimisation strategy."""
         return self._optimiser.name()
