@@ -94,15 +94,17 @@ def save_data_dict(
                     )
         savemat(filename, data_dict)
     elif to_format == "csv":
+        # use copy to avoid modifying input
+        data_dict_copy = data_dict.copy()
         for name, var in data_dict.items():
             var = np.asarray(var)
             if var.ndim == 0:
-                data_dict[name] = [var]
+                data_dict_copy[name] = [var]
             elif var.ndim >= 2:
                 raise ValueError(
                     f"only 0D variables can be saved to csv, but '{name}' is {var.ndim - 1}D"
                 )
-        df = pd.DataFrame(data_dict)
+        df = pd.DataFrame(data_dict_copy)
         return df.to_csv(filename, index=False)
     elif to_format == "json":
         if filename is None:
@@ -111,7 +113,7 @@ def save_data_dict(
             with open(filename, "w") as outfile:
                 json.dump(data_dict, outfile, cls=NumpyEncoder)
     else:
-        raise ValueError(f"format '{to_format}' not supported")
+        raise ValueError(f"format '{to_format}' is not supported")
 
 
 def load_data_dict(
@@ -136,8 +138,8 @@ def load_data_dict(
         - 'json'
     data_keys_0d: list[str], optional
         A list of keys for which the data is a scalar/0-dimensional.
-        This is only needed for file_format='matlab'. scipy.io.savemat turns any
-        data into a multi-dimensional array with at least 2 dimensions.
+        This is only needed for file_format='matlab' or file_format = 'csv'.
+        scipy.io.savemat turns any data into a multi-dimensional array with at least 2 dimensions.
         If provided, data dimensions will be consistent with the original data.
     data_keys_1d: list[str], optional
         A list of keys for which the data is a 1-dimensional list or array.
@@ -155,6 +157,7 @@ def load_data_dict(
     if file_format == "pickle":
         with open(filename, "rb") as f:
             data_dict = pickle.load(f)
+
     elif file_format == "matlab":
         data_dict = {}
         loadmat(filename, mdict=data_dict)
@@ -168,11 +171,20 @@ def load_data_dict(
         for key in data_keys_1d:
             if key in data_dict.keys():
                 data_dict[key] = data_dict[key].flatten()
+
     elif file_format == "json":
         with open(filename) as f:
             data_dict = json.load(f)
+
     elif file_format == "csv":
-        data_dict = pd.read_csv(filename)
+        data_dict = pd.read_csv(filename).to_dict(orient="list")
+
+        # fix dimensions for 0-d data
+        data_keys_0d = data_keys_0d or []
+        for key in data_keys_0d:
+            if key in data_dict.keys():
+                data_dict[key] = data_dict[key][0]
+
     else:
         raise ValueError(f"format '{file_format}' is not supported.")
 

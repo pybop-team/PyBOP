@@ -62,6 +62,24 @@ class TestSaveData:
                 # need to strip \r chars for windows
                 assert data_str.replace("\r", "") == f.read()
 
+        if file_format == "csv":
+            # 1-d variables
+            data_dict = {
+                "string": "word",
+                "number": 1.5,
+            }
+            # save data
+            pybop.save_data_dict(data_dict, filename, to_format=file_format)
+
+            # load data
+            data_load = pybop.load_data_dict(
+                filename, file_format=file_format, data_keys_0d=data_dict.keys()
+            )
+
+            # compare original data with loaded data
+            for key, data in data_dict.items():
+                assert data_load[key] == data
+
     def test_input_errors(self, data_dict, tmp_path):
         test_stub = tmp_path / "test"
 
@@ -73,8 +91,11 @@ class TestSaveData:
             pybop.save_data_dict(data_dict, to_format="matlab")
 
         # raise error if format is unknown
-        with pytest.raises(ValueError, match=r"format 'wrong_format' not supported"):
+        with pytest.raises(ValueError, match=r"format 'wrong_format' is not supported"):
             pybop.save_data_dict(data_dict, "{test_stub}.csv", to_format="wrong_format")
+
+        with pytest.raises(ValueError, match=r"format 'wrong_format' is not supported"):
+            pybop.load_data_dict("{test_stub}.csv", file_format="wrong_format")
 
         # To matlab with bad variable names fails
         data_dict = {
