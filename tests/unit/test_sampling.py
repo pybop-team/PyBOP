@@ -1,13 +1,10 @@
-import json
 import logging
 import pickle
 from unittest.mock import call, patch
 
 import numpy as np
-import pandas as pd
 import pybamm
 import pytest
-from scipy.io import loadmat
 
 import pybop
 from pybop import (
@@ -311,6 +308,28 @@ class TestPintsSamplers:
         with pytest.raises(NotImplementedError):
             chain_processor._extract_log_pdf(posterior_problem, 0)
 
+    def compare_result_data(self, result1, result2):
+        assert result1.method_name == result2.method_name
+        assert result1.n_runs == result2.n_runs
+        assert result1._best_run == result2._best_run
+        np.testing.assert_array_equal(result1._x, result2._x)
+        np.testing.assert_array_equal(result1._x_model, result2._x_model)
+        np.testing.assert_array_equal(result1._x0, result2._x0)
+        np.testing.assert_array_equal(result1._best_cost, result2._best_cost)
+        np.testing.assert_array_equal(result1._cost, result2._cost)
+        np.testing.assert_array_equal(result1._initial_cost, result2._initial_cost)
+        np.testing.assert_array_equal(result1._n_iterations, result2._n_iterations)
+        np.testing.assert_array_equal(
+            result1._iteration_number, result2._iteration_number
+        )
+        np.testing.assert_array_equal(result1._n_evaluations, result2._n_evaluations)
+        assert result1._message == result2._message
+        np.testing.assert_array_equal(result1._scipy_result, result2._scipy_result)
+        np.testing.assert_array_equal(result1._time, result2._time)
+        np.testing.assert_array_equal(result1.chains, result2.chains)
+        np.testing.assert_array_equal(result1.all_samples, result2.all_samples)
+        assert result1.num_parameters == result2.num_parameters
+
     def test_save(self, posterior_problem, n_chains, MCMC, tmp_path):
         test_stub = tmp_path / "test"
 
@@ -325,91 +344,29 @@ class TestPintsSamplers:
         # Run the sampler
         result = sampler.run()
 
-        # Test save result
-        with pytest.raises(ValueError, match=r"pickle"):
-            result.save_data(to_format="pickle")
-        result.save_data(f"{test_stub}.pickle")
+        # Re-define sampler to reconstruct result from data
+        sampler2 = MCMC(log_pdf=posterior_problem, options=options)
 
-        with open(f"{test_stub}.pickle", "rb") as f:
-            result_load = pickle.load(f)
+        for to_format in ["json", "matlab", "pickle"]:
+            # Define filename
+            if to_format == "matlab":
+                filename = f"{test_stub}.mat"
+            elif to_format == "json":
+                filename = f"{test_stub}.json"
+            else:
+                filename = f"{test_stub}.pickle"
+            # Test save result
+            result.save_data(filename, to_format=to_format)
 
-        for j, name in enumerate(result._problem._parameters.names):
-            np.testing.assert_array_equal(result_load[name], result.all_samples[:, j])
-
-        # To matlab with bad variable names fails
-        with pytest.raises(ValueError, match=r"Invalid character"):
-            result.save_data(f"{test_stub}.mat", to_format="matlab")
-
-        # To matlab without filename
-        with pytest.raises(ValueError, match=r"matlab format"):
-            result.save_data(to_format="matlab")
-
-        # To matlab with appropriate short_names
-        short_names = {
-            "Negative electrode active material volume fraction": "ne_vf",
-            "Positive electrode active material volume fraction": "pe_vf",
-        }
-        result.save_data(
-            f"{test_stub}.mat", to_format="matlab", short_names=short_names
-        )
-
-        result_load = loadmat(f"{test_stub}.mat")
-
-        for j, name in enumerate(result._problem._parameters.names):
-            # savemat turns 1-d array into 2-d array
-            np.testing.assert_array_equal(
-                result_load[short_names[name]].flatten(), result.all_samples[:, j]
+            # load result
+            result_load = SamplingResult.load_result(
+                sampler2, filename, file_format=to_format
             )
-
-        # To csv
-        result.save_data(f"{test_stub}.csv", to_format="csv")
-        csv_str = result.save_data(to_format="csv")
-
-        # check string is the same as the file
-        with open(f"{test_stub}.csv") as f:
-            # need to strip \r chars for windows
-            assert csv_str.replace("\r", "") == f.read()
-
-        # read csv
-        df = pd.read_csv(f"{test_stub}.csv")
-        for j, name in enumerate(result._problem._parameters.names):
-            np.testing.assert_array_equal(df[name], result.all_samples[:, j])
-
-        # check string is the same as the file
-        with open(f"{test_stub}.csv") as f:
-            # need to strip \r chars for windows
-            assert csv_str.replace("\r", "") == f.read()
-
-        # to json
-        result.save_data(f"{test_stub}.json", to_format="json")
-        json_str = result.save_data(to_format="json")
-
-        # check string is the same as the file
-        with open(f"{test_stub}.json") as f:
-            # need to strip \r chars for windows
-            assert json_str.replace("\r", "") == f.read()
-
-        # check if string has the right values
-        json_data = json.loads(json_str)
-        for j, name in enumerate(result._problem._parameters.names):
-            np.testing.assert_allclose(
-                json_data[name], result.all_samples[:, j], rtol=1e-7, atol=1e-6
-            )
-
-        # raise error if format is unknown
-        with pytest.raises(ValueError, match=r"format 'wrong_format' not recognised"):
-            result.save_data(f"{test_stub}.csv", to_format="wrong_format")
+            self.compare_result_data(result, result_load)
+            assert sampler2.logger is None
 
         # test save whole result
         result.save(f"{test_stub}.pickle")
         with open(f"{test_stub}.pickle", "rb") as f:
             result_load = pickle.load(f)
-        assert result.method_name == result_load.method_name
-        np.testing.assert_array_equal(result._x, result_load._x)
-
-        # test csv with multi-d arrays
-        result.all_samples = result.all_samples.reshape(
-            (result.all_samples.shape[0], result.all_samples.shape[1], 1)
-        )
-        with pytest.raises(ValueError, match=r"only 0D variables"):
-            result.save_data(f"{test_stub}.csv", to_format="csv")
+        self.compare_result_data(result, result_load)

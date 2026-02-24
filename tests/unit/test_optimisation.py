@@ -1,15 +1,12 @@
 import io
-import json
 import pickle
 import re
 import sys
 
 import numpy as np
-import pandas as pd
 import pybamm
 import pytest
 from pints import PopulationBasedOptimiser
-from scipy.io import loadmat
 
 import pybop
 from pybop.optimisers.base_optimiser import OptimisationResult
@@ -189,6 +186,25 @@ class TestOptimisation:
         # Copy the MultivariateParameters to the problem
         problem.parameters = multivariate_simulator.parameters
         return problem
+
+    @pytest.fixture
+    def result(self, problem):
+        logger = pybop.Logger(minimising=True)
+        logger.iteration = 1
+        logger.extend_log(
+            x_search=[np.asarray([1e-3])], x_model=[np.asarray([1e-3])], cost=[0.1]
+        )
+        optim = pybop.XNES(problem)
+        optim._logger = logger
+
+        # Construct OptimisationResult
+        result = OptimisationResult(
+            optim=optim,
+            method_name="Test name",
+            time=0.1,
+            message="Test message",
+        )
+        return result
 
     @pytest.mark.parametrize(
         "optimiser, expected_name, sensitivities",
@@ -726,23 +742,7 @@ class TestOptimisation:
             optim._threshold = None
             optim.run()
 
-    def test_optimisation_result(self, problem):
-        logger = pybop.Logger(minimising=True)
-        logger.iteration = 1
-        logger.extend_log(
-            x_search=[np.asarray([1e-3])], x_model=[np.asarray([1e-3])], cost=[0.1]
-        )
-        optim = pybop.XNES(problem)
-        optim._logger = logger
-
-        # Construct OptimisationResult
-        result = OptimisationResult(
-            optim=optim,
-            method_name="Test name",
-            time=0.1,
-            message="Test message",
-        )
-
+    def test_optimisation_result(self, result, problem):
         # Asserts
         assert result.method_name == "Test name"
         assert result.x[0] == 1e-3
@@ -782,98 +782,57 @@ class TestOptimisation:
         ):
             optim.run()
 
-    def test_save_result(self, problem, tmp_path):
+    def compare_result_data(self, result1, result2):
+        assert result1.method_name == result2.method_name
+        assert result1.n_runs == result2.n_runs
+        assert result1._best_run == result2._best_run
+        np.testing.assert_array_equal(result1._x, result2._x)
+        np.testing.assert_array_equal(result1._x_model, result2._x_model)
+        np.testing.assert_array_equal(result1._x0, result2._x0)
+        np.testing.assert_array_equal(result1._best_cost, result2._best_cost)
+        np.testing.assert_array_equal(result1._cost, result2._cost)
+        np.testing.assert_array_equal(result1._initial_cost, result2._initial_cost)
+        np.testing.assert_array_equal(result1._n_iterations, result2._n_iterations)
+        np.testing.assert_array_equal(
+            result1._iteration_number, result2._iteration_number
+        )
+        np.testing.assert_array_equal(result1._n_evaluations, result2._n_evaluations)
+        assert result1._message == result2._message
+        np.testing.assert_array_equal(result1._scipy_result, result2._scipy_result)
+        np.testing.assert_array_equal(result1._time, result2._time)
+
+    @pytest.mark.parametrize("to_format", ["json", "matlab", "pickle"])
+    def test_save_result_data(self, result, problem, to_format, tmp_path):
         test_stub = tmp_path / "test"
 
-        logger = pybop.Logger(minimising=True)
-        logger.iteration = 1
-        logger.extend_log(
-            x_search=[np.asarray([1e-3])], x_model=[np.asarray([1e-3])], cost=[0.1]
-        )
-        optim = pybop.XNES(problem)
-        optim._logger = logger
-
-        # Construct OptimisationResult
-        result = OptimisationResult(
-            optim=optim,
-            method_name="Test name",
-            time=0.1,
-            message="Test message",
-        )
-
+        if to_format == "matlab":
+            filename = f"{test_stub}.mat"
+        elif to_format == "json":
+            filename = f"{test_stub}.json"
+        else:
+            filename = f"{test_stub}.pickle"
         # Test save result
-        with pytest.raises(ValueError, match=r"pickle"):
-            result.save_data(to_format="pickle")
-        result.save_data(f"{test_stub}.pickle")
+        result.save_data(filename, to_format=to_format)
 
-        with open(f"{test_stub}.pickle", "rb") as f:
-            result_load = pickle.load(f)
-
-        for name in result.problem.parameters.names:
-            np.testing.assert_approx_equal(result_load[name], result.best_inputs[name])
-
-        # To matlab with bad variable names fails
-        with pytest.raises(ValueError, match=r"Invalid character"):
-            result.save_data(f"{test_stub}.mat", to_format="matlab")
-
-        # To matlab with appropriate short_names
-        short_names = {
-            "Positive electrode active material volume fraction": "pe_vf",
-        }
-        result.save_data(
-            f"{test_stub}.mat", to_format="matlab", short_names=short_names
+        result_load = OptimisationResult.load_result(
+            problem, filename, file_format=to_format
         )
+        self.compare_result_data(result, result_load)
 
-        result_load = loadmat(f"{test_stub}.mat")
+        # Test save combined result
+        result_combined = OptimisationResult.combine([result, result])
+        result_combined.save_data(filename, to_format=to_format)
 
-        for name in result._problem._parameters.names:
-            # savemat turns 1-d array into 2-d array
-            np.testing.assert_array_equal(
-                result_load[short_names[name]].flatten(), result.best_inputs[name]
-            )
+        result_load = OptimisationResult.load_result(
+            problem, filename, file_format=to_format
+        )
+        self.compare_result_data(result_combined, result_load)
 
-        # To csv
-        result.save_data(f"{test_stub}.csv", to_format="csv")
-        csv_str = result.save_data(to_format="csv")
-
-        # check string is the same as the file
-        with open(f"{test_stub}.csv") as f:
-            # need to strip \r chars for windows
-            assert csv_str.replace("\r", "") == f.read()
-
-        # read csv
-        df = pd.read_csv(f"{test_stub}.csv")
-        for name in result._problem._parameters.names:
-            np.testing.assert_array_equal(df[name], result.best_inputs[name])
-
-        # check string is the same as the file
-        with open(f"{test_stub}.csv") as f:
-            # need to strip \r chars for windows
-            assert csv_str.replace("\r", "") == f.read()
-
-        # to json
-        result.save_data(f"{test_stub}.json", to_format="json")
-        json_str = result.save_data(to_format="json")
-
-        # check string is the same as the file
-        with open(f"{test_stub}.json") as f:
-            # need to strip \r chars for windows
-            assert json_str.replace("\r", "") == f.read()
-
-        # check if string has the right values
-        json_data = json.loads(json_str)
-        for name in result._problem._parameters.names:
-            np.testing.assert_allclose(
-                json_data[name], result.best_inputs[name], rtol=1e-7, atol=1e-6
-            )
-
-        # raise error if format is unknown
-        with pytest.raises(ValueError, match=r"format 'wrong_format' not recognised"):
-            result.save_data(f"{test_stub}.csv", to_format="wrong_format")
+    def test_save_result(self, result, tmp_path):
+        test_stub = tmp_path / "test"
 
         # test save whole result
         result.save(f"{test_stub}.pickle")
         with open(f"{test_stub}.pickle", "rb") as f:
             result_load = pickle.load(f)
-        assert result.method_name == result_load.method_name
-        np.testing.assert_array_equal(result._x, result_load._x)
+        self.compare_result_data(result, result_load)

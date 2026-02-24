@@ -133,17 +133,19 @@ class Simulator(BaseSimulator):
 
     def __getstate__(self):
         # Copy the object's state from self.__dict__ which contains
-        # all our instance attributes. Always use the dict.copy()
-        # method to avoid modifying the original state.
+        # all instance attributes.
+        # Copy() method avoid modifying the original state.
         state = self.__dict__.copy()
+
         # Remove the unpicklable entries.
         del state["_simulation"]
         del state["_solve"]
         return state
 
     def __setstate__(self, state):
-        # Restore instance attributes .
+        # Restore instance attributes.
         self.__dict__.update(state)
+
         # Restore unpickalable attributes
         self._simulation = None
         self._solve = None

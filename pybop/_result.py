@@ -1,27 +1,11 @@
-import json
 import pickle
 
 import numpy as np
-import pandas as pd
-from scipy.io import savemat
 
 from pybop import plot
 from pybop._logging import Logger
+from pybop._utils import load_data_dict, save_data_dict
 from pybop.problems.problem import Problem
-
-
-class NumpyEncoder(json.JSONEncoder):
-    """
-    Numpy serialiser helper class that converts numpy arrays to a list.
-    Numpy arrays cannot be directly converted to JSON, so the arrays are
-    converted to python list objects before encoding.
-    """
-
-    def default(self, obj):
-        if isinstance(obj, np.ndarray):
-            return obj.tolist()
-        # won't be called since we only need to convert numpy arrays
-        return json.JSONEncoder.default(self, obj)  # pragma: no cover
 
 
 class Result:
@@ -336,27 +320,40 @@ class Result:
         """
         return plot.contour(call_object=self, **kwargs)
 
-    def save(self, filename):
+    def save(self, filename) -> None:
         """Save the whole result using pickle"""
 
         with open(filename, "wb") as f:
             pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
 
-    def data_dict(self, short_names):
-        data = {}
-        for key, value in self.best_inputs.items():
-            if short_names is not None and key in short_names.keys():
-                data[short_names[key]] = value
-            else:
-                data[key] = value
+    def data_dict(self) -> dict:
+        """return result data as dictionary for saving to file"""
 
-        return data
+        return {
+            "method_name": self.method_name,
+            "n_runs": self.n_runs,
+            "x": self._x,
+            "x_model": self._x_model,
+            "best_cost": self._best_cost,
+            "cost": self._cost,
+            "initial_cost": self._initial_cost,
+            "n_iterations": self._n_iterations,
+            "iteration_number": self._iteration_number,
+            "n_evaluations": self._n_evaluations,
+            "message": self._message,
+            "scipy_result": self._scipy_result
+            if self._scipy_result[0] is not None
+            else [],
+            "time": self._time,
+        }
 
     def save_data(
-        self, filename=None, variables=None, to_format="pickle", short_names=None
-    ):
+        self,
+        filename=None,
+        to_format="pickle",
+    ) -> str | None:
         """
-        Save result data (raw arrays)
+        Save result data
 
         Based on pybamm.Solution.save_data
 
@@ -364,75 +361,118 @@ class Result:
         ----------
         filename : str, optional
             The name of the file to save data to. If None, then a str is returned
+            for json format or an error is thrown for pickle/matlab.
         to_format : str, optional
             The format to save to. Options are:
 
             - 'pickle' (default): creates a pickle file with the data dictionary
             - 'matlab': creates a .mat file, for loading in matlab
-            - 'csv': creates a csv file (0D variables only)
             - 'json': creates a json file
-        short_names : dict, optional
-            Dictionary of shortened names to use when saving. This may be necessary when
-            saving to MATLAB, since no spaces or special characters are allowed in
-            MATLAB variable names. Note that not all the variables need to be given
-            a short name.
 
         Returns
         -------
         data : str, optional
-            str if 'csv' or 'json' is chosen and filename is None, otherwise None
+            str if 'json' is chosen and filename is None, otherwise None
         """
 
-        data = self.data_dict(short_names)
+        data = self.data_dict()
+        return save_data_dict(data, filename=filename, to_format=to_format)
 
-        if to_format == "pickle":
-            if filename is None:
-                raise ValueError("pickle format must be written to a file")
-            with open(filename, "wb") as f:
-                pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
-        elif to_format == "matlab":
-            if filename is None:
-                raise ValueError("matlab format must be written to a file")
-            # Check all the variable names only contain a-z, A-Z or _ or numbers
-            for name in data.keys():
-                # Check the string only contains the following ASCII:
-                # a-z (97-122)
-                # A-Z (65-90)
-                # _ (95)
-                # 0-9 (48-57) but not in the first position
-                for i, s in enumerate(name):
-                    if not (
-                        97 <= ord(s) <= 122
-                        or 65 <= ord(s) <= 90
-                        or ord(s) == 95
-                        or (i > 0 and 48 <= ord(s) <= 57)
-                    ):
-                        raise ValueError(
-                            f"Invalid character '{s}' found in '{name}'. "
-                            "MATLAB variable names must only contain a-z, A-Z, _, "
-                            "or 0-9 (except the first position). "
-                            "Use the 'short_names' argument to pass an alternative "
-                            "variable name, e.g. \n\n"
-                            "\tsolution.save_data(filename, "
-                            "['Electrolyte concentration'], to_format='matlab, "
-                            "short_names={'Electrolyte concentration': 'c_e'})"
-                        )
-            savemat(filename, data)
-        elif to_format == "csv":
-            for name, var in data.items():
-                if var.ndim == 0:
-                    data[name] = [var]
-                elif var.ndim >= 2:
-                    raise ValueError(
-                        f"only 0D variables can be saved to csv, but '{name}' is {var.ndim - 1}D"
-                    )
-            df = pd.DataFrame(data)
-            return df.to_csv(filename, index=False)
-        elif to_format == "json":
-            if filename is None:
-                return json.dumps(data, cls=NumpyEncoder)
-            else:
-                with open(filename, "w") as outfile:
-                    json.dump(data, outfile, cls=NumpyEncoder)
-        else:
-            raise ValueError(f"format '{to_format}' not recognised")
+    @staticmethod
+    def load_data_dict(filename: str, file_format: str = "pickle") -> dict:
+        """
+        Load results data as dictionary from a given file. Restores data saved with
+        save_data.
+
+        Calls load_data_dict defined in _utils.py and provides the keys of
+        data that is 0-d and 1-d to ensure consistent data dimensions.
+
+        Parameters
+        ----------
+        filename : str
+            The name of the file containing the data.
+        file_format : str, optional
+            The format the data was save to. Options are:
+            - 'pickle' (default)
+            - 'matlab'
+            - 'csv'
+            - 'json'
+
+        Returns
+        -------
+        data_dict :
+            python dictionary containing the data in the file.
+        """
+        return load_data_dict(
+            filename,
+            file_format=file_format,
+            data_keys_0d=["n_runs"],
+            data_keys_1d=[
+                "method_name",
+                "message",
+                "n_evaluations",
+                "best_cost",
+                "initial_cost",
+                "n_iterations",
+                "n_evaluations",
+                "time",
+            ],
+        )
+
+    @staticmethod
+    def load_result(
+        problem: Problem, filename: str, file_format: str = "pickle"
+    ) -> "Result":
+        """
+        Reconstructs result object based on the underlying problem and
+        the result data stored in a file
+
+        Parameters
+        ----------
+        problem: The underlying problem used to obtain the result before saving.
+        filename : str
+            The name of the file containing the data.
+        file_format : str, optional
+            The format the data was save to. Options are:
+            - 'pickle' (default)
+            - 'matlab'
+            - 'csv'
+            - 'json'
+
+        Returns
+        -------
+        result :
+            result object containing the data from the given file.
+        """
+
+        # read data file
+        data = Result.load_data_dict(filename, file_format)
+
+        # dummy logger for initialising result
+        logger = Logger(minimising=problem.minimising)
+        logger.extend_log(
+            x_search=[np.asarray([1e-3])], x_model=[np.asarray([1e-3])], cost=[0.1]
+        )
+        method_name = data["method_name"] if "method_name" in data.keys() else None
+        message = data["message"] if "message" in data.keys() else None
+
+        # create result instance
+        result = Result(
+            problem,
+            logger,
+            time=0.0,
+            method_name=method_name,
+            message=message,
+        )
+
+        # set result data
+        if "n_runs" in data.keys():
+            result.n_runs = data["n_runs"]
+            del data["n_runs"]
+        for key, value in data.items():
+            setattr(result, f"_{key}", list(value))
+        result._x0 = [x_model[0] for x_model in result._x_model]
+        if len(result._scipy_result) == 0:
+            result._scipy_result = [None for _ in range(max(1, result.n_runs))]
+
+        return result

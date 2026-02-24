@@ -167,7 +167,7 @@ class SamplingResult(Result):
 
     def __getstate__(self):
         # Copy the object's state from self.__dict__ which contains
-        # all our instance attributes. Always use the dict.copy()
+        # all our instance attributes. Use the dict.copy()
         # method to avoid modifying the original state.
         state = self.__dict__.copy()
         # Remove the unpicklable entries.
@@ -410,14 +410,81 @@ class SamplingResult(Result):
         """
         return pints.rhat(self.chains)
 
-    def data_dict(self, short_names):
-        names = self.problem.parameters.names
-        sample_data = {}
-        for j, name in enumerate(names):
-            val = self.all_samples[:, j]
-            if short_names is not None and name in short_names.keys():
-                sample_data[short_names[name]] = val
-            else:
-                sample_data[name] = val
+    def data_dict(self) -> dict:
+        """return result data as dictionary for saving to file"""
 
-        return sample_data
+        data_dict = super().data_dict()
+        data_dict["chains"] = self.chains
+
+        return data_dict
+
+    @staticmethod
+    def load_result(
+        sampler: BaseSampler, filename: str, file_format: str = "pickle"
+    ) -> "SamplingResult":
+        """
+        Reconstructs result object based on the underlying sampler and
+        the result data stored in a file
+
+        Parameters
+        ----------
+        sampler: The underlying problem used to obtain the result before saving.
+        filename : str
+            The name of the file containing the data.
+        file_format : str, optional
+            The format the data was save to. Options are:
+            - 'pickle' (default)
+            - 'matlab'
+            - 'csv'
+            - 'json'
+
+        Returns
+        -------
+        result :
+            result object containing the data from the given file.
+        """
+
+        # read data file
+        data = Result.load_data_dict(filename, file_format)
+
+        # dummy logger for initialising result
+        logger = sampler.logger
+        dummy_logger = Logger(sampler.log_pdf.minimising)
+        dummy_logger.extend_log(
+            x_search=[np.asarray([1e-3])], x_model=[np.asarray([1e-3])], cost=[0.1]
+        )
+
+        sampler._logger = dummy_logger  # noqa: SLF001
+
+        # initialise result
+        time = 0.0
+        chains = None
+        if "chains" in data.keys():
+            chains = np.asarray(data["chains"].copy())
+            del data["chains"]
+
+        method_name = data["method_name"] if "method_name" in data.keys() else None
+        message = data["message"] if "message" in data.keys() else None
+
+        result = SamplingResult(
+            sampler,
+            time,
+            chains,
+            method_name=method_name,
+            message=message,
+        )
+
+        # set result data
+        if "n_runs" in data.keys():
+            result.n_runs = data["n_runs"]
+            del data["n_runs"]
+        for key, value in data.items():
+            setattr(result, f"_{key}", list(value))
+        result._x0 = [x_model[0] for x_model in result._x_model]
+        if len(result._scipy_result) == 0:
+            result._scipy_result = [None for _ in range(max(1, result.n_runs))]
+
+        # restore orginal logger in sampler
+        sampler._logger = logger  # noqa: SLF001
+
+        return result
