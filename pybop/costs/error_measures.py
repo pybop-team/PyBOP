@@ -115,7 +115,7 @@ class ErrorMeasure(BaseCost):
         """
         # Return failure cost if the solution failed
         if isinstance(solution, FailedSolution):
-            return self.failure(calculate_sensitivities)
+            return self.failure(self.parameters.names, calculate_sensitivities)
 
         if not isinstance(solution, (Solution, pybamm.Solution)):
             raise ValueError(
@@ -124,7 +124,7 @@ class ErrorMeasure(BaseCost):
 
         # Early return if the prediction is not verified
         if not self.verify_prediction(solution):
-            return self.failure(calculate_sensitivities)
+            return self.failure(self.parameters.names, calculate_sensitivities)
 
         # Compute the residual for all output variables
         r = np.asarray(
@@ -172,9 +172,10 @@ class ErrorMeasure(BaseCost):
         r : np.ndarray
             The residual difference between the model prediction and the target. The
             dimensions of r are (len(target), len(domain_data)).
-        dy : np.ndarray, optional
-            The corresponding gradient with respect to the parameters for each output variable.
-            The dimensions of dy are (len(parameters), len(target), len(domain_data)).
+        dy : dict[str, np.ndarray], optional
+            The corresponding gradients dy/dx(t) for each output variable y with respect
+            to each parameter x over the domain t. The dictionary keys are the parameter
+            names and the arrays are of dimensions (len(target), len(domain_data)).
 
         Returns
         -------
@@ -219,7 +220,9 @@ class MeanSquaredError(ErrorMeasure):
         e = np.mean((np.abs(r) ** 2) * self.weighting)
 
         if dy is not None:
-            de = 2 * np.mean((r * self.weighting) * dy, axis=(1, 2))
+            de = {}
+            for key, value in dy.items():
+                de[key] = 2 * np.mean((r * self.weighting) * value)
             return e, de
 
         return e
@@ -243,9 +246,11 @@ class RootMeanSquaredError(ErrorMeasure):
         e = np.sqrt(np.mean((np.abs(r) ** 2) * self.weighting))
 
         if dy is not None:
-            de = np.mean((r * self.weighting) * dy, axis=(1, 2)) / (
-                e + np.finfo(float).eps
-            )
+            de = {}
+            for key, value in dy.items():
+                de[key] = np.mean((r * self.weighting) * value) / (
+                    e + np.finfo(float).eps
+                )
             return e, de
 
         return e
@@ -269,7 +274,9 @@ class MeanAbsoluteError(ErrorMeasure):
         e = np.mean(np.abs(r) * self.weighting)
 
         if dy is not None:
-            de = np.mean((np.sign(r) * self.weighting) * dy, axis=(1, 2))
+            de = {}
+            for key, value in dy.items():
+                de[key] = np.mean((np.sign(r) * self.weighting) * value)
             return e, de
 
         return e
@@ -293,7 +300,9 @@ class SumSquaredError(ErrorMeasure):
         e = np.sum(np.abs(r) ** 2 * self.weighting)
 
         if dy is not None:
-            de = 2 * np.sum((r * self.weighting) * dy, axis=(1, 2))
+            de = {}
+            for key, value in dy.items():
+                de[key] = 2 * np.sum((r * self.weighting) * value)
             return e, de
 
         return e
@@ -355,10 +364,11 @@ class Minkowski(ErrorMeasure):
         e = np.sum((np.abs(r) ** self.p) * self.weighting) ** (1 / self.p)
 
         if dy is not None:
-            de = np.sum(
-                ((np.sign(r) * np.abs(r) ** (self.p - 1)) * self.weighting) * dy,
-                axis=(1, 2),
-            ) / (e ** (self.p - 1) + np.finfo(float).eps)
+            de = {}
+            for key, value in dy.items():
+                de[key] = np.sum(
+                    ((np.sign(r) * np.abs(r) ** (self.p - 1)) * self.weighting) * value
+                ) / (e ** (self.p - 1) + np.finfo(float).eps)
             return e, de
 
         return e
@@ -422,10 +432,11 @@ class SumOfPower(ErrorMeasure):
         e = np.sum((np.abs(r) ** self.p) * self.weighting)
 
         if dy is not None:
-            de = self.p * np.sum(
-                ((np.sign(r) * np.abs(r) ** (self.p - 1)) * self.weighting) * dy,
-                axis=(1, 2),
-            )
+            de = {}
+            for key, value in dy.items():
+                de[key] = self.p * np.sum(
+                    ((np.sign(r) * np.abs(r) ** (self.p - 1)) * self.weighting) * value
+                )
             return e, de
 
         return e

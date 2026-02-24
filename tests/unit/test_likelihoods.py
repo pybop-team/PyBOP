@@ -30,11 +30,7 @@ class TestLikelihoods:
     def parameters(self):
         return {
             "Negative electrode active material volume fraction": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    0.5,
-                    0.01,
-                    truncated_at=[0.375, 0.625],
-                )
+                distribution=pybop.Gaussian(0.5, 0.01, truncated_at=[0.375, 0.625])
             )
         }
 
@@ -93,7 +89,8 @@ class TestLikelihoods:
         assert isinstance(result[0], float)
         np.testing.assert_allclose(result, grad_result, atol=1e-5)
         # Since 0.5 < ground_truth, the likelihood should be increasing
-        assert grad_likelihood >= 0
+        key0 = problem.parameters.names[0]
+        assert grad_likelihood[key0] >= 0
 
     def test_gaussian_log_likelihood(self, simulator, dataset):
         likelihood = pybop.GaussianLogLikelihood(dataset, sigma=0.01)
@@ -104,10 +101,11 @@ class TestLikelihoods:
         ).get_values()
         assert isinstance(result[0], float)
         np.testing.assert_allclose(result, grad_result, atol=1e-5)
+        key = problem.parameters.names
         # Since 0.8 > ground_truth, the likelihood should be decreasing
-        assert grad_likelihood[0][0] <= 0
+        assert grad_likelihood[key[0]] <= 0
         # Since sigma < 0.02, the likelihood should be decreasing
-        assert grad_likelihood[0][1] <= 0
+        assert grad_likelihood[key[1]] <= 0
 
         # Test construction with sigma as a Parameter
         sigma = pybop.Parameter(stats.uniform(loc=0.4, scale=0.6 - 0.4))
@@ -120,16 +118,6 @@ class TestLikelihoods:
         ):
             likelihood = pybop.GaussianLogLikelihood(dataset, sigma="Invalid string")
             pybop.Problem(simulator, likelihood)
-
-    def test_gaussian_log_likelihood_dsigma_scale(self, dataset):
-        likelihood = pybop.GaussianLogLikelihood(dataset, dsigma_scale=0.05)
-        assert likelihood.dsigma_scale == 0.05
-        likelihood.dsigma_scale = 1e3
-        assert likelihood.dsigma_scale == 1e3
-
-        # Test incorrect sigma scale
-        with pytest.raises(ValueError):
-            likelihood.dsigma_scale = -1e3
 
     def test_gaussian_log_likelihood_returns_negative_inf(self, simulator, dataset):
         likelihood = pybop.GaussianLogLikelihood(dataset)

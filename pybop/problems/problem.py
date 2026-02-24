@@ -115,11 +115,12 @@ class Problem:
             The cost value(s) and (optionally) the gradient of the cost with respect to
             each input parameter.
         """
-        # Convert values to parameter inputs
+        # Accept numeric values, convert to Inputs dictionaries
         if not isinstance(inputs, dict):
             if not isinstance(inputs[0], dict):
                 values = np.atleast_2d(inputs)
                 inputs = [self.parameters.to_dict(v) for v in values]
+
         inputs_list = inputs if isinstance(inputs, list) else [inputs]
 
         return self.evaluate_batch(
@@ -167,9 +168,7 @@ class Problem:
         # Preallocate the evaluation results
         evaluation = Evaluation()
         evaluation.preallocate(
-            n_inputs=len(inputs),
-            n_parameters=len(self.parameters),
-            calculate_sensitivities=calculate_sensitivities,
+            inputs=inputs, calculate_sensitivities=calculate_sensitivities
         )
 
         # Evaluate the cost for the valid parameters
@@ -198,11 +197,13 @@ class Problem:
             # Insert failure outputs for the invalid parameters into the lists of results
             invalid_indices = [i for i, valid in enumerate(validity) if not valid]
             if calculate_sensitivities:
-                y, dy = self._cost.failure(calculate_sensitivities)
+                y, dy = self._cost.failure(
+                    self.parameters.names, calculate_sensitivities
+                )
                 for i in invalid_indices:
                     evaluation.insert_result(i=i, value=y, sensitivities=dy)
             else:
-                y = self._cost.failure(calculate_sensitivities)
+                y = self._cost.failure(self.parameters.names, calculate_sensitivities)
                 for i in invalid_indices:
                     evaluation.insert_result(i=i, value=y)
 

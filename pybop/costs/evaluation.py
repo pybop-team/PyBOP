@@ -7,27 +7,32 @@ class Evaluation:
     """
 
     def __init__(
-        self, values: np.ndarray = None, sensitivities: np.ndarray | None = None
+        self,
+        values: np.ndarray = None,
+        sensitivities: dict[str, np.ndarray] | None = None,
     ):
         self.values = np.atleast_1d(values)
-        self.sensitivities = (
-            np.atleast_2d(sensitivities) if sensitivities is not None else None
-        )
+        self.sensitivities = sensitivities
 
-    def preallocate(self, n_inputs, n_parameters, calculate_sensitivities: bool = None):
+    def preallocate(self, inputs, calculate_sensitivities: bool = None):
+        self.all_inputs = inputs
+        n_inputs = len(inputs)
         self.values = np.empty(n_inputs)
-        self.sensitivities = (
-            np.empty((n_inputs, n_parameters)) if calculate_sensitivities else None
-        )
+        if calculate_sensitivities:
+            parameter_names = inputs[0].keys()
+            self.sensitivities = {key: np.empty(n_inputs) for key in parameter_names}
+        else:
+            self.sensitivities = None
 
     def insert_result(
-        self, i: int, value: float, sensitivities: np.ndarray | None = None
+        self, i: int, value: float, sensitivities: dict[str, np.ndarray] | None = None
     ):
         self.values[i] = value
         if sensitivities is not None:
-            self.sensitivities[i] = sensitivities
+            for key, value in sensitivities.items():
+                self.sensitivities[key][i] = value
 
-    def get_values(self) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
+    def get_values(self) -> np.ndarray | tuple[np.ndarray, dict[str, np.ndarray]]:
         if self.sensitivities is None:
             return self.values
         return self.values, self.sensitivities

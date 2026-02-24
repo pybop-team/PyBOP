@@ -21,7 +21,6 @@ class BaseCost:
 
     def __init__(self):
         self._de = 1.0
-        self.grad_fail = None
         self.parameters = Parameters()
         self.minimising = True
 
@@ -57,28 +56,26 @@ class BaseCost:
         """
         raise NotImplementedError
 
-    def stack_sensitivities(self, solution: Solution) -> np.ndarray:
+    def stack_sensitivities(self, solution: Solution) -> dict[str, np.ndarray]:
         """
-        Stack the sensitivities for each output variable and parameter into a single array.
+        Stack the sensitivities for each output variable into a single array.
 
         Parameters
         ----------
-        dict[str, dict[str, np.ndarray[np.float64]]]
-            A dictionary of the sensitivities dy/dx(t) for each parameter x and target y.
+        solution : pybop.Solution | pybamm.Solution
+            A solution object containing a dictionary of sensitivities for each output variable.
 
         Returns
         -------
-        np.ndarray[np.float64]
-            The combined sensitivities dy/dx(t) for each parameter and target, with
-            dimensions of (len(parameters), len(target), len(domain_data)).
+        dict[str, np.ndarray[np.float64]]
+            The sensitivities dy/dx(t) for each output variable y with respect to each parameter
+            x over the domain t. The dictionary keys are the parameter names and the arrays are
+            of dimensions (len(target), len(domain_data)).
         """
-        return np.stack(
-            [
-                np.row_stack([solution[var].sensitivities[p] for var in self.target])
-                for p in solution.all_inputs[0].keys()
-            ],
-            axis=0,
-        )
+        return {
+            key: np.vstack([solution[var].sensitivities[key] for var in self.target])
+            for key in solution.all_inputs[0].keys()
+        }
 
     def set_fail_gradient(self, de: float = 1.0):
         """
@@ -95,14 +92,13 @@ class BaseCost:
         if not isinstance(de, float):
             de = float(de)
         self._de = de
-        self.grad_fail = self._de * np.ones(self.n_parameters)
 
-    def failure(self, calculate_sensitivities: bool = True):
+    def failure(self, parameter_names: list[str], calculate_sensitivities: bool = True):
         if calculate_sensitivities:
             return (
-                (np.inf, self.grad_fail)
+                (np.inf, {key: self._de for key in parameter_names})
                 if self.minimising
-                else (-np.inf, -self.grad_fail)
+                else (-np.inf, {key: -self._de for key in parameter_names})
             )
         else:
             return np.inf if self.minimising else -np.inf

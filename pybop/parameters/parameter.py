@@ -783,6 +783,10 @@ class Parameters:
             inputs_list.append(self.to_dict(values=val))
         return inputs_list
 
+    def convert_grad_to_array(self, grad: dict[str, np.ndarray]) -> np.ndarray:
+        """Get an array of sensitivities with the parameters in the expected order."""
+        return np.vstack([grad[key] for key in self.names]).T
+
     def copy(self) -> Parameters:
         """Create a deep copy of the Parameters object."""
         return deepcopy(self)

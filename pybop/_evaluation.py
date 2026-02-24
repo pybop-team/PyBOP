@@ -49,6 +49,7 @@ class BaseEvaluator(PintsEvaluator):
                 cost, grad = self.problem.evaluate_batch(
                     inputs_list, calculate_sensitivities=True
                 ).get_values()
+                grad = self.problem.parameters.convert_grad_to_array(grad)
 
                 # Apply the inverse parameter transformation to the gradient
                 for i, x in enumerate(x_search):
@@ -91,6 +92,7 @@ class BaseEvaluator(PintsEvaluator):
                 cost, grad = self.problem.evaluate_batch(
                     inputs_list, calculate_sensitivities=True
                 ).get_values()
+                grad = self.problem.parameters.convert_grad_to_array(grad)
 
                 # Apply the inverse parameter transformation to the gradient
                 for i, x in enumerate(x_search):

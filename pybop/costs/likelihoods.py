@@ -59,7 +59,9 @@ class GaussianLogLikelihoodKnownSigma(LogLikelihood):
         l = np.sum(self._offset + self._multip * np.sum(np.real(r * np.conj(r))))
 
         if dy is not None:
-            dl = -np.sum((np.sum((r * dy), axis=2) / self.sigma2), axis=1)
+            dl = {}
+            for key, value in dy.items():
+                dl[key] = -np.sum(np.sum((r * value), axis=1) / self.sigma2)
             return l, dl
 
         return l
@@ -91,20 +93,16 @@ class GaussianLogLikelihood(LogLikelihood):
     ----------
     _logpi : float
         Precomputed offset value for the log-likelihood function.
-    _dsigma_scale : float
-        Scale factor for derivative of standard deviation.
     """
 
     def __init__(
         self,
         dataset: Dataset,
         sigma: float | list[float] | list[Parameter] = 1e-2,
-        dsigma_scale: float = 1.0,
         target: str | list[str] = None,
     ):
         super().__init__(dataset=dataset, target=target)
         self.set_sigma(sigma)
-        self._dsigma_scale = dsigma_scale
         self._logpi = -0.5 * self.n_data * np.log(2 * np.pi)
 
     def set_sigma(self, sigma: float | list[float] | list[Parameter]):
@@ -144,19 +142,6 @@ class GaussianLogLikelihood(LogLikelihood):
         self.sigma.add(f"Sigma for output {index + 1}", sigma)
         self.parameters.add(f"Sigma for output {index + 1}", sigma)
 
-    @property
-    def dsigma_scale(self):
-        """
-        Scaling factor for the dsigma term in the gradient calculation.
-        """
-        return self._dsigma_scale
-
-    @dsigma_scale.setter
-    def dsigma_scale(self, new_value):
-        if new_value < 0:
-            raise ValueError("dsigma_scale must be non-negative")
-        self._dsigma_scale = new_value
-
     def __call__(
         self,
         r: np.ndarray,
@@ -167,23 +152,25 @@ class GaussianLogLikelihood(LogLikelihood):
         Compute the Gaussian log-likelihood for the given parameters.
         """
         inputs = inputs or self.parameters.to_dict("initial")
-        sigma_values = []
-        for name in self.sigma.keys():
-            sigma_values.append(inputs[name])
-        sigma = np.asarray(sigma_values)
+        sigma_values = np.zeros(len(self.sigma))
+        for i, name in enumerate(self.sigma.names):
+            sigma_values[i] = inputs[name]
 
         sum_r2 = np.sum(np.real(r * np.conj(r)), axis=1)
         l = np.sum(
-            self._logpi - self.n_data * np.log(sigma) - sum_r2 / (2.0 * sigma**2.0)
+            self._logpi
+            - self.n_data * np.log(sigma_values)
+            - sum_r2 / (2.0 * sigma_values**2.0)
         )
 
         if dy is not None:
-            dl = np.concatenate(
-                (
-                    -np.sum((np.sum((r * dy), axis=2) / (sigma**2.0)), axis=1),
-                    (-self.n_data / sigma + sum_r2 / (sigma**3.0)) / self._dsigma_scale,
-                )
-            )
+            dl = {}
+            for key, value in dy.items():
+                dl[key] = -np.sum(np.sum((r * value), axis=1) / (sigma_values**2.0))
+            for i, (key, value) in enumerate(
+                zip(self.sigma.names, sigma_values, strict=False)
+            ):
+                dl[key] = -self.n_data / value + sum_r2[i] / (value**3.0)
             return l, dl
 
         return l
@@ -243,16 +230,18 @@ class LogPosterior(LogLikelihood):
         # Compute log prior (and gradient)
         if dy is not None:
             log_prior, dp = self.joint_prior.logpdfS1(input_values)
+            dp = {key: dp[i] for i, key in enumerate(self.parameters.names)}
         else:
             log_prior = self.joint_prior.logpdf(input_values)
 
         if not np.isfinite(log_prior).any():
-            return self.failure(dy)
+            return self.failure(self.parameters.names, dy)
 
         # Compute log likelihood and add log prior (and gradients)
         if dy is not None:
             log_likelihood, dl = self.log_likelihood(r, dy, inputs=inputs)
 
-            return log_likelihood + log_prior, dl + dp
+            dp = {key: dp[key] + dl[key] for i, key in enumerate(self.parameters.names)}
+            return log_likelihood + log_prior, dp
 
         return self.log_likelihood(r, inputs=inputs) + log_prior

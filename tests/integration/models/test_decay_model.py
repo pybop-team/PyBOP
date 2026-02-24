@@ -98,14 +98,9 @@ class TestDecayModel:
         ).get_values()
 
         # Validate gradient shape and value consistency
-        assert grad1.shape == (
-            1,
-            len(problem.parameters),
-        ), f"Gradient shape mismatch: {grad1.shape}"
-        assert grad2.shape == (
-            1,
-            len(problem.parameters),
-        ), f"Gradient shape mismatch: {grad2.shape}"
+        for key in problem.parameters.keys():
+            assert len(grad1[key]) == len([initial_inputs])
+            assert len(grad2[key]) == len([example_inputs])
 
         np.testing.assert_allclose(
             value1_sens, value1, atol=ABSOLUTE_TOLERANCE, rtol=RELATIVE_TOLERANCE

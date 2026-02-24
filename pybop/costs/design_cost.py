@@ -49,6 +49,6 @@ class DesignCost(BaseCost):
         """
         # Return failure cost if the solution failed
         if isinstance(solution, FailedSolution):
-            return self.failure(calculate_sensitivities)
+            return self.failure(self.parameters.names, calculate_sensitivities)
 
         return solution[self.target[0]].data[-1]

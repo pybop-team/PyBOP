@@ -106,14 +106,8 @@ def contour(
     if gradient:
         grad_parameter_costs = []
 
-        # Determine the number of gradient outputs
-        num_gradients = problem.evaluate(
-            np.asarray([x[0], y[0]] + additional_values),
-            calculate_sensitivities=True,
-        ).sensitivities.shape[1]
-
-        # Create an array to hold each gradient output
-        grads = [np.zeros((len(y), len(x))) for _ in range(num_gradients)]
+        # Create an array to hold the gradient with respect to each parameter
+        grads = [np.zeros((len(y), len(x))) for _ in range(len(parameters))]
 
     # Populate cost matrix
     for i, xi in enumerate(x):
@@ -123,9 +117,9 @@ def contour(
                     np.asarray([xi, yj] + additional_values),
                     calculate_sensitivities=True,
                 ).get_values()
-                costs[j, i], (*current_grads,) = out[0][0], out[1][0]
-                for k, grad_output in enumerate(current_grads):
-                    grads[k][j, i] = grad_output
+                costs[j, i], sensitivities = out[0][0], out[1]
+                for k, key in enumerate(problem.parameters.names):
+                    grads[k][j, i] = sensitivities[key]
             else:
                 costs[j, i] = problem.evaluate(
                     np.asarray([xi, yj] + additional_values),

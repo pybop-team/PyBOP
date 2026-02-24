@@ -119,7 +119,7 @@ class TestLogPosterior:
         # Test log posterior evaluateS1
         p, dp = problem.evaluate(x, calculate_sensitivities=True).get_values()
         assert np.allclose(p, 51.6033, atol=2e-2)
-        assert np.allclose(dp, 0.4266, atol=2e-2)
+        assert np.allclose(dp[problem.parameters.names[0]], 0.4266, atol=2e-2)
 
     @pytest.fixture
     def posterior_uniform_prior(self, simulator, likelihood):

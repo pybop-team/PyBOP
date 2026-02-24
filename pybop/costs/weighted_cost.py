@@ -82,15 +82,17 @@ class WeightedCost(BaseCost):
             gradient with dimension (len(parameters)), otherwise returns only the cost.
         """
         e = np.empty_like(self.costs)
-        de = np.empty((len(self.parameters), len(self.costs)))
+        de = {key: np.zeros(len(self.costs)) for key in inputs.keys()}
 
         for i, cost in enumerate(self.costs):
             if calculate_sensitivities:
-                e[i], de[:, i] = cost.evaluate(
+                e[i], sensitivities = cost.evaluate(
                     solution,
                     inputs=inputs,
                     calculate_sensitivities=calculate_sensitivities,
                 )
+                for key, value in sensitivities.items():
+                    de[key][i] = value
             else:
                 e[i] = cost.evaluate(
                     solution,
@@ -100,7 +102,8 @@ class WeightedCost(BaseCost):
 
         e = np.dot(e, self.weights)
         if calculate_sensitivities:
-            de = np.dot(de, self.weights)
+            for key in de.keys():
+                de[key] = np.dot(de[key], self.weights)
             return e, de
 
         return e
