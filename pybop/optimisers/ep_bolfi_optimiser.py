@@ -12,7 +12,7 @@ import pybop
 from pybop._logging import Logger
 from pybop.optimisers.base_optimiser import BaseOptimiser, OptimisationResult
 from pybop.parameters.multivariate_distributions import MultivariateGaussian
-from pybop.parameters.multivariate_parameters import MultivariateParameters
+from pybop.parameters.parameter import Parameters
 
 
 def ep_bolfi_problem_processing(y, problem):
@@ -268,7 +268,9 @@ class EP_BOLFI(BaseOptimiser):
                 name: par.get_initial_value_transformed()
                 for name, par in self.problem.parameters.items()  # noqa: SLF001
             },
-            initial_covariance=self.problem.parameters.distribution.properties["cov"],  # noqa: SLF001
+            initial_covariance=self.problem.parameters.transformed_distribution_properties[
+                "cov"
+            ],  # the optimiser requires the covariance in the search space
             free_parameters_boundaries=transposed_boundaries,
             boundaries_in_deviations=self._options.boundaries_in_standard_deviations,
             Q=self._options.precision_matrix,
@@ -473,7 +475,7 @@ class BayesianOptimisationResult(OptimisationResult):
         message: str | None = None,
         lower_bounds: np.ndarray | None = None,
         upper_bounds: np.ndarray | None = None,
-        posterior: MultivariateParameters | None = None,
+        posterior: Parameters | None = None,
         maximum_a_posteriori: np.ndarray | None = None,
         log_evidence_mean: float | None = None,
         log_evidence_variance: float | None = None,

@@ -1,8 +1,16 @@
 import numpy as np
 import pytest
+from scipy import stats
 from scipy.linalg import sqrtm
 
 import pybop
+from pybop import (
+    ComposedTransformation,
+    IdentityTransformation,
+    LogTransformation,
+    ScaledTransformation,
+    UnitHyperCube,
+)
 
 
 class TestDistributions:
@@ -35,7 +43,7 @@ class TestDistributions:
     @pytest.fixture
     def MultivariateGaussian(self):
         return pybop.MultivariateGaussian(
-            np.asarray([0, 1]), np.asarray([[0.2, 0.0], [0.0, 2.0]])
+            mean=np.asarray([0, 1]), covariance=np.asarray([[0.2, 0.0], [0.0, 2.0]])
         )
 
     @pytest.fixture
@@ -43,8 +51,12 @@ class TestDistributions:
         return pybop.MultivariateUniform(np.asarray([[0, 0], [1, 2]]))
 
     @pytest.fixture
-    def MultivariateNonparametric(self, MultivariateGaussian):
-        return pybop.MultivariateNonparametric(MultivariateGaussian.rvs(100).T)
+    def random_dataset(self, MultivariateGaussian):
+        return MultivariateGaussian.rvs(100).T
+
+    @pytest.fixture
+    def MultivariateNonparametric(self, random_dataset):
+        return pybop.MultivariateNonparametric(random_dataset)
 
     def test_distribution_class(self):
         base = pybop.Distribution()
@@ -192,7 +204,11 @@ class TestDistributions:
             pybop.JointDistribution(Gaussian, Uniform, 0.5)
 
     def test_multivariate_distributions(
-        self, MultivariateGaussian, MultivariateUniform, MultivariateNonparametric
+        self,
+        MultivariateGaussian,
+        MultivariateUniform,
+        MultivariateNonparametric,
+        random_dataset,
     ):
         assert (
             MultivariateNonparametric.pdf(np.asarray([0, 1]))
@@ -216,3 +232,165 @@ class TestDistributions:
         np.testing.assert_allclose(
             MultivariateGaussian.sigma, sqrtm(np.asarray([[0.2, 0.0], [0.0, 2.0]]))
         )
+
+        # Test marginal distributions of multivariate distributions
+        assert isinstance(MultivariateNonparametric.marginal(0), stats.gaussian_kde)
+        marginal = pybop.MarginalDistribution(MultivariateNonparametric, 1)
+        assert pytest.approx(marginal.mean()) == np.mean(random_dataset[1, :])
+        assert pytest.approx(marginal.std()) == np.std(random_dataset[1, :], ddof=1)
+
+        marginal = pybop.MarginalDistribution(MultivariateGaussian, 0)
+        assert pytest.approx(marginal.mean()) == 0
+        assert pytest.approx(marginal.std()) == np.sqrt(0.2)
+
+    @pytest.mark.parametrize(
+        "bounds", [np.array([[1, 2], [4, 5]]), np.array([[0, -1], [2, 3]])]
+    )
+    def test_multivariate_uniform(self, bounds):
+        # Multivariate uniform distribution
+        dist = pybop.MultivariateUniform(bounds=bounds)
+
+        # check bounds set correctly
+        support = dist.distribution.support()
+        np.testing.assert_array_equal(support[0], bounds[0, :])
+        np.testing.assert_array_equal(support[1], bounds[1, :])
+
+        # Marginal distributions
+        bounds0 = dist.marginal(0).support()
+        bounds1 = dist.marginal(1).support()
+
+        assert pytest.approx(bounds0[0]) == bounds[0, 0]
+        assert pytest.approx(bounds0[1]) == bounds[1, 0]
+        assert pytest.approx(bounds1[0]) == bounds[0, 1]
+        assert pytest.approx(bounds1[1]) == bounds[1, 1]
+
+    @pytest.mark.parametrize("X", [np.array([1.5, 0.9]), np.array([1.5, -0.9])])
+    def test_multivariate_log_normal(self, X):
+        # Check independent case matches univariate (using scipy.stats.lognorm)
+        mean = np.array([np.log(0.5), np.log(0.2)])
+        cov = np.diag([np.log(2), np.log(5)])  # diagonal = independent
+
+        # Multivariate distribution
+        dist = pybop.MultivariateLogNormal(mean_log_x=mean, covariance_log_x=cov)
+
+        # Marginal distributions
+        dist_m_0 = dist.marginal(0)
+        dist_m_1 = dist.marginal(1)
+
+        # Using scipy.stats.lognorm
+        scale = np.exp(mean)
+        s = np.sqrt(np.diag(cov))
+
+        dist_s_0 = stats.lognorm(s=s[0], scale=scale[0])
+        dist_s_1 = stats.lognorm(s=s[1], scale=scale[1])
+
+        # pdf
+        pdf = dist.pdf(X)
+        pdf_m_0 = dist_m_0.pdf(X[0])
+        pdf_m_1 = dist_m_1.pdf(X[1])
+
+        assert pytest.approx(pdf_m_0) == dist_s_0.pdf(X[0])
+        assert pytest.approx(pdf_m_1) == dist_s_1.pdf(X[1])
+        assert pytest.approx(pdf) == pdf_m_0 * pdf_m_1
+
+        # logpdf
+        logpdf = dist.logpdf(X)
+        logpdf_m_0 = dist_m_0.logpdf(X[0])
+        logpdf_m_1 = dist_m_1.logpdf(X[1])
+
+        assert pytest.approx(logpdf_m_0) == dist_s_0.logpdf(X[0])
+        assert pytest.approx(logpdf_m_1) == dist_s_1.logpdf(X[1])
+        assert pytest.approx(logpdf) == logpdf_m_0 + logpdf_m_1
+
+        # cdf
+        cdf = dist.cdf(X)
+        cdf_m_0 = dist_m_0.cdf(X[0])
+        cdf_m_1 = dist_m_1.cdf(X[1])
+
+        assert pytest.approx(cdf_m_0) == dist_s_0.cdf(X[0])
+        assert pytest.approx(cdf_m_1) == dist_s_1.cdf(X[1])
+        assert pytest.approx(cdf) == cdf_m_0 * cdf_m_1
+
+    @pytest.mark.parametrize(
+        "transformation",
+        [
+            LogTransformation(),
+            IdentityTransformation(2),
+            ScaledTransformation([0.5, 0.1], [1, 2], 2),
+            UnitHyperCube(0.1, 1.1),
+        ],
+    )
+    def test_transformed_properties(
+        self, transformation, MultivariateNonparametric, MultivariateGaussian
+    ):
+        # mulitvariate log-normal distribution
+        mean = np.asarray([0, 1])
+        covariance = np.asarray([[0.2, 0.0], [0.0, 2.0]])
+        dist_lognorm = pybop.MultivariateLogNormal(
+            mean_log_x=mean, covariance_log_x=covariance
+        )
+
+        if not isinstance(transformation, dist_lognorm.compatible_transformations):
+            with pytest.raises(
+                TypeError,
+                match="The transformation provided is not compatible with pybop.MultivariateLogNormal. "
+                "Only pybop.LogTransformation and pybop.IdentityTransformation are allowed.",
+            ):
+                dist_lognorm.transformed_properties(transformation)
+        elif isinstance(transformation, IdentityTransformation):
+            properties = dist_lognorm.transformed_properties(transformation)
+            dist_m_0 = dist_lognorm.marginal(0)
+            dist_m_1 = dist_lognorm.marginal(1)
+            assert pytest.approx(properties["mean"][0]) == dist_m_0.mean()
+            assert pytest.approx(properties["mean"][1]) == dist_m_1.mean()
+            assert pytest.approx(np.sqrt(properties["cov"][0, 0])) == dist_m_0.std()
+            assert pytest.approx(np.sqrt(properties["cov"][1, 1])) == dist_m_1.std()
+
+            properties = dist_lognorm.transformed_properties(
+                ComposedTransformation([transformation, transformation])
+            )
+            assert pytest.approx(properties["mean"][0]) == dist_m_0.mean()
+            assert pytest.approx(properties["mean"][1]) == dist_m_1.mean()
+            assert pytest.approx(np.sqrt(properties["cov"][0, 0])) == dist_m_0.std()
+            assert pytest.approx(np.sqrt(properties["cov"][1, 1])) == dist_m_1.std()
+
+            with pytest.raises(
+                TypeError,
+                match="The transformation provided is not compatible with pybop.MultivariateLogNormal. "
+                "Only pybop.LogTransformation and pybop.IdentityTransformation are allowed.",
+            ):
+                dist_lognorm.transformed_properties(
+                    ComposedTransformation([transformation, LogTransformation()])
+                )
+        elif isinstance(transformation, LogTransformation):
+            properties = dist_lognorm.transformed_properties(transformation)
+            np.testing.assert_allclose(properties["cov"], covariance, atol=1e-7)
+            properties = dist_lognorm.transformed_properties(
+                ComposedTransformation([transformation, transformation])
+            )
+            np.testing.assert_allclose(properties["mean"], mean, atol=1e-7)
+            with pytest.raises(
+                TypeError,
+                match="The transformation provided is not compatible with pybop.MultivariateLogNormal. "
+                "Only pybop.LogTransformation and pybop.IdentityTransformation are allowed.",
+            ):
+                dist_lognorm.transformed_properties(
+                    ComposedTransformation([transformation, IdentityTransformation()])
+                )
+
+        # multivariate non-parametric distribution
+        assert isinstance(
+            transformation, MultivariateNonparametric.compatible_transformations
+        )
+        assert MultivariateNonparametric.transformed_properties(transformation) == {}
+
+        # multivariate guassian
+        if not isinstance(
+            transformation, MultivariateGaussian.compatible_transformations
+        ):
+            with pytest.raises(
+                TypeError,
+                match="The transformation provided is not compatible with pybop.MultivariateGaussian. "
+                "Only pybop.IdentityTransformation, pybop.ScaledTransformation and pybop.UnitHypercube are allowed.",
+            ):
+                MultivariateGaussian.transformed_properties(transformation)

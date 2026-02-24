@@ -3,6 +3,7 @@
 ## Features
 
 - [#873](https://github.com/pybop-team/PyBOP/pull/873) - Adds methods for saving result and reconstructing result from saved data. `result.save`: saves entire python object using pickle. `result.save_data`: saves primarily the logger data and any other data required to reconstruct the result from the problem or the sampler (for `SamplingResult`). `Result.load_result`: reconstructs the `Result` object based on the underlying problem (or sampler for `SamplingResult`) and the data saved to file.
+- [#862](https://github.com/pybop-team/PyBOP/pull/862) - Adds pybop.MarginalDistribution, pybop.MultivariateLogNormal.
 - [#889](https://github.com/pybop-team/PyBOP/pull/889) - Adds methods for setting the initial state from a voltage to the grouped models.
 - [#869](https://github.com/pybop-team/PyBOP/issues/869) - Adds methods for pre-processing current data for linear interpolation.
 - [#868](https://github.com/pybop-team/PyBOP/pull/868) - Adds support for Python3.13 (NumPy restricted to <2.4, EP-BOLFI optimiser and PyProBE do not support Python 3.13).
@@ -17,6 +18,7 @@
 
 ## Breaking Changes
 
+- [#862](https://github.com/pybop-team/PyBOP/pull/862) - Removes MultivariateParameters class. Instead allows multivariate parameters to be passed via pybamm.ParameterValues (as a pybop.Parameter with a pybop.MarginalDistribution). The pybop.Parameters class now handles multivariate parameters. Multivariate distributions are now defined in the model space instead of the search space.
 - [#878](https://github.com/pybop-team/PyBOP/pull/878) - Use "Current [A]" instead of "Current function [A]" in datasets and allow list of control functions.
 - [#864](https://github.com/pybop-team/PyBOP/pull/864) - Remove `check_already_exists` from `ParameterValues` following PyBaMM PR 5339.
 - [#860](https://github.com/pybop-team/PyBOP/pull/860) - Create a parent class for optimisation and sampling results, move `PosteriorSummary` attributes to the `SamplingResult` and deprecate the `pints.AdaptiveCovarianceMCMC` sampler.

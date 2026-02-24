@@ -285,6 +285,10 @@ class ComposedTransformation(Transformation):
         self._n_parameters += transformation.n_parameters
         self._is_elementwise = self._is_elementwise and transformation.is_elementwise()
 
+    @property
+    def transformations(self):
+        return self._transformations
+
     def append(self, transformation: Transformation):
         """
         Append a new transformation to the existing composition.

@@ -146,7 +146,7 @@ class TestParameters:
         with pytest.raises(ParameterNotFoundError, match="not found"):
             params["not a parameter"] = pybop.Parameter(initial_value=0.8)
         with pytest.raises(
-            TypeError, match="Paremeter must be of type pybop.ParemterInfo"
+            TypeError, match="Paremeter must be of type pybop.Parameter"
         ):
             params[name] = pybop.Gaussian(0.5, 0.02)
 
@@ -224,6 +224,12 @@ class TestParameters:
         assert (samples >= -0.125).all() and (samples <= -0.06).all()
         parameter._transformation = None
 
+        param = pybop.Parameter(initial_value=0.5)
+        params = pybop.Parameters({name: param})
+
+        samples = params.sample_from_distribution(n_samples=500, transformed=True)
+        assert samples is None
+
     def test_get_sigma(self, name):
         parameter = pybop.Parameter(stats.norm(loc=0.6, scale=0.02))
         params = pybop.Parameters({name: parameter})
@@ -274,7 +280,7 @@ class TestParameters:
         )
 
 
-class TestMultivariateParameters:
+class TestMultivariateParameter:
     """
     A class to test the multivariate parameters class.
     """
@@ -282,8 +288,71 @@ class TestMultivariateParameters:
     pytestmark = pytest.mark.unit
 
     @pytest.fixture
-    def multivariate_parameters(self):
-        return pybop.MultivariateParameters(
+    def distribution(self):
+        return pybop.MultivariateLogNormal(
+            mean_log_x=[np.log(3.9e-14), np.log(1e-15)],
+            covariance_log_x=[[np.log(10), 0.0], [0.0, np.log(10)]],
+        )
+
+    @pytest.fixture
+    def multivariate_parameters(self, distribution):
+        return pybop.Parameters(
+            {
+                "Negative particle diffusivity [m2.s-1]": pybop.Parameter(
+                    distribution=pybop.MarginalDistribution(distribution, 0),
+                    initial_value=3.9e-14,
+                    transformation=pybop.LogTransformation(),
+                ),
+                "Positive particle diffusivity [m2.s-1]": pybop.Parameter(
+                    distribution=pybop.MarginalDistribution(distribution, 1),
+                    initial_value=1e-15,
+                    transformation=pybop.LogTransformation(),
+                ),
+            },
+        )
+
+    def test_compatible_transformation(self, distribution):
+        with pytest.raises(
+            TypeError,
+            match="The transformation provided is not compatible with pybop.MultivariateLogNormal. Only LogTransformation, IdentityTransformation are allowed.",
+        ):
+            pybop.Parameter(
+                distribution=pybop.MarginalDistribution(distribution, 1),
+                initial_value=1e-15,
+                transformation=pybop.ScaledTransformation(0.5, 1.0),
+            )
+
+    def test_rvs(self, multivariate_parameters):
+        samples = multivariate_parameters.sample_from_distribution(1, transformed=False)
+        assert samples.shape == (1, 2)
+        assert samples.T[1].min() >= 1e-16
+        assert samples.T[1].max() <= 1e-14
+        assert (
+            multivariate_parameters.distribution.pdf(np.asarray([3.9e-14, 1e-15])) > 0
+        )
+        assert multivariate_parameters.distribution is not None
+
+    def test_input_checks_multivariate_parameters(self, distribution):
+        with pytest.raises(
+            TypeError,
+            match="A Parameters object with a MarginalDistribution cannot be combined with parameters with other types of distributions",
+        ):
+            pybop.Parameters(
+                {
+                    "Negative particle diffusivity [m2.s-1]": pybop.Parameter(
+                        distribution=pybop.MarginalDistribution(distribution, 0),
+                        initial_value=3.9e-14,
+                        transformation=pybop.LogTransformation(),
+                    ),
+                    "Positive particle diffusivity [m2.s-1]": pybop.Parameter(
+                        initial_value=1e-15,
+                        bounds=[1e-16, 1e-14],
+                        transformation=pybop.LogTransformation(),
+                    ),
+                },
+            )
+
+        params = pybop.Parameters(
             {
                 "Negative particle diffusivity [m2.s-1]": pybop.Parameter(
                     initial_value=3.9e-14,
@@ -296,18 +365,34 @@ class TestMultivariateParameters:
                     transformation=pybop.LogTransformation(),
                 ),
             },
-            distribution=pybop.MultivariateGaussian(
-                [np.log(3.9e-14), np.log(1e-15)],
-                [[np.log(10), 0.0], [0.0, np.log(10)]],
-            ),
         )
 
-    def test_rvs(self, multivariate_parameters):
-        samples = multivariate_parameters.sample_from_distribution(
-            1, apply_transform=True
-        )
-        assert samples.shape == (1, 2)
-        assert samples.T[1].min() >= 1e-16
-        assert samples.T[1].max() <= 1e-14
-        assert multivariate_parameters.pdf(np.asarray([3.9e-14, 1e-15])) > 0
-        assert multivariate_parameters.distribution is not None
+        with pytest.raises(
+            TypeError,
+            match="A Parameters object with a MarginalDistribution cannot be combined with parameters with other types of distributions",
+        ):
+            params["Negative particle diffusivity [m2.s-1]"] = pybop.Parameter(
+                distribution=pybop.MarginalDistribution(distribution, 0),
+                initial_value=3.9e-14,
+                transformation=pybop.LogTransformation(),
+            )
+
+        distribution2 = pybop.MultivariateUniform(np.asarray([[0, 0], [1, 2]]))
+        with pytest.raises(
+            ValueError,
+            match="All MarginalDistributions must share the same parent MultivariateDistribution.",
+        ):
+            pybop.Parameters(
+                {
+                    "Negative particle diffusivity [m2.s-1]": pybop.Parameter(
+                        distribution=pybop.MarginalDistribution(distribution, 0),
+                        initial_value=3.9e-14,
+                        transformation=pybop.LogTransformation(),
+                    ),
+                    "Positive particle diffusivity [m2.s-1]": pybop.Parameter(
+                        distribution=pybop.MarginalDistribution(distribution2, 1),
+                        initial_value=1e-15,
+                        transformation=pybop.IdentityTransformation(),
+                    ),
+                },
+            )
