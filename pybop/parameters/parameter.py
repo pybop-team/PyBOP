@@ -166,6 +166,20 @@ class Parameter:
                     + " are allowed."
                 )
 
+    def _check_compatible_transformation(self):
+        if isinstance(self._distribution, MarginalDistribution):
+            allowed_transformations = (
+                self._distribution.parent_distribution.compatible_transformations
+            )
+
+            if not isinstance(self._transformation, allowed_transformations):
+                raise TypeError(
+                    f"The transformation provided is not compatible with pybop.{self._distribution.parent_distribution.name}. "
+                    "Only "
+                    + ", ".join([trans.__name__ for trans in allowed_transformations])
+                    + " are allowed."
+                )
+
     def sample_from_distribution(
         self,
         n_samples: int = 1,
@@ -578,6 +592,20 @@ class Parameters:
             The random state seed for reproducibility (default: None).
         transformed: bool, optional
             If True, the transformation is applied to the output (default: False).
+
+        or
+
+        Draw random samples from the joint parameters distribution for multivariate parameters.
+
+        Parameters
+        ----------
+        n_samples : int
+            The number of samples to draw (default: 1).
+        random_state : int, optional
+            The random state seed for reproducibility (default: None).
+        transformed: bool
+            If True, the transformation is applied to the output
+            (default: False).
 
         Returns
         -------

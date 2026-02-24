@@ -446,6 +446,11 @@ class Simulator(BaseSimulator):
         return self._output_variables
 
     def set_output_variables(self, value: list[str] | None):
+        if value is not None:
+            for var in value:
+                if var not in self._model.variable_names():
+                    raise ValueError(f"{var} is not a variable in the model.")
+
         self._output_variables = value
         if self.experiment is None:
             self._set_up_solution_method(output_variables=value)
