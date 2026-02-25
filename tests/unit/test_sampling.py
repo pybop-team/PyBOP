@@ -297,6 +297,16 @@ class TestPintsSamplers:
         with pytest.raises(NotImplementedError):
             sampler.run()
 
+        # test default covariance
+        sampler._cov0 = None
+        sampler._validate_covariance_matrix()
+        np.testing.assert_allclose(sampler.cov0, 0.05 * np.eye(2))
+
+        # throws error for negative entry in covariance
+        with pytest.raises(ValueError, match="Covariance values must be nonnegative."):
+            sampler._cov0 = np.asarray([[-1.0, 0], [0, 1.0]])
+            sampler._validate_covariance_matrix()
+
     def test_base_chain_processor(self, posterior_problem):
         options = pybop.PintsSamplerOptions(n_chains=1)
         sampler = pybop.MALAMCMC(log_pdf=posterior_problem, options=options)
