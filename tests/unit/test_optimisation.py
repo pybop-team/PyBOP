@@ -1,5 +1,4 @@
 import io
-import pickle
 import re
 import sys
 
@@ -795,25 +794,21 @@ class TestOptimisation:
         # Test save result
         result.save_data(filename, to_format=to_format)
 
-        result_load = OptimisationResult.load_result(
-            problem, filename, file_format=to_format
-        )
+        result_load = OptimisationResult.load_data(filename, file_format=to_format)
         self.compare_result_data(result, result_load)
 
         # Test save combined result
         result_combined = OptimisationResult.combine([result, result])
         result_combined.save_data(filename, to_format=to_format)
 
-        result_load = OptimisationResult.load_result(
-            problem, filename, file_format=to_format
-        )
+        result_load = OptimisationResult.load_data(filename, file_format=to_format)
         self.compare_result_data(result_combined, result_load)
 
     def test_save_result(self, result, tmp_path):
         test_stub = tmp_path / "test"
 
         # test save whole result
-        result.save(f"{test_stub}.pickle")
-        with open(f"{test_stub}.pickle", "rb") as f:
-            result_load = pickle.load(f)
+        filename = f"{test_stub}.pickle"
+        result.save(filename)
+        result_load = OptimisationResult.load(filename)
         self.compare_result_data(result, result_load)
