@@ -241,7 +241,7 @@ class MultivariateGaussian(BaseMultivariateDistribution):
         ):
             mean = transformation.to_search(self.properties["mean"])
             covariance = transformation.convert_covariance_matrix(
-                self.properties["cov"], np.zeros(self._n_parameters)
+                self.properties["cov"], mean
             )
 
             return {"mean": mean, "cov": covariance}
