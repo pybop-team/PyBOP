@@ -1,3 +1,5 @@
+import re
+
 import numpy as np
 import pytest
 from scipy import stats
@@ -74,12 +76,25 @@ class TestParameter:
         ):
             pybop.Parameter(bounds=[0.7, 0.3])
 
+        # Intiial value outside bounds
+        with pytest.raises(
+            ParameterValidationError,
+            match=re.escape("Initial value 0.2 is outside bounds (0.3, 0.7)"),
+        ):
+            pybop.Parameter(bounds=[0.3, 0.7], initial_value=0.2)
+
     def test_sample_initial_values(self):
         parameter = pybop.Parameter(
             distribution=pybop.Gaussian(0.6, 0.02, truncated_at=[0.375, 0.7])
         )
         sample = parameter.get_initial_value()
         assert (sample >= 0.375) and (sample <= 0.7)
+
+    def test_get_mean(self):
+        # Test mean based on bounds with no distribution
+        param = pybop.Parameter(bounds=[0.3, 0.7])
+        param._distribution = None
+        assert pytest.approx(param.get_mean()) == 0.5
 
 
 class TestParameters:
@@ -262,13 +277,19 @@ class TestMultivariateParameter:
     pytestmark = pytest.mark.unit
 
     @pytest.fixture
-    def distribution(self):
+    def distribution1(self):
+        return pybop.MultivariateLogNormal(
+            mean_log_x=[np.log(0.2), np.log(0.5)],
+            covariance_log_x=[[np.log(10), 0.0], [0.0, np.log(10)]],
+        )
+
+    @pytest.fixture
+    def distribution2(self):
         return pybop.MultivariateLogNormal(
             mean_log_x=[np.log(3.9e-14), np.log(1e-15)],
             covariance_log_x=[[np.log(10), 0.0], [0.0, np.log(10)]],
         )
 
-    @pytest.fixture
     def multivariate_parameters(self, distribution):
         return pybop.Parameters(
             {
@@ -285,18 +306,19 @@ class TestMultivariateParameter:
             },
         )
 
-    def test_compatible_transformation(self, distribution):
+    def test_compatible_transformation(self, distribution1):
         with pytest.raises(
             TypeError,
             match="The transformation provided is not compatible with pybop.MultivariateLogNormal. Only LogTransformation, IdentityTransformation are allowed.",
         ):
             pybop.Parameter(
-                distribution=pybop.MarginalDistribution(distribution, 1),
+                distribution=pybop.MarginalDistribution(distribution1, 1),
                 initial_value=1e-15,
                 transformation=pybop.ScaledTransformation(0.5, 1.0),
             )
 
-    def test_rvs(self, multivariate_parameters):
+    def test_rvs(self, distribution2):
+        multivariate_parameters = self.multivariate_parameters(distribution2)
         samples = multivariate_parameters.sample_from_distribution(1, transformed=False)
         assert samples.shape == (1, 2)
         assert samples.T[1].min() >= 1e-16
@@ -306,7 +328,26 @@ class TestMultivariateParameter:
         )
         assert multivariate_parameters.distribution is not None
 
-    def test_input_checks_multivariate_parameters(self, distribution):
+    def test_get_mean(self, distribution1):
+        multivariate_parameters = self.multivariate_parameters(distribution1)
+        mean = multivariate_parameters.get_mean(transformed=True)
+        assert pytest.approx(mean) == [np.log(0.2), np.log(0.5)]
+
+        mean = multivariate_parameters.get_mean()
+        assert pytest.approx(mean) == [0.2 * np.sqrt(10), 0.5 * np.sqrt(10)]
+
+    def test_get_covariance(self, distribution1):
+        multivariate_parameters = self.multivariate_parameters(distribution1)
+        cov = multivariate_parameters.get_covariance(transformed=True)
+        assert pytest.approx(cov) == [[np.log(10), 0.0], [0.0, np.log(10)]]
+
+        cov = multivariate_parameters.get_covariance()
+        assert pytest.approx(cov) == [
+            [9 * 10 * (0.2**2), 0.0],
+            [0.0, 9 * 10 * (0.5**2)],
+        ]
+
+    def test_input_checks_multivariate_parameters(self, distribution1):
         with pytest.raises(
             TypeError,
             match="A Parameters object with a MarginalDistribution cannot be combined with parameters with other types of distributions",
@@ -314,7 +355,7 @@ class TestMultivariateParameter:
             pybop.Parameters(
                 {
                     "Negative particle diffusivity [m2.s-1]": pybop.Parameter(
-                        distribution=pybop.MarginalDistribution(distribution, 0),
+                        distribution=pybop.MarginalDistribution(distribution1, 0),
                         initial_value=3.9e-14,
                         transformation=pybop.LogTransformation(),
                     ),
@@ -346,7 +387,7 @@ class TestMultivariateParameter:
             match="A Parameters object with a MarginalDistribution cannot be combined with parameters with other types of distributions",
         ):
             params["Negative particle diffusivity [m2.s-1]"] = pybop.Parameter(
-                distribution=pybop.MarginalDistribution(distribution, 0),
+                distribution=pybop.MarginalDistribution(distribution1, 0),
                 initial_value=3.9e-14,
                 transformation=pybop.LogTransformation(),
             )
@@ -359,7 +400,7 @@ class TestMultivariateParameter:
             pybop.Parameters(
                 {
                     "Negative particle diffusivity [m2.s-1]": pybop.Parameter(
-                        distribution=pybop.MarginalDistribution(distribution, 0),
+                        distribution=pybop.MarginalDistribution(distribution1, 0),
                         initial_value=3.9e-14,
                         transformation=pybop.LogTransformation(),
                     ),
