@@ -118,3 +118,44 @@ class BaseCost:
     @property
     def target_data(self):
         return self._target_data
+
+
+class LogPrior(BaseCost):
+    """
+    The log-prior as a cost, to be used with the LogPosterior class.
+    """
+
+    def __init__(self, parameters):
+        super().__init__()
+        self.parameters = parameters
+        self.minimising = False
+
+    def evaluate(
+        self,
+        solution: Solution,
+        inputs: Inputs | None = None,
+        calculate_sensitivities: bool = False,
+    ) -> float | tuple[float, np.ndarray]:
+        """
+        Computes the log-prior for the given inputs, and optionally the sensitivities.
+        """
+        # Get the values of all input parameters
+        inputs = inputs or self.parameters.to_dict("initial")
+        input_values = np.asarray(list(inputs.values()))
+
+        # Compute log prior (and gradient)
+        if calculate_sensitivities:
+            l, dl = self.parameters.distribution.logpdfS1(input_values)
+            dl = {key: dl[i] for i, key in enumerate(self.parameters.names)}
+        else:
+            l = self.parameters.distribution.logpdf(input_values)
+
+        if not np.isfinite(l).any():
+            return self.failure(
+                inputs=inputs, calculate_sensitivities=calculate_sensitivities
+            )
+
+        if calculate_sensitivities:
+            return l, dl
+
+        return l

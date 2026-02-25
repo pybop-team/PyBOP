@@ -3,7 +3,6 @@ import numpy as np
 from pybop.analysis.sensitivity_analysis import sensitivity_analysis
 from pybop.costs.base_cost import BaseCost
 from pybop.costs.evaluation import Evaluation
-from pybop.costs.likelihoods import LogPosterior
 from pybop.parameters.parameter import Inputs, Parameters
 from pybop.simulators.base_simulator import BaseSimulator, Solution
 from pybop.simulators.failed_solution import FailedSolution
@@ -51,11 +50,6 @@ class Problem:
         self.parameters.join(self._cost.parameters)
         self._cost.parameters = self.parameters
         self._cost.set_fail_gradient()
-
-        # Objective-specific configuration
-        if isinstance(self._cost, LogPosterior):
-            self._cost.log_likelihood.parameters = self.parameters
-            self._cost.set_joint_prior()
 
     def get_model_inputs(self, inputs: Inputs):
         return {key: inputs[key] for key in self._simulator.parameters.keys()}

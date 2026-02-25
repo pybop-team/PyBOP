@@ -13,7 +13,7 @@ from pybop import (
     SingleChainProcessor,
 )
 from pybop._logging import Logger
-from pybop.problems.problem import Problem
+from pybop.problems.log_pdf import LogPDF
 from pybop.samplers.base_sampler import SamplerOptions, SamplingResult
 
 
@@ -84,7 +84,7 @@ class BasePintsSampler(BaseSampler):
 
     Parameters
     ----------
-    log_pdf: pybop.Problem
+    log_pdf: pybop.LogPDF
         The negative unnormalised posterior distribution.
     sampler: pints.MCMCSampler
         The PINTS sampler to be used for sampling.
@@ -94,7 +94,7 @@ class BasePintsSampler(BaseSampler):
 
     def __init__(
         self,
-        log_pdf: Problem,
+        log_pdf: LogPDF,
         sampler: type[pints.SingleChainMCMC | pints.MultiChainMCMC],
         options: PintsSamplerOptions | None = None,
     ):

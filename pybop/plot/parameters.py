@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from pybop.costs.likelihoods import GaussianLogLikelihood
+from pybop.costs.log_likelihoods import GaussianLogLikelihood
 from pybop.plot.standard_plots import StandardSubplot
 
 if TYPE_CHECKING:

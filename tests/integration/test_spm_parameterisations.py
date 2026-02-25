@@ -76,7 +76,6 @@ class Test_SPM_Parameterisation:
             pybop.SumSquaredError,
             pybop.SumOfPower,
             pybop.Minkowski,
-            pybop.LogPosterior,
         ]
     )
     def cost_class(self, request):
@@ -105,10 +104,7 @@ class Test_SPM_Parameterisation:
         dataset = self.get_data(model, parameter_values)
 
         # Define the problem
-        if cost_class is pybop.LogPosterior:
-            parameter_values.update(priors)
-        else:
-            parameter_values.update(parameters)
+        parameter_values.update(parameters)
         simulator = pybop.pybamm.Simulator(
             model, parameter_values=parameter_values, protocol=dataset
         )
@@ -118,12 +114,6 @@ class Test_SPM_Parameterisation:
             cost = cost_class(dataset, sigma=self.sigma)
         elif cost_class is pybop.GaussianLogLikelihood:
             cost = cost_class(dataset, sigma=self.sigma * 4)  # Initial sigma guess
-        elif cost_class is pybop.LogPosterior:
-            cost = cost_class(
-                log_likelihood=pybop.GaussianLogLikelihoodKnownSigma(
-                    dataset, sigma=self.sigma
-                )
-            )
         elif cost_class in [pybop.SumOfPower, pybop.Minkowski]:
             cost = cost_class(dataset, p=2.5)
         else:
@@ -232,12 +222,6 @@ class Test_SPM_Parameterisation:
             cost = cost_class(
                 dataset, target=target, sigma=self.sigma * 4
             )  # Initial sigma guess
-        elif cost_class is pybop.LogPosterior:
-            cost = cost_class(
-                log_likelihood=pybop.GaussianLogLikelihoodKnownSigma(
-                    dataset, target=target, sigma=self.sigma
-                )
-            )
         elif cost_class in [pybop.SumOfPower, pybop.Minkowski]:
             cost = cost_class(dataset, target=target, p=2.5)
         else:

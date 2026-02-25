@@ -70,7 +70,7 @@ class Test_Sampling_SPM:
         return data + np.random.normal(0, sigma, len(data))
 
     @pytest.fixture
-    def log_posterior(self, model_and_parameter_values, parameters, init_soc):
+    def log_pdf(self, model_and_parameter_values, parameters, init_soc):
         model, parameter_values = model_and_parameter_values
         parameter_values.set_initial_state(init_soc)
         dataset = self.get_data(model, parameter_values)
@@ -81,16 +81,15 @@ class Test_Sampling_SPM:
             model, parameter_values=parameter_values, protocol=dataset
         )
         likelihood = pybop.GaussianLogLikelihood(dataset, sigma=0.002 * 1.2)
-        posterior = pybop.LogPosterior(likelihood)
-        return pybop.Problem(simulator, posterior)
+        return pybop.LogPosterior(simulator, likelihood)
 
     @pytest.fixture
-    def map_estimate(self, log_posterior):
+    def map_estimate(self, log_pdf):
         options = pybop.PintsOptions(
             max_iterations=100,
             max_unchanged_iterations=35,
         )
-        optim = pybop.CMAES(log_posterior, options=options)
+        optim = pybop.CMAES(log_pdf, options=options)
         result = optim.run()
 
         return result.x
@@ -106,13 +105,13 @@ class Test_Sampling_SPM:
             PopulationMCMC,
         ],
     )
-    def test_sampling_spm(self, quick_sampler, log_posterior, map_estimate):
+    def test_sampling_spm(self, quick_sampler, log_pdf, map_estimate):
         x0 = np.clip(
             map_estimate + np.random.normal(0, [5e-3, 5e-3, 1e-4], size=3),
             [0.4, 0.4, 1e-5],
             [0.75, 0.75, 5e-2],
         )
-        log_posterior.parameters.update(initial_values=x0)
+        log_pdf.parameters.update(initial_values=x0)
         options = pybop.PintsSamplerOptions(
             n_chains=3,
             warm_up_iterations=150,
@@ -120,7 +119,7 @@ class Test_Sampling_SPM:
         )
 
         # construct and run
-        sampler = quick_sampler(log_pdf=log_posterior, options=options)
+        sampler = quick_sampler(log_pdf=log_pdf, options=options)
         result = sampler.run()
 
         # Assert both final sample and posterior mean

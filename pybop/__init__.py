@@ -69,6 +69,7 @@ from . import pybamm
 #
 from .problems.problem import Problem
 from .problems.meta_problem import MetaProblem
+from .problems.log_pdf import LogPDF, LogPosterior
 
 #
 # Simulator classes
@@ -89,12 +90,12 @@ from .costs.error_measures import (
     Minkowski,
     SumOfPower,
 )
-from .costs.likelihoods import (
+from .costs.log_likelihoods import (
     LogLikelihood,
     GaussianLogLikelihood,
     GaussianLogLikelihoodKnownSigma,
-    LogPosterior,
 )
+from .costs.base_cost import LogPrior
 from .costs.weighted_cost import WeightedCost
 from .costs.design_cost import DesignCost
 from .costs.feature_distances import SquareRootFeatureDistance, ExponentialFeatureDistance
