@@ -411,3 +411,26 @@ class TestMultivariateParameter:
                     ),
                 },
             )
+
+    def test_parameter_order(self, distribution1):
+        # pass parameters in reverse order
+        params = pybop.Parameters(
+            {
+                "Negative particle diffusivity [m2.s-1]": pybop.Parameter(
+                    distribution=pybop.MarginalDistribution(distribution1, 1),
+                    initial_value=3.9e-14,
+                    transformation=pybop.LogTransformation(),
+                ),
+                "Positive particle diffusivity [m2.s-1]": pybop.Parameter(
+                    distribution=pybop.MarginalDistribution(distribution1, 0),
+                    initial_value=1e-15,
+                    transformation=pybop.IdentityTransformation(),
+                ),
+            },
+        )
+
+        # check parameters are in correct order
+        assert params.names == [
+            "Positive particle diffusivity [m2.s-1]",
+            "Negative particle diffusivity [m2.s-1]",
+        ]
