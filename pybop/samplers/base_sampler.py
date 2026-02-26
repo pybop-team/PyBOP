@@ -167,7 +167,7 @@ class SamplingResult(Result):
         )
         self.chains = chains
         self.all_samples = np.concatenate(chains, axis=0)
-        self.num_parameters = self.chains.shape[2]
+        self.n_parameters = self.chains.shape[2]
         self.go = PlotlyManager().go
 
     def signif(self, x, p: int):
@@ -226,7 +226,7 @@ class SamplingResult(Result):
         Plot trace plots for the posterior samples.
         """
 
-        for i in range(self.num_parameters):
+        for i in range(self.n_parameters):
             fig = self.go.Figure()
 
             for j, chain in enumerate(self.chains):
@@ -379,7 +379,7 @@ class SamplingResult(Result):
         def compute_ess(samples):
             """Helper function to compute the ESS for a single set of samples."""
             ess = []
-            for j in range(self.num_parameters):
+            for j in range(self.n_parameters):
                 rho = self.autocorrelation(samples[:, j])
                 T = self._autocorrelate_negative(rho)
                 ess.append(len(samples[:, j]) / (1 + 2 * rho[:T].sum()))
