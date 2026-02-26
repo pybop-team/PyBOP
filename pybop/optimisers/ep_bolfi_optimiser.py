@@ -196,10 +196,7 @@ class EP_BOLFI(BaseOptimiser):
         options: EPBOLFIOptions | None = None,
     ):
         if type(problem) is not pybop.MetaProblem:
-            # Store the parameters and replace the forced univariate Parameters with them
-            parameters = problem.parameters
             problem = pybop.MetaProblem(problem)
-            problem.parameters = parameters
         super().__init__(problem, options)
         # citations.register("""@article{
         #     Minka2013,
