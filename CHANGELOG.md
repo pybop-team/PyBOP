@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#897](https://github.com/pybop-team/PyBOP/pull/897) - Adds separate `LogPrior`, `LogPDF` and `LogPosterior` classes and updates `set_target`.
 - [#862](https://github.com/pybop-team/PyBOP/pull/862) - Adds pybop.MarginalDistribution, pybop.MultivariateLogNormal.
 - [#889](https://github.com/pybop-team/PyBOP/pull/889) - Adds methods for setting the initial state from a voltage to the grouped models.
 - [#869](https://github.com/pybop-team/PyBOP/issues/869) - Adds methods for pre-processing current data for linear interpolation.
