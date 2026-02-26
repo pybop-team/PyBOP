@@ -57,11 +57,7 @@ parameter_values.update(
             distribution=pybop.Gaussian(0.68, 0.05, truncated_at=[0.5, 0.8])
         ),
         "Positive electrode active material volume fraction": pybop.Parameter(
-            distribution=pybop.Gaussian(
-                0.58,
-                0.05,
-                truncated_at=[0.4, 0.7],
-            )
+            distribution=pybop.Gaussian(0.58, 0.05, truncated_at=[0.4, 0.7])
         ),
     }
 )

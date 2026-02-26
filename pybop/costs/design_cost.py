@@ -20,9 +20,7 @@ class DesignCost(BaseCost):
     def __init__(self, target: str):
         super().__init__()
         self.minimising = False
-        target = [target] if isinstance(target, str) else target
-        self.target = target or ["Voltage [V]"]
-        self.domain = "Time [s]"
+        self.set_target(target)
 
     def evaluate(
         self,

@@ -2,6 +2,7 @@ import numpy as np
 
 from pybop._utils import add_spaces
 from pybop.parameters.parameter import Inputs, Parameters
+from pybop.processing.dataset import Dataset
 from pybop.simulators.solution import Solution
 
 
@@ -23,12 +24,35 @@ class BaseCost:
         self._de = 1.0
         self.parameters = Parameters()
         self.minimising = True
-
-        # Default settings, to be overwritten
-        self.domain = "Time [s]"
-        self.target = ["Voltage [V]"]
+        # TODO: Remove the default domain, target and dataset from the base cost as
+        # they are not relevant for all costs.
+        self._domain = "Time [s]"
+        self._target = ["Voltage [V]"]
         self._domain_data = None
         self._target_data = None
+        self._dataset = None
+
+    def set_target(
+        self, target: list[str] | str | None = None, dataset: Dataset | None = None
+    ):
+        """Set the target variable and target data from a pybop.Dataset."""
+        self._target = [target] if isinstance(target, str) else target or self._target
+        self.n_outputs = len(self._target)
+
+        if not isinstance(dataset, Dataset | None):
+            raise ValueError("Dataset must be a pybop.Dataset object.")
+
+        if dataset is not None:
+            # Check that the dataset contains necessary variables
+            dataset.check(domain=dataset.domain, signal=self._target)
+            self._domain = dataset.domain
+            self._dataset = dataset.data
+
+        if self._dataset is not None:
+            # Unpack the domain and target data
+            self._domain_data = self._dataset[self.domain]
+            self.n_data = len(self._domain_data)
+            self._target_data = {var: self._dataset[var] for var in self._target}
 
     def evaluate(
         self,
@@ -112,8 +136,16 @@ class BaseCost:
         return len(self.parameters)
 
     @property
+    def domain(self):
+        return self._domain
+
+    @property
     def domain_data(self):
         return self._domain_data
+
+    @property
+    def target(self):
+        return self._target
 
     @property
     def target_data(self):

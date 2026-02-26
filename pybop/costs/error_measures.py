@@ -35,7 +35,7 @@ class ErrorMeasure(BaseCost):
         The name of the domain (default: "Time [s]").
     domain_data : np.ndarray
         The domain points in the dataset.
-    n_domain_data : int
+    n_data : int
         The number of domain points.
     target_data : np.ndarray
         The target values of the output variables.
@@ -48,27 +48,8 @@ class ErrorMeasure(BaseCost):
         weighting: float | str | np.ndarray = None,
     ):
         super().__init__()
-        self.target = [target] if isinstance(target, str) else target or ["Voltage [V]"]
-        self.set_target(dataset)
+        self.set_target(target, dataset)
         self.set_weighting(weighting)
-
-    def set_target(self, dataset: Dataset):
-        """Set the target data from a pybop.Dataset."""
-        if not isinstance(dataset, Dataset):
-            raise ValueError("Dataset must be a pybop.Dataset object.")
-        self.domain = dataset.domain
-
-        # Check that the dataset contains necessary variables
-        dataset.check(domain=self.domain, signal=self.target)
-        self._dataset = dataset.data
-
-        # Unpack domain and target data
-        self._domain_data = self._dataset[self.domain]
-        self.n_data = len(self._domain_data)
-
-        self._domain_data = dataset[self.domain]
-        self._target_data = {var: dataset[var] for var in self.target}
-        self.n_outputs = len(self.target)
 
     def set_weighting(self, weighting: float | str | np.ndarray):
         if weighting == "equal" or weighting is None:
@@ -184,22 +165,6 @@ class ErrorMeasure(BaseCost):
             gradient with dimension (len(parameters)), otherwise returns only the cost.
         """
         raise NotImplementedError
-
-    @property
-    def target_data(self):
-        return self._target_data
-
-    @property
-    def domain_data(self):
-        return self._domain_data
-
-    @domain_data.setter
-    def domain_data(self, domain_data):
-        self._domain_data = domain_data
-
-    @property
-    def dataset(self):
-        return self._dataset
 
 
 class MeanSquaredError(ErrorMeasure):

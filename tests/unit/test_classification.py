@@ -13,7 +13,7 @@ class SeparableParaboloidProblem(pybop.Problem):
 
     def __init__(self, centre: np.ndarray, c: float = 0.0):
         super().__init__(simulator=None, cost=None)
-        self.parameters = pybop.Parameters(
+        self._parameters = pybop.Parameters(
             {
                 "x0": pybop.Parameter(bounds=[-10, 10]),
                 "x1": pybop.Parameter(bounds=[-10, 10]),

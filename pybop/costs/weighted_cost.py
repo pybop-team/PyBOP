@@ -31,11 +31,10 @@ class WeightedCost(BaseCost):
             raise ValueError("All costs must have the same domain.")
         super().__init__()
 
-        self.domain = self.costs[0].domain
-        self.target = []
+        self._domain = self.costs[0].domain
         for cost in self.costs:
-            self.target.extend(cost.target)
             self.parameters.join(cost.parameters)
+        self.set_target([cost.target for cost in self.costs])
 
         # Check if weights are provided
         if weights is not None:
@@ -107,3 +106,18 @@ class WeightedCost(BaseCost):
             return e, de
 
         return e
+
+    def set_target(self, target: list[list[str]] | list[str] | str | None = None):
+        """Set the target variable for all costs. Expecting a list of list[str] the same length as self.costs."""
+        target = [target] if isinstance(target, str) else target or self._target
+        if isinstance(target[0], str):
+            target = [target] * len(self.costs)
+
+        self._target = []
+        for i, cost in enumerate(self.costs):
+            cost.set_target(target[i])
+            self._target.extend(cost.target)
+
+    @property
+    def target(self):
+        return list(set(self._target))
