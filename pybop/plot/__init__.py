@@ -10,3 +10,4 @@ from .parameters import parameters
 from .problem import problem
 from .nyquist import nyquist
 from .voronoi import surface
+from .samples import trace, chains, posterior, summary_table

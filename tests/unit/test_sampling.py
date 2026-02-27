@@ -316,3 +316,63 @@ class TestPintsSamplers:
 
         with pytest.raises(NotImplementedError):
             chain_processor._extract_log_pdf(posterior_problem, 0)
+
+    def compare_result_data(self, result1, result2):
+        assert result1.method_name == result2.method_name
+        assert result1.n_runs == result2.n_runs
+        assert result1._best_run == result2._best_run
+        np.testing.assert_array_equal(result1._x, result2._x)
+        np.testing.assert_array_equal(result1._x_model, result2._x_model)
+        np.testing.assert_array_equal(result1._x0, result2._x0)
+        np.testing.assert_array_equal(result1._best_cost, result2._best_cost)
+        np.testing.assert_array_equal(result1._cost, result2._cost)
+        np.testing.assert_array_equal(result1._initial_cost, result2._initial_cost)
+        np.testing.assert_array_equal(result1._n_iterations, result2._n_iterations)
+        np.testing.assert_array_equal(
+            result1._iteration_number, result2._iteration_number
+        )
+        np.testing.assert_array_equal(result1._n_evaluations, result2._n_evaluations)
+        assert result1._message == result2._message
+        np.testing.assert_array_equal(result1._scipy_result, result2._scipy_result)
+        np.testing.assert_array_equal(result1._time, result2._time)
+
+    def test_save(self, posterior_problem, n_chains, MCMC, tmp_path):
+        test_stub = tmp_path / "test"
+
+        # Set up sampler
+        options = pybop.PintsSamplerOptions(
+            n_chains=n_chains,
+            max_iterations=1,
+            verbose=True,
+        )
+        sampler = MCMC(log_pdf=posterior_problem, options=options)
+
+        # Run the sampler
+        result = sampler.run()
+
+        # Re-define sampler to reconstruct result from data
+        sampler2 = MCMC(log_pdf=posterior_problem, options=options)
+
+        for to_format in ["json", "matlab", "pickle"]:
+            # Define filename
+            if to_format == "matlab":
+                filename = f"{test_stub}.mat"
+            elif to_format == "json":
+                filename = f"{test_stub}.json"
+            else:
+                filename = f"{test_stub}.pickle"
+            # Test save result
+            result.save_data(filename, to_format=to_format)
+
+            # load result
+            result_load = SamplingResult.load_data(filename, file_format=to_format)
+            self.compare_result_data(result, result_load)
+            assert sampler2.logger is None
+
+        # test save whole result
+        filename = f"{test_stub}.pickle"
+        result.save(filename)
+        result_load = SamplingResult.load(filename)
+        self.compare_result_data(result, result_load)
+        assert result.problem.parameters.names == result_load.problem.parameters.names
+        np.testing.assert_array_equal(result.chains, result_load.chains)

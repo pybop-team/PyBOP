@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#873](https://github.com/pybop-team/PyBOP/pull/873) - Adds methods for saving result and reconstructing result from saved data. `result.save`: saves entire python object using pickle. `result.save_data`: saves primarily the logger data and any other data required to reconstruct the result from the problem or the sampler (for `SamplingResult`). `Result.load_result`: reconstructs the `Result` object based on the underlying problem (or sampler for `SamplingResult`) and the data saved to file.
 - [#862](https://github.com/pybop-team/PyBOP/pull/862) - Adds pybop.MarginalDistribution, pybop.MultivariateLogNormal.
 - [#889](https://github.com/pybop-team/PyBOP/pull/889) - Adds methods for setting the initial state from a voltage to the grouped models.
 - [#869](https://github.com/pybop-team/PyBOP/issues/869) - Adds methods for pre-processing current data for linear interpolation.

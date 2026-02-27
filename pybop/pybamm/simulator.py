@@ -128,6 +128,27 @@ class Simulator(BaseSimulator):
         )
         self._set_up_solution_method(output_variables=output_variables)
 
+    def __getstate__(self):
+        # Copy the object's state from self.__dict__ which contains
+        # all instance attributes.
+        # Copy() method avoid modifying the original state.
+        state = self.__dict__.copy()
+
+        # Remove the unpicklable entries.
+        del state["_simulation"]
+        del state["_solve"]
+        return state
+
+    def __setstate__(self, state):
+        # Restore instance attributes.
+        self.__dict__.update(state)
+
+        # Restore unpickalable attributes
+        self._simulation = None
+        self._solve = None
+
+        self._set_up_solution_method(output_variables=self.output_variables)
+
     def _set_protocol(self, protocol: pybamm.Experiment | Dataset | np.ndarray | None):
         """
         Set up the protocol for the simulation.
