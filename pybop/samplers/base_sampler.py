@@ -163,7 +163,6 @@ class SamplingResult(Result):
         self.chains = chains
         self.all_samples = np.concatenate(chains, axis=0)
         self.num_parameters = self.chains.shape[2]
-        self.n_runs = self.chains.shape[0]
 
     def signif(self, x, p: int):
         """
