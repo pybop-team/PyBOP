@@ -364,3 +364,5 @@ class TestPintsSamplers:
         result.save(filename)
         result_load = SamplingResult.load(filename)
         self.compare_result_data(result, result_load)
+        assert result.problem.parameters.names == result_load.problem.parameters.names
+        np.testing.assert_array_equal(result.chains, result_load.chains)

@@ -812,3 +812,4 @@ class TestOptimisation:
         result.save(filename)
         result_load = OptimisationResult.load(filename)
         self.compare_result_data(result, result_load)
+        assert result.problem.parameters.names == result_load.problem.parameters.names
