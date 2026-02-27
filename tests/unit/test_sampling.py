@@ -1,5 +1,4 @@
 import logging
-import pickle
 from unittest.mock import call, patch
 
 import numpy as np
@@ -326,9 +325,6 @@ class TestPintsSamplers:
         assert result1._message == result2._message
         np.testing.assert_array_equal(result1._scipy_result, result2._scipy_result)
         np.testing.assert_array_equal(result1._time, result2._time)
-        np.testing.assert_array_equal(result1.chains, result2.chains)
-        np.testing.assert_array_equal(result1.all_samples, result2.all_samples)
-        assert result1.num_parameters == result2.num_parameters
 
     def test_save(self, posterior_problem, n_chains, MCMC, tmp_path):
         test_stub = tmp_path / "test"
@@ -359,14 +355,14 @@ class TestPintsSamplers:
             result.save_data(filename, to_format=to_format)
 
             # load result
-            result_load = SamplingResult.load_result(
-                sampler2, filename, file_format=to_format
-            )
+            result_load = SamplingResult.load_data(filename, file_format=to_format)
             self.compare_result_data(result, result_load)
             assert sampler2.logger is None
 
         # test save whole result
-        result.save(f"{test_stub}.pickle")
-        with open(f"{test_stub}.pickle", "rb") as f:
-            result_load = pickle.load(f)
+        filename = f"{test_stub}.pickle"
+        result.save(filename)
+        result_load = SamplingResult.load(filename)
         self.compare_result_data(result, result_load)
+        assert result.problem.parameters.names == result_load.problem.parameters.names
+        np.testing.assert_array_equal(result.chains, result_load.chains)

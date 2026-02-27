@@ -4,9 +4,9 @@ import numpy as np
 import pints
 import scipy
 
+from pybop import plot
 from pybop._logging import Logger
 from pybop._result import Result
-from pybop.plot import PlotlyManager
 from pybop.problems.problem import Problem
 
 
@@ -163,22 +163,6 @@ class SamplingResult(Result):
         self.chains = chains
         self.all_samples = np.concatenate(chains, axis=0)
         self.num_parameters = self.chains.shape[2]
-        self.go = PlotlyManager().go
-
-    def __getstate__(self):
-        # Copy the object's state from self.__dict__ which contains
-        # all our instance attributes. Use the dict.copy()
-        # method to avoid modifying the original state.
-        state = self.__dict__.copy()
-        # Remove the unpicklable entries.
-        del state["go"]
-        return state
-
-    def __setstate__(self, state):
-        # Restore instance attributes .
-        self.__dict__.update(state)
-        # Restore unpickalable attributes
-        self.go = PlotlyManager().go
 
     def signif(self, x, p: int):
         """
@@ -235,113 +219,25 @@ class SamplingResult(Result):
         """
         Plot trace plots for the posterior samples.
         """
-
-        for i in range(self.num_parameters):
-            fig = self.go.Figure()
-
-            for j, chain in enumerate(self.chains):
-                fig.add_trace(
-                    self.go.Scatter(y=chain[:, i], mode="lines", name=f"Chain {j}")
-                )
-
-            fig.update_layout(
-                title=f"Parameter {i} Trace Plot",
-                xaxis_title="Sample Index",
-                yaxis_title="Value",
-            )
-            fig.update_layout(**kwargs)
-            fig.show()
+        return plot.trace(result=self, **kwargs)
 
     def plot_chains(self, **kwargs):
         """
         Plot posterior distributions for each chain.
         """
-        fig = self.go.Figure()
-
-        for i, chain in enumerate(self.chains):
-            for j in range(chain.shape[1]):
-                fig.add_trace(
-                    self.go.Histogram(
-                        x=chain[:, j],
-                        name=f"Chain {i} - Parameter {j}",
-                        opacity=0.75,
-                    )
-                )
-
-                fig.add_shape(
-                    type="line",
-                    x0=self.mean[j],
-                    y0=0,
-                    x1=self.mean[j],
-                    y1=self.max[j],
-                    name=f"Mean - Parameter {j}",
-                    line=dict(color="Black", width=1.5, dash="dash"),
-                )
-
-        fig.update_layout(
-            barmode="overlay",
-            title="Posterior Distribution",
-            xaxis_title="Value",
-            yaxis_title="Density",
-        )
-        fig.update_layout(**kwargs)
-        fig.show()
+        return plot.chains(result=self, **kwargs)
 
     def plot_posterior(self, **kwargs):
         """
         Plot the summed posterior distribution across chains.
         """
-        fig = self.go.Figure()
+        return plot.posterior(result=self, **kwargs)
 
-        for j in range(self.all_samples.shape[1]):
-            histogram = self.go.Histogram(
-                x=self.all_samples[:, j],
-                name=f"Parameter {j}",
-                opacity=0.75,
-            )
-            fig.add_trace(histogram)
-            fig.add_vline(
-                x=self.mean[j], line_width=3, line_dash="dash", line_color="black"
-            )
-
-        fig.update_layout(
-            barmode="overlay",
-            title="Posterior Distribution",
-            xaxis_title="Value",
-            yaxis_title="Density",
-        )
-        fig.update_layout(**kwargs)
-        fig.show()
-        return fig
-
-    def summary_table(self):
+    def summary_table(self, **kwargs):
         """
         Display summary statistics in a table.
         """
-        summary_stats = self.get_summary_statistics()
-
-        header = ["Statistic", "Value"]
-        values = [
-            ["Mean", summary_stats["mean"]],
-            ["Median", summary_stats["median"]],
-            ["Standard Deviation", summary_stats["std"]],
-            ["95% CI Lower", summary_stats["ci_lower"]],
-            ["95% CI Upper", summary_stats["ci_upper"]],
-        ]
-
-        fig = self.go.Figure(
-            data=[
-                self.go.Table(
-                    header=dict(values=header),
-                    cells=dict(
-                        values=[[row[0] for row in values], [row[1] for row in values]]
-                    ),
-                )
-            ]
-        )
-
-        fig.update_layout(title="Summary Statistics")
-        fig.show()
+        return plot.summary_table(result=self, **kwargs)
 
     def autocorrelation(self, x: np.ndarray) -> np.ndarray:
         """
@@ -409,82 +305,3 @@ class SamplingResult(Result):
         stationary chains R-hat will be close to one, otherwise it is higher.
         """
         return pints.rhat(self.chains)
-
-    def data_dict(self) -> dict:
-        """return result data as dictionary for saving to file"""
-
-        data_dict = super().data_dict()
-        data_dict["chains"] = self.chains
-
-        return data_dict
-
-    @staticmethod
-    def load_result(
-        sampler: BaseSampler, filename: str, file_format: str = "pickle"
-    ) -> "SamplingResult":
-        """
-        Reconstructs result object based on the underlying sampler and
-        the result data stored in a file
-
-        Parameters
-        ----------
-        sampler: The underlying problem used to obtain the result before saving.
-        filename : str
-            The name of the file containing the data.
-        file_format : str, optional
-            The format the data was save to. Options are:
-            - 'pickle' (default)
-            - 'matlab'
-            - 'csv'
-            - 'json'
-
-        Returns
-        -------
-        result :
-            result object containing the data from the given file.
-        """
-
-        # read data file
-        data = Result.load_data_dict(filename, file_format)
-
-        # dummy logger for initialising result
-        logger = sampler.logger
-        dummy_logger = Logger(sampler.log_pdf.minimising)
-        dummy_logger.extend_log(
-            x_search=[np.asarray([1e-3])], x_model=[np.asarray([1e-3])], cost=[0.1]
-        )
-
-        sampler._logger = dummy_logger  # noqa: SLF001
-
-        # initialise result
-        time = 0.0
-        chains = None
-        if "chains" in data.keys():
-            chains = np.asarray(data["chains"].copy())
-            del data["chains"]
-
-        method_name = data["method_name"] if "method_name" in data.keys() else None
-        message = data["message"] if "message" in data.keys() else None
-
-        result = SamplingResult(
-            sampler,
-            time,
-            chains,
-            method_name=method_name,
-            message=message,
-        )
-
-        # set result data
-        if "n_runs" in data.keys():
-            result.n_runs = data["n_runs"]
-            del data["n_runs"]
-        for key, value in data.items():
-            setattr(result, f"_{key}", list(value))
-        result._x0 = [x_model[0] for x_model in result._x_model]
-        if len(result._scipy_result) == 0:
-            result._scipy_result = [None for _ in range(max(1, result.n_runs))]
-
-        # restore orginal logger in sampler
-        sampler._logger = logger  # noqa: SLF001
-
-        return result
