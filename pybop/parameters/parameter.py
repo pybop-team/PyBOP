@@ -10,8 +10,9 @@ import numpy as np
 import scipy.stats as stats
 from numpy.typing import NDArray
 
-from pybop.parameters.distributions import Distribution
+from pybop.parameters.distributions import Distribution, JointDistribution
 from pybop.parameters.multivariate_distributions import (
+    BaseMultivariateDistribution,
     MarginalDistribution,
 )
 from pybop.transformation.base_transformation import Transformation
@@ -99,7 +100,7 @@ class Parameter:
 
     Parameters
     ----------
-    distribution : stats.distribution.rv_frozen | Distribution
+    distribution : stats.distribution.rv_frozen | Distribution, optional
         Distribution of the parameter
     bounds : tuple[float, float], optional
         Parameter bounds as (lower, upper)
@@ -118,10 +119,12 @@ class Parameter:
     ) -> None:
         self._distribution = distribution
         self._bounds = None
+        self._initial_value = None
         self._transformation = transformation or IdentityTransformation()
 
-        # The ep-bolfi optimiser requires some distribution properties in the search space rather than the model space
-        # Some transformations are not suitable for some multivariate distributions as they are currently implemented in this context
+        # Some optimisers (EP-BOLFI) and all samplers require distribution properties in the search space
+        # rather than the model space. Some transformations are not suitable for some multivariate
+        # distributions as they are currently implemented in this context
         self._check_compatible_transformation()
 
         if self._distribution is not None:
@@ -129,33 +132,27 @@ class Parameter:
             if np.isinf(lower) and np.isinf(upper):
                 self._bounds = None
             else:
-                self._bounds = Bounds(lower, upper)
+                self._bounds = Bounds(float(lower), float(upper))
 
         if bounds is not None:
             if distribution is not None:
                 raise ParameterError(
-                    "Bounds can only be set if no distribution is provided. If a bounded distribution is needed, please ensure the distribution itself is bounded."
+                    "Bounds can only be set if no distribution is provided. If a bounded distribution "
+                    "is needed, please ensure the distribution itself is bounded."
                 )
             # Set bounds with validation
-            self._bounds = Bounds(bounds[0], bounds[1])
+            self._bounds = Bounds(float(bounds[0]), float(bounds[1]))
             # Add uniform distribution for finite bounds in order to sample initial values
             if all(np.isfinite(np.asarray(bounds))):
                 self._distribution = stats.uniform(
                     loc=bounds[0], scale=bounds[1] - bounds[0]
                 )
 
-        if initial_value is None and self._distribution is not None:
-            initial_value = self.sample_from_distribution()[0]
+        # Set and validate initial value
+        self.update_initial_value(value=initial_value)
 
-        # Validate and set values
-        self._initial_value = (
-            float(initial_value) if initial_value is not None else None
-        )
-
-        # Validate initial values are within bounds
-        self._validate_values_within_bounds()
-
-    def _check_compatible_transformation(self):
+    def _check_compatible_transformation(self) -> None:
+        """Raise an error if the transformation is not compatible with the distribution."""
         if isinstance(self._distribution, MarginalDistribution):
             allowed_transformations = (
                 self._distribution.parent_distribution.compatible_transformations
@@ -163,8 +160,8 @@ class Parameter:
 
             if not isinstance(self._transformation, allowed_transformations):
                 raise TypeError(
-                    f"The transformation provided is not compatible with pybop.{self._distribution.parent_distribution.name}. "
-                    "Only "
+                    "The transformation provided is not compatible with "
+                    f"pybop.{self._distribution.parent_distribution.name}. Only "
                     + ", ".join([trans.__name__ for trans in allowed_transformations])
                     + " are allowed."
                 )
@@ -185,7 +182,7 @@ class Parameter:
             Number of samples to draw (default: 1).
         random_state : int, optional
             Random seed for reproducibility.
-        transformed : bool
+        transformed : bool, optional
             Whether to apply transformation to samples (default: False).
 
         Returns
@@ -204,50 +201,85 @@ class Parameter:
 
         return samples
 
-    def update_initial_value(self, value: NumericValue) -> None:
-        """
-        Update the initial parameter value.
-
-        Parameters
-        ----------
-        value : NumericValue
-            New initial value
-        """
-        self._initial_value = float(value)
+    def update_initial_value(self, value: NumericValue | None) -> None:
+        """Update the initial parameter value."""
+        self._initial_value = float(value) if value is not None else None
+        self._validate_initial_value_within_bounds()
 
     def __repr__(self) -> str:
         """String representation of the parameter."""
-        return f"Parameter - Distribution: {self._distribution}, Bounds: ({self.bounds[0]}, {self.bounds[1]}), Initial value: {self.initial_value}"
+        return f"Parameter - Distribution: {self._distribution}, Bounds: {self.bounds}, Initial value: {self._initial_value}"
 
-    def _validate_values_within_bounds(self) -> None:
-        """Validate that initial values are within bounds."""
-        if self._bounds is None or self._initial_value is None:
-            return
+    def _validate_initial_value_within_bounds(self) -> None:
+        """Validate that the initial value is within the bounds."""
+        if self._initial_value is not None:
+            if self._bounds is None:
+                return
 
-        if not self._bounds.contains(self._initial_value):
-            raise ParameterValidationError(
-                f"Initial value {self._initial_value} is outside bounds {self.bounds}"
+            if not self._bounds.contains(self._initial_value):
+                raise ParameterValidationError(
+                    f"Initial value {self._initial_value} is outside bounds {self.bounds}"
+                )
+
+    def get_initial_value(self, transformed: bool = False) -> NDArray | None:
+        """Get initial value in either the model space or the transformed search space."""
+        if self._initial_value is None and self._distribution is not None:
+            # Try to sample from distribution if available
+            self.update_initial_value(self.sample_from_distribution(1)[0])
+
+        if self._initial_value is None:
+            # If still None, just return this
+            return None
+
+        if transformed:
+            return self._transformation.to_search(self._initial_value)[0]
+        return self._initial_value
+
+    def get_mean(self, transformed: bool = False):
+        """Get the mean of each parameter, or its initial value."""
+        if self.distribution is not None:
+            mean = self.distribution.mean()
+        elif self.bounds is not None and np.isfinite(self.bounds[1] - self.bounds[0]):
+            lower, upper = self.bounds
+            mean = (lower + upper) / 2
+        else:
+            mean = self.get_initial_value()
+
+        if transformed and mean is not None:
+            mean = self.transformation.to_search(np.asarray(mean))
+
+        return np.asarray(mean).item()
+
+    def get_std(self, transformed: bool = False):
+        """Get the standard deviation, or an estimate of it."""
+        if self.distribution is not None:
+            std = self.distribution.std()
+        elif self.bounds is not None and np.isfinite(self.bounds[1] - self.bounds[0]):
+            lower, upper = self.bounds
+            std = 0.05 * (upper - lower)
+        else:
+            std = 0.05 * self.get_initial_value()
+
+        if transformed and std is not None:
+            std = self.transformation.convert_standard_deviation(
+                std, self.get_mean(transformed=True)
             )
 
-    def get_initial_value_transformed(self) -> NDArray | None:
-        """Get initial value in transformed space."""
-        if self._initial_value is None:
-            return None
-        return self._transformation.to_search(self._initial_value)[0]
+        return np.asarray(std).item()
 
-    def __call__(self, *unused_args, **unused_kwargs) -> float:
-        "Return the initial value. The unused arguments are to pass pybamm.ParameterValues checks."
+    def __call__(self, *unused_args, **unused_kwargs) -> float | None:
+        """Return the initial value. The unused arguments are to pass pybamm.ParameterValues checks."""
         return self._initial_value
 
     @property
-    def initial_value(self) -> float:
+    def initial_value(self) -> float | None:
         return self._initial_value
 
     @property
-    def bounds(self) -> BoundsPair | None:
+    def bounds(self) -> tuple | None:
         """Parameter bounds as (lower, upper) tuple."""
         return (
-            None if self._bounds is None else [self._bounds.lower, self._bounds.upper]
+            None if self._bounds is None else (self._bounds.lower, self._bounds.upper)
         )
 
     @property
@@ -267,19 +299,25 @@ class Parameters:
     validation, transformation, serialisation, and bulk operations.
     """
 
-    def __init__(self, parameters: dict | Parameters = None) -> None:
-        if parameters is None:
-            parameters = {}
-        elif not isinstance(parameters, (dict, Parameters)):
+    def __init__(self, parameters: dict | Parameters | None = None) -> None:
+        if not isinstance(parameters, dict | Parameters | None):
             raise TypeError(
                 "parameters must be either a dictionary or a pybop.Parameters instance"
             )
+        self._parameters = None
+        self._distribution = None
+        self._multivariate = None
+        self._transform = None
+
+        self._collect_parameters(parameters)
+        self._transform = self.construct_transformation()
+        self.update_distribution()
+
+    def _collect_parameters(self, parameters):
+        parameters = parameters or {}
         self._parameters = OrderedDict()
         for name, param in parameters.items():
-            self._add(name, param, update_transform=False, check_multivariate=False)
-
-        self._transform = self.construct_transformation()
-        self.check_multivariate()
+            self._add(name, param, update_transform=False, update_distribution=False)
 
     def __getitem__(self, name: str) -> Parameter:
         return self.get(name)
@@ -301,56 +339,86 @@ class Parameters:
     def __iter__(self) -> Iterator[Parameter]:
         return iter(self._parameters.values())
 
-    def add(self, name: str, parameter: Parameter, check_multivariate=True) -> None:
+    def add(
+        self, name: str, parameter: Parameter, update_distribution: bool = True
+    ) -> None:
         """Add a parameter to the collection."""
-        self._add(name, parameter, check_multivariate=check_multivariate)
+        self._add(name, parameter, update_distribution=update_distribution)
 
-    def check_multivariate(self):
-        """Method to determin whether parameters have a MultivariateDistribution
-        Multivariate distributions are passed to individual parameters via the corresponding marginal distribution.
-        The pybop.MarginalDistribution class retains the underlying pybop.MultivariateDistribution in the parent_distribution property
+    def update_distribution(self):
         """
+        Method to determine whether to construct a JointDistribution or a MultivariateDistribution
+        and to set up the distribution.
 
+        Multivariate distributions are passed to individual parameters via the corresponding
+        marginal distribution. The pybop.MarginalDistribution class retains the underlying
+        pybop.MultivariateDistribution in the parent_distribution property.
+        """
         # check if any distribution is a pybop.MarginalDistribution
         self._multivariate = any(
             isinstance(param.distribution, MarginalDistribution) for param in self
         )
 
-        # if there is a pybop.MarginalDistribution ensure all distributions are marginal distributions of the same parent_distribution
+        # if there is a pybop.MarginalDistribution ensure all distributions are marginal
+        # distributions of the same parent_distribution
         if self._multivariate:
             if not all(
                 isinstance(param.distribution, MarginalDistribution) for param in self
             ):
                 raise TypeError(
-                    "A Parameters object with a MarginalDistribution cannot be combined with parameters with other types of distributions"
+                    "A Parameters object with a MarginalDistribution cannot be combined with "
+                    "parameters with other types of distributions"
                 )
-            dist = next(
-                iter(self._parameters.values())
-            ).distribution.parent_distribution
+            # Get the parent distribution from the first Parameter object
+            parent_dist = next(iter(self)).distribution.parent_distribution
             if not all(
-                param.distribution.parent_distribution == dist for param in self
+                param.distribution.parent_distribution == parent_dist for param in self
             ):
                 raise ValueError(
                     "All MarginalDistributions must share the same parent MultivariateDistribution."
                 )
-            self.distribution = dist
+            self._distribution = parent_dist
+
+            # Re-order all properties to match the position of each marginal distribution
+            parameter_list = self.names
+            index = np.argsort([p.distribution.position for p in self.__iter__()])
+            parameter_order = [parameter_list[i] for i in index]
+            self._parameters = {key: self._parameters[key] for key in parameter_order}
+            self._transform._transformations = [  # noqa: SLF001
+                self._transform.transformations[i] for i in index
+            ]
+
+        else:
+            list_of_distributions = [
+                param.distribution
+                for param in self._parameters.values()
+                if param.distribution is not None
+            ]
+            if len(list_of_distributions) == len(self):
+                self._distribution = JointDistribution(*list_of_distributions)
+            else:
+                self._distribution = None
 
     def _add(
         self,
         name: str,
         parameter: Parameter,
         update_transform: bool = True,
-        check_multivariate=True,
+        update_distribution: bool = True,
     ) -> None:
         """
         Internal method to add a parameter to the collection.
 
         Parameters
         ----------
-        parameter : Parameter
-            Parameter to add
+        name : str
+            Name of the parameter.
+        parameter : pybop.Parameter
+            The parameter to add.
         update_transform : bool, optional
-            Whether to update the transformation after adding (default: True)
+            Whether to update the transformation after adding (default: True).
+        update_distribution : bool, optional
+            Whether to update the joint or multivariate distribution (default: True).
         """
         if not isinstance(parameter, Parameter):
             raise TypeError("Expected Parameter instance")
@@ -362,16 +430,8 @@ class Parameters:
 
         if update_transform:
             self._transform = self.construct_transformation()
-        if check_multivariate:
-            self.check_multivariate()
-
-    def remove(self, name: str) -> Parameter:
-        """Remove parameter and return it."""
-        if not isinstance(name, str):
-            raise TypeError("The input name is not a string.")
-        if name not in self._parameters:
-            raise ParameterNotFoundError(f"Parameter for '{name}' not found")
-        return self._parameters.pop(name)
+        if update_distribution:
+            self.update_distribution()
 
     def join(self, parameters=None):
         """
@@ -384,12 +444,12 @@ class Parameters:
         for name, param in parameters.items():
             if name not in self._parameters.keys():
                 self.add(
-                    name, param, check_multivariate=False
-                )  # don't check every each param individually
+                    name, param, update_distribution=False
+                )  # don't update every time
             else:
                 print(f"Discarding duplicate {name}.")
 
-        self.check_multivariate()  # check once when all parameters are added
+        self.update_distribution()  # update once when all parameters are added
 
     def get(self, name: str) -> Parameter:
         """Get a parameter by name."""
@@ -397,19 +457,21 @@ class Parameters:
             raise ParameterNotFoundError(f"Parameter for '{name}' not found")
         return self._parameters[name]
 
-    def set(self, name: str, param: Parameter, check_multivariate=True) -> None:
-        """Get a parameter by name."""
+    def set(
+        self, name: str, param: Parameter, update_distribution: bool = True
+    ) -> None:
+        """Set a parameter by name."""
         if name not in self._parameters:
             raise ParameterNotFoundError(f"Parameter for '{name}' not found")
         if not isinstance(param, Parameter):
-            raise TypeError({"Paremeter must be of type pybop.Parameter"})
+            raise TypeError({"Parameter must be of type pybop.Parameter"})
         self._parameters[name] = param
-        if check_multivariate:
-            self.check_multivariate()
+        if update_distribution:
+            self.update_distribution()
 
     def get_bounds(self, transformed: bool = False) -> dict:
         """
-        Get bounds, for either all or no parameters.
+        Get bounds for each parameter as a dictionary.
 
         Parameters
         ----------
@@ -420,11 +482,7 @@ class Parameters:
         for param in self._parameters.values():
             lower, upper = param.bounds or (-np.inf, np.inf)
 
-            if (
-                transformed
-                and param.bounds is not None
-                and param.transformation is not None
-            ):
+            if transformed and param.bounds is not None:
                 if isinstance(param.transformation, LogTransformation) and lower == 0:
                     bound_one = -np.inf
                 else:
@@ -510,11 +568,7 @@ class Parameters:
         transformed: bool = False,
     ) -> NDArray[np.floating] | None:
         """
-        Sample from each parameter distribution.
-
-        or
-
-        Draw random samples from the joint parameters distribution for multivariate parameters.
+        Sample from a joint or multivariate distribution.
 
         Parameters
         ----------
@@ -522,79 +576,86 @@ class Parameters:
             The number of samples to draw (default: 1).
         random_state : int, optional
             The random state seed for reproducibility (default: None).
-        transformed: bool
-            If True, the transformation is applied to the output
-            (default: False).
+        transformed: bool, optional
+            If True, the transformation is applied to the output (default: False).
 
         Returns
         -------
         NDArray[np.floating] or None
             Array of shape (n_samples, n_parameters) or None if any distribution is missing
         """
+        if self._distribution is None:
+            return None
 
-        if self._multivariate:
-            # use multivariate distribution for to sample all parameters
-            samples = self.distribution.rvs(n_samples, random_state=random_state)
-            if samples.ndim < 2:
-                samples = np.atleast_2d(samples)
+        samples = self._distribution.rvs(n_samples, random_state=random_state)
+        samples = np.atleast_2d(samples)
 
-            if transformed:
-                samples = np.asarray(
-                    [self.transformation.to_search(s) for s in samples]
-                )
+        if transformed:
+            samples = np.asarray([self.transformation.to_search(s) for s in samples])
 
-            return samples
-        else:
-            # sample each parameter individually
-            all_samples = []
+        return samples
 
-            for param in self._parameters.values():
-                samples = param.sample_from_distribution(
-                    n_samples, random_state=random_state, transformed=transformed
-                )
-                if samples is None:
-                    return None
-                all_samples.append(samples)
-
-            return np.column_stack(all_samples)
-
-    def get_sigma0(self, transformed: bool = False) -> list:
+    def get_mean(self, transformed: bool = False):
         """
-        Get the standard deviation, for either all or no parameters.
+        Get the mean of each parameter, or its initial value.
 
         Parameters
         ----------
-        transformed : bool
+        transformed : bool, optional
             If True, the transformation is applied to the output (default: False).
         """
-        sigma0 = []
+        if self._multivariate:
+            if transformed:
+                return self.transformed_distribution_properties["mean"]
+            else:
+                return self.distribution.properties["mean"]
+
+        else:
+            means = []
+            for param in self._parameters.values():
+                means.append(param.get_mean(transformed=transformed))
+            return np.asarray(means).T
+
+    def get_std(self, transformed: bool = False) -> list:
+        """
+        Get the standard deviation, or an estimate of it, for each parameter.
+
+        Parameters
+        ----------
+        transformed : bool, optional
+            If True, the transformation is applied to the output (default: False).
+        """
+        standard_deviations = []
 
         for param in self._parameters.values():
-            sig = None
-            if param.distribution is not None and hasattr(param.distribution, "std"):
-                sig = param.distribution.std()
-            elif param.bounds is not None:
-                lower, upper = param.bounds
-                if np.isfinite(upper - lower):
-                    sig = 0.05 * (upper - lower)
+            standard_deviations.append(param.get_std(transformed=transformed))
+        return standard_deviations
 
-            if transformed and sig is not None and param.transformation is not None:
-                sig = np.ndarray.item(
-                    param.transformation.convert_standard_deviation(
-                        sig, param.transformation.to_search(param.initial_value)[0]
-                    )
-                )
+    def get_covariance(self, transformed: bool = False):
+        """
+        Get the covariance matrix, or an estimate of it.
 
-            sigma0.extend([sig or 0.05])
-        return sigma0
+        Parameters
+        ----------
+        transformed : bool, optional
+            If True, the transformation is applied to the output (default: False).
+        """
+        if self._multivariate:
+            if transformed:
+                return self.transformed_distribution_properties["cov"]
+            else:
+                return self.distribution.properties["cov"]
 
-    def distribution(self) -> list:
-        """Return the initial distribution of each parameter."""
-        return [
-            param.distribution
-            for param in self._parameters.values()
-            if param.distribution is not None
-        ]
+        else:
+            standard_deviations = self.get_std(transformed=transformed)
+            return (np.eye(len(self)) * np.asarray(standard_deviations)) ** 2
+
+    @property
+    def distribution(
+        self,
+    ) -> BaseMultivariateDistribution | JointDistribution | None:
+        """Return the joint or multivariate distribution."""
+        return self._distribution
 
     def get_initial_values(self, *, transformed: bool = False) -> NDArray[np.floating]:
         """
@@ -612,20 +673,9 @@ class Parameters:
         """
         values = []
         for name, param in self._parameters.items():
-            value = param.initial_value
+            value = param.get_initial_value(transformed=transformed)
             if value is None:
-                # Try to sample from distribution if available
-                if param.distribution is not None:
-                    samples = param.sample_from_distribution(1, transformed=transformed)
-                    if samples is not None:
-                        param.update_initial_value(samples[0])
-                        value = samples[0] if transformed else param.initial_value
-
-                if value is None:
-                    raise ParameterError(f"Parameter '{name}' has no initial value")
-
-            if transformed:
-                value = param.transformation.to_search(value)[0]
+                raise ParameterError(f"Parameter '{name}' has no initial value")
 
             values.append(value)
 
@@ -671,14 +721,14 @@ class Parameters:
         bounds = self.get_bounds(transformed=transformed)
 
         # Validate that all parameters have bounds
-        if bounds is None or not np.isfinite(list(bounds.values())).all():
+        if not np.isfinite(list(bounds.values())).all():
             raise ValueError("All parameters require bounds for plot.")
 
         return np.asarray(list(bounds.values())).T
 
     def to_dict(self, values: str | ArrayLike | None = None) -> Inputs:
         """
-        Convert to parameter dictionary.
+        Return values as a dictionary of inputs.
 
         Parameters
         ----------
@@ -695,7 +745,7 @@ class Parameters:
         params = self._parameters.items()
 
         if isinstance(values, str) and values == "initial":
-            return {name: param.initial_value for name, param in params}
+            return {name: param.get_initial_value() for name, param in params}
         else:
             # Custom values array
             values_array = np.atleast_1d(values)
@@ -710,8 +760,7 @@ class Parameters:
         valid = True
         for name, param in self._parameters.items():
             if param.bounds is not None:
-                input_value = inputs[name]
-                if input_value < param.bounds[0] or input_value > param.bounds[1]:
+                if not param._bounds.contains(inputs[name]):  # noqa: SLF001
                     valid = False
         return valid
 

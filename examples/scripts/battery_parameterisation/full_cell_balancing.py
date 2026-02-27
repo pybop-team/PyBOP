@@ -98,7 +98,7 @@ parameter_values.update(
 
 # Build the problem
 simulator = pybop.pybamm.Simulator(model, parameter_values, protocol=dataset)
-cost = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=sigma)
+cost = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma=sigma)
 problem = pybop.Problem(simulator, cost)
 
 # Set up the optimiser

@@ -16,7 +16,7 @@ class TestWeightedCost:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.sigma0 = 0.002
+        self.sigma = 0.002
         self.ground_truth = np.clip(
             np.asarray([0.55, 0.55]) + np.random.normal(loc=0.0, scale=0.05, size=2),
             a_min=0.4,
@@ -103,7 +103,7 @@ class TestWeightedCost:
         costs = []
         for cost in cost_class:
             if issubclass(cost, pybop.LogLikelihood):
-                costs.append(cost(dataset, sigma0=self.sigma0))
+                costs.append(cost(dataset, sigma=self.sigma))
             else:
                 costs.append(cost(dataset))
 
@@ -198,6 +198,6 @@ class TestWeightedCost:
             {
                 "Time [s]": solution["Time [s]"].data,
                 "Current [A]": solution["Current [A]"].data,
-                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma0),
+                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma),
             }
         )

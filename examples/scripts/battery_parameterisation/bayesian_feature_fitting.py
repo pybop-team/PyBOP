@@ -94,6 +94,16 @@ if __name__ == "__main__":
         bolfi_posterior_effective_sample_size=10,
         posterior_gelman_rubin_threshold=1.2,
         verbose=True,
+        model_parameter_boundaries={
+            "Negative particle diffusivity [m2.s-1]": [
+                original_D_n / 2,
+                original_D_n * 2,
+            ],
+            "Positive particle diffusivity [m2.s-1]": [
+                original_D_p / 2,
+                original_D_p * 2,
+            ],
+        },
     )
     optim = pybop.EP_BOLFI(problem, options=options)
     result = optim.run()

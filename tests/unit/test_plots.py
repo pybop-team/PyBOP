@@ -187,7 +187,7 @@ class TestPlots:
         simulator = pybop.pybamm.Simulator(
             model, parameter_values=parameter_values, protocol=dataset
         )
-        likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=2e-3)
+        likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma=2e-3)
         posterior = pybop.LogPosterior(likelihood)
         problem = pybop.Problem(simulator, posterior)
         options = pybop.PintsSamplerOptions(n_chains=1, max_iterations=1)

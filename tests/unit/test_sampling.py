@@ -75,7 +75,7 @@ class TestPintsSamplers:
         simulator = pybop.pybamm.Simulator(
             model, parameter_values=parameter_values, protocol=dataset
         )
-        likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=0.01)
+        likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma=0.01)
         prior1 = pybop.Gaussian(0.7, 0.02)
         prior2 = pybop.Gaussian(0.6, 0.02)
         composed_prior = pybop.JointDistribution(prior1, prior2)
@@ -125,11 +125,11 @@ class TestPintsSamplers:
         sampler = MCMC(log_pdf=posterior_problem, options=options)
         assert sampler.options.n_chains == n_chains
         assert sampler._log_pdf == posterior_problem
-        x0 = posterior_problem.parameters.get_initial_values()
+        mean0 = posterior_problem.parameters.get_mean()
         if isinstance(sampler, multi_samplers):
-            np.testing.assert_allclose(sampler._samplers[0]._x0[0], x0)
+            np.testing.assert_allclose(sampler._samplers[0]._x0[0], mean0)
         else:
-            np.testing.assert_allclose(sampler._samplers[0]._x0, x0)
+            np.testing.assert_allclose(sampler._samplers[0]._x0, mean0)
 
         # Test __setattr__
         sampler.some_attribute = 1
@@ -190,7 +190,7 @@ class TestPintsSamplers:
         simulator = pybop.pybamm.Simulator(
             model, parameter_values=parameter_values, protocol=dataset
         )
-        likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma0=0.01)
+        likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma=0.01)
         posterior = pybop.LogPosterior(likelihood)
         posterior = pybop.Problem(simulator, posterior)
 
@@ -292,10 +292,20 @@ class TestPintsSamplers:
             sampler.set_max_iterations(-1)
 
     def test_base_sampler(self, posterior_problem):
-        options = pybop.SamplerOptions(n_chains=1, cov=0.1)
+        options = pybop.SamplerOptions(n_chains=1)
         sampler = pybop.BaseSampler(log_pdf=posterior_problem, options=options)
         with pytest.raises(NotImplementedError):
             sampler.run()
+
+        # test default covariance
+        sampler._cov0 = None
+        sampler._validate_covariance_matrix()
+        np.testing.assert_allclose(sampler.cov0, 0.05 * np.eye(2))
+
+        # throws error for negative entry in covariance
+        with pytest.raises(ValueError, match="Covariance values must be nonnegative."):
+            sampler._cov0 = np.asarray([[-1.0, 0], [0, 1.0]])
+            sampler._validate_covariance_matrix()
 
     def test_base_chain_processor(self, posterior_problem):
         options = pybop.PintsSamplerOptions(n_chains=1)

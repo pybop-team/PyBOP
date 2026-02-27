@@ -2,7 +2,7 @@ import numpy as np
 import scipy.stats as stats
 
 from pybop.costs.error_measures import ErrorMeasure
-from pybop.parameters.distributions import Distribution, JointDistribution, Uniform
+from pybop.parameters.distributions import Distribution, Uniform
 from pybop.parameters.parameter import Inputs, Parameter, Parameters
 from pybop.processing.dataset import Dataset
 
@@ -17,11 +17,11 @@ class LogLikelihood(ErrorMeasure):
     def __init__(self, dataset: Dataset, target: str | list[str] = None):
         super().__init__(dataset=dataset, target=target)
         self.minimising = False
-        self.sigma0 = None
+        self.sigma = None
         self.parameters = Parameters()
 
-    def set_sigma0(self, sigma0: np.ndarray | float, n_outputs: int, n_data: int):
-        """Set sigma0 after checking its validity."""
+    def set_sigma(self, sigma: np.ndarray | float, n_outputs: int, n_data: int):
+        """Set the noise variance (sigma) after checking its validity."""
         raise NotImplementedError
 
 
@@ -33,7 +33,7 @@ class GaussianLogLikelihoodKnownSigma(LogLikelihood):
 
     Parameters
     ----------
-    sigma0 : scalar or array
+    sigma : scalar or array
         Initial standard deviation around ``x0``. Either a scalar value (one standard deviation
         for all coordinates) or an array with one entry per dimension.
     """
@@ -41,11 +41,11 @@ class GaussianLogLikelihoodKnownSigma(LogLikelihood):
     def __init__(
         self,
         dataset: Dataset,
-        sigma0: list[float] | float,
+        sigma: list[float] | float,
         target: str | list[str] = None,
     ):
         super().__init__(dataset=dataset, target=target)
-        self.set_sigma0(sigma0)
+        self.set_sigma(sigma)
 
     def __call__(
         self,
@@ -64,17 +64,17 @@ class GaussianLogLikelihoodKnownSigma(LogLikelihood):
 
         return l
 
-    def set_sigma0(self, sigma0: np.ndarray | float):
-        """Set sigma0 after checking its validity."""
-        sigma0 = np.asarray(sigma0, dtype=float)
-        if not np.all(sigma0 > 0):
+    def set_sigma(self, sigma: np.ndarray | float):
+        """Set sigma after checking its validity."""
+        sigma = np.asarray(sigma, dtype=float)
+        if not np.all(sigma > 0):
             raise ValueError("Sigma0 must be positive")
-        if np.shape(sigma0) not in [(), (1,), (self.n_outputs,)]:
+        if np.shape(sigma) not in [(), (1,), (self.n_outputs,)]:
             raise ValueError(
-                "sigma0 must be either a scalar value (one standard deviation for "
+                "sigma must be either a scalar value (one standard deviation for "
                 "all coordinates) or an array with one entry per dimension."
             )
-        self.sigma2 = sigma0**2.0
+        self.sigma2 = sigma**2.0
         self._offset = -0.5 * self.n_data * np.log(2 * np.pi * self.sigma2)
         self._multip = -1 / (2.0 * self.sigma2)
 
@@ -98,35 +98,35 @@ class GaussianLogLikelihood(LogLikelihood):
     def __init__(
         self,
         dataset: Dataset,
-        sigma0: float | list[float] | list[Parameter] = 1e-2,
+        sigma: float | list[float] | list[Parameter] = 1e-2,
         dsigma_scale: float = 1.0,
         target: str | list[str] = None,
     ):
         super().__init__(dataset=dataset, target=target)
-        self.set_sigma0(sigma0)
+        self.set_sigma(sigma)
         self._dsigma_scale = dsigma_scale
         self._logpi = -0.5 * self.n_data * np.log(2 * np.pi)
 
-    def set_sigma0(self, sigma0: float | list[float] | list[Parameter]):
+    def set_sigma(self, sigma: float | list[float] | list[Parameter]):
         # Reset
         self.parameters = Parameters()
         self.sigma = Parameters()
 
         # Compile sigma parameters
-        sigma0 = [sigma0] if not isinstance(sigma0, list) else sigma0
-        sigma0 = self._pad_sigma0(sigma0)
+        sigma = [sigma] if not isinstance(sigma, list) else sigma
+        sigma = self._pad_sigma(sigma)
 
-        for i, value in enumerate(sigma0):
+        for i, value in enumerate(sigma):
             self._add_single_sigma(i, value)
 
-    def _pad_sigma0(self, sigma0):
-        if len(sigma0) < self.n_outputs:
+    def _pad_sigma(self, sigma):
+        if len(sigma) < self.n_outputs:
             return np.pad(
-                sigma0,
-                (0, self.n_outputs - len(sigma0)),
-                constant_values=sigma0[-1],
+                sigma,
+                (0, self.n_outputs - len(sigma)),
+                constant_values=sigma[-1],
             )
-        return sigma0
+        return sigma
 
     def _add_single_sigma(self, index, value):
         if isinstance(value, Parameter):
@@ -138,7 +138,7 @@ class GaussianLogLikelihood(LogLikelihood):
             )
         else:
             raise TypeError(
-                f"Expected sigma0 to contain Parameter objects or numeric values. "
+                f"Expected sigma to contain Parameter objects or numeric values. "
                 f"Received {type(value)}"
             )
         self.sigma.add(f"Sigma for output {index + 1}", sigma)
@@ -218,7 +218,7 @@ class LogPosterior(LogLikelihood):
 
     def set_joint_prior(self):
         if self.prior is None:
-            self.joint_prior = JointDistribution(*self.parameters.distribution())
+            self.joint_prior = self.parameters.distribution
         elif isinstance(self.prior, (stats.distributions.rv_frozen)):
             self.joint_prior = Distribution(self.prior)
         elif isinstance(self.prior, Parameter):
