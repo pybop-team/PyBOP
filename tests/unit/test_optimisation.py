@@ -167,6 +167,25 @@ class TestOptimisation:
         )
         return problem
 
+    @pytest.fixture
+    def result(self, problem):
+        logger = pybop.Logger(minimising=True)
+        logger.iteration = 1
+        logger.extend_log(
+            x_search=[np.asarray([1e-3])], x_model=[np.asarray([1e-3])], cost=[0.1]
+        )
+        optim = pybop.XNES(problem)
+        optim._logger = logger
+
+        # Construct OptimisationResult
+        result = OptimisationResult(
+            optim=optim,
+            method_name="Test name",
+            time=0.1,
+            message="Test message",
+        )
+        return result
+
     @pytest.mark.parametrize(
         "optimiser, expected_name, sensitivities",
         [
@@ -703,23 +722,7 @@ class TestOptimisation:
             optim._threshold = None
             optim.run()
 
-    def test_optimisation_result(self, problem):
-        logger = pybop.Logger(minimising=True)
-        logger.iteration = 1
-        logger.extend_log(
-            x_search=[np.asarray([1e-3])], x_model=[np.asarray([1e-3])], cost=[0.1]
-        )
-        optim = pybop.XNES(problem)
-        optim._logger = logger
-
-        # Construct OptimisationResult
-        result = OptimisationResult(
-            optim=optim,
-            method_name="Test name",
-            time=0.1,
-            message="Test message",
-        )
-
+    def test_optimisation_result(self, result, problem):
         # Asserts
         assert result.method_name == "Test name"
         assert result.x[0] == 1e-3
@@ -758,3 +761,55 @@ class TestOptimisation:
             RuntimeError, match="Distributions must be provided for multi-start"
         ):
             optim.run()
+
+    def compare_result_data(self, result1, result2):
+        assert result1.method_name == result2.method_name
+        assert result1.n_runs == result2.n_runs
+        assert result1._best_run == result2._best_run
+        np.testing.assert_array_equal(result1._x, result2._x)
+        np.testing.assert_array_equal(result1._x_model, result2._x_model)
+        np.testing.assert_array_equal(result1._x0, result2._x0)
+        np.testing.assert_array_equal(result1._best_cost, result2._best_cost)
+        np.testing.assert_array_equal(result1._cost, result2._cost)
+        np.testing.assert_array_equal(result1._initial_cost, result2._initial_cost)
+        np.testing.assert_array_equal(result1._n_iterations, result2._n_iterations)
+        np.testing.assert_array_equal(
+            result1._iteration_number, result2._iteration_number
+        )
+        np.testing.assert_array_equal(result1._n_evaluations, result2._n_evaluations)
+        assert result1._message == result2._message
+        np.testing.assert_array_equal(result1._scipy_result, result2._scipy_result)
+        np.testing.assert_array_equal(result1._time, result2._time)
+
+    @pytest.mark.parametrize("to_format", ["json", "matlab", "pickle"])
+    def test_save_result_data(self, result, problem, to_format, tmp_path):
+        test_stub = tmp_path / "test"
+
+        if to_format == "matlab":
+            filename = f"{test_stub}.mat"
+        elif to_format == "json":
+            filename = f"{test_stub}.json"
+        else:
+            filename = f"{test_stub}.pickle"
+        # Test save result
+        result.save_data(filename, to_format=to_format)
+
+        result_load = OptimisationResult.load_data(filename, file_format=to_format)
+        self.compare_result_data(result, result_load)
+
+        # Test save combined result
+        result_combined = OptimisationResult.combine([result, result])
+        result_combined.save_data(filename, to_format=to_format)
+
+        result_load = OptimisationResult.load_data(filename, file_format=to_format)
+        self.compare_result_data(result_combined, result_load)
+
+    def test_save_result(self, result, tmp_path):
+        test_stub = tmp_path / "test"
+
+        # test save whole result
+        filename = f"{test_stub}.pickle"
+        result.save(filename)
+        result_load = OptimisationResult.load(filename)
+        self.compare_result_data(result, result_load)
+        assert result.problem.parameters.names == result_load.problem.parameters.names
