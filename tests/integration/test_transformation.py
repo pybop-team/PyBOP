@@ -81,7 +81,6 @@ class TestTransformation:
             pybop.GaussianLogLikelihood,
             pybop.RootMeanSquaredError,
             pybop.SumSquaredError,
-            pybop.LogPosterior,
         ]
     )
     def cost_class(self, request):
@@ -98,11 +97,7 @@ class TestTransformation:
         )
 
         # Construct the cost
-        if cost_class is pybop.LogPosterior:
-            likelihood = pybop.GaussianLogLikelihood(dataset, sigma=self.sigma)
-            cost = cost_class(likelihood)
-        else:
-            cost = cost_class(dataset)
+        cost = cost_class(dataset)
         return pybop.Problem(simulator, cost)
 
     @pytest.mark.parametrize(
@@ -144,7 +139,7 @@ class TestTransformation:
         # Noise levels are very hard to gauge; removed for test consistency.
         """
         # Add sigma to ground truth for GaussianLogLikelihood
-        if isinstance(problem.cost, pybop.GaussianLogLikelihood | pybop.LogPosterior):
+        if isinstance(problem.cost, pybop.GaussianLogLikelihood):
             self.ground_truth = np.concatenate(
                 (self.ground_truth, np.asarray([self.sigma]))
             )

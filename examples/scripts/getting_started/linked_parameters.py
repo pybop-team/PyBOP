@@ -109,5 +109,5 @@ print(f"Optimised gravimetric energy density: {problem(result.x):.2f} W.h.kg-1")
 result.plot_surface()
 
 # Plot the timeseries output
-problem.target = "Voltage [V]"
+problem.set_target("Voltage [V]")
 pybop.plot.problem(problem, inputs=result.best_inputs, title="Optimised Comparison")

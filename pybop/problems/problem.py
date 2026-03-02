@@ -3,7 +3,6 @@ import numpy as np
 from pybop.analysis.sensitivity_analysis import sensitivity_analysis
 from pybop.costs.base_cost import BaseCost
 from pybop.costs.evaluation import Evaluation
-from pybop.costs.likelihoods import LogPosterior
 from pybop.parameters.parameter import Inputs, Parameters
 from pybop.simulators.base_simulator import BaseSimulator, Solution
 from pybop.simulators.failed_solution import FailedSolution
@@ -34,7 +33,7 @@ class Problem:
     """
 
     def __init__(self, simulator: BaseSimulator = None, cost: BaseCost = None):
-        self.parameters = Parameters()
+        self._parameters = Parameters()
 
         # Gather information from the simulator
         self._simulator = simulator.copy() if simulator is not None else BaseSimulator()
@@ -44,34 +43,13 @@ class Problem:
         # Gather information from the cost function
         self._cost = cost or BaseCost()
         self._minimising = self._cost.minimising
-        self.domain = self._cost.domain
-        self.target = self._cost.target
-
-        # Share parameters from model with cost
         self.parameters.join(self._cost.parameters)
-        self._cost.parameters = self.parameters
-        self._cost.set_fail_gradient()
 
-        # Objective-specific configuration
-        if isinstance(self._cost, LogPosterior):
-            self._cost.log_likelihood.parameters = self.parameters
-            self._cost.set_joint_prior()
+        # Update the simulator output variables to match the target
+        self.set_target()
 
     def get_model_inputs(self, inputs: Inputs):
         return {key: inputs[key] for key in self._simulator.parameters.keys()}
-
-    @property
-    def target(self):
-        return self._target
-
-    @target.setter
-    def target(self, value: list[str] | None):
-        self._target = [value] if isinstance(value, str) else value or []
-        self._simulator.set_output_variables(self._target)
-
-    @property
-    def n_outputs(self):
-        return len(self._target)
 
     def __call__(self, inputs: Inputs | list[Inputs]) -> float | list[float]:
         """
@@ -301,15 +279,6 @@ class Problem:
             problem=self, n_samples=n_samples, calc_second_order=calc_second_order
         )
 
-    def join_parameters(self, parameters):
-        """
-        Setter for joining parameters. This method sets the fail gradient if the join adds parameters.
-        """
-        original_n_params = self.n_parameters
-        self._parameters.join(parameters)
-        if original_n_params != self.n_parameters:
-            self.set_fail_gradient()
-
     @property
     def cost(self):
         return self._cost
@@ -319,20 +288,28 @@ class Problem:
         return self._minimising
 
     @property
-    def target_data(self):
-        return self._cost.target_data
+    def domain(self):
+        return self._cost.domain
 
     @property
     def domain_data(self):
         return self._cost.domain_data
 
     @property
+    def target(self):
+        return self._cost.target
+
+    @property
+    def target_data(self):
+        return self._cost.target_data
+
+    def set_target(self, value: list[str] | str | None = None):
+        self._cost.set_target(value)
+        self._simulator.set_output_variables(self._cost.target)
+
+    @property
     def parameters(self):
         return self._parameters
-
-    @parameters.setter
-    def parameters(self, parameters):
-        self._parameters = parameters
 
     @property
     def n_parameters(self):
@@ -345,7 +322,3 @@ class Problem:
     @property
     def has_sensitivities(self):
         return self._has_sensitivities
-
-    @property
-    def eis(self):
-        return self._eis

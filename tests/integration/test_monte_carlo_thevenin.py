@@ -69,20 +69,12 @@ class TestSamplingThevenin:
     def parameters(self):
         return {
             "R0 [Ohm]": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    5e-2,
-                    5e-3,
-                    truncated_at=[1e-4, 1e-1],
-                ),
+                distribution=pybop.Gaussian(5e-2, 5e-3, truncated_at=[1e-4, 1e-1]),
                 transformation=pybop.LogTransformation(),
                 initial_value=stats.uniform(2e-3, 8e-2 - 2e-3).rvs(),
             ),
             "R1 [Ohm]": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    5e-2,
-                    5e-3,
-                    truncated_at=[1e-4, 1e-1],
-                ),
+                distribution=pybop.Gaussian(5e-2, 5e-3, truncated_at=[1e-4, 1e-1]),
                 transformation=pybop.LogTransformation(),
                 initial_value=stats.uniform(2e-3, 8e-2 - 2e-3).rvs(),
             ),
@@ -96,7 +88,7 @@ class TestSamplingThevenin:
         return data + np.random.normal(0, sigma, len(data))
 
     @pytest.fixture
-    def posterior(self, model, parameter_values, parameters, init_soc):
+    def log_pdf(self, model, parameter_values, parameters, init_soc):
         parameter_values.set_initial_state(init_soc)
         dataset = self.get_data(model, parameter_values)
 
@@ -106,16 +98,15 @@ class TestSamplingThevenin:
             model, parameter_values=parameter_values, protocol=dataset
         )
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma=self.sigma)
-        posterior = pybop.LogPosterior(likelihood)
-        return pybop.Problem(simulator, posterior)
+        return pybop.LogPosterior(simulator, likelihood)
 
     @pytest.fixture
-    def map_estimate(self, posterior):
+    def map_estimate(self, log_pdf):
         options = pybop.PintsOptions(
             max_iterations=80,
             verbose=True,
         )
-        optim = pybop.CMAES(posterior, options=options)
+        optim = pybop.CMAES(log_pdf, options=options)
         result = optim.run()
 
         return result.x
@@ -133,11 +124,11 @@ class TestSamplingThevenin:
             SliceStepoutMCMC,
         ],
     )
-    def test_sampling_thevenin(self, sampler, posterior, map_estimate):
+    def test_sampling_thevenin(self, sampler, log_pdf, map_estimate):
         # Note: we don't test the NUTS, SliceRankShrinking or DramACMC samplers,
         # as convergence for this problem was found to be challenging.
         x0 = np.clip(map_estimate + np.random.normal(0, 5e-3, size=2), 1e-4, 1e-1)
-        posterior.parameters.update(initial_values=x0)
+        log_pdf.parameters.update(initial_values=x0)
         options = pybop.PintsSamplerOptions(
             n_chains=2,
             warm_up_iterations=50,
@@ -145,7 +136,7 @@ class TestSamplingThevenin:
         )
 
         # construct and run
-        sampler = sampler(log_pdf=posterior, options=options)
+        sampler = sampler(log_pdf=log_pdf, options=options)
         result = sampler.run()
 
         # Test posterior summary

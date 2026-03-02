@@ -48,13 +48,13 @@ def problem(
     if problem.domain_data is None:
         # Simulate the model for the both the initial and the given inputs
         target = problem.target
-        problem.target = target + [domain]
+        problem.set_target(target + [domain])
         initial_inputs = problem.simulator.parameters.to_dict("initial")
         target_output = problem.simulate(initial_inputs)
         target_domain = target_output[domain].data
         model_output = problem.simulate(inputs)
         model_domain = model_output[domain].data
-        problem.target = target
+        problem.set_target(target)
     else:
         # Extract the time data and simulate the model for the given inputs
         target_output = Solution()

@@ -62,7 +62,6 @@ class TestEISParameterisation:
             pybop.MeanAbsoluteError,
             pybop.MeanSquaredError,
             pybop.Minkowski,
-            pybop.LogPosterior,
         ]
     )
     def cost_class(self, request):
@@ -114,11 +113,6 @@ class TestEISParameterisation:
             cost = cost_class(
                 dataset, target=target, sigma=self.sigma * 4
             )  # Initial sigma guess
-        elif cost_class is pybop.LogPosterior:
-            likelihood = pybop.GaussianLogLikelihoodKnownSigma(
-                dataset, target=target, sigma=self.sigma
-            )
-            cost = cost_class(likelihood)
         elif cost_class in [pybop.SumOfPower, pybop.Minkowski]:
             cost = cost_class(dataset, target=target, p=2)
         else:

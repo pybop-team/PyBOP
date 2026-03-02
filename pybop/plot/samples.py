@@ -13,7 +13,7 @@ def trace(result: "SamplingResult", **kwargs):
     # Import plotly only when needed
     go = PlotlyManager().go
 
-    for i in range(result.num_parameters):
+    for i in range(result.n_parameters):
         fig = go.Figure()
 
         for j, chain in enumerate(result.chains):

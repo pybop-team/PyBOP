@@ -31,7 +31,7 @@ class MetaProblem(Problem):
                 sensitivities_available = False
 
         super().__init__(simulator=None, cost=None)
-        self.parameters = combined_parameters
+        self._parameters = combined_parameters
         self._has_sensitivities = sensitivities_available
 
         # Check if weights are provided
@@ -104,3 +104,13 @@ class MetaProblem(Problem):
             return Evaluation(values=e, sensitivities=de)
 
         return Evaluation(values=e)
+
+    def set_target(self, value: list[str] | str | None = None):
+        for problem in self.problems:
+            problem.set_target(value)
+
+    @property
+    def has_sensitivities(self):
+        if all(problem.has_sensitivities for problem in self.problems):
+            return True
+        return False

@@ -52,8 +52,8 @@ parameter_values.update(
 simulator = pybop.pybamm.Simulator(
     model, parameter_values=parameter_values, protocol=dataset
 )
-likelihood = pybop.GaussianLogLikelihood(dataset, sigma=8e-3)
-problem = pybop.Problem(simulator, likelihood)
+cost = pybop.GaussianLogLikelihood(dataset, sigma=8e-3)
+problem = pybop.Problem(simulator, cost)
 
 # Set up the optimiser
 options = pybop.PintsOptions(

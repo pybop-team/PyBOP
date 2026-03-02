@@ -34,7 +34,7 @@ class TestCosts:
         return {
             "Negative electrode active material volume fraction": pybop.Parameter(
                 distribution=pybop.Gaussian(
-                    truncated_at=[0.375, 0.625], mean=0.5, sigma=0.010
+                    mean=0.5, sigma=0.010, truncated_at=[0.375, 0.625]
                 )
             )
         }
@@ -81,14 +81,10 @@ class TestCosts:
         [
             pybop.MeanAbsoluteError,
             pybop.GaussianLogLikelihoodKnownSigma,
-            pybop.LogPosterior,
         ],
     )
     def test_fitting_costs(self, simulator, dataset, cost_class):
-        if cost_class is pybop.LogPosterior:
-            likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma=0.002)
-            cost = cost_class(likelihood)
-        elif issubclass(cost_class, pybop.LogLikelihood):
+        if issubclass(cost_class, pybop.LogLikelihood):
             cost = cost_class(dataset, sigma=0.002)
         else:
             cost = cost_class(dataset)
@@ -404,30 +400,6 @@ class TestCosts:
             np.testing.assert_allclose(
                 sensitivities_2[key], sensitivities_3[key], atol=1e-5
             )
-
-        # Test LogPosterior explicitly
-        cost4 = pybop.LogPosterior(pybop.GaussianLogLikelihood(dataset))
-        weighted_cost_4 = pybop.WeightedCost(cost1, cost4, weights=[1, 1 / weight])
-        problem_4 = pybop.Problem(simulator, cost4)
-        weighted_4 = pybop.Problem(simulator, weighted_cost_4)
-        sigma = 0.01
-        assert np.isfinite(
-            cost4.parameters["Sigma for output 1"].distribution.logpdf(sigma)
-        )
-        assert np.isfinite(weighted_4([0.5, sigma]))
-        np.testing.assert_allclose(
-            weighted_4.evaluate([0.6, sigma]).values,
-            problem_1.evaluate([0.6]).values
-            - 1 / weight * problem_4.evaluate([0.6, sigma]).values,
-            atol=1e-5,
-        )
-        assert np.isfinite(weighted_4.evaluate([0.5, sigma]).values)
-        np.testing.assert_allclose(
-            weighted_4.evaluate([0.6, sigma]).values,
-            problem_1.evaluate([0.6]).values
-            - 1 / weight * problem_4.evaluate([0.6, sigma]).values,
-            atol=1e-5,
-        )
 
     def test_weighted_design_cost(self, design_simulator):
         cost_1 = pybop.DesignCost(target="Gravimetric energy density [W.h.kg-1]")

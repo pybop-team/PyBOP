@@ -56,9 +56,8 @@ model = pybamm.lithium_ion.SPM()
 simulator = pybop.pybamm.Simulator(
     model, parameter_values=parameter_values, protocol=dataset
 )
-likelihood = pybop.GaussianLogLikelihood(dataset)
-posterior = pybop.LogPosterior(likelihood)
-problem = pybop.Problem(simulator, posterior)
+cost = pybop.GaussianLogLikelihood(dataset)
+log_pdf = pybop.LogPosterior(simulator, cost)
 
 # Create and run the sampler
 options = pybop.PintsSamplerOptions(
@@ -67,7 +66,7 @@ options = pybop.PintsSamplerOptions(
     warm_up_iterations=100,
     verbose=True,
 )
-sampler = pybop.DifferentialEvolutionMCMC(problem, options=options)
+sampler = pybop.DifferentialEvolutionMCMC(log_pdf, options=options)
 result = sampler.run()
 
 # Summary statistics

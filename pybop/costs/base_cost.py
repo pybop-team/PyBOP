@@ -2,6 +2,7 @@ import numpy as np
 
 from pybop._utils import add_spaces
 from pybop.parameters.parameter import Inputs, Parameters
+from pybop.processing.dataset import Dataset
 from pybop.simulators.solution import Solution
 
 
@@ -23,12 +24,35 @@ class BaseCost:
         self._de = 1.0
         self.parameters = Parameters()
         self.minimising = True
-
-        # Default settings, to be overwritten
-        self.domain = "Time [s]"
-        self.target = ["Voltage [V]"]
+        # TODO: Remove the default domain, target and dataset from the base cost as
+        # they are not relevant for all costs.
+        self._domain = "Time [s]"
+        self._target = ["Voltage [V]"]
         self._domain_data = None
         self._target_data = None
+        self._dataset = None
+
+    def set_target(
+        self, target: list[str] | str | None = None, dataset: Dataset | None = None
+    ):
+        """Set the target variable and target data from a pybop.Dataset."""
+        self._target = [target] if isinstance(target, str) else target or self._target
+        self.n_outputs = len(self._target)
+
+        if not isinstance(dataset, Dataset | None):
+            raise ValueError("Dataset must be a pybop.Dataset object.")
+
+        if dataset is not None:
+            # Check that the dataset contains necessary variables
+            dataset.check(domain=dataset.domain, signal=self._target)
+            self._domain = dataset.domain
+            self._dataset = dataset.data
+
+        if self._dataset is not None:
+            # Unpack the domain and target data
+            self._domain_data = self._dataset[self.domain]
+            self.n_data = len(self._domain_data)
+            self._target_data = {var: self._dataset[var] for var in self._target}
 
     def evaluate(
         self,
@@ -112,9 +136,58 @@ class BaseCost:
         return len(self.parameters)
 
     @property
+    def domain(self):
+        return self._domain
+
+    @property
     def domain_data(self):
         return self._domain_data
 
     @property
+    def target(self):
+        return self._target
+
+    @property
     def target_data(self):
         return self._target_data
+
+
+class LogPrior(BaseCost):
+    """
+    The log-prior as a cost, to be used with the LogPosterior class.
+    """
+
+    def __init__(self, parameters):
+        super().__init__()
+        self.parameters = parameters
+        self.minimising = False
+
+    def evaluate(
+        self,
+        solution: Solution,
+        inputs: Inputs | None = None,
+        calculate_sensitivities: bool = False,
+    ) -> float | tuple[float, np.ndarray]:
+        """
+        Computes the log-prior for the given inputs, and optionally the sensitivities.
+        """
+        # Get the values of all input parameters
+        inputs = inputs or self.parameters.to_dict("initial")
+        input_values = np.asarray(list(inputs.values()))
+
+        # Compute log prior (and gradient)
+        if calculate_sensitivities:
+            l, dl = self.parameters.distribution.logpdfS1(input_values)
+            dl = {key: dl[i] for i, key in enumerate(self.parameters.names)}
+        else:
+            l = self.parameters.distribution.logpdf(input_values)
+
+        if not np.isfinite(l).any():
+            return self.failure(
+                inputs=inputs, calculate_sensitivities=calculate_sensitivities
+            )
+
+        if calculate_sensitivities:
+            return l, dl
+
+        return l

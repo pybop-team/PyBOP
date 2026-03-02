@@ -107,7 +107,7 @@ class TestProblem:
 
         # Test set target
         dataset["Voltage [V]"] += np.random.normal(0, 0.05, len(dataset["Voltage [V]"]))
-        cost.set_target(dataset)
+        cost.set_target("Voltage [V]", dataset)
         problem = pybop.Problem(simulator, cost)
 
         # Assert

@@ -7,7 +7,7 @@ import scipy
 from pybop import plot
 from pybop._logging import Logger
 from pybop._result import Result
-from pybop.problems.problem import Problem
+from pybop.problems.log_pdf import LogPDF
 
 
 @dataclass
@@ -42,7 +42,7 @@ class BaseSampler:
 
     Parameters
     ----------
-    log_pdf : pybop.Problem
+    log_pdf : pybop.LogPDF
         The negative unnormalised posterior distribution.
     options : SamplerOptions, optional
         Options for the sampler. If None, default options are used.
@@ -50,7 +50,7 @@ class BaseSampler:
 
     def __init__(
         self,
-        log_pdf: Problem,
+        log_pdf: LogPDF,
         options: SamplerOptions | None = None,
     ):
         self._log_pdf = log_pdf
@@ -91,7 +91,7 @@ class BaseSampler:
         return self._cov0
 
     @property
-    def log_pdf(self) -> Problem:
+    def log_pdf(self) -> LogPDF:
         return self._log_pdf
 
     @property
@@ -167,7 +167,7 @@ class SamplingResult(Result):
         )
         self.chains = chains
         self.all_samples = np.concatenate(chains, axis=0)
-        self.num_parameters = self.chains.shape[2]
+        self.n_parameters = self.chains.shape[2]
 
     def signif(self, x, p: int):
         """
@@ -290,7 +290,7 @@ class SamplingResult(Result):
         def compute_ess(samples):
             """Helper function to compute the ESS for a single set of samples."""
             ess = []
-            for j in range(self.num_parameters):
+            for j in range(self.n_parameters):
                 rho = self.autocorrelation(samples[:, j])
                 T = self._autocorrelate_negative(rho)
                 ess.append(len(samples[:, j]) / (1 + 2 * rho[:T].sum()))

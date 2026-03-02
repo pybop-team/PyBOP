@@ -49,18 +49,10 @@ class TestPintsSamplers:
     def parameters(self):
         return {
             "Negative electrode active material volume fraction": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    0.6,
-                    0.2,
-                    truncated_at=[0.58, 0.62],
-                ),
+                distribution=pybop.Gaussian(0.7, 0.02, truncated_at=[0.58, 0.62])
             ),
             "Positive electrode active material volume fraction": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    0.55,
-                    0.05,
-                    truncated_at=[0.53, 0.57],
-                ),
+                distribution=pybop.Gaussian(0.6, 0.02, truncated_at=[0.53, 0.57])
             ),
         }
 
@@ -69,18 +61,14 @@ class TestPintsSamplers:
         return pybamm.lithium_ion.SPM()
 
     @pytest.fixture
-    def posterior_problem(self, model, parameters, dataset):
+    def log_pdf(self, model, parameters, dataset):
         parameter_values = model.default_parameter_values
         parameter_values.update(parameters)
         simulator = pybop.pybamm.Simulator(
             model, parameter_values=parameter_values, protocol=dataset
         )
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma=0.01)
-        prior1 = pybop.Gaussian(0.7, 0.02)
-        prior2 = pybop.Gaussian(0.6, 0.02)
-        composed_prior = pybop.JointDistribution(prior1, prior2)
-        posterior = pybop.LogPosterior(likelihood, prior=composed_prior)
-        return pybop.Problem(simulator, posterior)
+        return pybop.LogPosterior(simulator, likelihood)
 
     @pytest.fixture
     def n_chains(self):
@@ -114,18 +102,16 @@ class TestPintsSamplers:
     def MCMC(self, request):
         return request.param
 
-    def test_initialisation_and_run(
-        self, posterior_problem, n_chains, MCMC, multi_samplers
-    ):
+    def test_initialisation_and_run(self, log_pdf, n_chains, MCMC, multi_samplers):
         options = pybop.PintsSamplerOptions(
             n_chains=n_chains,
             max_iterations=1,
             verbose=True,
         )
-        sampler = MCMC(log_pdf=posterior_problem, options=options)
+        sampler = MCMC(log_pdf=log_pdf, options=options)
         assert sampler.options.n_chains == n_chains
-        assert sampler._log_pdf == posterior_problem
-        mean0 = posterior_problem.parameters.get_mean()
+        assert sampler._log_pdf == log_pdf
+        mean0 = log_pdf.parameters.get_mean()
         if isinstance(sampler, multi_samplers):
             np.testing.assert_allclose(sampler._samplers[0]._x0[0], mean0)
         else:
@@ -142,7 +128,7 @@ class TestPintsSamplers:
         assert result.chains is not None
         assert result.chains.shape == (n_chains, 1, 2)
 
-    def test_effective_sample_size(self, posterior_problem, MCMC):
+    def test_effective_sample_size(self, log_pdf, MCMC):
         if MCMC is NUTS:
             # Test sample size error only once
             logger = pybop.Logger(minimising=True)
@@ -150,7 +136,7 @@ class TestPintsSamplers:
             logger.extend_log(
                 x_search=[np.asarray([1e-3])], x_model=[np.asarray([1e-3])], cost=[0.1]
             )
-            sampler = MCMC(posterior_problem)
+            sampler = MCMC(log_pdf)
             sampler._logger = logger
             result = SamplingResult(
                 sampler=sampler,
@@ -165,17 +151,17 @@ class TestPintsSamplers:
 
         n_chains = 3
         options = pybop.PintsSamplerOptions(n_chains=n_chains, max_iterations=3)
-        sampler = pybop.HaarioBardenetACMC(log_pdf=posterior_problem, options=options)
+        sampler = pybop.HaarioBardenetACMC(log_pdf=log_pdf, options=options)
         result = sampler.run()
 
         # Non mixed chains
         ess = result.effective_sample_size()
-        assert len(ess) == posterior_problem.n_parameters * n_chains
+        assert len(ess) == log_pdf.n_parameters * n_chains
         assert all(e > 0 for e in ess)  # ESS should be positive
 
         # Mixed chains
         ess = result.effective_sample_size(mixed_chains=True)
-        assert len(ess) == posterior_problem.n_parameters
+        assert len(ess) == log_pdf.n_parameters
         assert all(e > 0 for e in ess)
 
     def test_single_parameter_sampling(self, model, dataset, MCMC, n_chains):
@@ -191,8 +177,7 @@ class TestPintsSamplers:
             model, parameter_values=parameter_values, protocol=dataset
         )
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma=0.01)
-        posterior = pybop.LogPosterior(likelihood)
-        posterior = pybop.Problem(simulator, posterior)
+        log_pdf = pybop.LogPosterior(simulator, likelihood)
 
         # Skip RelativisticMCMC as it requires > 1 parameter
         if issubclass(MCMC, RelativisticMCMC):
@@ -204,7 +189,7 @@ class TestPintsSamplers:
             max_iterations=3,
             verbose=True,
         )
-        sampler = MCMC(log_pdf=posterior, options=options)
+        sampler = MCMC(log_pdf=log_pdf, options=options)
         result = sampler.run()
         summary = result.get_summary_statistics()
         assert isinstance(summary, dict)
@@ -212,10 +197,10 @@ class TestPintsSamplers:
         autocorr = result.autocorrelation(result.chains[0, :, 0])
         assert autocorr.shape == (result.chains[0, :, 0].shape[0] - 2,)
 
-    def test_invalid_initialisation(self, posterior_problem):
+    def test_invalid_initialisation(self, log_pdf):
         with pytest.raises(ValueError, match="Number of chains must be greater than 0"):
             options = pybop.PintsSamplerOptions(n_chains=0)
-            HaarioBardenetACMC(log_pdf=posterior_problem, options=options)
+            HaarioBardenetACMC(log_pdf=log_pdf, options=options)
 
     # SingleChain & MultiChain Sampler
     @pytest.mark.parametrize(
@@ -225,31 +210,29 @@ class TestPintsSamplers:
             DifferentialEvolutionMCMC,
         ],
     )
-    def test_no_chains_in_memory(self, posterior_problem, n_chains, sampler):
+    def test_no_chains_in_memory(self, log_pdf, n_chains, sampler):
         options = sampler.default_options()
         options.n_chains = n_chains
         options.max_iterations = 1
         options.chains_in_memory = False
-        sampler = sampler(posterior_problem, options=options)
+        sampler = sampler(log_pdf, options=options)
 
         # Run the sampler
         samples = sampler.run()
         assert samples.shape == (
             0,
             options.max_iterations,
-            len(posterior_problem.parameters),
+            len(log_pdf.parameters),
         )
 
     @patch("logging.basicConfig")
     @patch("logging.info")
-    def test_initialise_logging(
-        self, mock_info, mock_basicConfig, posterior_problem, n_chains
-    ):
+    def test_initialise_logging(self, mock_info, mock_basicConfig, log_pdf, n_chains):
         options = HaarioBardenetACMC.default_options()
         options.n_chains = n_chains
         options.evaluation_files = ["eval1.txt", "eval2.txt"]
         options.chain_files = ["chain1.txt", "chain2.txt"]
-        sampler = HaarioBardenetACMC(posterior_problem, options=options)
+        sampler = HaarioBardenetACMC(log_pdf, options=options)
         sampler._initialise_logging()
 
         # Check if basicConfig was called with correct arguments
@@ -271,9 +254,9 @@ class TestPintsSamplers:
         sampler._initialise_logging()
         assert mock_info.call_count == len(expected_calls)  # No additional calls
 
-    def test_check_stopping_criteria(self, posterior_problem, n_chains):
+    def test_check_stopping_criteria(self, log_pdf, n_chains):
         options = pybop.PintsSamplerOptions(n_chains=n_chains)
-        sampler = HaarioBardenetACMC(log_pdf=posterior_problem, options=options)
+        sampler = HaarioBardenetACMC(log_pdf=log_pdf, options=options)
         # Set stopping criteria
         sampler.set_max_iterations(10)
         assert sampler._max_iterations == 10
@@ -291,9 +274,9 @@ class TestPintsSamplers:
         ):
             sampler.set_max_iterations(-1)
 
-    def test_base_sampler(self, posterior_problem):
+    def test_base_sampler(self, log_pdf):
         options = pybop.SamplerOptions(n_chains=1)
-        sampler = pybop.BaseSampler(log_pdf=posterior_problem, options=options)
+        sampler = pybop.BaseSampler(log_pdf=log_pdf, options=options)
         with pytest.raises(NotImplementedError):
             sampler.run()
 
@@ -307,15 +290,15 @@ class TestPintsSamplers:
             sampler._cov0 = np.asarray([[-1.0, 0], [0, 1.0]])
             sampler._validate_covariance_matrix()
 
-    def test_base_chain_processor(self, posterior_problem):
+    def test_base_chain_processor(self, log_pdf):
         options = pybop.PintsSamplerOptions(n_chains=1)
-        sampler = pybop.MALAMCMC(log_pdf=posterior_problem, options=options)
+        sampler = pybop.MALAMCMC(log_pdf=log_pdf, options=options)
         chain_processor = pybop.ChainProcessor(sampler)
         with pytest.raises(NotImplementedError):
             chain_processor.process_chain()
 
         with pytest.raises(NotImplementedError):
-            chain_processor._extract_log_pdf(posterior_problem, 0)
+            chain_processor._extract_log_pdf(log_pdf, 0)
 
     def compare_result_data(self, result1, result2):
         assert result1.method_name == result2.method_name
@@ -336,7 +319,7 @@ class TestPintsSamplers:
         np.testing.assert_array_equal(result1._scipy_result, result2._scipy_result)
         np.testing.assert_array_equal(result1._time, result2._time)
 
-    def test_save(self, posterior_problem, n_chains, MCMC, tmp_path):
+    def test_save(self, log_pdf, n_chains, MCMC, tmp_path):
         test_stub = tmp_path / "test"
 
         # Set up sampler
@@ -345,13 +328,13 @@ class TestPintsSamplers:
             max_iterations=1,
             verbose=True,
         )
-        sampler = MCMC(log_pdf=posterior_problem, options=options)
+        sampler = MCMC(log_pdf=log_pdf, options=options)
 
         # Run the sampler
         result = sampler.run()
 
         # Re-define sampler to reconstruct result from data
-        sampler2 = MCMC(log_pdf=posterior_problem, options=options)
+        sampler2 = MCMC(log_pdf=log_pdf, options=options)
 
         for to_format in ["json", "matlab", "pickle"]:
             # Define filename

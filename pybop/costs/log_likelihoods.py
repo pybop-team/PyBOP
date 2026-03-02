@@ -1,8 +1,7 @@
 import numpy as np
-import scipy.stats as stats
 
 from pybop.costs.error_measures import ErrorMeasure
-from pybop.parameters.distributions import Distribution, Uniform
+from pybop.parameters.distributions import Uniform
 from pybop.parameters.parameter import Inputs, Parameter, Parameters
 from pybop.processing.dataset import Dataset
 
@@ -174,74 +173,3 @@ class GaussianLogLikelihood(LogLikelihood):
             return l, dl
 
         return l
-
-
-class LogPosterior(LogLikelihood):
-    """
-    The log-posterior defined as the sum of the log-likelihood and the log-prior.
-
-    Additional Parameters
-    ---------------------
-    log_likelihood : LogLikelihood
-        The likelihood class of type ``LogLikelihood``.
-    prior : Optional, Union[pybop.Parameter, stats.distributions.rv_frozen]
-        The prior class of type ``Parameter``, ``Distribution`` or ``stats.distributions.rv_frozen``.
-        If not provided, the prior class will be taken from the parameter distributions
-        constructed in the `pybop.Parameters` class.
-    """
-
-    def __init__(
-        self,
-        log_likelihood: LogLikelihood,
-        prior: Parameter | stats.distributions.rv_frozen | Distribution | None = None,
-    ):
-        dataset = Dataset(log_likelihood.dataset)
-        dataset.domain = log_likelihood.domain
-        super().__init__(dataset=dataset, target=log_likelihood.target)
-        self.log_likelihood = log_likelihood
-        self.parameters = self.log_likelihood.parameters
-        self.prior = prior
-        self.joint_prior = None  # must be built with model parameters included
-
-    def set_joint_prior(self):
-        if self.prior is None:
-            self.joint_prior = self.parameters.distribution
-        elif isinstance(self.prior, (stats.distributions.rv_frozen)):
-            self.joint_prior = Distribution(self.prior)
-        elif isinstance(self.prior, Parameter):
-            self.joint_prior = self.prior.distribution
-        elif isinstance(self.prior, Distribution):
-            self.joint_prior = self.prior
-        else:
-            raise TypeError(
-                "All priors must either be of type pybop.Parameter, pybop.Distribution or scipy.stats.distributions.rv_frozen"
-            )
-
-    def __call__(
-        self,
-        r: np.ndarray,
-        dy: np.ndarray | None = None,
-        inputs: Inputs | None = None,
-    ) -> float | tuple[float, np.ndarray]:
-        # Get the values of all input parameters
-        inputs = inputs or self.parameters.to_dict("initial")
-        input_values = np.asarray(list(inputs.values()))
-
-        # Compute log prior (and gradient)
-        if dy is not None:
-            log_prior, dp = self.joint_prior.logpdfS1(input_values)
-            dp = {key: dp[i] for i, key in enumerate(self.parameters.names)}
-        else:
-            log_prior = self.joint_prior.logpdf(input_values)
-
-        if not np.isfinite(log_prior).any():
-            return self.failure(self.parameters.names, dy)
-
-        # Compute log likelihood and add log prior (and gradients)
-        if dy is not None:
-            log_likelihood, dl = self.log_likelihood(r, dy, inputs=inputs)
-
-            dp = {key: dp[key] + dl[key] for i, key in enumerate(self.parameters.names)}
-            return log_likelihood + log_prior, dp
-
-        return self.log_likelihood(r, inputs=inputs) + log_prior

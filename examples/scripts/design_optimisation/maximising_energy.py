@@ -90,5 +90,5 @@ print(f"Optimised volumetric energy density: {problem_2(result.x):.2f} W.h.m-3")
 result.plot_surface()
 
 # Plot the timeseries output
-problem_1.target = "Voltage [V]"
+problem_1.set_target("Voltage [V]")
 pybop.plot.problem(problem_1, inputs=result.best_inputs, title="Optimised Comparison")
