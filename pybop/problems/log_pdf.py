@@ -20,7 +20,7 @@ class LogPDF(Problem):
 class LogPosterior(LogPDF):
     """
     The log of the proportional posterior, defined as the sum of the log-likelihood and
-    the log-prior. The likelihood can be an unnormalised probability density function.
+    the log-prior.
     """
 
     def __init__(self, simulator: BaseSimulator, cost: LogLikelihood):
