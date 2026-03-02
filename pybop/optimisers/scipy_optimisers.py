@@ -63,8 +63,8 @@ class BaseSciPyOptimiser(BaseOptimiser):
 
         user_callback = self._options_dict.pop("callback", None)
         if user_callback is not None:
-            self._options_dict["callback"] = (
-                lambda x: user_callback(base_callback(x))
+            self._options_dict["callback"] = lambda x: (
+                user_callback(base_callback(x))
                 if self._options_dict.get("method", None) != "trust-constr"
                 else lambda x, intermediate_result: user_callback(
                     base_callback(intermediate_result)

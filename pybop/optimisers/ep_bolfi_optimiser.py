@@ -244,9 +244,9 @@ class EP_BOLFI(BaseOptimiser):
         # Use the first output variable to pass to EP-BOLFI; define separate simulators
         # for multiple output variables.
         simulators = [
-            lambda inputs, sim=problem._simulator: sim.solve(inputs)[  # noqa: SLF001
-                sim.output_variables[0]
-            ].data
+            lambda inputs, sim=problem._simulator: (  # noqa: SLF001
+                sim.solve(inputs)[sim.output_variables[0]].data
+            )
             for problem in self.problem.problems
         ]
         experimental_datasets = [
