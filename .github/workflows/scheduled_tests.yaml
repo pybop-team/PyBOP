@@ -37,7 +37,7 @@ jobs:
       pybop_matrix: ${{ steps.set-matrix.outputs.matrix }}
 
   # Filter the matrix to only include Python and PyBaMM versions. This job
-  # is used for the self-hosted macOS-14 (arm64) runner at this time.
+  # is used for the self-hosted macOS (arm64) runner at this time.
   filter_pybamm_matrix:
     name: Filter the matrix for OS and Python version
     needs: [create_pybamm_matrix]
@@ -57,8 +57,8 @@ jobs:
           matrix = json.loads(matrix_json)
 
           # Filter the matrix to include just the Python version and PyBaMM version
-          # First filter the matrix to only include macOS-14 entries
-          filtered_entries = [entry for entry in matrix['include'] if entry['os'] == 'macos-14']
+          # First filter the matrix to only include macOS (arm64) entries
+          filtered_entries = [entry for entry in matrix['include'] if entry['os'] == 'macos-latest']
           # Then remove the os key from the entries
           for entry in filtered_entries:
               entry.pop('os')
@@ -110,7 +110,7 @@ jobs:
   # M-series Mac Mini
   build-apple-mseries:
     # This job filters the matrix JSON created in build_matrix.sh to provide
-    # a matrix of only macOS-14 (arm64) entries
+    # a matrix of only macOS (arm64) entries
     needs: [filter_pybamm_matrix]
     name: Build (MacOS M-series, Python ${{ matrix.python_version }}, PyBaMM ${{ matrix.pybamm_version }})
     runs-on: [self-hosted, macOS, ARM64]
