@@ -43,6 +43,7 @@ jobs:
         run: |
             eval "$(pyenv init -)"
             pyenv activate pybop-312-bench
+            python -m pip install --upgrade pip
             python -m pip install -e .[all]
             python -m pip install --group dev
             python -m pip install asv[virtualenv]
