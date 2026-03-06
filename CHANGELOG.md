@@ -5,6 +5,7 @@
 ## Optimisations
 
 ## Bug Fixes
+- [#905](https://github.com/pybop-team/PyBOP/pull/905) - Remove restriction on numpy.
 
 ## Breaking Changes
 
