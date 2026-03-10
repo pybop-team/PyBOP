@@ -28,7 +28,7 @@ def convergence(result: "Result", show=True, **layout_kwargs):
     """
 
     # Extract log from the optimisation object
-    cost_log = result.cost
+    cost_log = result.cost_convergence
 
     # Generate a list of iteration numbers
     iteration_numbers = list(range(1, len(cost_log) + 1))
