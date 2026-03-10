@@ -263,7 +263,7 @@ def surface(
         raise ValueError("This plot method requires two parameters.")
 
     x_optim, y_optim = map(list, zip(*points, strict=False))
-    f = result.cost
+    f = result.problem.evaluate(result.problem.parameters.to_inputs_list(points)).get_values()
 
     # Translate bounds, taking only the first two elements
     xlim, ylim = (
