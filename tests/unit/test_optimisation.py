@@ -771,7 +771,10 @@ class TestOptimisation:
         np.testing.assert_array_equal(result1._x0, result2._x0)
         np.testing.assert_array_equal(result1._best_cost, result2._best_cost)
         np.testing.assert_array_equal(result1._cost, result2._cost)
-        np.testing.assert_array_equal(result1._initial_cost, result2._initial_cost)
+        np.testing.assert_array_equal(
+            result1._cost_convergence, result2._cost_convergence
+        )
+        np.testing.assert_array_equal(result1.initial_cost, result2.initial_cost)
         np.testing.assert_array_equal(result1._n_iterations, result2._n_iterations)
         np.testing.assert_array_equal(
             result1._iteration_number, result2._iteration_number

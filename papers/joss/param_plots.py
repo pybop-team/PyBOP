@@ -239,7 +239,7 @@ if create_plot["minimising"]:
         print("True parameter values:", true_value)
 
         # Plot convergence
-        cost_log = result.cost
+        cost_log = result.cost_convergence
         iteration_numbers = list(range(1, len(cost_log) + 1))
         convergence_plot_dict = pybop.plot.StandardPlot(
             x=iteration_numbers,
@@ -318,7 +318,7 @@ if create_plot["maximising"]:
         print("True parameter values:", true_value)
 
         # Plot convergence
-        cost_log = result.cost
+        cost_log = result.cost_convergence
         iteration_numbers = list(range(1, len(cost_log) + 1))
         convergence_plot_dict = pybop.plot.StandardPlot(
             x=iteration_numbers,
