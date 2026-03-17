@@ -119,7 +119,7 @@ def contour(
                 ).get_values()
                 costs[j, i], sensitivities = out[0][0], out[1]
                 for k, key in enumerate(problem.parameters.names):
-                    grads[k][j, i] = sensitivities[key]
+                    grads[k][j, i] = sensitivities[key].item()
             else:
                 costs[j, i] = problem.evaluate(
                     np.asarray([xi, yj] + additional_values),

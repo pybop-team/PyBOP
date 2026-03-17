@@ -5,6 +5,7 @@
 ## Optimisations
 
 ## Bug Fixes
+- [#905](https://github.com/pybop-team/PyBOP/pull/905) - Remove restriction on numpy.
 
 - [#911](https://github.com/pybop-team/PyBOP/pull/911) - Fixes the passing of the cost log to the Voronoi surface plot.
 
