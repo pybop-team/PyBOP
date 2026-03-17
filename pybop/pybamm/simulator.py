@@ -53,6 +53,9 @@ class Simulator(BaseSimulator):
     discretisation_kwargs : dict, optional
         Any keyword arguments to pass to the Discretisation class.
         See :class:`pybamm.Discretisation` for details.
+    cache_esoh : bool, optional
+        If True, the electrode SOH computation is cached for repeated calls to `pybamm.Simulation.solve`
+        (default: True).
     build_every_time : bool, optional
         If True, the model will be rebuilt every evaluation. Otherwise, the need to rebuild will be
         determined automatically.
@@ -71,6 +74,7 @@ class Simulator(BaseSimulator):
         var_pts: dict | None = None,
         spatial_methods: dict | None = None,
         discretisation_kwargs: dict | None = None,
+        cache_esoh: bool = True,
         build_every_time: bool = False,
     ):
         # Core
@@ -114,6 +118,7 @@ class Simulator(BaseSimulator):
         self._var_pts = var_pts or model.default_var_pts
         self._spatial_methods = spatial_methods or model.default_spatial_methods
         self._discretisation_kwargs = discretisation_kwargs or {"check_model": True}
+        self._cache_esoh = cache_esoh
 
         # State
         self._simulation = None
@@ -388,6 +393,7 @@ class Simulator(BaseSimulator):
             var_pts=self._var_pts,
             spatial_methods=self._spatial_methods,
             discretisation_kwargs=self._discretisation_kwargs,
+            cache_esoh=self._cache_esoh,
         )
 
     def _simulate_without_rebuild(
