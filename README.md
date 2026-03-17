@@ -65,7 +65,7 @@ If you use PyBOP in your work, please cite our paper according to the [CITATION.
 
 or the BibTeX entry
 
-```
+```bib
 @article{Planden_PyBOP_A_Python_2025,
     author = {Planden, Brady and Courtier, Nicola E. and Robinson, Martin and Khetarpal, Agriya and Planella, Ferran Brosa and Howey, David A.},
     doi = {10.21105/joss.07874},
