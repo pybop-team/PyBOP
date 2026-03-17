@@ -59,7 +59,7 @@ To check that PyBOP is installed correctly, run one of the examples in the follo
 
 ## 📖 Citing PyBOP
 
-If you use PyBOP in your work, please cite our paper according to the [CITATION.md](https://github.com/pybop-team/PyBOP/blob/develop/CITATION.md) using
+If you use PyBOP in your work, please cite our paper according to the [CITATION.cff](https://github.com/pybop-team/PyBOP/blob/develop/CITATION.cff) using
 
 > Planden, B., Courtier, N. E., Robinson, M., Khetarpal, A., Planella, F. B., & Howey, D. A. (2025). PyBOP: A Python package for battery model optimisation and parameterisation. _Journal of Open Source Software, 10(116), 7874_. https://doi.org/10.21105/joss.07874
 
