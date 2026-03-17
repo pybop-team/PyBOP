@@ -6,6 +6,8 @@
 
 ## Bug Fixes
 
+- [#911](https://github.com/pybop-team/PyBOP/pull/911) - Fixes the passing of the cost log to the Voronoi surface plot.
+
 ## Breaking Changes
 
 # [v26.3](https://github.com/pybop-team/PyBOP/tree/v26.3) - 2026-03-05
