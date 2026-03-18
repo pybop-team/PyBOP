@@ -54,9 +54,9 @@ class FeatureDistance(BaseCost):
                 f"Feature '{feature}' not supported. Options: "
                 + str(self._supported_features)
             )
-
-        target = target or "Voltage [V]"
         self.set_target(target, dataset)
+        if len(self._target) != 1:
+            raise ValueError("Feature distances require exactly one target variable.")
         self.feature = feature
         self.time_start = time_start
         self.time_end = time_end
@@ -72,7 +72,7 @@ class FeatureDistance(BaseCost):
             warnings.simplefilter("ignore")
             self.data_fit = self._fit(
                 self.domain_data[self.start_index : self.end_index],
-                self.target_data[target][self.start_index : self.end_index],
+                self.target_data[self._target[0]][self.start_index : self.end_index],
             )
 
     def _inverse_fit_function(self, y, *args):

@@ -148,15 +148,15 @@ class TestOptimisation:
     @pytest.fixture
     def gitt_like_problem(self, multivariate_simulator, dataset):
         sqrt_cost_1 = pybop.costs.feature_distances.SquareRootFeatureDistance(
-            dataset["Time [s]"],
-            dataset["Voltage [V]"],
+            dataset,
+            target="Voltage [V]",
             feature="offset",
             time_start=0,
             time_end=180,
         )
         sqrt_cost_2 = pybop.costs.feature_distances.SquareRootFeatureDistance(
-            dataset["Time [s]"],
-            dataset["Voltage [V]"],
+            dataset,
+            target="Voltage [V]",
             feature="offset",
             time_start=180,
             time_end=360,
