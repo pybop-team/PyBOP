@@ -489,3 +489,9 @@ class BayesianOptimisationResult(OptimisationResult):
         self.maximum_a_posteriori = maximum_a_posteriori
         self.log_evidence_mean = log_evidence_mean
         self.log_evidence_variance = log_evidence_variance
+
+    def plot_predictive(self, **kwargs):
+        """
+        Plot the predictive posterior of a Bayesian parameterisation result.
+        """
+        return plot.predictive(result=self, **kwargs)

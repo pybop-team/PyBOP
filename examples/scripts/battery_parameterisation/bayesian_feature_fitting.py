@@ -118,7 +118,12 @@ if __name__ == "__main__":
     optim = pybop.EP_BOLFI(problem, options=options)
     result = optim.run()
 
-    pybop.plot.convergence(result, yaxis={"type": "log"})
-    pybop.plot.parameters(result, yaxis={"type": "log"}, yaxis2={"type": "log"})
+    # Plot the optimisation result
+    result.plot_convergence(yaxis={"type": "log"})
+    result.plot_parameters(yaxis={"type": "log"}, yaxis2={"type": "log"})
+
+    # Plot predictions for a set of inputs sampled from the posterior
+    fig = result.plot_predictive(show=False)
+    fig[0].show()
 
     print_citations()
