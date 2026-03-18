@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 def predictive(
-    result: "BayesianOptimisationResult",  # TODO: Extend to SamplingResult objects
+    result: "BayesianOptimisationResult | SamplingResult",
     number_of_traces: int = 8,
     data_legend_entry=None,
     rvs_legend_entry=None,

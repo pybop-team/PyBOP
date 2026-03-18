@@ -1,3 +1,4 @@
+from copy import deepcopy
 from dataclasses import dataclass
 
 import numpy as np
@@ -7,6 +8,7 @@ import scipy
 from pybop import plot
 from pybop._logging import Logger
 from pybop._result import Result
+from pybop.parameters.multivariate_distributions import MultivariateGaussian
 from pybop.problems.log_pdf import LogPDF
 
 
@@ -215,10 +217,19 @@ class SamplingResult(Result):
             "ci_upper": lambda x, axis: np.percentile(x, 97.5, axis=axis),
         }
 
-        return {
+        summary_statistics = {
             key: self._calculate_statistics(func, key, axis=0)
             for key, func in summary_funs.items()
         }
+
+        # Assume the posterior is Gaussian
+        self.posterior = deepcopy(self.problem.parameters)
+        self.posterior._distribution = MultivariateGaussian(  # noqa: SLF001
+            mean=summary_statistics["mean"],
+            covariance=np.eye(self.n_parameters) * summary_statistics["std"],
+        )
+
+        return summary_statistics
 
     def plot_trace(self, **kwargs):
         """
@@ -310,3 +321,9 @@ class SamplingResult(Result):
         stationary chains R-hat will be close to one, otherwise it is higher.
         """
         return pints.rhat(self.chains)
+
+    def plot_predictive(self, **kwargs):
+        """
+        Plot the predictive posterior of a Bayesian parameterisation result.
+        """
+        return plot.predictive(result=self, **kwargs)

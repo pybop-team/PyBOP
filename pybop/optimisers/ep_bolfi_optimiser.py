@@ -1,7 +1,7 @@
-import copy
 import json
 import time
 from contextlib import redirect_stderr, redirect_stdout
+from copy import deepcopy
 from dataclasses import dataclass, field
 from sys import stderr, stdout
 
@@ -335,13 +335,13 @@ class EP_BOLFI(BaseOptimiser):
         # Collect all features into one cost. Note: they are logarithms,
         # so this is a multiplicative combination.
         feature_costs = np.array(list(ep_bolfi_log["discrepancies"].values()))
-        cost_list = copy.deepcopy(feature_costs[0])
+        cost_list = deepcopy(feature_costs[0])
         for i in range(1, len(feature_costs)):
             for j in range(len(cost_list)):
                 cost_list[j][0] += feature_costs[i][j][0]
         cost_list = np.array([np.exp(value[0]) for value in cost_list])
-        x_best_over_time = copy.deepcopy(x_list)
-        cost_best = copy.deepcopy(cost_list)
+        x_best_over_time = deepcopy(x_list)
+        cost_best = deepcopy(cost_list)
         for i in range(1, len(cost_list)):
             if cost_list[i] < cost_best[i - 1]:
                 x_best_over_time[i:, None] = x_list[i, None]
@@ -391,8 +391,8 @@ class EP_BOLFI(BaseOptimiser):
             [bounds[1][0] for bounds in ep_bolfi_result["error bounds"].values()]
         )
         # The re-use of `parameters` makes transformations easily usable.
-        posterior = copy.deepcopy(self.problem.parameters)
-        posterior.prior = MultivariateGaussian(
+        posterior = deepcopy(self.problem.parameters)
+        posterior._distribution = MultivariateGaussian(  # noqa: SLF001
             search_mean_array, np.array(ep_bolfi_result["covariance"])
         )
         self._logger.iteration = {
