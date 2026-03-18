@@ -21,7 +21,7 @@ class ErrorMeasure(BaseCost):
     ----------
     dataset : pybop.Dataset
         Dataset object containing the target data.
-    target : list[str]
+    target : str | list[str], optional
         The name(s) of the target variable(s).
     weighting : Union[str, np.ndarray], optional
         The type of weighting to use when taking the sum or mean of the error

@@ -5,6 +5,16 @@ from pybamm import CasadiSolver, Experiment, print_citations
 
 import pybop
 
+"""
+This example demonstrates how to use EP-BOLFI to parameterise a PyBaMM model using
+a "feature"-based cost function. We use the term "feature" to describe a parameter
+obtained from fitting either the data or a candidate solution to a simpler model.
+Every evaluation of a feature-based cost function runs its own optimisation (based
+on the simpler model) to identify the value of the feature. The aim is to minimise
+the "feature distance" to identify the parameter values which produce a candidate
+solution with a feature value as close as possible to that of the data.
+"""
+
 # Define model and parameter values
 model = pybamm.lithium_ion.SPMe()
 parameter_values = pybamm.ParameterValues("Chen2020")
@@ -65,15 +75,15 @@ synthetic_data = simulator.solve(
 dataset = pybop.import_pybamm_solution(synthetic_data)
 
 ICI_cost = pybop.SquareRootFeatureDistance(
-    dataset["Time [s]"],
-    dataset["Voltage [V]"],
+    dataset=dataset,
+    target="Voltage [V]",
     feature="inverse_slope",
     time_start=0,
     time_end=90,
 )
 GITT_cost = pybop.SquareRootFeatureDistance(
-    dataset["Time [s]"],
-    dataset["Voltage [V]"],
+    dataset=dataset,
+    target="Voltage [V]",
     feature="inverse_slope",
     time_start=901,
     time_end=991,
