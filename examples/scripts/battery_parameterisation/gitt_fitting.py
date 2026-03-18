@@ -35,7 +35,7 @@ dataset = pybop.Dataset(
 
 # Determine the indices corresponding to each pulse in the dataset
 nonzero_index = np.concatenate(
-    ([-1], np.flatnonzero(dataset["Current [A]"]), [len(dataset["Current [A]"]) + 1])
+    ([-1], np.flatnonzero(dataset["Current [A]"]), [len(dataset) + 1])
 )
 pulse_starts = np.extract(
     nonzero_index[1:] - nonzero_index[:-1] != 1,  # check if there is a gap
