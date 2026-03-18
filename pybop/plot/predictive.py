@@ -8,6 +8,7 @@ from pybop.problems.meta_problem import MetaProblem
 
 if TYPE_CHECKING:
     from pybop.optimisers.ep_bolfi_optimiser import BayesianOptimisationResult
+    from pybop.samplers.base_sampler import SamplingResult
 
 
 def predictive(
