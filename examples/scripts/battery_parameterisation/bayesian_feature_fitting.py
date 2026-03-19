@@ -23,16 +23,17 @@ original_D_p = parameter_values["Positive particle diffusivity [m2.s-1]"]
 
 # Set multivariate parameters (defined in model space)
 distribution = pybop.MultivariateLogNormal(
-    mean_log_x=[np.log(original_D_n), np.log(original_D_p)],
+    mean_log_x=[
+        np.log(0.9 * original_D_n) - 0.5 * np.log(2),
+        np.log(1.1 * original_D_p) - 0.5 * np.log(2),
+    ],
     covariance_log_x=[[np.log(2), 0.0], [0.0, np.log(2)]],
 )
 parameter_values["Negative particle diffusivity [m2.s-1]"] = pybop.Parameter(
-    initial_value=0.9 * original_D_n,
     transformation=pybop.LogTransformation(),
     distribution=pybop.MarginalDistribution(distribution, 0),
 )
 parameter_values["Positive particle diffusivity [m2.s-1]"] = pybop.Parameter(
-    initial_value=1.1 * original_D_p,
     transformation=pybop.LogTransformation(),
     distribution=pybop.MarginalDistribution(distribution, 1),
 )
