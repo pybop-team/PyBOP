@@ -73,7 +73,7 @@ def problem(
         plot_dict = StandardPlot(
             layout_options=dict(
                 title="Scatter Plot",
-                xaxis_title="Time / s",
+                xaxis_title=StandardPlot.remove_brackets(domain),
                 yaxis_title=StandardPlot.remove_brackets(var),
             )
         )

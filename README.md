@@ -57,6 +57,34 @@ pip install pybop==v24.3
 
 To check that PyBOP is installed correctly, run one of the examples in the following section. For a development installation, see the [Contribution Guide](https://github.com/pybop-team/PyBOP/blob/develop/CONTRIBUTING.md#Installation). More installation information is available in our [documentation](https://pybop-docs.readthedocs.io/en/latest/installation.html) and the [extended installation instructions](https://docs.pybamm.org/en/latest/source/user_guide/installation/gnu-linux-mac.html) for PyBaMM.
 
+## 📖 Citing PyBOP
+
+If you use PyBOP in your work, please cite our paper according to the [CITATION.cff](https://github.com/pybop-team/PyBOP/blob/develop/CITATION.cff) using
+
+> Planden, B., Courtier, N. E., Robinson, M., Khetarpal, A., Planella, F. B., & Howey, D. A. (2025). PyBOP: A Python package for battery model optimisation and parameterisation. _Journal of Open Source Software, 10(116), 7874_. https://doi.org/10.21105/joss.07874
+
+or the BibTeX entry
+
+```bib
+@article{Planden_PyBOP_A_Python_2025,
+    author = {Planden, Brady and Courtier, Nicola E. and Robinson, Martin and Khetarpal, Agriya and Planella, Ferran Brosa and Howey, David A.},
+    doi = {10.21105/joss.07874},
+    journal = {Journal of Open Source Software},
+    month = dec,
+    number = {116},
+    pages = {7874},
+    title = {{PyBOP: A Python package for battery model optimisation and parameterisation}},
+    url = {https://joss.theoj.org/papers/10.21105/joss.07874},
+    volume = {10},
+    year = {2025}
+}
+```
+
+Depending on which models and methods you use, please also check the [PyBaMM citation guidelines](https://github.com/pybamm-team/PyBaMM?tab=readme-ov-file#-citing-pybamm) and include the following command at the end of your script to print the relevant BibTeX information.
+
+```python
+pybamm.print_citations()
+```
 
 ## 💡 Use Cases
 
