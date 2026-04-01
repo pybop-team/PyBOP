@@ -73,9 +73,6 @@ class TestTransformation:
             ),
         }
 
-    def noisy(self, data, sigma):
-        return data + np.random.normal(0, sigma, len(data))
-
     @pytest.fixture(
         params=[
             pybop.GaussianLogLikelihood,
@@ -170,6 +167,8 @@ class TestTransformation:
             {
                 "Time [s]": solution["Time [s]"].data,
                 "Current [A]": solution["Current [A]"].data,
-                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma),
+                "Voltage [V]": pybop.add_noise(
+                    solution["Voltage [V]"].data, self.sigma
+                ),
             }
         )

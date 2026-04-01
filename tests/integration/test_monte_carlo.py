@@ -66,9 +66,6 @@ class Test_Sampling_SPM:
     def init_soc(self, request):
         return request.param
 
-    def noisy(self, data, sigma):
-        return data + np.random.normal(0, sigma, len(data))
-
     @pytest.fixture
     def log_pdf(self, model_and_parameter_values, parameters, init_soc):
         model, parameter_values = model_and_parameter_values
@@ -141,6 +138,6 @@ class Test_Sampling_SPM:
             {
                 "Time [s]": solution["Time [s]"].data,
                 "Current [A]": solution["Current [A]"].data,
-                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, 0.002),
+                "Voltage [V]": pybop.add_noise(solution["Voltage [V]"].data, 0.002),
             }
         )

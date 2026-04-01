@@ -8,7 +8,7 @@ import pybop
 
 class TestEISParameterisation:
     """
-    A class to test the eis parameterisation methods.
+    A class to test the EIS parameterisation methods.
     """
 
     pytestmark = pytest.mark.integration
@@ -66,16 +66,6 @@ class TestEISParameterisation:
     )
     def cost_class(self, request):
         return request.param
-
-    def noisy(self, data, sigma):
-        # Generate real part noise
-        real_noise = np.random.normal(0, sigma, len(data))
-
-        # Generate imaginary part noise
-        imag_noise = np.random.normal(0, sigma, len(data))
-
-        # Combine them into a complex noise
-        return data + real_noise + 1j * imag_noise
 
     @pytest.fixture(
         params=[
@@ -163,14 +153,11 @@ class TestEISParameterisation:
         np.testing.assert_allclose(result.x, self.ground_truth, atol=1.5e-2)
 
     def get_data(self, model, parameter_values, f_eval):
+        x = self.ground_truth
         parameter_values.update(
             {
-                "Negative electrode active material volume fraction": self.ground_truth[
-                    0
-                ],
-                "Positive electrode active material volume fraction": self.ground_truth[
-                    1
-                ],
+                "Negative electrode active material volume fraction": x[0],
+                "Positive electrode active material volume fraction": x[1],
             }
         )
         solution = pybop.pybamm.EISSimulator(
@@ -180,7 +167,7 @@ class TestEISParameterisation:
             {
                 "Frequency [Hz]": f_eval,
                 "Current [A]": np.zeros_like(f_eval),
-                "Impedance": self.noisy(solution["Impedance"].data, self.sigma),
+                "Impedance": pybop.add_noise(solution["Impedance"].data, self.sigma),
             },
             domain="Frequency [Hz]",
         )

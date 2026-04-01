@@ -1,4 +1,3 @@
-import numpy as np
 import pybamm
 
 import pybop
@@ -22,7 +21,7 @@ cs_p_max = parameter_values["Maximum concentration in positive electrode [mol.m-
 cs_n_init = parameter_values["Initial concentration in negative electrode [mol.m-3]"]
 cs_p_init = parameter_values["Initial concentration in positive electrode [mol.m-3]"]
 
-# Generate a synthetic data
+# Generate a synthetic dataset
 sigma = 5e-4
 experiment = pybamm.Experiment(
     [
@@ -33,17 +32,11 @@ experiment = pybamm.Experiment(
 solution = pybamm.Simulation(
     model, parameter_values=parameter_values, experiment=experiment
 ).solve()
-
-
-def noisy(data, sigma):
-    return data + np.random.normal(0, sigma, len(data))
-
-
 dataset = pybop.Dataset(
     {
         "Time [s]": solution.t,
         "Current [A]": solution["Current [A]"].data,
-        "Voltage [V]": noisy(solution["Voltage [V]"].data, sigma),
+        "Voltage [V]": pybop.add_noise(solution["Voltage [V]"].data, sigma),
     }
 )
 

@@ -84,9 +84,6 @@ class TestSamplingThevenin:
     def init_soc(self, request):
         return request.param
 
-    def noisy(self, data, sigma):
-        return data + np.random.normal(0, sigma, len(data))
-
     @pytest.fixture
     def log_pdf(self, model, parameter_values, parameters, init_soc):
         parameter_values.set_initial_state(init_soc)
@@ -102,10 +99,7 @@ class TestSamplingThevenin:
 
     @pytest.fixture
     def map_estimate(self, log_pdf):
-        options = pybop.PintsOptions(
-            max_iterations=80,
-            verbose=True,
-        )
+        options = pybop.PintsOptions(max_iterations=80)
         optim = pybop.CMAES(log_pdf, options=options)
         result = optim.run()
 
@@ -163,6 +157,8 @@ class TestSamplingThevenin:
             {
                 "Time [s]": solution["Time [s]"].data,
                 "Current [A]": solution["Current [A]"].data,
-                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma),
+                "Voltage [V]": pybop.add_noise(
+                    solution["Voltage [V]"].data, self.sigma
+                ),
             }
         )

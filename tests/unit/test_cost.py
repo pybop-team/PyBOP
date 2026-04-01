@@ -324,8 +324,7 @@ class TestCosts:
             {
                 "Time [s]": solution["Time [s]"].data,
                 "Current [A]": solution["Current [A]"].data,
-                "Voltage [V]": solution["Voltage [V]"].data
-                + np.random.normal(0, 0.02, len(solution["Time [s]"].data)),
+                "Voltage [V]": pybop.add_noise(solution["Voltage [V]"].data, 0.02),
             }
         )
 

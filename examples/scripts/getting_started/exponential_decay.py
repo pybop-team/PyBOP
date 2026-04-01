@@ -13,17 +13,11 @@ t_eval = np.linspace(0, 10, 100)
 solution = pybamm.Simulation(model, parameter_values=parameter_values).solve(
     t_eval=t_eval
 )
-
-
-def noisy(data, sigma):
-    return data + np.random.normal(0, sigma, len(data))
-
-
 dataset = pybop.Dataset(
     {
         "Time [s]": t_eval,
-        "y_0": noisy(solution["y_0"](t_eval), sigma),
-        "y_1": noisy(solution["y_1"](t_eval), sigma),
+        "y_0": pybop.add_noise(solution["y_0"](t_eval), sigma),
+        "y_1": pybop.add_noise(solution["y_1"](t_eval), sigma),
     }
 )
 
