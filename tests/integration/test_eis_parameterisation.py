@@ -49,10 +49,6 @@ class TestEISParameterisation:
             ),
         }
 
-    @pytest.fixture(params=[0.5])
-    def init_soc(self, request):
-        return request.param
-
     @pytest.fixture(
         params=[
             pybop.GaussianLogLikelihood,
@@ -77,12 +73,10 @@ class TestEISParameterisation:
         return request.param
 
     @pytest.fixture
-    def optim(
-        self, optimiser, model, parameter_values, parameters, cost_class, init_soc
-    ):
+    def optim(self, optimiser, model, parameter_values, parameters, cost_class):
         n_frequency = 15
         f_eval = np.logspace(-4, 5, n_frequency)
-        parameter_values.set_initial_state(init_soc)
+        parameter_values.set_initial_state(0.5)
         dataset = self.get_data(model, parameter_values, f_eval)
 
         # Define the problem

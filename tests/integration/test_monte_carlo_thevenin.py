@@ -78,13 +78,9 @@ class TestSamplingThevenin:
             ),
         }
 
-    @pytest.fixture(params=[0.5])
-    def init_soc(self, request):
-        return request.param
-
     @pytest.fixture
-    def log_pdf(self, model, parameter_values, parameters, init_soc):
-        parameter_values.set_initial_state(init_soc)
+    def log_pdf(self, model, parameter_values, parameters):
+        parameter_values.set_initial_state(0.5)
         dataset = self.get_data(model, parameter_values)
 
         # Define the cost to optimise
