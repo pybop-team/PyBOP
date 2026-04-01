@@ -24,10 +24,9 @@ class Test_Sampling_SPM:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ground_truth = np.clip(
-            np.asarray([0.55, 0.55, 3e-3])
-            + np.random.normal(0, [5e-2, 5e-2, 1e-4], size=3),
-            [0.4, 0.4, 1e-5],
-            [0.7, 0.7, 1e-2],
+            pybop.add_noise(np.asarray([0.55, 0.55, 3e-3]), [5e-2, 5e-2, 1e-4]),
+            a_min=[0.4, 0.4, 1e-5],
+            a_max=[0.7, 0.7, 1e-2],
         )
 
     @pytest.fixture
@@ -104,9 +103,9 @@ class Test_Sampling_SPM:
     )
     def test_sampling_spm(self, quick_sampler, log_pdf, map_estimate):
         x0 = np.clip(
-            map_estimate + np.random.normal(0, [5e-3, 5e-3, 1e-4], size=3),
-            [0.4, 0.4, 1e-5],
-            [0.75, 0.75, 5e-2],
+            pybop.add_noise(map_estimate, [5e-3, 5e-3, 1e-4]),
+            a_min=[0.4, 0.4, 1e-5],
+            a_max=[0.75, 0.75, 5e-2],
         )
         log_pdf.parameters.update(initial_values=x0)
         options = pybop.PintsSamplerOptions(

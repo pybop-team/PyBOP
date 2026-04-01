@@ -31,9 +31,7 @@ class TestTransformation:
     def setup(self):
         self.sigma = 2e-3
         self.ground_truth = np.clip(
-            np.asarray([0.005, 0.005]) + np.random.normal(loc=0.0, scale=0.001, size=2),
-            a_min=0.0,
-            a_max=0.01,
+            pybop.add_noise(np.asarray([0.005, 0.005]), 0.001), a_min=0.0, a_max=0.01
         )
 
     @pytest.fixture

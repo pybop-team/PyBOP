@@ -17,9 +17,7 @@ class TestTheveninParameterisation:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ground_truth = np.clip(
-            np.asarray([0.05, 0.05]) + np.random.normal(loc=0.0, scale=0.01, size=2),
-            a_min=0.0,
-            a_max=0.1,
+            pybop.add_noise(np.asarray([0.05, 0.05]), 0.01), a_min=0.0, a_max=0.1
         )
 
     @pytest.fixture

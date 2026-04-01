@@ -170,9 +170,7 @@ class TestApplications:
             parameter_values=half_cell_parameter_values,
             experiment=experiment,
         ).solve()
-        corrupt_values = solution["Voltage [V]"].data + np.random.normal(
-            0, sigma, len(solution.t)
-        )
+        corrupt_values = pybop.add_noise(solution["Voltage [V]"].data, sigma)
         start = np.where(solution["Time [s]"].data == 1)[0][0] - 1
         return pybop.Dataset(
             {

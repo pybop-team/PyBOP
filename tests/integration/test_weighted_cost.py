@@ -18,9 +18,7 @@ class TestWeightedCost:
     def setup(self):
         self.sigma = 0.002
         self.ground_truth = np.clip(
-            np.asarray([0.55, 0.55]) + np.random.normal(loc=0.0, scale=0.05, size=2),
-            a_min=0.4,
-            a_max=0.75,
+            pybop.add_noise(np.asarray([0.55, 0.55]), 0.05), a_min=0.4, a_max=0.75
         )
 
     @pytest.fixture

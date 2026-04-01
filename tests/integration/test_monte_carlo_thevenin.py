@@ -29,9 +29,7 @@ class TestSamplingThevenin:
     def setup(self):
         self.sigma = 1e-3
         self.ground_truth = np.clip(
-            np.asarray([0.05, 0.05]) + np.random.normal(loc=0.0, scale=0.01, size=2),
-            a_min=1e-4,
-            a_max=0.1,
+            pybop.add_noise(np.asarray([0.05, 0.05]), 0.01), a_min=1e-4, a_max=0.1
         )
         self.fast_samplers = [
             MALAMCMC,
@@ -121,7 +119,7 @@ class TestSamplingThevenin:
     def test_sampling_thevenin(self, sampler, log_pdf, map_estimate):
         # Note: we don't test the NUTS, SliceRankShrinking or DramACMC samplers,
         # as convergence for this problem was found to be challenging.
-        x0 = np.clip(map_estimate + np.random.normal(0, 5e-3, size=2), 1e-4, 1e-1)
+        x0 = np.clip(pybop.add_noise(map_estimate, 5e-3), a_min=1e-4, a_max=1e-1)
         log_pdf.parameters.update(initial_values=x0)
         options = pybop.PintsSamplerOptions(
             n_chains=2,
