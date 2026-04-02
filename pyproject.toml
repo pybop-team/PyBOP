@@ -28,7 +28,7 @@ classifiers = [
 # versions in the tests in nightly_dependency_tests.yml as appropriate
 requires-python = ">=3.10, <3.14"
 dependencies = [
-    "pybamm>=25.12.0",
+    "pybamm>=26.3.0",
     "numpy>=1.26",
     "scipy>=1.12",
     "pints>=0.6.0",

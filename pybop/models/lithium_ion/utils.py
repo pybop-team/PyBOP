@@ -29,6 +29,8 @@ class Interpolant:
         Output values corresponding to x.
     name : str, optional
         Name for the interpolant when used in PyBaMM.
+    kind: str, optional
+        Which kind of interpolator to use. Can be "linear" (default) or "cubic".
     bounds_error : bool, optional
         If True, raise error when interpolating outside bounds.
     fill_value : str or float, optional
@@ -42,6 +44,7 @@ class Interpolant:
         x: np.ndarray,
         y: np.ndarray,
         name: str | None = None,
+        kind: str | None = None,
         bounds_error: bool = False,
         fill_value: str | float = "extrapolate",
         axis: int = 0,
@@ -49,6 +52,7 @@ class Interpolant:
         self.x = np.asarray(x)
         self.y = np.asarray(y)
         self.name = name
+        self.kind = kind or "linear"
         self._interp_func = self._create_interpolant(bounds_error, fill_value, axis)
 
     def _create_interpolant(
@@ -58,6 +62,7 @@ class Interpolant:
         return interpolate.interp1d(
             self.x,
             self.y,
+            kind=self.kind,
             bounds_error=bounds_error,
             fill_value=fill_value,
             axis=axis,
@@ -82,7 +87,9 @@ class Interpolant:
             return self._interp_func(x)
         except Exception:
             # Fall back to PyBaMM interpolant for symbolic evaluation
-            return PybammInterpolant(self.x, self.y, x, name=self.name)
+            return PybammInterpolant(
+                self.x, self.y, x, name=self.name, interpolator=self.kind
+            )
 
 
 class InverseOCV:

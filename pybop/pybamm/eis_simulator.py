@@ -55,6 +55,9 @@ class EISSimulator(BaseSimulator):
     discretisation_kwargs : dict, optional
         Any keyword arguments to pass to the Discretisation class.
         See :class:`pybamm.Discretisation` for details.
+    cache_esoh : bool, optional
+        If True, the electrode SOH computation is cached for repeated calls to `pybamm.Simulation.solve`
+        (default: True).
     build_every_time : bool, optional
         If True, the model will be rebuilt every evaluation. Otherwise, the need to rebuild will be
         determined automatically.
@@ -72,6 +75,7 @@ class EISSimulator(BaseSimulator):
         var_pts: dict | None = None,
         spatial_methods: dict | None = None,
         discretisation_kwargs: dict | None = None,
+        cache_esoh: bool = True,
         build_every_time: bool = False,
     ):
         # Set-up model for EIS
@@ -93,6 +97,7 @@ class EISSimulator(BaseSimulator):
             var_pts=var_pts,
             spatial_methods=spatial_methods,
             discretisation_kwargs=discretisation_kwargs,
+            cache_esoh=cache_esoh,
             build_every_time=build_every_time,
         )
         self.debug_mode = False

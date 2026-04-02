@@ -106,7 +106,7 @@ class TestProblem:
         assert_array_equal(target_data, dataset["Voltage [V]"])
 
         # Test set target
-        dataset["Voltage [V]"] += np.random.normal(0, 0.05, len(dataset["Voltage [V]"]))
+        dataset["Voltage [V]"] += np.random.normal(0, 0.05, len(dataset))
         cost.set_target("Voltage [V]", dataset)
         problem = pybop.Problem(simulator, cost)
 

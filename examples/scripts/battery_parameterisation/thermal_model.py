@@ -22,7 +22,7 @@ experiment = pybamm.Experiment(
 parameter_values = pybamm.ParameterValues("Chen2020")
 model = pybamm.lithium_ion.SPM()
 solution = pybamm.Simulation(
-    model, parameter_values=parameter_values, experiment=experiment
+    model, parameter_values=parameter_values, experiment=experiment, cache_esoh=False
 ).solve(initial_soc=init_soc)
 
 # Add thermal parameters and the voltage data
@@ -61,6 +61,6 @@ grouped_parameter_values.update(
 # Run an example thermal simulation
 thermal_model = pybop.lithium_ion.CellTemperature()
 solution = pybamm.Simulation(
-    thermal_model, parameter_values=grouped_parameter_values
+    thermal_model, parameter_values=grouped_parameter_values, cache_esoh=False
 ).solve(initial_soc=init_soc, t_eval=solution.t)
 solution.plot(["Current [A]", "SoC", "Voltage [V]", "Cell temperature [K]"])
