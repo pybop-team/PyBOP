@@ -1,6 +1,13 @@
 import numpy as np
 import scipy.stats as stats
 
+from pybop.transformation.base_transformation import Transformation
+from pybop.transformation.transformations import (
+    IdentityTransformation,
+    LogTransformation,
+    ScaledTransformation,
+)
+
 
 class Distribution:
     """
@@ -15,15 +22,24 @@ class Distribution:
     ----------
     distribution : scipy.stats.distributions.rv_frozen
         The underlying continuous random variable distribution.
+    n_parameters : int
+        The number of dimensions (default: 1).
     """
 
     def __init__(
         self,
         distribution: stats.distributions.rv_frozen | None = None,
+        properties: dict | None = None,
+        n_parameters: int = 1,
     ):
         self.distribution = distribution
+        self.properties = properties or {}
+        self._n_parameters = n_parameters
 
-    def support(self):
+    def support(self) -> tuple[float]:
+        if self.distribution is None:
+            return (-np.inf, np.inf)
+
         return self.distribution.support()
 
     def pdf(self, x):
@@ -42,8 +58,8 @@ class Distribution:
         """
         if self.distribution is None:
             raise NotImplementedError
-        else:
-            return self.distribution.pdf(x)
+
+        return self.distribution.pdf(x)
 
     def logpdf(self, x):
         """
@@ -61,8 +77,8 @@ class Distribution:
         """
         if self.distribution is None:
             raise NotImplementedError
-        else:
-            return self.distribution.logpdf(x)
+
+        return self.distribution.logpdf(x)
 
     def icdf(self, q):
         """
@@ -80,8 +96,8 @@ class Distribution:
         """
         if self.distribution is None:
             raise NotImplementedError
-        else:
-            return self.distribution.ppf(q)
+
+        return self.distribution.ppf(q)
 
     def cdf(self, x):
         """
@@ -99,10 +115,10 @@ class Distribution:
         """
         if self.distribution is None:
             raise NotImplementedError
-        else:
-            return self.distribution.cdf(x)
 
-    def rvs(self, size=1, random_state=None):
+        return self.distribution.cdf(x)
+
+    def rvs(self, size: int = 1, random_state: int | None = None):
         """
         Generates random variates from the distribution.
 
@@ -123,19 +139,10 @@ class Distribution:
         ValueError
             If the size parameter is negative.
         """
-        if not isinstance(size, int | tuple):
-            raise ValueError(
-                "size must be a positive integer or tuple of positive integers"
-            )
-        if isinstance(size, int) and size < 1:
-            raise ValueError("size must be a positive integer")
-        if isinstance(size, tuple) and any(s < 1 for s in size):
-            raise ValueError("size must be a tuple of positive integers")
-
         if self.distribution is None:
             raise NotImplementedError
-        else:
-            return self.distribution.rvs(size=size, random_state=random_state)
+
+        return self.distribution.rvs(size=size, random_state=random_state)
 
     def logpdfS1(self, x):
         """
@@ -171,61 +178,64 @@ class Distribution:
         float
             The value(s) of the first derivative at x.
         """
-        if self.distribution is None:
-            raise NotImplementedError
-        else:
-            # Use a finite difference approximation of the gradient
-            delta = max(abs(x) * 1e-3, np.finfo(float).eps)
-            log_distribution_upper = self.logpdf(x + delta)
-            log_distribution_lower = self.logpdf(x - delta)
+        # Use a finite difference approximation of the gradient
+        delta = max(abs(x) * 1e-3, np.finfo(float).eps)
+        log_distribution_upper = self.logpdf(x + delta)
+        log_distribution_lower = self.logpdf(x - delta)
 
-            return (log_distribution_upper - log_distribution_lower) / (2 * delta)
+        return (log_distribution_upper - log_distribution_lower) / (2 * delta)
 
-    def verify(self, x):
-        """
-        Verifies that the input is a numpy array and converts it if necessary.
-        """
+    def verify(self, x) -> np.ndarray:
+        """Verifies that the input is a numpy array and converts it if necessary."""
         if isinstance(x, dict):
             x = np.asarray(list(x.values()))
         elif not isinstance(x, np.ndarray):
             x = np.asarray(x)
         return x
 
-    def __repr__(self):
-        """
-        Returns a string representation of the object.
-        """
-        return f"{self.__class__.__name__}, mean: {self.mean()}, standard deviation: {self.std()}"
+    def __repr__(self) -> str:
+        return f"{self.name}, properties: {self.properties}"
 
-    def mean(self):
-        """
-        Get the mean of the distribution.
+    def mean(self) -> float:
+        """Get the mean of the distribution."""
+        if self.distribution is None:
+            raise NotImplementedError
 
-        Returns
-        -------
-        float
-            The mean of the distribution.
-        """
         return self.distribution.mean()
 
-    def std(self):
-        """
-        Get the standard deviation of the distribution.
+    def std(self) -> float:
+        """Get the standard deviation of the distribution."""
+        if self.distribution is None:
+            raise NotImplementedError
 
-        Returns
-        -------
-        float
-            The standard deviation of the distribution.
-        """
         return self.distribution.std()
+
+    def get_transformed_distribution(self, transform: Transformation):
+        """Get the transformed distribution in the search space."""
+        if isinstance(transform, IdentityTransformation):
+            return self
+
+        transformed_distribution = self._transform(transform)
+
+        if transformed_distribution is None:
+            raise TypeError(
+                f"The transformation of a {self.name} distribution by a "
+                f"{transform.name} is undefined or not yet implemented."
+            )
+        return transformed_distribution
+
+    def _transform(self, transform: Transformation):
+        """Get the transformed distribution in the search space."""
+        return NotImplementedError
+
+    @property
+    def name(self):
+        return self.__class__.__name__
 
 
 class Gaussian(Distribution):
     """
     Represents a Gaussian (normal) distribution with a given mean and standard deviation.
-
-    This class provides methods to calculate the probability density function (pdf),
-    the logarithm of the pdf, and to generate random variates (rvs) from the distribution.
 
     Parameters
     ----------
@@ -233,52 +243,154 @@ class Gaussian(Distribution):
         The mean (mu) of the Gaussian distribution.
     sigma : float
         The standard deviation (sigma) of the Gaussian distribution.
+    truncated_at : list[float], optional
+        If provided, the distribution becomes a truncated normal distribution.
     """
 
     def __init__(
-        self,
-        mean,
-        sigma,
-        truncated_at: list[float] = None,
+        self, mean: float, sigma: float, truncated_at: list[float] | None = None
     ):
         if truncated_at is not None:
-            distribution = stats.truncnorm(
-                (truncated_at[0] - mean) / sigma,
-                (truncated_at[1] - mean) / sigma,
-                loc=mean,
-                scale=sigma,
-            )
+            properties = {
+                "a": float((truncated_at[0] - mean) / sigma),
+                "b": float((truncated_at[1] - mean) / sigma),
+                "loc": float(mean),
+                "scale": float(sigma),
+            }
+            distribution = stats.truncnorm(**properties)
         else:
-            distribution = stats.norm(loc=mean, scale=sigma)
-        super().__init__(distribution)
-        self.name = "Gaussian"
-        self._n_parameters = 1
-        self.loc = mean
-        self.scale = sigma
+            properties = {"loc": float(mean), "scale": float(sigma)}
+            distribution = stats.norm(**properties)
+        super().__init__(distribution, properties=properties)
 
     def _dlogpdf_dx(self, x):
-        """
-        Evaluates the first derivative of the log Gaussian distribution at x.
+        """Evaluates the first derivative of the log Gaussian distribution at x."""
+        if "a" in self.properties.keys():
+            return super()._dlogpdf_dx(x)  # use estimate for a truncated normal
 
-        Parameters
-        ----------
-        x : float
-            The point(s) at which to evaluate the first derivative.
+        return (self.properties["loc"] - x) / self.properties["scale"] ** 2
 
-        Returns
-        -------
-        float
-            The value(s) of the first derivative at x.
-        """
-        return (self.loc - x) / self.scale**2
+    def _transform(self, transform: Transformation) -> Distribution | None:
+        """Get the transformed distribution in the search space."""
+        if isinstance(transform, ScaledTransformation):
+            truncated_at = None
+            if "a" in self.properties.keys():
+                original_truncation = self.properties["loc"] + (
+                    self.properties["scale"]
+                    * np.asarray([self.properties["a"], self.properties["b"]])
+                )
+                truncated_at = np.sort(
+                    [transform.to_search(x) for x in original_truncation]
+                )
+            return Gaussian(
+                mean=transform.to_search(self.properties["loc"]),
+                sigma=self.properties["scale"] * transform.coefficient,
+                truncated_at=truncated_at,
+            )
+        return None
+
+
+class LogNormal(Distribution):
+    """
+    Represents a log-normal distribution corresponding to a Gaussian distribution for
+    log(x) with a given mean and standard deviation.
+
+    Parameters
+    ----------
+    mean_log_x : float
+        The mean (mu) of the Gaussian distribution of log(x).
+    sigma : float
+        The standard deviation (sigma) of the Gaussian distribution of log(x).
+    """
+
+    def __init__(self, mean_log_x: float, sigma: float):
+        properties = {"scale": float(np.exp(mean_log_x)), "s": float(sigma)}
+        super().__init__(stats.lognorm(**properties), properties=properties)
+
+    def _transform(self, transform: Transformation) -> Distribution | None:
+        """Get the transformed distribution in the search space."""
+        if isinstance(transform, LogTransformation):
+            return Gaussian(
+                mean=np.log(self.properties["scale"]),
+                sigma=self.properties["s"],
+            )
+        return None
 
 
 class Uniform(Distribution):
     """
     Represents a uniform distribution over a specified interval.
 
-    This class provides methods to calculate the pdf, the log pdf, and to generate
-    random variates from the distribution.
+    Parameters
+    ----------
+    lower : float
+        The lower bound of the distribution.
+    upper : float
+        The upper bound of the distribution.
+    """
+
+    def __init__(self, lower: float, upper: float):
+        properties = {"loc": float(lower), "scale": float(upper - lower)}
+        super().__init__(stats.uniform(**properties), properties=properties)
+
+    def _dlogpdf_dx(self, x):
+        """Evaluates the first derivative of the log uniform distribution at x."""
+        return np.zeros_like(x)
+
+    def mean(self) -> float:
+        """Returns the mean of the distribution."""
+        return self.properties["loc"] + self.properties["scale"] / 2
+
+    def __repr__(self) -> str:
+        return f"{self.name}, bounds: {self.support()}"
+
+    def _transform(self, transform: Transformation) -> Distribution | None:
+        """Get the transformed distribution in the search space."""
+        if isinstance(transform, ScaledTransformation):
+            bounds = [transform.to_search(x) for x in self.support()]
+            return Uniform(lower=min(bounds), upper=max(bounds))
+        return None
+
+
+class LogUniform(Distribution):
+    """
+    Represents a log-uniform distribution over a specified interval.
+
+    Parameters
+    ----------
+    lower : float
+        The lower bound of the distribution.
+    upper : float
+        The upper bound of the distribution.
+    """
+
+    def __init__(self, lower: float, upper: float):
+        # Validate that upper > lower for all elements
+        if not np.all(0 < lower < upper):
+            raise ValueError(
+                "All elements of upper bounds must be greater than lower bounds."
+            )
+        properties = {"a": float(lower), "b": float(upper)}
+        super().__init__(stats.loguniform(**properties), properties=properties)
+
+    def __repr__(self) -> str:
+        return f"{self.name}, bounds: {self.support()}"
+
+    def _transform(self, transform: Transformation) -> Distribution | None:
+        """Get the transformed distribution in the search space."""
+        if isinstance(transform, ScaledTransformation):
+            bounds = [transform.to_search(x) for x in self.support()]
+            return LogUniform(lower=min(bounds), upper=max(bounds))
+
+        elif isinstance(transform, LogTransformation):
+            bounds = [transform.to_search(x) for x in self.support()]
+            return Uniform(lower=min(bounds), upper=max(bounds))
+        return None
+
+
+class Unbounded(Distribution):
+    """
+    Represents an unbounded distribution with either zero or one finite bound.
 
     Parameters
     ----------
@@ -289,51 +401,50 @@ class Uniform(Distribution):
     """
 
     def __init__(
-        self,
-        lower,
-        upper,
+        self, initial_value: float = 1.0, lower: float = -np.inf, upper: float = np.inf
     ):
-        super().__init__(stats.uniform(loc=lower, scale=upper - lower))
-        self.name = "Uniform"
-        self.lower = lower
-        self.upper = upper
-        self._n_parameters = 1
+        super().__init__()
+        self.lower = float(lower)
+        self.upper = float(upper)
+        self.initial_value = (
+            None
+            if initial_value is None
+            else float(min(max(initial_value, lower), upper))
+        )
+
+    def support(self) -> tuple[float]:
+        return (self.lower, self.upper)
 
     def _dlogpdf_dx(self, x):
-        """
-        Evaluates the first derivative of the log uniform distribution at x.
-
-        Parameters
-        ----------
-        x : float
-            The point(s) at which to evaluate the first derivative.
-
-        Returns
-        -------
-        float
-            The value(s) of the first derivative at x.
-        """
+        """Evaluates the first derivative of the log uniform distribution at x."""
         return np.zeros_like(x)
 
-    def mean(self):
-        """
-        Returns the mean of the distribution.
-        """
-        return (self.lower + self.upper) / 2
+    def mean(self) -> float:
+        """Returns an estimate for the mean of the distribution."""
+        return self.initial_value
 
-    def __repr__(self):
-        """
-        Returns a string representation of the object.
-        """
-        return f"{self.__class__.__name__}, lower: {self.lower}, upper: {self.upper}"
+    def std(self) -> float:
+        """Returns an estimate for the standard deivation of the distribution."""
+        return 0.05 if self.initial_value == 0 else 0.05 * self.initial_value
+
+    def __repr__(self) -> str:
+        return f"{self.name}, initial value: {self.initial_value}, bounds: {self.support()}"
+
+    def _transform(self, transform: Transformation) -> Distribution | None:
+        """Get the transformed distribution in the search space."""
+        if isinstance(transform, ScaledTransformation | LogTransformation):
+            bounds = [transform.to_search(x) for x in self.support()]
+            return Unbounded(
+                initial_value=transform.to_search(self.initial_value),
+                lower=min(bounds),
+                upper=max(bounds),
+            )
+        return None
 
 
 class Exponential(Distribution):
     """
     Represents an exponential distribution with a specified scale parameter.
-
-    This class provides methods to calculate the pdf, the log pdf, and to generate random
-    variates from the distribution.
 
     Parameters
     ----------
@@ -341,38 +452,13 @@ class Exponential(Distribution):
         The scale parameter (lambda) of the exponential distribution.
     """
 
-    def __init__(
-        self,
-        scale: float,
-        loc: float = 0,
-    ):
-        super().__init__(stats.expon(loc=loc, scale=scale))
-        self.name = "Exponential"
-        self._n_parameters = 1
-        self.loc = loc
-        self.scale = scale
+    def __init__(self, scale: float, loc: float = 0):
+        properties = {"loc": float(loc), "scale": float(scale)}
+        super().__init__(stats.expon(**properties), properties=properties)
 
     def _dlogpdf_dx(self, x):
-        """
-        Evaluates the first derivative of the log exponential distribution at x.
-
-        Parameters
-        ----------
-        x : float
-            The point(s) at which to evaluate the first derivative.
-
-        Returns
-        -------
-        float
-            The value(s) of the first derivative at x.
-        """
-        return -1 / self.scale * np.ones_like(x)
-
-    def __repr__(self):
-        """
-        Returns a string representation of the object.
-        """
-        return f"{self.__class__.__name__}, loc: {self.loc}, scale: {self.scale}"
+        """Evaluates the first derivative of the log exponential distribution at x."""
+        return -1 / self.properties["scale"] * np.ones_like(x)
 
 
 class JointDistribution(Distribution):
@@ -391,23 +477,30 @@ class JointDistribution(Distribution):
         if all(distribution is None for distribution in distributions):
             return
 
-        if not all(
-            isinstance(distribution, (Distribution, stats.distributions.rv_frozen))
-            for distribution in distributions
-        ):
-            raise ValueError(
-                "All distributions must be instances of Distribution or scipy.stats.distributions.rv_frozen"
-            )
+        for distribution in distributions:
+            if not isinstance(distribution, Distribution):
+                raise ValueError(
+                    "All distributions must be instances of Distribution. "
+                    f"Received {distribution}"
+                )
 
         self._n_parameters = len(distributions)
-        self._distributions_list: list[Distribution] = [
-            distribution
-            if isinstance(distribution, Distribution)
-            else Distribution(distribution)
-            for distribution in distributions
-        ]
+        self._distributions_list: list[Distribution] = list(distributions)
 
-    def rvs(self, size=1, random_state=None):
+    def support(self) -> np.ndarray:
+        """Return the support as a numpy array of dimensions (2, n_parameters)."""
+        return np.asarray([d.support() for d in self._distributions_list]).T
+
+    def mean(self):
+        return np.asarray([d.mean() for d in self._distributions_list]).T
+
+    def std(self):
+        return np.asarray([d.std() for d in self._distributions_list])
+
+    def cov(self):
+        return np.diag(self.std()) ** 2
+
+    def rvs(self, size: int = 1, random_state: int | None = None):
         """Sample each distribution individually and then compile."""
         all_samples = []
         for distribution in self._distributions_list:
@@ -436,8 +529,7 @@ class JointDistribution(Distribution):
             )
 
         return sum(
-            distribution.logpdf(x)
-            for distribution, x in zip(self._distributions_list, x, strict=False)
+            d.logpdf(x) for d, x in zip(self._distributions_list, x, strict=False)
         )
 
     def logpdfS1(self, x: float | np.ndarray) -> tuple[float, np.ndarray]:
@@ -477,7 +569,19 @@ class JointDistribution(Distribution):
         return output, doutput.T
 
     def __repr__(self) -> str:
-        distributions_repr = "; ".join(
-            [repr(distribution) for distribution in self._distributions_list]
-        )
-        return f"{self.__class__.__name__}(distributions: [{distributions_repr}])"
+        distributions_repr = "; ".join([repr(d) for d in self._distributions_list])
+        return f"{self.name}(distributions: [{distributions_repr}])"
+
+    def _transform(self, transform: Transformation) -> Distribution | None:
+        """Get the transformed distribution in the search space."""
+        list_of_transforms = []
+        for t, d in zip(
+            transform.transformations, self._distributions_list, strict=False
+        ):
+            transformed_dist = d.get_transformed_distribution(t)
+            if transformed_dist is None:
+                return None
+            else:
+                list_of_transforms.append(transformed_dist)
+
+        return JointDistribution(*list_of_transforms)
