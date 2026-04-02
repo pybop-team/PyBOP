@@ -1,7 +1,6 @@
 import numpy as np
 import pybamm
 import pytest
-from scipy import stats
 
 import pybop
 
@@ -40,12 +39,10 @@ class TestEISParameterisation:
     def parameters(self):
         return {
             "Negative electrode active material volume fraction": pybop.Parameter(
-                distribution=stats.uniform(loc=0.3, scale=0.9 - 0.3),
-                initial_value=stats.uniform(loc=0.4, scale=0.75 - 0.4).rvs(),
+                distribution=pybop.Uniform(0.3, 0.9)
             ),
             "Positive electrode active material volume fraction": pybop.Parameter(
-                distribution=stats.uniform(loc=0.3, scale=0.9 - 0.3),
-                initial_value=stats.uniform(loc=0.4, scale=0.75 - 0.4).rvs(),
+                distribution=pybop.Uniform(0.3, 0.9)
             ),
         }
 

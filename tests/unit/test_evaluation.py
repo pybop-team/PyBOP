@@ -1,7 +1,6 @@
 import numpy as np
 import pybamm
 import pytest
-from scipy import stats
 
 import pybop
 
@@ -36,7 +35,7 @@ class TestEvaluation:
                 ),
             ),
             "Positive electrode Bruggeman coefficient (electrode)": pybop.Parameter(
-                distribution=stats.norm(loc=1.5, scale=0.1),
+                distribution=pybop.LogNormal(mean_log_x=1.5, sigma=0.1),
                 transformation=pybop.LogTransformation(),
             ),
         }

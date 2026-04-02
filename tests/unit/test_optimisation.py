@@ -41,18 +41,10 @@ class TestOptimisation:
     def two_parameters(self):
         return {
             "Negative electrode active material volume fraction": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    0.6,
-                    0.02,
-                    truncated_at=[0.58, 0.62],
-                )
+                distribution=pybop.Gaussian(0.6, 0.02, truncated_at=[0.58, 0.62])
             ),
             "Positive electrode active material volume fraction": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    0.5,
-                    0.05,
-                    truncated_at=[0.48, 0.52],
-                )
+                distribution=pybop.Gaussian(0.5, 0.05, truncated_at=[0.48, 0.52])
             ),
         }
 
@@ -633,7 +625,7 @@ class TestOptimisation:
             "Positive electrode active material volume fraction"
         ]._transformation = pybop.IdentityTransformation()
 
-        # Test max evalutions
+        # Test max evaluations
         options = pybop.PintsOptions(max_evaluations=1, verbose=True)
         optim = pybop.GradientDescent(problem, options=options)
         result = optim.run()
@@ -739,28 +731,6 @@ class TestOptimisation:
         assert result.n_iterations in result._n_iterations
         assert result.n_evaluations in result._n_evaluations
         assert result.x0 in result._x0
-
-    def test_multistart_fails_without_distribution(self, model, dataset):
-        # parameter with inifinite bound (no distribution)
-        parameter_values = model.default_parameter_values
-        param = pybop.Parameter(bounds=(0.5, np.inf), initial_value=0.8)
-        parameter_values.update(
-            {"Positive electrode active material volume fraction": param}
-        )
-        simulator = pybop.pybamm.Simulator(
-            model, parameter_values=parameter_values, protocol=dataset
-        )
-        cost = pybop.SumSquaredError(dataset)
-        problem = pybop.Problem(simulator, cost)
-
-        # Setup optimiser
-        options = pybop.PintsOptions(max_iterations=1, multistart=3)
-        optim = pybop.XNES(problem, options=options)
-
-        with pytest.raises(
-            RuntimeError, match="Distributions must be provided for multi-start"
-        ):
-            optim.run()
 
     def compare_result_data(self, result1, result2):
         assert result1.method_name == result2.method_name

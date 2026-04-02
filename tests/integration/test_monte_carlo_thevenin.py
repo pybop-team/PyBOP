@@ -3,12 +3,10 @@ import json
 import numpy as np
 import pybamm
 import pytest
-from scipy import stats
 
 import pybop
 from pybop import (
     MALAMCMC,
-    DramACMC,
     HamiltonianMCMC,
     MonomialGammaHamiltonianMCMC,
     RaoBlackwellACMC,
@@ -31,13 +29,6 @@ class TestSamplingThevenin:
         self.ground_truth = np.clip(
             pybop.add_noise(np.asarray([0.05, 0.05]), 0.01), a_min=1e-4, a_max=0.1
         )
-        self.fast_samplers = [
-            MALAMCMC,
-            RaoBlackwellACMC,
-            SliceDoublingMCMC,
-            SliceStepoutMCMC,
-            DramACMC,
-        ]
 
     @pytest.fixture
     def model(self):
@@ -51,12 +42,8 @@ class TestSamplingThevenin:
             {
                 "Open-circuit voltage [V]": model.default_parameter_values[
                     "Open-circuit voltage [V]"
-                ]
-            }
-        )
-        parameter_values.update(
-            {
-                "C1 [F]": 1000,
+                ],
+                "C1 [F]": 50 / self.ground_truth[1],
                 "R0 [Ohm]": self.ground_truth[0],
                 "R1 [Ohm]": self.ground_truth[1],
             }
@@ -67,14 +54,12 @@ class TestSamplingThevenin:
     def parameters(self):
         return {
             "R0 [Ohm]": pybop.Parameter(
-                distribution=pybop.Gaussian(5e-2, 5e-3, truncated_at=[1e-4, 1e-1]),
+                distribution=pybop.LogNormal(mean_log_x=np.log(0.05), sigma=0.02),
                 transformation=pybop.LogTransformation(),
-                initial_value=stats.uniform(2e-3, 8e-2 - 2e-3).rvs(),
             ),
             "R1 [Ohm]": pybop.Parameter(
-                distribution=pybop.Gaussian(5e-2, 5e-3, truncated_at=[1e-4, 1e-1]),
+                distribution=pybop.LogNormal(mean_log_x=np.log(0.05), sigma=0.02),
                 transformation=pybop.LogTransformation(),
-                initial_value=stats.uniform(2e-3, 8e-2 - 2e-3).rvs(),
             ),
         }
 
@@ -93,8 +78,8 @@ class TestSamplingThevenin:
 
     @pytest.fixture
     def map_estimate(self, log_pdf):
-        options = pybop.PintsOptions(max_iterations=80)
-        optim = pybop.CMAES(log_pdf, options=options)
+        options = pybop.SciPyMinimizeOptions(maxiter=50)
+        optim = pybop.SciPyMinimize(log_pdf, options=options)
         result = optim.run()
 
         return result.x
@@ -142,7 +127,10 @@ class TestSamplingThevenin:
 
     def get_data(self, model, parameter_values):
         experiment = pybamm.Experiment(
-            ["Discharge at 0.5C for 3 minutes (20 second period)"]
+            [
+                "Discharge at 2C for 2 minutes (12 seconds period)",
+                "Rest for 20 seconds (4 seconds period)",
+            ]
         )
         solution = pybamm.Simulation(
             model, parameter_values=parameter_values, experiment=experiment

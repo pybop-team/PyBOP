@@ -1,7 +1,6 @@
 import numpy as np
 import pybamm
 import pytest
-from scipy import stats
 
 import pybop
 
@@ -108,7 +107,7 @@ class TestLikelihoods:
         assert grad_likelihood[key[1]] <= 0
 
         # Test construction with sigma as a Parameter
-        sigma = pybop.Parameter(stats.uniform(loc=0.4, scale=0.6 - 0.4))
+        sigma = pybop.Parameter(pybop.Uniform(lower=0.4, upper=0.6))
         likelihood = pybop.GaussianLogLikelihood(dataset, sigma=sigma)
 
         # Test invalid sigma
