@@ -23,6 +23,7 @@ from pybop.parameters.multivariate_distributions import (
 from pybop.parameters.parameter import Parameter, Parameters
 from pybop.problems.meta_problem import MetaProblem
 from pybop.problems.problem import Problem
+from pybop.simulators.solution import Solution
 
 
 @dataclass
@@ -243,16 +244,21 @@ class EP_BOLFI(BaseOptimiser):
 
         # Define separate simulators for multiple target variables.
         simulators = [
-            lambda inputs, problem=problem: (
-                problem.simulate(inputs=inputs)[problem.target[0]].data
-            )
+            lambda inputs, problem=problem: problem.simulate(inputs=inputs)
             for problem in self.problem.problems
         ]
-        experimental_datasets = [
-            problem.target_data[problem.target[0]] for problem in self.problem.problems
-        ]
+        # Turn datasets into "solutions" for evaluation
+        experimental_datasets = []
+        for problem in self.problem.problems:
+            sol = Solution()
+            sol.set_solution_variable(
+                problem.target[0], data=problem.target_data[problem.target[0]]
+            )
+            experimental_datasets.append(sol)
         feature_extractors = [
-            lambda y, problem=problem: [problem.cost(y=y).values]
+            lambda solution, problem=problem: [
+                problem.cost.evaluate(solution=solution).values
+            ]
             for problem in self.problem.problems
         ]
         self.optimiser = ep_bolfi.EP_BOLFI(

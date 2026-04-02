@@ -5,7 +5,9 @@ from scipy.optimize import minimize
 
 from pybop.costs.base_cost import BaseCost
 from pybop.costs.evaluation import Evaluation
+from pybop.parameters.parameter import Inputs
 from pybop.processing.dataset import Dataset
+from pybop.simulators.solution import Solution
 
 
 def indices_of(values, target):
@@ -75,6 +77,15 @@ class FeatureDistance(BaseCost):
                 self.target_data[self._target[0]][self.start_index : self.end_index],
             )
 
+    def evaluate(
+        self,
+        solution: Solution,
+        inputs: Inputs | None = None,
+        calculate_sensitivities: bool = False,
+    ) -> Evaluation:
+        """Evaluate the feature distance for the given solution."""
+        return Evaluation(self.__call__(y=solution[self.target[0]].data))
+
     def _inverse_fit_function(self, y, *args):
         return NotImplementedError
 
@@ -126,7 +137,7 @@ class FeatureDistance(BaseCost):
                     ]
                 )
             )
-        return Evaluation(error.item())
+        return error.item()
 
 
 class SquareRootFeatureDistance(FeatureDistance):
