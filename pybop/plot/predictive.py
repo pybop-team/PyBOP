@@ -43,12 +43,9 @@ def predictive(
     figure_list = []
 
     for problem in problems:
-        inputs = [problem.parameters.to_dict(s) for s in posterior_samples]
-        simulations = problem.simulate_batch(inputs=inputs)
-
         plot_dict = StandardPlot(
             x=problem.domain_data,
-            y=problem.cost._dataset[problem.target[0]],  # noqa: SLF001
+            y=problem.target_data[problem.target[0]],
             layout_options=dict(
                 xaxis_title=StandardPlot.remove_brackets(problem.domain),
                 yaxis_title=StandardPlot.remove_brackets(problem.target[0]),
@@ -56,10 +53,13 @@ def predictive(
             trace_names=data_legend_entry,
         )
 
-        for pdf, pred in zip(posterior_samples_pdf, simulations, strict=False):
+        # Simulate the samples and add to plot
+        inputs = [problem.parameters.to_dict(s) for s in posterior_samples]
+        simulations = problem.simulate_batch(inputs=inputs)
+        for pdf, sim in zip(posterior_samples_pdf, simulations, strict=False):
             plot_dict.add_traces(
                 x=problem.domain_data,
-                y=pred[problem.target[0]].data,
+                y=sim[problem.target[0]].data,
                 line={
                     "dash": "dot",
                     "color": px.colors.sample_colorscale(
@@ -69,7 +69,7 @@ def predictive(
                 },
             )
 
-        # Add the colourbar.
+        # Add the colourbar
         plot_dict.add_traces(
             x=[None],
             y=[None],
