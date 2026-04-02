@@ -99,9 +99,9 @@ if __name__ == "__main__":
     options = pybop.EPBOLFIOptions(
         ep_iterations=2,
         ep_total_dampening=0,
-        bolfi_initial_sobol_samples=10,
-        bolfi_optimally_acquired_samples=10,
-        bolfi_posterior_effective_sample_size=10,
+        bolfi_initial_sobol_samples=8,
+        bolfi_optimally_acquired_samples=8,
+        bolfi_posterior_effective_sample_size=8,
         posterior_gelman_rubin_threshold=1.2,
         verbose=True,
         model_parameter_boundaries={
