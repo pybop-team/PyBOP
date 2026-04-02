@@ -1,7 +1,6 @@
 import numpy as np
 import pybamm
 from ep_bolfi.models.solversetup import spectral_mesh_pts_and_method
-from pybamm import CasadiSolver, Experiment, print_citations
 
 import pybop
 
@@ -23,10 +22,7 @@ original_D_p = parameter_values["Positive particle diffusivity [m2.s-1]"]
 
 # Set multivariate parameters (defined in model space)
 distribution = pybop.MultivariateLogNormal(
-    mean_log_x=[
-        np.log(0.9 * original_D_n) - 0.5 * np.log(2),
-        np.log(1.1 * original_D_p) - 0.5 * np.log(2),
-    ],
+    mean_log_x=[np.log(0.9 * original_D_n), np.log(1.1 * original_D_p)],
     covariance_log_x=[[np.log(2), 0.0], [0.0, np.log(2)]],
 )
 parameter_values["Negative particle diffusivity [m2.s-1]"] = pybop.Parameter(
@@ -43,13 +39,13 @@ submesh_types, var_pts, spatial_methods = spectral_mesh_pts_and_method(10, 10, 1
 simulator = pybop.pybamm.Simulator(
     model=model,
     parameter_values=parameter_values,
-    protocol=Experiment(
+    protocol=pybamm.Experiment(
         [
             "Discharge at 1.0 C for 15 minutes (1 second period)",
             "Rest for 15 minutes (1 second period)",
         ]
     ),
-    solver=CasadiSolver(
+    solver=pybamm.CasadiSolver(
         rtol=1e-5,
         atol=1e-5,
         root_tol=1e-3,
@@ -118,6 +114,7 @@ if __name__ == "__main__":
     )
     optim = pybop.EP_BOLFI(problem, options=options)
     result = optim.run()
+    print("True values:", [original_D_n, original_D_p])
 
     # Plot the optimisation result
     result.plot_convergence(yaxis={"type": "log"})
@@ -127,4 +124,4 @@ if __name__ == "__main__":
     fig = result.plot_predictive(show=False)
     fig[0].show()
 
-    print_citations()
+    pybamm.print_citations()
