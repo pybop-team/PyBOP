@@ -120,6 +120,9 @@ if __name__ == "__main__":
     result.plot_convergence(yaxis={"type": "log"})
     result.plot_parameters(yaxis={"type": "log"}, yaxis2={"type": "log"})
 
+    # Plot the prior and posterior probability density functions
+    pybop.plot.probability(result.problem.parameters, result.posterior)
+
     # Plot predictions for a set of inputs sampled from the posterior
     fig = result.plot_predictive(show=False)
     fig[0].show()
