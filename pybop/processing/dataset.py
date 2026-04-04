@@ -66,6 +66,10 @@ class Dataset:
 
         return self.data[key]
 
+    def __len__(self) -> int:
+        """Return the length of the data, based on the length of the domain data."""
+        return len(self.data[self.domain])
+
     def check(self, domain: str = None, signal: str | list[str] = None) -> bool:
         """
         Check the consistency of a PyBOP Dataset against the expected format.

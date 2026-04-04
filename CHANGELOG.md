@@ -6,6 +6,7 @@
 
 ## Bug Fixes
 
+- [#915](https://github.com/pybop-team/PyBOP/pull/915) - Fixes axis labels for non-standard domain names, adds `Dataset` length property and adds `kind` property to `Interpolant`.
 - [#911](https://github.com/pybop-team/PyBOP/pull/911) - Fixes the passing of the cost log to the Voronoi surface plot.
 - [#905](https://github.com/pybop-team/PyBOP/pull/905) - Remove restriction on numpy.
 

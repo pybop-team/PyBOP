@@ -183,9 +183,7 @@ class LogPrior(BaseCost):
             l = self.parameters.distribution.logpdf(input_values)
 
         if not np.isfinite(l).any():
-            return self.failure(
-                inputs=inputs, calculate_sensitivities=calculate_sensitivities
-            )
+            return self.failure(self.parameters.names, calculate_sensitivities)
 
         if calculate_sensitivities:
             return l, dl

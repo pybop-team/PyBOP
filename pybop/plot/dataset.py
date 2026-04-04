@@ -34,7 +34,7 @@ def dataset(dataset, signal=None, trace_names=None, show=True, **layout_kwargs):
     # Compile ydata and labels or legend
     y = [dataset[s] for s in signal]
     if len(signal) == 1:
-        yaxis_title = signal[0]
+        yaxis_title = StandardPlot.remove_brackets(signal[0])
         if trace_names is None:
             trace_names = ["Data"]
     else:

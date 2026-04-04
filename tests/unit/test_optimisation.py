@@ -141,9 +141,8 @@ class TestOptimisation:
 
     @pytest.fixture
     def multivariate_problem(self, multivariate_simulator, dataset):
-        cost = pybop.SumSquaredError(dataset)
-        problem = pybop.Problem(multivariate_simulator, cost)
-        return problem
+        cost = pybop.SquareRootFeatureDistance(dataset, feature="offset")
+        return pybop.Problem(multivariate_simulator, cost)
 
     @pytest.fixture
     def gitt_like_problem(self, multivariate_simulator, dataset):
