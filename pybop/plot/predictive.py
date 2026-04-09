@@ -1,8 +1,8 @@
 from typing import TYPE_CHECKING
 
 import numpy as np
-import plotly.express as px
 
+from pybop.plot.plotly_manager import PlotlyManager
 from pybop.plot.standard_plots import StandardPlot
 from pybop.problems.meta_problem import MetaProblem
 
@@ -25,6 +25,8 @@ def predictive(
     """
     Plot the predictive posterior of a Bayesian optimisation result.
     """
+    # Import plotly only when needed
+    px = PlotlyManager().px
 
     posterior_samples = result.posterior.sample_from_distribution(
         n_samples=number_of_traces
