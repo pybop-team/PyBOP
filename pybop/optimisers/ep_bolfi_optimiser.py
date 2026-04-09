@@ -373,6 +373,17 @@ class EP_BOLFI(BaseOptimiser):
         ]
         self._logger.x_search_best = x_search_best_over_time[-1]
         self._logger.cost_best = cost_best[-1]
+        self._logger.iteration = {
+            "EP iterations": self._options.ep_iterations,
+            "total feature iterations": self._options.ep_iterations
+            * len(self.problem.problems),
+        }
+        self._logger.evaluations = {
+            "model evaluations": len(
+                list(ep_bolfi_log["tried parameters"].values())[0]
+            ),
+            # "surrogate evaluations" are not directly accessible
+        }
 
         # Get the mean and the 95% confidence error bounds
         model_mean = np.array(
