@@ -1,6 +1,5 @@
 import numpy as np
 
-from pybop.analysis.sensitivity_analysis import get_sobol_sensitivities
 from pybop.costs.base_cost import BaseCost
 from pybop.costs.evaluation import Evaluation
 from pybop.parameters.parameter import Inputs, Parameters
@@ -259,25 +258,6 @@ class Problem:
         if np.isinf(cost0):
             raise ValueError("The initial parameter values return an infinite cost.")
         return cost0
-
-    def get_sobol_sensitivities(
-        self, n_samples: int = 256, calc_second_order: bool = False
-    ) -> dict:
-        """
-        Computes the parameter sensitivities on the combined cost function using
-        SOBOL analysis. See pybop.analysis.sensitivity_analysis for more details.
-
-        Parameters
-        ----------
-        n_samples : int, optional
-            Number of samples for SOBOL sensitivity analysis, performs best as a
-            power of 2, i.e. 128, 256, etc.
-        calc_second_order : bool, optional
-            Whether to calculate second-order sensitivities.
-        """
-        return get_sobol_sensitivities(
-            problem=self, n_samples=n_samples, calc_second_order=calc_second_order
-        )
 
     @property
     def cost(self):

@@ -12,6 +12,8 @@
 
 ## Breaking Changes
 
+- [#938](https://github.com/pybop-team/PyBOP/pull/938) - Make SALib an optional dependency and remove `sensitivity_analysis` in favour of using SALib directly.
+
 # [v26.3](https://github.com/pybop-team/PyBOP/tree/v26.3) - 2026-03-05
 
 ## Features

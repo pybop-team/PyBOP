@@ -32,11 +32,11 @@ dependencies = [
     "numpy>=1.26",
     "scipy>=1.12",
     "pints>=0.6.0",
-    "SALib>=1.5",
 ]
 
 [project.optional-dependencies]
 plot = ["plotly>=6"]
+salib = ["SALib>=1.5"]
 scifem = [
   "scikit-fem>=8.1.0" # scikit-fem is a dependency for the multi-dimensional pybamm models
 ]
@@ -50,7 +50,7 @@ ep-bolfi = [
 pyprobe = [
   "PyProBE-Data>=2.5.0;python_version >= '3.11' and python_version < '3.13'"
 ]
-all = ["pybop[plot,scifem,bpx,pyprobe,ep-bolfi]"]
+all = ["pybop[plot,salib,scifem,bpx,pyprobe,ep-bolfi]"]
 
 [dependency-groups]
 docs = [
