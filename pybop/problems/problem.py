@@ -68,7 +68,7 @@ class Problem:
         evaluation = self.evaluate(inputs=inputs, calculate_sensitivities=False)
 
         return (
-            evaluation.values[0]
+            evaluation.values.item()
             if len(evaluation.values) == 1
             else evaluation.values.tolist()
         )
@@ -152,38 +152,20 @@ class Problem:
         # Evaluate the cost for the valid parameters
         valid_indices = [i for i, valid in enumerate(validity) if valid]
         # TODO: Parallelise the cost computations
-        if calculate_sensitivities:
-            for i, solution in enumerate(solutions):
-                e, de = self._cost.evaluate(
-                    solution,
-                    inputs=valid_inputs[i],
-                    calculate_sensitivities=calculate_sensitivities,
-                )
-                evaluation.insert_result(
-                    i=valid_indices[i], value=np.asarray(e).item(), sensitivities=de
-                )
-        else:
-            for i, solution in enumerate(solutions):
-                e = self._cost.evaluate(
-                    solution,
-                    inputs=valid_inputs[i],
-                    calculate_sensitivities=calculate_sensitivities,
-                )
-                evaluation.insert_result(i=valid_indices[i], value=np.asarray(e).item())
+        for i, solution in enumerate(solutions):
+            e = self._cost.evaluate(
+                solution,
+                inputs=valid_inputs[i],
+                calculate_sensitivities=calculate_sensitivities,
+            )
+            evaluation.insert_result(i=valid_indices[i], evaluation=e)
 
         if False in validity:
             # Insert failure outputs for the invalid parameters into the lists of results
             invalid_indices = [i for i, valid in enumerate(validity) if not valid]
-            if calculate_sensitivities:
-                y, dy = self._cost.failure(
-                    self.parameters.names, calculate_sensitivities
-                )
-                for i in invalid_indices:
-                    evaluation.insert_result(i=i, value=y, sensitivities=dy)
-            else:
-                y = self._cost.failure(self.parameters.names, calculate_sensitivities)
-                for i in invalid_indices:
-                    evaluation.insert_result(i=i, value=y)
+            e = self._cost.failure(self.parameters.names, calculate_sensitivities)
+            for i in invalid_indices:
+                evaluation.insert_result(i=i, evaluation=e)
 
         return evaluation
 
@@ -244,14 +226,14 @@ class Problem:
         Compute the absolute initial cost, resampling the initial parameters if needed.
         """
         x0 = self.parameters.get_initial_values()
-        cost0 = np.abs(self.evaluate(x0).values[0])
+        cost0 = np.abs(self.evaluate(x0).values.item())
         nsamples = 0
         while np.isinf(cost0) and nsamples < 10:
             x0 = self.parameters.sample_from_distribution()[0]
             if x0 is None:
                 break
 
-            cost0 = np.abs(self.evaluate(x0).values[0])
+            cost0 = np.abs(self.evaluate(x0).values.item())
             nsamples += 1
         if nsamples > 0:
             self.parameters.update(initial_values=x0)

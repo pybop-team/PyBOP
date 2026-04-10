@@ -1,6 +1,7 @@
 import numpy as np
 
 from pybop._utils import add_spaces
+from pybop.costs.evaluation import Evaluation
 from pybop.parameters.parameter import Inputs, Parameters
 from pybop.processing.dataset import Dataset
 from pybop.simulators.solution import Solution
@@ -59,7 +60,7 @@ class BaseCost:
         solution: Solution,
         inputs: Inputs | None = None,
         calculate_sensitivities: bool = False,
-    ) -> float | tuple[float, np.ndarray]:
+    ) -> Evaluation:
         """
         Computes the cost function for the given predictions.
 
@@ -71,12 +72,6 @@ class BaseCost:
             Input parameters (default: None).
         calculate_sensitivities : bool
             Whether to also return the sensitivities (default: False).
-
-        Returns
-        -------
-        np.float64 or tuple[np.float64, np.ndarray[np.float64]]
-            If the solution has sensitivities, returns a tuple containing the cost (float) and the
-            gradient with dimension (len(parameters)), otherwise returns only the cost.
         """
         raise NotImplementedError
 
@@ -118,14 +113,13 @@ class BaseCost:
         self._de = de
 
     def failure(self, parameter_names: list[str], calculate_sensitivities: bool = True):
-        if calculate_sensitivities:
-            return (
-                (np.inf, {key: self._de for key in parameter_names})
-                if self.minimising
-                else (-np.inf, {key: -self._de for key in parameter_names})
-            )
-        else:
-            return np.inf if self.minimising else -np.inf
+        sign = 1.0 if self.minimising else -1.0
+        return Evaluation(
+            values=sign * np.inf,
+            sensitivities={key: sign * self._de for key in parameter_names}
+            if calculate_sensitivities
+            else None,
+        )
 
     @property
     def name(self):
@@ -167,7 +161,7 @@ class LogPrior(BaseCost):
         solution: Solution,
         inputs: Inputs | None = None,
         calculate_sensitivities: bool = False,
-    ) -> float | tuple[float, np.ndarray]:
+    ) -> Evaluation:
         """
         Computes the log-prior for the given inputs, and optionally the sensitivities.
         """
@@ -188,6 +182,6 @@ class LogPrior(BaseCost):
             )
 
         if calculate_sensitivities:
-            return l, dl
+            return Evaluation(values=l, sensitivities=dl)
 
-        return l
+        return Evaluation(values=l)

@@ -13,6 +13,9 @@ class Evaluation:
     ):
         self.values = np.atleast_1d(values)
         self.sensitivities = sensitivities
+        if sensitivities is not None:
+            for key, value in sensitivities.items():
+                self.sensitivities[key] = np.atleast_1d(value)
 
     def preallocate(self, inputs, calculate_sensitivities: bool = None):
         self.all_inputs = inputs
@@ -24,10 +27,9 @@ class Evaluation:
         else:
             self.sensitivities = None
 
-    def insert_result(
-        self, i: int, value: float, sensitivities: dict[str, np.ndarray] | None = None
-    ):
-        self.values[i] = value
+    def insert_result(self, i: int, evaluation):
+        self.values[i] = evaluation.values.item()
+        sensitivities = evaluation.sensitivities
         if sensitivities is not None:
             for key, value in sensitivities.items():
                 self.sensitivities[key][i] = value
@@ -39,3 +41,6 @@ class Evaluation:
 
     def __len__(self):
         return len(self.values)
+
+    def __repr__(self) -> str:
+        return self.get_values().__repr__()

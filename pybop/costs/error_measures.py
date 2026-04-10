@@ -2,6 +2,7 @@ import numpy as np
 import pybamm
 
 from pybop.costs.base_cost import BaseCost
+from pybop.costs.evaluation import Evaluation
 from pybop.parameters.parameter import Inputs
 from pybop.processing.dataset import Dataset
 from pybop.simulators.failed_solution import FailedSolution
@@ -75,7 +76,7 @@ class ErrorMeasure(BaseCost):
         solution: Solution | pybamm.Solution | FailedSolution,
         inputs: Inputs | None = None,
         calculate_sensitivities: bool = False,
-    ) -> float | tuple[float, np.ndarray]:
+    ) -> Evaluation:
         """
         Computes the cost function for the given predictions.
 
@@ -87,12 +88,6 @@ class ErrorMeasure(BaseCost):
             Input parameters (default: None).
         calculate_sensitivities : bool
             Whether to also return the sensitivities (default: False).
-
-        Returns
-        -------
-        np.float64 or tuple[np.float64, np.ndarray[np.float64]]
-            If the solution has sensitivities, returns a tuple containing the cost (float) and the
-            gradient with dimension (len(parameters)), otherwise returns only the cost.
         """
         # Return failure cost if the solution failed
         if isinstance(solution, FailedSolution):
@@ -112,10 +107,13 @@ class ErrorMeasure(BaseCost):
             [solution[var].data - self._target_data[var] for var in self.target]
         )
 
-        # Extract the sensitivities for all output variables and parameters
-        dy = self.stack_sensitivities(solution) if calculate_sensitivities else None
+        if calculate_sensitivities:
+            # Extract the sensitivities for all output variables and parameters
+            dy = self.stack_sensitivities(solution)
+            e, de = self.__call__(r=r, dy=dy, inputs=inputs)
+            return Evaluation(values=e, sensitivities=de)
 
-        return self.__call__(r=r, dy=dy, inputs=inputs)
+        return Evaluation(values=self.__call__(r=r, inputs=inputs))
 
     def verify_prediction(self, solution: Solution):
         """
