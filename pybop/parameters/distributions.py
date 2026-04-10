@@ -40,7 +40,7 @@ class Distribution:
         if self.distribution is None:
             return (-np.inf, np.inf)
 
-        return self.distribution.support()
+        return tuple(float(x) for x in self.distribution.support())
 
     def pdf(self, x):
         """
