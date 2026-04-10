@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+import numpy as np
 from SALib.analyze import sobol
 from SALib.sample.sobol import sample
 
@@ -7,7 +8,7 @@ if TYPE_CHECKING:
     from pybop.problems.problem import Problem
 
 
-def sensitivity_analysis(
+def get_sobol_sensitivities(
     problem: "Problem", n_samples: int = 256, calc_second_order: bool = False
 ) -> dict:
     """
@@ -36,9 +37,13 @@ def sensitivity_analysis(
     Sensitivities : dict
     """
 
+    bounds_array = problem.parameters.get_bounds_array()
+    if not np.isfinite(bounds_array).all():
+        raise ValueError("SOBOL analysis requires finite bounds.")
+
     salib_dict = {
         "names": problem.parameters.names,
-        "bounds": problem.parameters.get_bounds_array(),
+        "bounds": bounds_array,
         "num_vars": len(problem.parameters),
     }
 

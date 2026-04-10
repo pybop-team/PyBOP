@@ -22,18 +22,10 @@ class TestProblem:
     def parameters(self):
         return {
             "Negative particle radius [m]": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    2e-05,
-                    0.1e-5,
-                    truncated_at=[1e-6, 5e-5],
-                )
+                distribution=pybop.Gaussian(2e-05, 0.1e-5, truncated_at=[1e-6, 5e-5])
             ),
             "Positive particle radius [m]": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    0.5e-05,
-                    0.1e-5,
-                    truncated_at=[1e-6, 5e-5],
-                )
+                distribution=pybop.Gaussian(0.5e-05, 0.1e-5, truncated_at=[1e-6, 5e-5])
             ),
         }
 
@@ -239,7 +231,7 @@ class TestProblem:
         cost = pybop.MeanAbsoluteError(dataset)
         problem = pybop.Problem(simulator, cost)
         n_params = len(problem.parameters)
-        result = problem.sensitivity_analysis(4, calc_second_order=True)
+        result = problem.get_sobol_sensitivities(4, calc_second_order=True)
 
         # Assertions
         assert isinstance(result, dict)
@@ -253,3 +245,9 @@ class TestProblem:
         assert isinstance(result["S2_conf"], np.ndarray)
         assert result["S1"].shape == (n_params,)
         assert result["ST"].shape == (n_params,)
+
+        problem.parameters["Negative particle radius [m]"] = pybop.Parameter(
+            distribution=pybop.Gaussian(2e-05, 0.1e-5)  # unbounded
+        )
+        with pytest.raises(ValueError, match="SOBOL analysis requires finite bounds."):
+            problem.get_sobol_sensitivities(4, calc_second_order=True)

@@ -1,6 +1,6 @@
 import numpy as np
 
-from pybop.analysis.sensitivity_analysis import sensitivity_analysis
+from pybop.analysis.sensitivity_analysis import get_sobol_sensitivities
 from pybop.costs.base_cost import BaseCost
 from pybop.costs.evaluation import Evaluation
 from pybop.parameters.parameter import Inputs, Parameters
@@ -260,7 +260,7 @@ class Problem:
             raise ValueError("The initial parameter values return an infinite cost.")
         return cost0
 
-    def sensitivity_analysis(
+    def get_sobol_sensitivities(
         self, n_samples: int = 256, calc_second_order: bool = False
     ) -> dict:
         """
@@ -275,7 +275,7 @@ class Problem:
         calc_second_order : bool, optional
             Whether to calculate second-order sensitivities.
         """
-        return sensitivity_analysis(
+        return get_sobol_sensitivities(
             problem=self, n_samples=n_samples, calc_second_order=calc_second_order
         )
 
