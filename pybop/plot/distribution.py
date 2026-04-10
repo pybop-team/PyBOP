@@ -4,7 +4,7 @@ from pybop.parameters.parameter import Parameters
 from pybop.plot.standard_plots import StandardSubplot
 
 
-def probability(
+def distribution(
     parameters: Parameters,
     posterior: Parameters | None = None,
     n_samples: int = 100,

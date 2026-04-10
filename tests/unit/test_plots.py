@@ -203,6 +203,11 @@ class TestPlots:
         # Plot posterior predictions
         sampling_result.plot_predictive()
 
+        # Plot the prior and posterior distributions
+        pybop.plot.distribution(
+            sampling_result.problem.parameters, sampling_result.posterior
+        )
+
     def test_with_ipykernel(self, dataset, fitting_problem, result):
         import ipykernel
 
