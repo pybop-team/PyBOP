@@ -280,11 +280,11 @@ class Gaussian(Distribution):
                     * np.asarray([self.properties["a"], self.properties["b"]])
                 )
                 truncated_at = np.sort(
-                    [transform.to_search(x) for x in original_truncation]
+                    [transform.to_search(x).item() for x in original_truncation]
                 )
             return Gaussian(
-                mean=transform.to_search(self.properties["loc"]),
-                sigma=self.properties["scale"] * transform.coefficient,
+                mean=transform.to_search(self.properties["loc"]).item(),
+                sigma=self.properties["scale"] * transform.coefficient.item(),
                 truncated_at=truncated_at,
             )
         return None
@@ -348,7 +348,7 @@ class Uniform(Distribution):
         """Get the transformed distribution in the search space."""
         if isinstance(transform, ScaledTransformation):
             bounds = [transform.to_search(x) for x in self.support()]
-            return Uniform(lower=min(bounds), upper=max(bounds))
+            return Uniform(lower=np.min(bounds), upper=np.max(bounds))
         return None
 
 
@@ -380,11 +380,11 @@ class LogUniform(Distribution):
         """Get the transformed distribution in the search space."""
         if isinstance(transform, ScaledTransformation):
             bounds = [transform.to_search(x) for x in self.support()]
-            return LogUniform(lower=min(bounds), upper=max(bounds))
+            return LogUniform(lower=np.min(bounds), upper=np.max(bounds))
 
         elif isinstance(transform, LogTransformation):
             bounds = [transform.to_search(x) for x in self.support()]
-            return Uniform(lower=min(bounds), upper=max(bounds))
+            return Uniform(lower=np.min(bounds), upper=np.max(bounds))
         return None
 
 
@@ -409,7 +409,7 @@ class Unbounded(Distribution):
         self.initial_value = (
             None
             if initial_value is None
-            else float(min(max(initial_value, lower), upper))
+            else float(np.min(np.max(initial_value, lower), upper))
         )
 
     def support(self) -> tuple[float]:
@@ -436,8 +436,8 @@ class Unbounded(Distribution):
             bounds = [transform.to_search(x) for x in self.support()]
             return Unbounded(
                 initial_value=transform.to_search(self.initial_value),
-                lower=min(bounds),
-                upper=max(bounds),
+                lower=np.min(bounds),
+                upper=np.max(bounds),
             )
         return None
 
