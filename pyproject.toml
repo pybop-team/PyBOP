@@ -13,10 +13,10 @@ maintainers = [
 ]
 description = "Python Battery Optimisation and Parameterisation"
 readme = {file = "README.md", content-type = "text/markdown"}
-license = { file = "LICENSE" }
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
 classifiers = [
   "Development Status :: 3 - Alpha",
-  "License :: OSI Approved :: BSD License",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
