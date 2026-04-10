@@ -572,6 +572,9 @@ class JointDistribution(Distribution):
         distributions_repr = "; ".join([repr(d) for d in self._distributions_list])
         return f"{self.name}(distributions: [{distributions_repr}])"
 
+    def marginal(self, position: int):
+        return self._distributions_list[position]
+
     def _transform(self, transform: Transformation) -> Distribution | None:
         """Get the transformed distribution in the search space."""
         list_of_transforms = []
