@@ -1,4 +1,3 @@
-from copy import deepcopy
 from dataclasses import dataclass
 
 import numpy as np
@@ -8,7 +7,12 @@ import scipy
 from pybop import plot
 from pybop._logging import Logger
 from pybop._result import Result
-from pybop.parameters.multivariate_distributions import MultivariateGaussian
+from pybop.parameters.multivariate_distributions import (
+    MarginalDistribution,
+    MultivariateGaussian,
+    MultivariateLogNormal,
+)
+from pybop.parameters.parameter import Parameter, Parameters
 from pybop.problems.log_pdf import LogPDF
 
 
@@ -222,12 +226,31 @@ class SamplingResult(Result):
             for key, func in summary_funs.items()
         }
 
-        # Assume the posterior is Gaussian
-        self.posterior = deepcopy(self.problem.parameters)
-        self.posterior._distribution = MultivariateGaussian(  # noqa: SLF001
-            mean=summary_statistics["mean"],
-            covariance=np.eye(self.n_parameters) * summary_statistics["std"],
-        )
+        # Create the posterior distribution, using the existing parameter transformations
+        model_mean = summary_statistics["mean"]
+        n = len(self.problem.parameters)
+        if isinstance(self.problem.parameters.distribution, MultivariateLogNormal):
+            covariance_log_x = np.eye(self.n_parameters) * summary_statistics["std"]
+            mean_log_x = np.zeros(n)
+            for i in range(n):
+                mean_log_x[i] = np.log(model_mean[i]) - 0.5 * covariance_log_x[i, i]
+            posterior_distribution = MultivariateLogNormal(
+                mean_log_x=mean_log_x, covariance_log_x=covariance_log_x
+            )
+        else:
+            posterior_distribution = MultivariateGaussian(
+                mean=model_mean,
+                covariance=np.eye(self.n_parameters) * summary_statistics["std"],
+            )
+        posterior_parameters = {
+            key: Parameter(
+                distribution=MarginalDistribution(posterior_distribution, i),
+                initial_value=p.initial_value,
+                transformation=p.transformation,
+            )
+            for i, (key, p) in enumerate(self.problem.parameters.items())
+        }
+        self.posterior = Parameters(posterior_parameters)
 
         return summary_statistics
 

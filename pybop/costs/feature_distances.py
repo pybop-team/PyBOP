@@ -123,6 +123,9 @@ class FeatureDistance(BaseCost):
         with warnings.catch_warnings():
             # Suppress SciPy's UserWarning about delta_grad == 0.
             warnings.simplefilter("ignore")
+            # Handle FailedSolution states.
+            if len(y[self.start_index : self.end_index]) == 0:
+                return Evaluation(float("inf"))
             error = np.abs(
                 np.asarray(
                     [
