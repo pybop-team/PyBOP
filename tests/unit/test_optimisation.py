@@ -515,7 +515,7 @@ class TestOptimisation:
         assert result.scipy_result is not None
 
     @pytest.mark.skipif(
-        sys.version_info >= (3, 13), reason="requires python3.13 or lower"
+        sys.version_info > (3, 12), reason="requires python3.12 or lower"
     )
     def test_ep_bolfi(self, multivariate_problem, gitt_like_problem):
         options = pybop.EPBOLFIOptions()
