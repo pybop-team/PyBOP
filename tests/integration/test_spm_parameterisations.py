@@ -17,9 +17,7 @@ class Test_SPM_Parameterisation:
     def setup(self):
         self.sigma = 0.002
         self.ground_truth = np.clip(
-            np.asarray([0.55, 0.55]) + np.random.normal(loc=0.0, scale=0.05, size=2),
-            a_min=0.425,
-            a_max=0.75,
+            pybop.add_noise(np.asarray([0.55, 0.55]), 0.05), a_min=0.425, a_max=0.75
         )
 
     @pytest.fixture
@@ -81,9 +79,6 @@ class Test_SPM_Parameterisation:
     def cost_class(self, request):
         return request.param
 
-    def noisy(self, data, sigma):
-        return data + np.random.normal(0, sigma, len(data))
-
     @pytest.fixture(
         params=[
             pybop.SciPyMinimize,  # scipy with sensitivities
@@ -96,9 +91,7 @@ class Test_SPM_Parameterisation:
         return request.param
 
     @pytest.fixture
-    def optim(
-        self, optimiser, model_and_parameter_values, parameters, priors, cost_class
-    ):
+    def optim(self, optimiser, model_and_parameter_values, parameters, cost_class):
         model, parameter_values = model_and_parameter_values
         parameter_values.set_initial_state(0.6)
         dataset = self.get_data(model, parameter_values)
@@ -356,15 +349,19 @@ class Test_SPM_Parameterisation:
                 {
                     "Time [s]": solution["Time [s]"].data,
                     "Current [A]": solution["Current [A]"].data,
-                    "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma),
+                    "Voltage [V]": pybop.add_noise(
+                        solution["Voltage [V]"].data, self.sigma
+                    ),
                 }
             )
         return pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
                 "Current [A]": solution["Current [A]"].data,
-                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma),
-                "Bulk open-circuit voltage [V]": self.noisy(
+                "Voltage [V]": pybop.add_noise(
+                    solution["Voltage [V]"].data, self.sigma
+                ),
+                "Bulk open-circuit voltage [V]": pybop.add_noise(
                     solution["Bulk open-circuit voltage [V]"].data, self.sigma
                 ),
             }

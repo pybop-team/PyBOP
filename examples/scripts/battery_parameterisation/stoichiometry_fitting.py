@@ -12,13 +12,8 @@ parameter_values = pybamm.ParameterValues("Chen2020")
 ocv_function = parameter_values["Positive electrode OCP [V]"]
 nom_capacity = parameter_values["Nominal cell capacity [A.h]"]
 
-
-def noise(sigma):
-    return np.random.normal(0, sigma, 91)
-
-
 sto = np.linspace(0, 0.9, 91)
-voltage = ocv_function(sto) + noise(2e-3)
+voltage = pybop.add_noise(ocv_function(sto), 2e-3)
 ocv_dataset = pybop.Dataset(
     {"Charge capacity [A.h]": (sto + 0.1) * nom_capacity, "Voltage [V]": voltage}
 )

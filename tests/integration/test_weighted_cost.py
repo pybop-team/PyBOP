@@ -18,9 +18,7 @@ class TestWeightedCost:
     def setup(self):
         self.sigma = 0.002
         self.ground_truth = np.clip(
-            np.asarray([0.55, 0.55]) + np.random.normal(loc=0.0, scale=0.05, size=2),
-            a_min=0.4,
-            a_max=0.75,
+            pybop.add_noise(np.asarray([0.55, 0.55]), 0.05), a_min=0.4, a_max=0.75
         )
 
     @pytest.fixture
@@ -87,9 +85,6 @@ class TestWeightedCost:
     def cost_class(self, request):
         return request.param
 
-    def noisy(self, data, sigma):
-        return data + np.random.normal(0, sigma, len(data))
-
     @pytest.fixture
     def weighted_fitting_problem(self, model, parameter_values, parameters, cost_class):
         parameter_values.set_initial_state(0.4)
@@ -144,16 +139,12 @@ class TestWeightedCost:
             {
                 "Positive electrode thickness [m]": pybop.Parameter(
                     distribution=pybop.Gaussian(
-                        5e-05,
-                        5e-06,
-                        truncated_at=[2e-06, 10e-05],
+                        5e-05, 5e-06, truncated_at=[2e-06, 10e-05]
                     )
                 ),
                 "Negative electrode thickness [m]": pybop.Parameter(
                     distribution=pybop.Gaussian(
-                        5e-05,
-                        5e-06,
-                        truncated_at=[2e-06, 10e-05],
+                        5e-05, 5e-06, truncated_at=[2e-06, 10e-05]
                     )
                 ),
             }
@@ -198,6 +189,8 @@ class TestWeightedCost:
             {
                 "Time [s]": solution["Time [s]"].data,
                 "Current [A]": solution["Current [A]"].data,
-                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma),
+                "Voltage [V]": pybop.add_noise(
+                    solution["Voltage [V]"].data, self.sigma
+                ),
             }
         )

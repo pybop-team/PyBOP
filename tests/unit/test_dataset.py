@@ -100,7 +100,7 @@ class TestDataset:
         sys.version_info < (3, 11), reason="requires python3.11 or higher"
     )
     @pytest.mark.skipif(
-        sys.version_info >= (3, 13), reason="requires python3.13 or lower"
+        sys.version_info > (3, 12), reason="requires python3.12 or lower"
     )
     def test_pyprobe_import(self):
         """

@@ -8,7 +8,7 @@ import pybop
 
 class TestEISParameterisation:
     """
-    A class to test the eis parameterisation methods.
+    A class to test the EIS parameterisation methods.
     """
 
     pytestmark = pytest.mark.integration
@@ -17,9 +17,7 @@ class TestEISParameterisation:
     def setup(self):
         self.sigma = 5e-4
         self.ground_truth = np.clip(
-            np.asarray([0.55, 0.55]) + np.random.normal(loc=0.0, scale=0.05, size=2),
-            a_min=0.4,
-            a_max=0.75,
+            pybop.add_noise(np.asarray([0.55, 0.55]), 0.05), a_min=0.4, a_max=0.75
         )
 
     @pytest.fixture
@@ -51,10 +49,6 @@ class TestEISParameterisation:
             ),
         }
 
-    @pytest.fixture(params=[0.5])
-    def init_soc(self, request):
-        return request.param
-
     @pytest.fixture(
         params=[
             pybop.GaussianLogLikelihood,
@@ -66,16 +60,6 @@ class TestEISParameterisation:
     )
     def cost_class(self, request):
         return request.param
-
-    def noisy(self, data, sigma):
-        # Generate real part noise
-        real_noise = np.random.normal(0, sigma, len(data))
-
-        # Generate imaginary part noise
-        imag_noise = np.random.normal(0, sigma, len(data))
-
-        # Combine them into a complex noise
-        return data + real_noise + 1j * imag_noise
 
     @pytest.fixture(
         params=[
@@ -89,12 +73,10 @@ class TestEISParameterisation:
         return request.param
 
     @pytest.fixture
-    def optim(
-        self, optimiser, model, parameter_values, parameters, cost_class, init_soc
-    ):
+    def optim(self, optimiser, model, parameter_values, parameters, cost_class):
         n_frequency = 15
         f_eval = np.logspace(-4, 5, n_frequency)
-        parameter_values.set_initial_state(init_soc)
+        parameter_values.set_initial_state(0.5)
         dataset = self.get_data(model, parameter_values, f_eval)
 
         # Define the problem
@@ -163,14 +145,11 @@ class TestEISParameterisation:
         np.testing.assert_allclose(result.x, self.ground_truth, atol=1.5e-2)
 
     def get_data(self, model, parameter_values, f_eval):
+        x = self.ground_truth
         parameter_values.update(
             {
-                "Negative electrode active material volume fraction": self.ground_truth[
-                    0
-                ],
-                "Positive electrode active material volume fraction": self.ground_truth[
-                    1
-                ],
+                "Negative electrode active material volume fraction": x[0],
+                "Positive electrode active material volume fraction": x[1],
             }
         )
         solution = pybop.pybamm.EISSimulator(
@@ -180,7 +159,7 @@ class TestEISParameterisation:
             {
                 "Frequency [Hz]": f_eval,
                 "Current [A]": np.zeros_like(f_eval),
-                "Impedance": self.noisy(solution["Impedance"].data, self.sigma),
+                "Impedance": pybop.add_noise(solution["Impedance"].data, self.sigma),
             },
             domain="Frequency [Hz]",
         )

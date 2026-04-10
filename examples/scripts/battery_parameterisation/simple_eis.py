@@ -28,24 +28,11 @@ f_eval = np.logspace(-4, 5, n_frequency)
 solution = pybop.pybamm.EISSimulator(
     model, parameter_values=parameter_values, f_eval=f_eval
 ).solve()
-
-
-def noisy(data, sigma):
-    # Generate real part noise
-    real_noise = np.random.normal(0, sigma, len(data))
-
-    # Generate imaginary part noise
-    imag_noise = np.random.normal(0, sigma, len(data))
-
-    # Combine them into a complex noise
-    return data + real_noise + 1j * imag_noise
-
-
 dataset = pybop.Dataset(
     {
         "Frequency [Hz]": f_eval,
         "Current [A]": np.zeros_like(f_eval),
-        "Impedance": noisy(solution["Impedance"].data, sigma),
+        "Impedance": pybop.add_noise(solution["Impedance"].data, sigma),
     },
     domain="Frequency [Hz]",
 )

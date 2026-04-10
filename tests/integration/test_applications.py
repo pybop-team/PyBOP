@@ -25,15 +25,12 @@ class TestApplications:
     def parameter_values(self):
         return pybamm.ParameterValues("Chen2020")
 
-    def noise(self, sigma, values):
-        return np.random.normal(0, sigma, values)
-
     @pytest.fixture
     def discharge_dataset(self, parameter_values):
         ocp_function = parameter_values["Positive electrode OCP [V]"]
 
         discharge_sto = np.linspace(0, 0.9, 91)
-        discharge_voltage = ocp_function(discharge_sto + 0.02) + self.noise(1e-3, 91)
+        discharge_voltage = pybop.add_noise(ocp_function(discharge_sto + 0.02), 1e-3)
 
         return pybop.Dataset(
             {"Stoichiometry": discharge_sto, "Voltage [V]": discharge_voltage}
@@ -44,7 +41,7 @@ class TestApplications:
         ocp_function = parameter_values["Positive electrode OCP [V]"]
 
         charge_sto = np.linspace(1, 0.1, 91)
-        charge_voltage = ocp_function(charge_sto - 0.02) + self.noise(1e-3, 91)
+        charge_voltage = pybop.add_noise(ocp_function(charge_sto - 0.02), 1e-3)
 
         return pybop.Dataset(
             {"Stoichiometry": charge_sto, "Voltage [V]": charge_voltage}
@@ -125,7 +122,7 @@ class TestApplications:
         nom_capacity = parameter_values["Nominal cell capacity [A.h]"]
 
         sto = np.linspace(0, 0.9, 91)
-        voltage = ocv_function(sto) + self.noise(2e-3, 91)
+        voltage = pybop.add_noise(ocv_function(sto), 2e-3)
 
         # Create the OCV dataset
         ocv_dataset = pybop.Dataset(
@@ -173,9 +170,7 @@ class TestApplications:
             parameter_values=half_cell_parameter_values,
             experiment=experiment,
         ).solve()
-        corrupt_values = solution["Voltage [V]"].data + np.random.normal(
-            0, sigma, len(solution.t)
-        )
+        corrupt_values = pybop.add_noise(solution["Voltage [V]"].data, sigma)
         start = np.where(solution["Time [s]"].data == 1)[0][0] - 1
         return pybop.Dataset(
             {

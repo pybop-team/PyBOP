@@ -29,9 +29,7 @@ class TestSamplingThevenin:
     def setup(self):
         self.sigma = 1e-3
         self.ground_truth = np.clip(
-            np.asarray([0.05, 0.05]) + np.random.normal(loc=0.0, scale=0.01, size=2),
-            a_min=1e-4,
-            a_max=0.1,
+            pybop.add_noise(np.asarray([0.05, 0.05]), 0.01), a_min=1e-4, a_max=0.1
         )
         self.fast_samplers = [
             MALAMCMC,
@@ -80,16 +78,9 @@ class TestSamplingThevenin:
             ),
         }
 
-    @pytest.fixture(params=[0.5])
-    def init_soc(self, request):
-        return request.param
-
-    def noisy(self, data, sigma):
-        return data + np.random.normal(0, sigma, len(data))
-
     @pytest.fixture
-    def log_pdf(self, model, parameter_values, parameters, init_soc):
-        parameter_values.set_initial_state(init_soc)
+    def log_pdf(self, model, parameter_values, parameters):
+        parameter_values.set_initial_state(0.5)
         dataset = self.get_data(model, parameter_values)
 
         # Define the cost to optimise
@@ -102,10 +93,7 @@ class TestSamplingThevenin:
 
     @pytest.fixture
     def map_estimate(self, log_pdf):
-        options = pybop.PintsOptions(
-            max_iterations=80,
-            verbose=True,
-        )
+        options = pybop.PintsOptions(max_iterations=80)
         optim = pybop.CMAES(log_pdf, options=options)
         result = optim.run()
 
@@ -127,7 +115,7 @@ class TestSamplingThevenin:
     def test_sampling_thevenin(self, sampler, log_pdf, map_estimate):
         # Note: we don't test the NUTS, SliceRankShrinking or DramACMC samplers,
         # as convergence for this problem was found to be challenging.
-        x0 = np.clip(map_estimate + np.random.normal(0, 5e-3, size=2), 1e-4, 1e-1)
+        x0 = np.clip(pybop.add_noise(map_estimate, 5e-3), a_min=1e-4, a_max=1e-1)
         log_pdf.parameters.update(initial_values=x0)
         options = pybop.PintsSamplerOptions(
             n_chains=2,
@@ -163,6 +151,8 @@ class TestSamplingThevenin:
             {
                 "Time [s]": solution["Time [s]"].data,
                 "Current [A]": solution["Current [A]"].data,
-                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma),
+                "Voltage [V]": pybop.add_noise(
+                    solution["Voltage [V]"].data, self.sigma
+                ),
             }
         )

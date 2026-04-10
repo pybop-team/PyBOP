@@ -25,7 +25,7 @@ script_path = path.dirname(__file__)
 #
 # Utilities
 #
-from ._utils import add_spaces, is_numeric, load_data_dict, save_data_dict
+from ._utils import add_spaces, add_noise, is_numeric, load_data_dict, save_data_dict
 
 #
 # Dataset class
