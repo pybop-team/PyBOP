@@ -32,7 +32,7 @@ class Evaluation:
         sensitivities = evaluation.sensitivities
         if sensitivities is not None:
             for key, value in sensitivities.items():
-                self.sensitivities[key][i] = value
+                self.sensitivities[key][i] = value.item()
 
     def get_values(self) -> np.ndarray | tuple[np.ndarray, dict[str, np.ndarray]]:
         if self.sensitivities is None:

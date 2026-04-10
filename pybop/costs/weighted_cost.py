@@ -85,7 +85,7 @@ class WeightedCost(BaseCost):
             e[i] = evaluation.values.item()
             if calculate_sensitivities:
                 for key, value in evaluation.sensitivities.items():
-                    de[key][i] = value
+                    de[key][i] = value.item()
 
         e = np.dot(e, self.weights)
         if calculate_sensitivities:
