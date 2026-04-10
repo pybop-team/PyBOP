@@ -2,6 +2,8 @@
 
 ## Features
 
+- [#940](https://github.com/pybop-team/PyBOP/pull/940) - Adds support for Python 3.14 (EP-BOLFI optimiser and PyProBE still restricted to Python 3.12 or below).
+
 ## Optimisations
 
 - [#925](https://github.com/pybop-team/PyBOP/pull/925) - Add `UnboundedDistribution` and the `get_transformed_distribution` functionality.
