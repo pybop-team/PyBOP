@@ -91,7 +91,7 @@ exclude = [
   "CONTRIBUTING.md",
 ]
 
-# the wheel additionally excludes files that are not needed for installation, such 
+# the wheel additionally excludes files that are not needed for installation, such
 #as the changelog and citation files, and the examples. those are present in the sdist.
 [tool.hatch.build.targets.wheel]
 exclude = [
