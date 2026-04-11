@@ -1,3 +1,5 @@
+import numpy as np
+
 from pybop.costs.base_cost import BaseCost
 from pybop.costs.evaluation import Evaluation
 from pybop.parameters.parameter import Inputs
@@ -52,10 +54,10 @@ class DesignCost(BaseCost):
 
         return solution[self.target[0]].data[-1]
 
-    def evaluate(
+    def evaluate_batch(
         self,
-        solution: Solution | FailedSolution,
-        inputs: Inputs | None = None,
+        solution: list[Solution],
+        inputs: list[Inputs],
         calculate_sensitivities: bool = False,
     ) -> Evaluation:
         """
@@ -63,11 +65,16 @@ class DesignCost(BaseCost):
 
         Parameters
         ----------
-        solution : pybop.Solution | pybamm.Solution
-            The simulation result.
-        inputs : Inputs, optional
-            Input parameters (default: None).
+        solution : list[Solution]
+            A list of simulation results.
+        inputs : list[Inputs]
+            The corresponding list of input parameters.
         calculate_sensitivities : bool
             Whether to also return the sensitivities (default: False).
         """
-        return Evaluation(values=self.__call__(solution, inputs))
+        e = np.empty(len(solution))
+
+        for i, (sol, x) in enumerate(zip(solution, inputs, strict=False)):
+            e[i] = self.__call__(solution=sol, inputs=x)
+
+        return Evaluation(values=e)

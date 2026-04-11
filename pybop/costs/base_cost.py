@@ -1,3 +1,5 @@
+from collections.abc import Iterable
+
 import numpy as np
 
 from pybop._utils import add_spaces
@@ -57,8 +59,8 @@ class BaseCost:
 
     def evaluate(
         self,
-        solution: Solution,
-        inputs: Inputs | None = None,
+        solution: Solution | list[Solution],
+        inputs: Inputs | list[Inputs] | None = None,
         calculate_sensitivities: bool = False,
     ) -> Evaluation:
         """
@@ -66,10 +68,44 @@ class BaseCost:
 
         Parameters
         ----------
-        solution : pybop.Solution | pybamm.Solution
-            The simulation result.
-        inputs : Inputs, optional
-            Input parameters (default: None).
+        solution : Solution | list[Solution]
+            The simulation result or a list of results.
+        inputs : Inputs | list[Inputs], optional
+            Input parameters or a list of inputs (default: None).
+        calculate_sensitivities : bool
+            Whether to also return the sensitivities (default: False).
+        """
+        solution_list = solution if isinstance(solution, list) else [solution]
+
+        inputs = inputs or self.parameters.to_dict("initial")
+        inputs_list = inputs if isinstance(inputs, list) else [inputs]
+        if len(inputs_list) != len(solution_list):
+            raise ValueError(
+                f"The number of solutions ({len(solution_list)}) must match "
+                f"the number of inputs ({len(inputs_list)})."
+            )
+
+        return self.evaluate_batch(
+            solution=solution_list,
+            inputs=inputs_list,
+            calculate_sensitivities=calculate_sensitivities,
+        )
+
+    def evaluate_batch(
+        self,
+        solution: list[Solution],
+        inputs: list[Inputs],
+        calculate_sensitivities: bool = False,
+    ) -> Evaluation:
+        """
+        Computes the cost function for the given predictions.
+
+        Parameters
+        ----------
+        solution : list[Solution]
+            A list of simulation results.
+        inputs : list[Inputs]
+            The corresponding list of input parameters.
         calculate_sensitivities : bool
             Whether to also return the sensitivities (default: False).
         """
@@ -112,14 +148,13 @@ class BaseCost:
             de = float(de)
         self._de = de
 
-    def failure(self, parameter_names: list[str], calculate_sensitivities: bool = True):
+    def failure(
+        self, parameter_names: Iterable[str], calculate_sensitivities: bool = True
+    ):
         sign = 1.0 if self.minimising else -1.0
-        return Evaluation(
-            values=sign * np.inf,
-            sensitivities={key: sign * self._de for key in parameter_names}
-            if calculate_sensitivities
-            else None,
-        )
+        if calculate_sensitivities:
+            return (sign * np.inf, {key: sign * self._de for key in parameter_names})
+        return sign * np.inf
 
     @property
     def name(self):
@@ -156,32 +191,48 @@ class LogPrior(BaseCost):
         self.parameters = parameters
         self.minimising = False
 
-    def evaluate(
+    def evaluate_batch(
         self,
-        solution: Solution,
-        inputs: Inputs | None = None,
+        solution: list[Solution],
+        inputs: list[Inputs],
         calculate_sensitivities: bool = False,
     ) -> Evaluation:
         """
         Computes the log-prior for the given inputs, and optionally the sensitivities.
+
+        Parameters
+        ----------
+        solution : list[Solution]
+            A list of simulation results.
+        inputs : list[Inputs]
+            The corresponding list of input parameters.
+        calculate_sensitivities : bool
+            Whether to also return the sensitivities (default: False).
         """
-        # Get the values of all input parameters
-        inputs = inputs or self.parameters.to_dict("initial")
-        input_values = np.asarray(list(inputs.values()))
+        l = np.empty(len(solution))
+        dl = (
+            {key: np.zeros(len(solution)) for key in inputs[0].keys()}
+            if calculate_sensitivities
+            else None
+        )
 
-        # Compute log prior (and gradient)
-        if calculate_sensitivities:
-            l, dl = self.parameters.distribution.logpdfS1(input_values)
-            dl = {key: dl[i] for i, key in enumerate(self.parameters.names)}
-        else:
-            l = self.parameters.distribution.logpdf(input_values)
+        for i, x in enumerate(inputs):
+            # Get the values of all input parameters
+            input_values = np.asarray(list(x.values()))
 
-        if not np.isfinite(l).any():
-            return self.failure(
-                inputs=inputs, calculate_sensitivities=calculate_sensitivities
-            )
+            # Compute log prior (and gradient)
+            if calculate_sensitivities:
+                l[i], dl_array = self.parameters.distribution.logpdfS1(input_values)
+                dl_i = {key: dl_array[i_key] for i_key, key in enumerate(x.keys())}
 
-        if calculate_sensitivities:
-            return Evaluation(values=l, sensitivities=dl)
+                # Use failure gradient for any infinite log prior
+                if not np.isfinite(l[i]):
+                    l[i], dl_i = self.failure(x.keys(), calculate_sensitivities)
 
-        return Evaluation(values=l)
+                for key in x.keys():
+                    dl[key][i] = dl_i[key]
+
+            else:
+                l[i] = self.parameters.distribution.logpdf(input_values)
+
+        return Evaluation(values=l, sensitivities=dl)

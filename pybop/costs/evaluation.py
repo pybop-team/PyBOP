@@ -27,9 +27,10 @@ class Evaluation:
         else:
             self.sensitivities = None
 
-    def insert_result(self, i: int, evaluation):
-        self.values[i] = evaluation.values.item()
-        sensitivities = evaluation.sensitivities
+    def insert_result(
+        self, i: int, value: float, sensitivities: dict[str, np.ndarray] | None = None
+    ):
+        self.values[i] = value
         if sensitivities is not None:
             for key, value in sensitivities.items():
                 self.sensitivities[key][i] = value.item()

@@ -14,6 +14,8 @@
 
 ## Breaking Changes
 
+- [#942](https://github.com/pybop-team/PyBOP/pull/942) - Adds `evaluate_batch` to the costs and ensures that an `Evaluation` is returned.
+
 # [v26.3](https://github.com/pybop-team/PyBOP/tree/v26.3) - 2026-03-05
 
 ## Features
