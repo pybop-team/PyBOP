@@ -2,7 +2,6 @@ import numpy as np
 import pybamm
 import pytest
 from pybamm import Parameter
-from scipy import stats
 
 import pybop
 
@@ -33,6 +32,7 @@ class TestWeightedCost:
     @pytest.fixture
     def parameter_values(self):
         parameter_values = pybamm.ParameterValues("Chen2020")
+        x = self.ground_truth
         parameter_values.update(
             {
                 "Electrolyte density [kg.m-3]": Parameter("Separator density [kg.m-3]"),
@@ -50,11 +50,6 @@ class TestWeightedCost:
                 ),
                 "Cell mass [kg]": pybop.pybamm.cell_mass(),
                 "Cell volume [m3]": pybop.pybamm.cell_volume(),
-            }
-        )
-        x = self.ground_truth
-        parameter_values.update(
-            {
                 "Negative electrode active material volume fraction": x[0],
                 "Positive electrode active material volume fraction": x[1],
             }
@@ -65,11 +60,10 @@ class TestWeightedCost:
     def parameters(self):
         return {
             "Negative electrode active material volume fraction": pybop.Parameter(
-                stats.uniform(0.4, 0.75 - 0.4),
+                distribution=pybop.Uniform(0.4, 0.75)
             ),
             "Positive electrode active material volume fraction": pybop.Parameter(
-                stats.uniform(0.4, 0.75 - 0.4),
-                # no bounds
+                distribution=pybop.Uniform(0.4, 0.75)  # no bounds
             ),
         }
 

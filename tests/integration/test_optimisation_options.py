@@ -1,7 +1,6 @@
 import numpy as np
 import pybamm
 import pytest
-from scipy import stats
 
 import pybop
 
@@ -42,8 +41,7 @@ class TestOptimisation:
                 distribution=pybop.Gaussian(0.55, 0.05, truncated_at=[0.375, 0.75]),
             ),
             "Positive electrode active material volume fraction": pybop.Parameter(
-                stats.norm(loc=0.55, scale=0.05),
-                # no bounds
+                distribution=pybop.Gaussian(0.55, 0.05)  # no bounds
             ),
         }
 

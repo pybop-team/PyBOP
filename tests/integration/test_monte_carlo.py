@@ -1,7 +1,6 @@
 import numpy as np
 import pybamm
 import pytest
-from scipy import stats
 
 import pybop
 from pybop import (
@@ -23,6 +22,7 @@ class Test_Sampling_SPM:
 
     @pytest.fixture(autouse=True)
     def setup(self):
+        self.sigma = 1e-3
         self.ground_truth = np.clip(
             pybop.add_noise(np.asarray([0.55, 0.55, 3e-3]), [5e-2, 5e-2, 1e-4]),
             a_min=[0.4, 0.4, 1e-5],
@@ -51,13 +51,10 @@ class Test_Sampling_SPM:
     def parameters(self):
         return {
             "Negative electrode active material volume fraction": pybop.Parameter(
-                pybop.Gaussian(0.575, 0.05, truncated_at=[0.375, 0.725]),
-                initial_value=stats.uniform(0.4, 0.7 - 0.4).rvs(),
+                distribution=pybop.Gaussian(0.575, 0.05, truncated_at=[0.375, 0.725])
             ),
             "Positive electrode active material volume fraction": pybop.Parameter(
-                stats.norm(loc=0.525, scale=0.05),
-                initial_value=stats.uniform(0.4, 0.7 - 0.4).rvs(),
-                # no bounds
+                distribution=pybop.Gaussian(0.525, 0.05)  # no bounds
             ),
         }
 
@@ -72,16 +69,13 @@ class Test_Sampling_SPM:
         simulator = pybop.pybamm.Simulator(
             model, parameter_values=parameter_values, protocol=dataset
         )
-        likelihood = pybop.GaussianLogLikelihood(dataset, sigma=0.002 * 1.2)
+        likelihood = pybop.GaussianLogLikelihood(dataset, sigma=self.sigma * 1.2)
         return pybop.LogPosterior(simulator, likelihood)
 
     @pytest.fixture
     def map_estimate(self, log_pdf):
-        options = pybop.PintsOptions(
-            max_iterations=100,
-            max_unchanged_iterations=35,
-        )
-        optim = pybop.CMAES(log_pdf, options=options)
+        options = pybop.SciPyMinimizeOptions(maxiter=50)
+        optim = pybop.SciPyMinimize(log_pdf, options=options)
         result = optim.run()
 
         return result.x
@@ -118,12 +112,15 @@ class Test_Sampling_SPM:
         x = np.mean(result.chains, axis=1)
         for i in range(len(x)):
             np.testing.assert_allclose(x[i], self.ground_truth, atol=1.6e-2)
+            np.testing.assert_allclose(
+                result.chains[i][-1], self.ground_truth, atol=2e-2
+            )
 
     def get_data(self, model, parameter_values):
         experiment = pybamm.Experiment(
             [
-                "Discharge at 0.5C for 4 minutes (12 second period)",
-                "Charge at 0.5C for 4 minutes (12 second period)",
+                "Discharge at 2C for 2 minutes (12 second period)",
+                "Charge at 2C for 2 minutes (12 second period)",
             ]
         )
         solution = pybamm.Simulation(
@@ -133,6 +130,8 @@ class Test_Sampling_SPM:
             {
                 "Time [s]": solution["Time [s]"].data,
                 "Current [A]": solution["Current [A]"].data,
-                "Voltage [V]": pybop.add_noise(solution["Voltage [V]"].data, 0.002),
+                "Voltage [V]": pybop.add_noise(
+                    solution["Voltage [V]"].data, self.sigma
+                ),
             }
         )

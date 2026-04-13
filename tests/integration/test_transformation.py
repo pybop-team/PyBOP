@@ -31,7 +31,7 @@ class TestTransformation:
     def setup(self):
         self.sigma = 2e-3
         self.ground_truth = np.clip(
-            pybop.add_noise(np.asarray([0.005, 0.005]), 0.001), a_min=0.0, a_max=0.01
+            pybop.add_noise(np.asarray([0.005, 0.005]), 0.001), a_min=1e-4, a_max=0.01
         )
 
     @pytest.fixture
@@ -46,11 +46,7 @@ class TestTransformation:
             {
                 "Open-circuit voltage [V]": model.default_parameter_values[
                     "Open-circuit voltage [V]"
-                ]
-            }
-        )
-        parameter_values.update(
-            {
+                ],
                 "C1 [F]": 50 / self.ground_truth[1],
                 "R0 [Ohm]": self.ground_truth[0],
                 "R1 [Ohm]": self.ground_truth[1],
@@ -62,11 +58,13 @@ class TestTransformation:
     def parameters(self, transformation_r0, transformation_r1):
         return {
             "R0 [Ohm]": pybop.Parameter(
-                distribution=pybop.Gaussian(0.005, 0.002, truncated_at=[1e-6, 0.01]),
+                distribution=pybop.LogUniform(1e-4, 0.01),
+                initial_value=0.005,
                 transformation=transformation_r0,
             ),
             "R1 [Ohm]": pybop.Parameter(
-                distribution=pybop.Gaussian(0.005, 0.002, truncated_at=[1e-6, 0.01]),
+                distribution=pybop.LogUniform(1e-4, 0.01),
+                initial_value=0.005,
                 transformation=transformation_r1,
             ),
         }
@@ -106,7 +104,7 @@ class TestTransformation:
             itertools.product(
                 [
                     pybop.IdentityTransformation(),
-                    pybop.UnitHyperCube(1e-4, 0.01),
+                    pybop.UnitHyperCube(5e-5, 0.01),
                     pybop.LogTransformation(),
                 ],
                 repeat=2,

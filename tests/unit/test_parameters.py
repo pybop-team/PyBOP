@@ -38,22 +38,18 @@ class TestParameter:
         # test error if bounds and distribution
         with pytest.raises(
             ParameterError,
-            match="Bounds can only be set if no distribution is provided. If a bounded distribution is needed, please ensure the distribution itself is bounded.",
+            match="Bounds can only be set if no distribution is provided. If a bounded "
+            "distribution is needed, please ensure the distribution itself is bounded.",
         ):
-            pybop.Parameter(distribution=stats.norm(0.3, 0.1), bounds=(0.4, 0.8))
+            pybop.Parameter(
+                distribution=pybop.Distribution(stats.norm(0.3, 0.1)), bounds=(0.4, 0.8)
+            )
 
     def test_parameter_repr(self, parameter):
         assert (
             repr(parameter)
-            == f"Parameter - Distribution: Gaussian, mean: {parameter.distribution.mean()}, standard deviation: {parameter.distribution.std()}, Bounds: (0.375, 0.7), Initial value: 0.6"
+            == f"Parameter - Distribution: {repr(parameter.distribution)}, Bounds: (0.375, 0.7), Initial value: 0.6"
         )
-
-    def test_parameter_sampling(self, parameter):
-        samples = parameter.sample_from_distribution(n_samples=500)
-        assert (samples >= 0.375).all() and (samples <= 0.7).all()
-
-        parameter = pybop.Parameter(bounds=(0, np.inf))
-        assert parameter.sample_from_distribution() is None
 
     def test_parameter_update(self, parameter):
         # Test initial value update
@@ -76,10 +72,12 @@ class TestParameter:
         ):
             pybop.Parameter(bounds=[0.7, 0.3])
 
-        # Intiial value outside bounds
+        # Initial value outside bounds
         with pytest.raises(
             ParameterValidationError,
-            match=re.escape("Initial value 0.2 is outside bounds (0.3, 0.7)"),
+            match=re.escape(
+                "Initial value 0.2 is outside the parameter bounds (0.3, 0.7)."
+            ),
         ):
             pybop.Parameter(bounds=[0.3, 0.7], initial_value=0.2)
 
@@ -89,12 +87,6 @@ class TestParameter:
         )
         sample = parameter.get_initial_value()
         assert (sample >= 0.375) and (sample <= 0.7)
-
-    def test_get_mean(self):
-        # Test mean based on bounds with no distribution
-        param = pybop.Parameter(bounds=[0.3, 0.7])
-        param._distribution = None
-        assert pytest.approx(param.get_mean()) == 0.5
 
 
 class TestParameters:
@@ -131,9 +123,7 @@ class TestParameters:
                 {
                     name: parameter,
                     "Positive electrode active material volume fraction": pybop.Parameter(
-                        distribution=pybop.Gaussian(
-                            0.6, 0.02, truncated_at=[0.375, 0.7]
-                        ),
+                        pybop.Gaussian(0.6, 0.02, truncated_at=[0.375, 0.7]),
                         initial_value=0.6,
                     ),
                 }
@@ -167,7 +157,7 @@ class TestParameters:
         params = pybop.Parameters(
             {
                 "LogParam": pybop.Parameter(
-                    bounds=[0, 1],
+                    distribution=pybop.LogUniform(1e-4, 1),
                     transformation=pybop.LogTransformation(),
                 ),
                 "ScaledParam": pybop.Parameter(
@@ -187,23 +177,8 @@ class TestParameters:
 
         # Test transformed bounds
         bounds = params.get_bounds(transformed=True)
-        np.testing.assert_allclose(bounds["lower"], [-np.inf, 0.5, 0, -1])
+        np.testing.assert_allclose(bounds["lower"], [np.log(1e-4), 0.5, 0, -1])
         np.testing.assert_allclose(bounds["upper"], [np.log(1), 1.5, 1, 0])
-
-        # Test unbounded transformation causes ValueError due to NaN
-        params = pybop.Parameters(
-            {
-                name: pybop.Parameter(
-                    distribution=pybop.Gaussian(0.01, 0.2, truncated_at=[-1, 1]),
-                    transformation=pybop.LogTransformation(),
-                )
-            }
-        )
-
-        with pytest.raises(
-            ValueError, match="Transformed bounds resulted in NaN values."
-        ):
-            params.get_bounds(transformed=True)
 
     def test_parameters_sampling(self, name, parameter):
         parameter._transformation = pybop.ScaledTransformation(
@@ -218,25 +193,22 @@ class TestParameters:
         param = pybop.Parameter(initial_value=0.5)
         params = pybop.Parameters({name: param})
 
-        samples = params.sample_from_distribution(n_samples=500, transformed=True)
-        assert samples is None
+        with pytest.raises(NotImplementedError):
+            params.sample_from_distribution(n_samples=500, transformed=True)
 
-    def test_get_sigma(self, name):
-        parameter = pybop.Parameter(stats.norm(loc=0.6, scale=0.02))
+    def test_get_std(self, name):
+        parameter = pybop.Parameter(pybop.Distribution(stats.norm(loc=0.6, scale=0.02)))
         params = pybop.Parameters({name: parameter})
         assert params.get_std() == pytest.approx([0.02])
 
         parameter = pybop.Parameter(bounds=(0.375, 0.7))
-        parameter._distribution = None
         params = pybop.Parameters({name: parameter})
-        assert params.get_std() == [0.05 * (parameter.bounds[1] - parameter.bounds[0])]
+        assert params.get_std() == [parameter.distribution.std()]
 
     def test_initial_values_without_attributes(self):
         # Test without initial values
-        parameter = pybop.Parameters(
-            {"Negative electrode conductivity [S.m-1]": pybop.Parameter()}
-        )
-        with pytest.raises(ParameterError, match="has no initial value"):
+        parameter = pybop.Parameters({"Param": pybop.Parameter()})
+        with pytest.raises(NotImplementedError):
             parameter.get_initial_values()
 
     def test_get_initial_values_if_none(self, name, parameter):
@@ -265,7 +237,8 @@ class TestParameters:
         params = pybop.Parameters({name: parameter})
         assert (
             repr(params)
-            == f"Parameters(1):\n Negative electrode active material volume fraction: Parameter - Distribution: Gaussian, mean: {parameter.distribution.mean()}, standard deviation: {parameter.distribution.std()}, Bounds: (0.375, 0.7), Initial value: 0.6"
+            == "Parameters(1):\n Negative electrode active material volume fraction: Parameter - "
+            f"Distribution: {repr(params[name].distribution)}, Bounds: (0.375, 0.7), Initial value: 0.6"
         )
 
 
@@ -309,12 +282,14 @@ class TestMultivariateParameter:
     def test_compatible_transformation(self, distribution1):
         with pytest.raises(
             TypeError,
-            match="The transformation provided is not compatible with pybop.MultivariateLogNormal. Only LogTransformation, IdentityTransformation are allowed.",
+            match="The transformation of a MultivariateGaussian distribution by a "
+            "LogTransformation is undefined or not yet implemented.",
         ):
             pybop.Parameter(
-                distribution=pybop.MarginalDistribution(distribution1, 1),
-                initial_value=1e-15,
-                transformation=pybop.ScaledTransformation(0.5, 1.0),
+                distribution=pybop.MarginalDistribution(
+                    pybop.MultivariateGaussian([0.2, 0.5], [[10, 0.0], [0.0, 10]]), 1
+                ),
+                transformation=pybop.LogTransformation(),
             )
 
     def test_rvs(self, distribution2):
@@ -350,19 +325,16 @@ class TestMultivariateParameter:
     def test_input_checks_multivariate_parameters(self, distribution1):
         with pytest.raises(
             TypeError,
-            match="A Parameters object with a MarginalDistribution cannot be combined with parameters with other types of distributions",
+            match="A Parameters object with a MarginalDistribution cannot be combined with "
+            "parameters with other types of distributions",
         ):
             pybop.Parameters(
                 {
                     "Negative particle diffusivity [m2.s-1]": pybop.Parameter(
-                        distribution=pybop.MarginalDistribution(distribution1, 0),
-                        initial_value=3.9e-14,
-                        transformation=pybop.LogTransformation(),
+                        distribution=pybop.MarginalDistribution(distribution1, 0)
                     ),
                     "Positive particle diffusivity [m2.s-1]": pybop.Parameter(
-                        initial_value=1e-15,
-                        bounds=[1e-16, 1e-14],
-                        transformation=pybop.LogTransformation(),
+                        bounds=[1e-16, 1e-14]
                     ),
                 },
             )
@@ -370,26 +342,21 @@ class TestMultivariateParameter:
         params = pybop.Parameters(
             {
                 "Negative particle diffusivity [m2.s-1]": pybop.Parameter(
-                    initial_value=3.9e-14,
-                    bounds=[3.9e-15, 3.9e-13],
-                    transformation=pybop.LogTransformation(),
+                    bounds=[3.9e-15, 3.9e-13]
                 ),
                 "Positive particle diffusivity [m2.s-1]": pybop.Parameter(
-                    initial_value=1e-15,
-                    bounds=[1e-16, 1e-14],
-                    transformation=pybop.LogTransformation(),
+                    bounds=[1e-16, 1e-14]
                 ),
             },
         )
 
         with pytest.raises(
             TypeError,
-            match="A Parameters object with a MarginalDistribution cannot be combined with parameters with other types of distributions",
+            match="A Parameters object with a MarginalDistribution cannot be combined with "
+            "parameters with other types of distributions",
         ):
             params["Negative particle diffusivity [m2.s-1]"] = pybop.Parameter(
-                distribution=pybop.MarginalDistribution(distribution1, 0),
-                initial_value=3.9e-14,
-                transformation=pybop.LogTransformation(),
+                distribution=pybop.MarginalDistribution(distribution1, 0)
             )
 
         distribution2 = pybop.MultivariateUniform(np.asarray([[0, 0], [1, 2]]))
@@ -400,14 +367,10 @@ class TestMultivariateParameter:
             pybop.Parameters(
                 {
                     "Negative particle diffusivity [m2.s-1]": pybop.Parameter(
-                        distribution=pybop.MarginalDistribution(distribution1, 0),
-                        initial_value=3.9e-14,
-                        transformation=pybop.LogTransformation(),
+                        distribution=pybop.MarginalDistribution(distribution1, 0)
                     ),
                     "Positive particle diffusivity [m2.s-1]": pybop.Parameter(
-                        distribution=pybop.MarginalDistribution(distribution2, 1),
-                        initial_value=1e-15,
-                        transformation=pybop.IdentityTransformation(),
+                        distribution=pybop.MarginalDistribution(distribution2, 1)
                     ),
                 },
             )
@@ -417,14 +380,10 @@ class TestMultivariateParameter:
         params = pybop.Parameters(
             {
                 "Negative particle diffusivity [m2.s-1]": pybop.Parameter(
-                    distribution=pybop.MarginalDistribution(distribution1, 1),
-                    initial_value=3.9e-14,
-                    transformation=pybop.LogTransformation(),
+                    distribution=pybop.MarginalDistribution(distribution1, 1)
                 ),
                 "Positive particle diffusivity [m2.s-1]": pybop.Parameter(
-                    distribution=pybop.MarginalDistribution(distribution1, 0),
-                    initial_value=1e-15,
-                    transformation=pybop.IdentityTransformation(),
+                    distribution=pybop.MarginalDistribution(distribution1, 0)
                 ),
             },
         )

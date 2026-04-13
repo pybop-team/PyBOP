@@ -6,6 +6,8 @@
 
 ## Optimisations
 
+- [#925](https://github.com/pybop-team/PyBOP/pull/925) - Add `UnboundedDistribution` and the `get_transformed_distribution` functionality.
+
 ## Bug Fixes
 
 - [#915](https://github.com/pybop-team/PyBOP/pull/915) - Fixes axis labels for non-standard domain names, adds `Dataset` length property and adds `kind` property to `Interpolant`.
