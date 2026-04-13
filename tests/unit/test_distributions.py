@@ -11,6 +11,7 @@ from pybop import (
     ScaledTransformation,
     UnitHyperCube,
 )
+from pybop.parameters.distributions import BaseDistribution
 
 
 class TestDistributions:
@@ -59,8 +60,21 @@ class TestDistributions:
         return pybop.MultivariateNonparametric(random_dataset)
 
     def test_distribution_class(self):
-        base = pybop.Distribution()
-        assert isinstance(base, pybop.Distribution)
+        base = BaseDistribution()
+        with pytest.raises(NotImplementedError):
+            base.mean()
+        with pytest.raises(NotImplementedError):
+            base.std()
+        with pytest.raises(NotImplementedError):
+            base.pdf(0.0)
+        with pytest.raises(NotImplementedError):
+            base.logpdf(0.0)
+        with pytest.raises(NotImplementedError):
+            base.icdf(0.0)
+        with pytest.raises(NotImplementedError):
+            base.cdf(0.0)
+        with pytest.raises(NotImplementedError):
+            base.rvs(1)
         with pytest.raises(NotImplementedError):
             base.logpdfS1(0.0)
 
@@ -200,11 +214,11 @@ class TestDistributions:
 
     def test_incorrect_composed_distributions(self, Gaussian, Uniform):
         with pytest.raises(
-            ValueError, match="All distributions must be instances of Distribution"
+            ValueError, match="All distributions must be instances of BaseDistribution"
         ):
             pybop.JointDistribution(Gaussian, Uniform, "string")
         with pytest.raises(
-            ValueError, match="All distributions must be instances of Distribution"
+            ValueError, match="All distributions must be instances of BaseDistribution"
         ):
             pybop.JointDistribution(Gaussian, Uniform, 0.5)
 

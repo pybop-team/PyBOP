@@ -3,7 +3,13 @@ import scipy.integrate as integrate
 import scipy.stats as stats
 from scipy.linalg import sqrtm
 
-from pybop.parameters.distributions import Distribution, Gaussian, LogNormal, Uniform
+from pybop.parameters.distributions import (
+    BaseDistribution,
+    Distribution,
+    Gaussian,
+    LogNormal,
+    Uniform,
+)
 from pybop.transformation.base_transformation import Transformation
 from pybop.transformation.transformations import (
     ComposedTransformation,
@@ -88,7 +94,7 @@ class BaseMultivariateDistribution(Distribution):
 
     def get_transformed_distribution(
         self, transform: Transformation
-    ) -> Distribution | None:
+    ) -> BaseDistribution | None:
         """Get the transformed distribution in the search space."""
         transform = (
             transform
@@ -192,7 +198,7 @@ class MultivariateUniform(BaseMultivariateDistribution):
             upper=self.properties["loc"][position] + self.properties["scale"][position],
         )
 
-    def _transform(self, transform: Transformation) -> Distribution | None:
+    def _transform(self, transform: Transformation) -> BaseDistribution | None:
         """Get the transformed distribution in the search space."""
         if all(isinstance(t, ScaledTransformation) for t in transform.transformations):
             lower = transform.to_search(self.properties["loc"])
@@ -242,7 +248,7 @@ class MultivariateGaussian(BaseMultivariateDistribution):
             sigma=np.sqrt(self.properties["cov"][position, position]),
         )
 
-    def _transform(self, transform: Transformation) -> Distribution | None:
+    def _transform(self, transform: Transformation) -> BaseDistribution | None:
         """Get the transformed distribution in the search space."""
         if all(isinstance(t, ScaledTransformation) for t in transform.transformations):
             mean = transform.to_search(self.properties["mean"])
@@ -271,7 +277,7 @@ class MultivariateLogNormal(BaseMultivariateDistribution):
     """
 
     def __init__(self, mean_log_x, covariance_log_x):
-        super().__init__(n_parameters=len(mean_log_x))
+        super().__init__(distribution=None, n_parameters=len(mean_log_x))
         self.distribution_log_x = stats.multivariate_normal
         self.properties_log_x = {
             "mean": np.asarray(mean_log_x),
@@ -362,7 +368,7 @@ class MultivariateLogNormal(BaseMultivariateDistribution):
             sigma=np.sqrt(self.properties_log_x["cov"][position, position]),
         )
 
-    def _transform(self, transform: Transformation) -> Distribution | None:
+    def _transform(self, transform: Transformation) -> BaseDistribution | None:
         """Get the transformed distribution in the search space."""
         if all(isinstance(t, LogTransformation) for t in transform.transformations):
             return MultivariateGaussian(
@@ -377,7 +383,7 @@ class MarginalDistribution(Distribution):
     Represents a univariate marginal distribution of a pybop.BaseMultivariateDistribution.
     Relies on the "marginal" method of the multivariate distribution.
 
-    Sub-class of pybop.Distribution with the additional properties
+    Sub-class of `pybop.Distribution` with the additional properties
     "parent_distribution" and "position"
 
     Parameters
@@ -393,7 +399,7 @@ class MarginalDistribution(Distribution):
     ):
         # Get marginal distribution and initialise parent class
         distribution = parent_distribution.marginal(position)
-        super().__init__(distribution)
+        super().__init__(distribution=distribution)
 
         # add additional properties
         self._position = position
@@ -405,7 +411,7 @@ class MarginalDistribution(Distribution):
 
     def get_transformed_distribution(
         self, transform: Transformation
-    ) -> Distribution | None:
+    ) -> BaseDistribution | None:
         """
         Get the transformed distribution in the search space, by first transforming the
         parent distribution and then fetching the marginal distribution.

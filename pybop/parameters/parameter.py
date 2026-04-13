@@ -9,7 +9,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from pybop.parameters.distributions import (
-    Distribution,
+    BaseDistribution,
     JointDistribution,
     Unbounded,
     Uniform,
@@ -58,8 +58,10 @@ class Parameter:
 
     Parameters
     ----------
-    distribution : Distribution, optional
-        Probability distribution for the parameter.
+    distribution : BaseDistribution, optional
+        Probability distribution for the parameter. If None, an empty
+        `pybop.BaseDistribution` will return a NotImplementedError for any
+        functionality that requires a distribution, such as `rvs`.
     bounds : tuple[float, float], optional
         Parameter bounds as (lower, upper)
     initial_value : NumericValue, optional
@@ -70,7 +72,7 @@ class Parameter:
 
     def __init__(
         self,
-        distribution: Distribution | None = None,
+        distribution: BaseDistribution | None = None,
         bounds: BoundsPair | None = None,
         initial_value: float = None,
         transformation: Transformation | None = None,
@@ -105,7 +107,7 @@ class Parameter:
             if initial_value is not None:
                 self._distribution = Unbounded(initial_value=initial_value)
             else:
-                self._distribution = Distribution()
+                self._distribution = BaseDistribution()
 
         # Set and validate initial value
         self.update_initial_value(value=initial_value)
@@ -180,7 +182,7 @@ class Parameter:
             return (lower, upper)
 
     @property
-    def distribution(self) -> Distribution:
+    def distribution(self) -> BaseDistribution:
         return self._distribution
 
     @property
@@ -188,7 +190,7 @@ class Parameter:
         return self._transformation
 
     @property
-    def transformed_distribution(self) -> Distribution:
+    def transformed_distribution(self) -> BaseDistribution:
         return self._transformed_distribution
 
 
