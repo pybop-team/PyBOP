@@ -420,3 +420,6 @@ class MarginalDistribution(Distribution):
             self.parent_distribution.get_transformed_distribution(transform)
         )
         return MarginalDistribution(transformed_parent_distribution, self._position)
+
+    def __repr__(self) -> str:
+        return f"Marginal, position {self.position}, parent {self.parent_distribution.__repr__()}"
