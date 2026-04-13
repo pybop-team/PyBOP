@@ -1,3 +1,4 @@
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -45,7 +46,7 @@ class FailedSolution:
         >>> print(voltage.data)  # np.ndarray([inf])
     """
 
-    def __init__(self, variable_names: list[str], parameter_names: list[str]):
+    def __init__(self, variable_names: Iterable[str], parameter_names: Iterable[str]):
         self._validate_inputs(variable_names, parameter_names)
         self._variable_names = variable_names
         self._parameter_names = parameter_names
@@ -125,14 +126,14 @@ class FailedSolution:
         """Get list of parameter names (read-only)."""
         return self._parameter_names.copy()
 
-    def keys(self) -> list[str]:
+    def keys(self) -> Iterator[str]:
         """Get all variable names."""
-        return list(self._variables.keys())
+        return self._variables.keys()
 
-    def values(self) -> list[FailedVariable]:
+    def values(self) -> Iterator[FailedVariable]:
         """Get all variables."""
-        return list(self._variables.values())
+        return self._variables.values()
 
-    def items(self) -> list[tuple[str, FailedVariable]]:
+    def items(self) -> Iterator[tuple[str, FailedVariable]]:
         """Get all variable name-value pairs."""
-        return list(self._variables.items())
+        return self._variables.items()

@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=64"]
-build-backend = "setuptools.build_meta"
+requires = ["hatch"]
+build-backend = "hatchling.build"
 
 [project]
 name = "pybop"
@@ -13,10 +13,10 @@ maintainers = [
 ]
 description = "Python Battery Optimisation and Parameterisation"
 readme = {file = "README.md", content-type = "text/markdown"}
-license = { file = "LICENSE" }
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
 classifiers = [
-  "Development Status :: 3 - Alpha",
-  "License :: OSI Approved :: BSD License",
+  "Development Status :: 4 - Beta",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -76,8 +76,40 @@ dev = [
     "ruff",
 ]
 
-[tool.setuptools.packages.find]
-include = ["pybop", "pybop.*"]
+[tool.hatch.build.targets.sdist]
+exclude = [
+  "papers/",
+  "tests/",
+  "benchmarks/",
+  "docs/",
+  "assets/",
+  "scripts/",
+  "multiprocessing_bench.py",
+  "noxfile.py",
+  "asv.conf.json",
+  "conftest.py",
+  "CONTRIBUTING.md",
+]
+
+# the wheel additionally excludes files that are not needed for installation, such
+#as the changelog and citation files, and the examples. those are present in the sdist.
+[tool.hatch.build.targets.wheel]
+exclude = [
+  "papers/",
+  "tests/",
+  "benchmarks/",
+  "docs/",
+  "assets/",
+  "scripts/",
+  "examples/",
+  "multiprocessing_bench.py",
+  "noxfile.py",
+  "asv.conf.json",
+  "conftest.py",
+  "CONTRIBUTING.md",
+  "CHANGELOG.md",
+  "CITATION.cff",
+]
 
 [project.urls]
 Homepage = "https://github.com/pybop-team/PyBOP"
