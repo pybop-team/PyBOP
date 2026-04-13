@@ -204,7 +204,8 @@ class EP_BOLFI(BaseOptimiser):
         #     author={Minka, T},
         #     journal={Proceedings of the Seventeenth Conference on Uncertainty in Artificial Intelligence (UAI2001)},
         #     pages={362-369},
-        #     year={2013}
+        #     year={2013},
+        #     doi={10.48550/arXiv.1301.2294}
         # }""")
         citations.register("""@article{
             Barthelme2014,
@@ -213,7 +214,8 @@ class EP_BOLFI(BaseOptimiser):
             journal={Journal of the American Statistical Association},
             volume={109},
             pages={315-333},
-            year={2014}
+            year={2014},
+            doi={10.1080/01621459.2013.864178}
         }""")
         citations.register("""@article{
             Gutmann2016,
@@ -222,7 +224,8 @@ class EP_BOLFI(BaseOptimiser):
             journal={Journal of Machine Learning Research},
             volume={17},
             pages={1-47},
-            year={2016}
+            year={2016},
+            doi={arXiv.1501.03291}
         }""")
         citations.register("""@article{
             Kuhn2022,
@@ -232,7 +235,8 @@ class EP_BOLFI(BaseOptimiser):
             volume={6},
             pages={e202200374},
             year={2023},
-            publisher={Chemistry Europe}
+            publisher={Chemistry Europe},
+            doi={10.1002/batt.202200374}
         }""")
 
     def _set_up_optimiser(self):
@@ -365,7 +369,7 @@ class EP_BOLFI(BaseOptimiser):
             for entry in x_best_over_time
         ]
         self._logger.x_search_best = x_search_best_over_time[-1]
-        self._logger.cost_best = cost_best[0]
+        self._logger.cost_best = cost_best[-1]
         model_mean_dict = {
             key: value[0]
             for key, value in ep_bolfi_result["inferred parameters"].items()

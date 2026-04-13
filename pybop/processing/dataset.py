@@ -206,6 +206,47 @@ def import_pybamm_solution(
     return Dataset(data_dict, domain=domain, control_functions=control_functions)
 
 
+class Datasets:
+    """
+    Represents a collection of experimental observations.
+    """
+
+    def __init__(
+        self,
+        datasets: list[Dataset],
+        domain: str | None = None,
+        control_functions: list[str] | None = None,
+    ):
+        self.datasets = []
+        self.domain = domain or "Time [s]"
+        self.control_functions = control_functions or ["Current function [A]"]
+        for dataset in datasets:
+            if not isinstance(dataset, Dataset):
+                dataset = Dataset(data_dictionary=dataset, domain=domain)
+            self.datasets.append(dataset)
+
+    def get_subset(self, indices):
+        return Datasets(
+            [self.datasets[i] for i in indices], self.domain, self.control_functions
+        )
+
+    def __iter__(self):
+        self.count = -1
+        return self
+
+    def __next__(self):
+        self.count += 1
+        if self.count >= len(self):
+            raise StopIteration
+        return self.datasets[self.count]
+
+    def __len__(self):
+        return len(self.datasets)
+
+    def __getitem__(self, i):
+        return self.datasets[i]
+
+
 def import_pyprobe_result(
     result: PyprobeResult,
     variables: list[str] | None = None,
