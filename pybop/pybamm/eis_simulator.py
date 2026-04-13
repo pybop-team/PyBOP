@@ -289,9 +289,7 @@ class EISSimulator(BaseSimulator):
                 try:
                     simulations.append(self._solve(x))
                 except (ZeroDivisionError, RuntimeError, ValueError):
-                    simulations.append(
-                        FailedSolution(["Impedance"], [k for k in x.keys()])
-                    )
+                    simulations.append(FailedSolution(["Impedance"], x.keys()))
             return simulations
 
         simulations = []

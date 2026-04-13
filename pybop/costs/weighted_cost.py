@@ -2,6 +2,7 @@ import numpy as np
 
 from pybop.costs.base_cost import BaseCost
 from pybop.costs.design_cost import DesignCost
+from pybop.costs.evaluation import Evaluation
 from pybop.parameters.parameter import Inputs
 from pybop.simulators.solution import Solution
 
@@ -56,56 +57,56 @@ class WeightedCost(BaseCost):
             self.weights = -self.weights
             self.minimising = False
 
-    def evaluate(
+    def evaluate_batch(
         self,
-        solution: Solution,
-        inputs: Inputs | None = None,
+        solution: list[Solution],
+        inputs: list[Inputs],
         calculate_sensitivities: bool = False,
-    ) -> float | tuple[float, np.ndarray]:
+    ) -> Evaluation:
         """
         Computes the cost function for the given predictions.
 
         Parameters
         ----------
-        solution : pybop.Solution | pybamm.Solution
-            The simulation result.
-        inputs : Inputs, optional
-            Input parameters (default: None).
+        solution : list[Solution]
+            A list of simulation results.
+        inputs : list[Inputs]
+            The corresponding list of input parameters.
         calculate_sensitivities : bool
             Whether to also return the sensitivities (default: False).
-
-        Returns
-        -------
-        np.float64 or tuple[np.float64, np.ndarray[np.float64]]
-            If the solution has sensitivities, returns a tuple containing the cost (float) and the
-            gradient with dimension (len(parameters)), otherwise returns only the cost.
         """
-        e = np.empty_like(self.costs)
-        de = {key: np.zeros(len(self.costs)) for key in inputs.keys()}
+        # Preallocate the evaluation results
+        weighted_evaluation = Evaluation()
+        weighted_evaluation.preallocate(
+            inputs=inputs, calculate_sensitivities=calculate_sensitivities
+        )
 
-        for i, cost in enumerate(self.costs):
+        for j, (sol, x) in enumerate(zip(solution, inputs, strict=False)):
+            e = np.empty(len(self.costs))
+            de = (
+                {key: np.zeros(len(self.costs)) for key in x.keys()}
+                if calculate_sensitivities
+                else None
+            )
+
+            for i, cost in enumerate(self.costs):
+                evaluation = cost.evaluate(
+                    sol, inputs=x, calculate_sensitivities=calculate_sensitivities
+                )
+                e[i] = evaluation.values.item()
+                if calculate_sensitivities:
+                    for key, value in evaluation.sensitivities.items():
+                        de[key][i] = value.item()
+
+            # Sum with weighting
+            e = np.dot(e, self.weights)
             if calculate_sensitivities:
-                e[i], sensitivities = cost.evaluate(
-                    solution,
-                    inputs=inputs,
-                    calculate_sensitivities=calculate_sensitivities,
-                )
-                for key, value in sensitivities.items():
-                    de[key][i] = value
-            else:
-                e[i] = cost.evaluate(
-                    solution,
-                    inputs=inputs,
-                    calculate_sensitivities=calculate_sensitivities,
-                )
+                for key in de.keys():
+                    de[key] = np.dot(de[key], self.weights)
 
-        e = np.dot(e, self.weights)
-        if calculate_sensitivities:
-            for key in de.keys():
-                de[key] = np.dot(de[key], self.weights)
-            return e, de
+            weighted_evaluation.insert_result(i=j, value=e, sensitivities=de)
 
-        return e
+        return weighted_evaluation
 
     def set_target(self, target: list[list[str]] | list[str] | str | None = None):
         """Set the target variable for all costs. Expecting a list of list[str] the same length as self.costs."""
