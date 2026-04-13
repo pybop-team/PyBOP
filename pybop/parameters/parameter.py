@@ -320,7 +320,8 @@ class Parameters:
             raise ParameterError(f"Parameter for '{name}' already exists")
 
         self._parameters[name] = parameter
-        self._update_attributes()
+        if update_attributes:
+            self._update_attributes()
 
     def join(self, parameters) -> None:
         """
