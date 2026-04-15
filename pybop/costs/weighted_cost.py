@@ -39,7 +39,9 @@ class WeightedCost(BaseCost):
         target_dataset = self.costs[0]._dataset  # noqa: SLF001
         self.set_target(
             [cost.target for cost in self.costs],
-            dataset=None if target_dataset is None else Dataset(target_dataset),
+            dataset=None
+            if target_dataset is None
+            else Dataset(target_dataset, domain=self.costs[0].domain),
         )
 
         # Check if weights are provided
