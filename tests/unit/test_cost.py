@@ -3,10 +3,6 @@ import pybamm
 import pytest
 
 import pybop
-from pybop.costs.feature_distances import (
-    ExponentialFeatureDistance,
-    SquareRootFeatureDistance,
-)
 
 
 class TestCosts:
@@ -432,36 +428,40 @@ class TestCosts:
 
     def test_square_root_feature_distance(self, gitt_like_dataset):
         dataset, switchover_point = gitt_like_dataset
-        srfd = SquareRootFeatureDistance(
+        srfd = pybop.SquareRootFeatureDistance(
             dataset=dataset, feature="offset", time_end=switchover_point
         )
         assert abs(srfd.data_fit - 0.2) < 1e-4
-        srfd = SquareRootFeatureDistance(
+        srfd = pybop.SquareRootFeatureDistance(
             dataset=dataset, feature="slope", time_end=switchover_point
         )
         assert abs(srfd.data_fit - 0.4) < 1e-4
-        srfd = SquareRootFeatureDistance(
+        srfd = pybop.SquareRootFeatureDistance(
             dataset=dataset, feature="inverse_slope", time_end=switchover_point
         )
         assert abs(srfd.data_fit - 1 / 0.4) < 1e-4
         with pytest.raises(ValueError):
-            srfd = SquareRootFeatureDistance(dataset=dataset, feature="non_existent")
+            srfd = pybop.SquareRootFeatureDistance(
+                dataset=dataset, feature="non_existent"
+            )
+
+        assert srfd(y=np.asarray([])) == np.inf
 
     def test_exponential_feature_distance(self, gitt_like_dataset):
         dataset, switchover_point = gitt_like_dataset
-        efd = ExponentialFeatureDistance(
+        efd = pybop.ExponentialFeatureDistance(
             dataset=dataset, feature="asymptote", time_start=switchover_point
         )
         assert abs(efd.data_fit - (2.2 + 0.4 * 20**0.5)) < 1e-4
-        efd = ExponentialFeatureDistance(
+        efd = pybop.ExponentialFeatureDistance(
             dataset=dataset, feature="magnitude", time_start=switchover_point
         )
         assert abs(efd.data_fit + 2.0) < 1e-1
-        efd = ExponentialFeatureDistance(
+        efd = pybop.ExponentialFeatureDistance(
             dataset=dataset, feature="timescale", time_start=switchover_point
         )
         assert abs(efd.data_fit - 1 / 0.02) < 1e-2
-        efd = ExponentialFeatureDistance(
+        efd = pybop.ExponentialFeatureDistance(
             dataset=dataset, feature="inverse_timescale", time_start=switchover_point
         )
         assert abs(efd.data_fit - 0.02) < 1e-4
