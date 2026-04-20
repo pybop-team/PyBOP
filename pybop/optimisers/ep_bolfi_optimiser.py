@@ -23,8 +23,6 @@ from pybop.parameters.multivariate_distributions import (
 from pybop.parameters.parameter import Parameter, Parameters
 from pybop.problems.meta_problem import MetaProblem
 from pybop.problems.problem import Problem
-from pybop.processing.dataset import Dataset
-from pybop.simulators.solution import Solution
 
 
 @dataclass
