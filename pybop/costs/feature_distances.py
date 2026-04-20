@@ -101,19 +101,14 @@ class FeatureDistance(BaseCost):
         involves applying the fit function to data and comparing to identity.
         """
         t = t - t[0]
-        try:
-            fit_guess = self._fit_guess(t, y)
-            return self._feature_selection(
-                minimize(
-                    lambda x: (
-                        np.sum((t - self._inverse_fit_function(y, *x)) ** 2) ** 0.5
-                    ),
-                    x0=fit_guess,
-                    method="trust-constr",
-                ).x
-            )
-        except IndexError:
-            return self.failure(self.parameters.names, calculate_sensitivities=False)
+        fit_guess = self._fit_guess(t, y)
+        return self._feature_selection(
+            minimize(
+                lambda x: np.sum((t - self._inverse_fit_function(y, *x)) ** 2) ** 0.5,
+                x0=fit_guess,
+                method="trust-constr",
+            ).x
+        )
 
     def __call__(
         self,

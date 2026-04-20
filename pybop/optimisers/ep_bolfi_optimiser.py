@@ -23,6 +23,7 @@ from pybop.parameters.multivariate_distributions import (
 from pybop.parameters.parameter import Parameter, Parameters
 from pybop.problems.meta_problem import MetaProblem
 from pybop.problems.problem import Problem
+from pybop.processing.dataset import Dataset
 
 
 @dataclass
@@ -247,7 +248,8 @@ class EP_BOLFI(BaseOptimiser):
             for problem in self.problem.problems
         ]
         experimental_datasets = [
-            problem.target_data for problem in self.problem.problems
+            Dataset(problem.target_data, domain=problem.domain)
+            for problem in self.problem.problems
         ]
         feature_extractors = [
             lambda solution, problem=problem: [
