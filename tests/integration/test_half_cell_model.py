@@ -2,7 +2,6 @@ import numpy as np
 import pybamm
 import pytest
 from pybamm import Parameter
-from scipy import stats
 
 import pybop
 
@@ -18,9 +17,7 @@ class TestHalfCellModel:
     def setup(self):
         self.sigma = 0.002
         self.ground_truth = np.clip(
-            np.asarray([0.5]) + np.random.normal(loc=0.0, scale=0.05, size=1),
-            a_min=0.4,
-            a_max=0.75,
+            pybop.add_noise(np.asarray([0.5]), 0.05), a_min=0.4, a_max=0.75
         )
 
     @pytest.fixture
@@ -34,6 +31,7 @@ class TestHalfCellModel:
     @pytest.fixture
     def parameter_values(self, model):
         parameter_values = model.default_parameter_values
+        x = self.ground_truth
         parameter_values.update(
             {
                 "Electrolyte density [kg.m-3]": Parameter(
@@ -56,11 +54,8 @@ class TestHalfCellModel:
                 "Positive electrode density [kg.m-3]": 3262.0,
                 "Separator density [kg.m-3]": 0.0,
                 "Cell mass [kg]": pybop.pybamm.cell_mass(),
+                "Positive electrode active material volume fraction": x[0],
             }
-        )
-        x = self.ground_truth
-        parameter_values.update(
-            {"Positive electrode active material volume fraction": x[0]}
         )
         return parameter_values
 
@@ -68,13 +63,9 @@ class TestHalfCellModel:
     def parameters(self):
         return {
             "Positive electrode active material volume fraction": pybop.Parameter(
-                stats.uniform(0.4, 0.75 - 0.4),
-                # no bounds
+                distribution=pybop.Uniform(0.4, 0.75)
             ),
         }
-
-    def noisy(self, data, sigma):
-        return data + np.random.normal(0, sigma, len(data))
 
     @pytest.fixture
     def fitting_problem(self, model, parameter_values, parameters):
@@ -115,9 +106,7 @@ class TestHalfCellModel:
             {
                 "Positive electrode thickness [m]": pybop.Parameter(
                     distribution=pybop.Gaussian(
-                        5e-05,
-                        5e-06,
-                        truncated_at=[2e-06, 10e-05],
+                        5e-05, 5e-06, truncated_at=[2e-06, 10e-05]
                     ),
                 )
             }
@@ -158,6 +147,8 @@ class TestHalfCellModel:
             {
                 "Time [s]": solution["Time [s]"].data,
                 "Current [A]": solution["Current [A]"].data,
-                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma),
+                "Voltage [V]": pybop.add_noise(
+                    solution["Voltage [V]"].data, self.sigma
+                ),
             }
         )

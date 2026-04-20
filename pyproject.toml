@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=64"]
-build-backend = "setuptools.build_meta"
+requires = ["hatch"]
+build-backend = "hatchling.build"
 
 [project]
 name = "pybop"
@@ -13,20 +13,21 @@ maintainers = [
 ]
 description = "Python Battery Optimisation and Parameterisation"
 readme = {file = "README.md", content-type = "text/markdown"}
-license = { file = "LICENSE" }
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
 classifiers = [
-  "Development Status :: 3 - Alpha",
-  "License :: OSI Approved :: BSD License",
+  "Development Status :: 4 - Beta",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Intended Audience :: Science/Research",
   "Topic :: Scientific/Engineering",
 ]
 # When updating the Python version ranges, please also bump the Python
 # versions in the tests in nightly_dependency_tests.yml as appropriate
-requires-python = ">=3.10, <3.14"
+requires-python = ">=3.10, <3.15"
 dependencies = [
     "pybamm>=26.3.0",
     "numpy>=1.26",
@@ -75,8 +76,40 @@ dev = [
     "ruff",
 ]
 
-[tool.setuptools.packages.find]
-include = ["pybop", "pybop.*"]
+[tool.hatch.build.targets.sdist]
+exclude = [
+  "papers/",
+  "tests/",
+  "benchmarks/",
+  "docs/",
+  "assets/",
+  "scripts/",
+  "multiprocessing_bench.py",
+  "noxfile.py",
+  "asv.conf.json",
+  "conftest.py",
+  "CONTRIBUTING.md",
+]
+
+# the wheel additionally excludes files that are not needed for installation, such
+#as the changelog and citation files, and the examples. those are present in the sdist.
+[tool.hatch.build.targets.wheel]
+exclude = [
+  "papers/",
+  "tests/",
+  "benchmarks/",
+  "docs/",
+  "assets/",
+  "scripts/",
+  "examples/",
+  "multiprocessing_bench.py",
+  "noxfile.py",
+  "asv.conf.json",
+  "conftest.py",
+  "CONTRIBUTING.md",
+  "CHANGELOG.md",
+  "CITATION.cff",
+]
 
 [project.urls]
 Homepage = "https://github.com/pybop-team/PyBOP"

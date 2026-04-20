@@ -1,4 +1,3 @@
-import numpy as np
 import pybamm
 
 import pybop
@@ -21,15 +20,12 @@ experiment = pybamm.Experiment(
 solution = pybamm.Simulation(
     model, parameter_values=parameter_values, experiment=experiment
 ).solve()
-corrupt_values = solution["Voltage [V]"].data + np.random.normal(
-    0, sigma, len(solution["Voltage [V]"].data)
-)
 dataset = pybop.Dataset(
     {
         "Time [s]": solution.t,
         "Current [A]": solution["Current [A]"].data,
         "Discharge capacity [A.h]": solution["Discharge capacity [A.h]"].data,
-        "Voltage [V]": corrupt_values,
+        "Voltage [V]": pybop.add_noise(solution["Voltage [V]"].data, sigma),
     }
 )
 

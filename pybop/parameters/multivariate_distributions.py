@@ -3,14 +3,19 @@ import scipy.integrate as integrate
 import scipy.stats as stats
 from scipy.linalg import sqrtm
 
-from pybop.parameters.distributions import Distribution
+from pybop.parameters.distributions import (
+    BaseDistribution,
+    Distribution,
+    Gaussian,
+    LogNormal,
+    Uniform,
+)
 from pybop.transformation.base_transformation import Transformation
 from pybop.transformation.transformations import (
     ComposedTransformation,
     IdentityTransformation,
     LogTransformation,
     ScaledTransformation,
-    UnitHyperCube,
 )
 
 
@@ -34,67 +39,103 @@ class BaseMultivariateDistribution(Distribution):
         keys and their values as float values.
     """
 
+    def support(self) -> np.ndarray:
+        """Return the support as a numpy array of dimensions (2, n_parameters)."""
+        return self.distribution.support(**self.properties)
+
     def pdf(self, x):
+        """Calculates the probability density function (PDF) of the distribution at x."""
         return self.distribution.pdf(x, **self.properties)
 
     def logpdf(self, x):
+        """Calculates the logarithm of the probability density function of the distribution at x."""
         return self.distribution.logpdf(x, **self.properties)
 
     icdf = None
     """Multivariate distributions have no invertible CDF."""
 
-    def icdf_marginal(self, q, dim):
+    def icdf_marginal(self, q, position: int):
         raise NotImplementedError
 
     def cdf(self, x):
         return self.distribution.cdf(x, **self.properties)
 
-    def cdf_marginal(self, x, dim):
+    def cdf_marginal(self, x, position: int):
         """
-        Takes the marginal cumulative distribution function (CDF) at x
-        in dim.
+        Takes the marginal cumulative distribution function (CDF) at x.
 
         Parameters
         ----------
         x : numpy.ndarray
             The point(s) at which to evaluate the CDF.
-        dim : int
+        position : int
             The dimension to which to reduce the CDF to.
 
         Returns
         -------
         float
-            The marginal cumulative distribution function value at x in
-            dim.
+            The marginal cumulative distribution function value at x.
         """
-        return integrate.quad(self.pdf_marginal, -np.inf, x)[0]
+        return integrate.quad(self.marginal(position), -np.inf, x)[0]
 
-    def rvs(self, size=1, random_state=None):
+    def rvs(self, size: int = 1, random_state: int | None = None):
+        """Generates random variates from the distribution."""
         return self.distribution.rvs(
             **self.properties, size=size, random_state=random_state
         )
 
-    def __repr__(self):
-        return f"{self.__class__.__name__}, properties: {self.properties}"
+    def cov(self):
+        """Get the covariance matrix."""
+        return self.properties["cov"]
 
-    @property
-    def mean(self):
-        raise NotImplementedError
+    def std(self):
+        """Get the square root of the covariance matrix."""
+        return sqrtm(self.cov())
 
-    @property
-    def sigma(self):
-        raise NotImplementedError
+    def get_transformed_distribution(
+        self, transform: Transformation
+    ) -> BaseDistribution | None:
+        """Get the transformed distribution in the search space."""
+        transform = (
+            transform
+            if isinstance(transform, ComposedTransformation)
+            else ComposedTransformation([transform] * self._n_parameters)
+        )
+        self.check_consistent_transformation(transform)
 
-    @property
-    def compatible_transformations(self):
-        raise NotImplementedError
+        if isinstance(transform, IdentityTransformation) or all(
+            isinstance(t, IdentityTransformation) for t in transform.transformations
+        ):
+            return self
 
-    def marginal(self, position):
-        """Return univariate marginal distribution of parameter with index 'position'"""
-        raise NotImplementedError
+        transformed_distribution = self._transform(transform)
 
-    def transformed_properties(self, transformation):
-        """Return distribution properties in search space"""
+        if transformed_distribution is None:
+            transform_name = (
+                transform.transformations[0].name
+                if isinstance(transform, ComposedTransformation)
+                else transform.name
+            )
+            raise TypeError(
+                f"The transformation of a {self.name} distribution by a "
+                f"{transform_name} is undefined or not yet implemented."
+            )
+        return transformed_distribution
+
+    def check_consistent_transformation(self, transform: Transformation) -> None:
+        """Raise an error if a composed transformation contains incompatible types of transformation."""
+        for transformation_category in [ScaledTransformation, LogTransformation]:
+            transformation_in_category: list[bool] = [
+                isinstance(t, transformation_category)
+                for t in transform.transformations
+            ]
+            if any(transformation_in_category) and not all(transformation_in_category):
+                raise TypeError(
+                    f"All transformations must be of a similar type. Received {[t.name for t in transform.transformations]}"
+                )
+
+    def marginal(self, position: int):
+        """Return univariate marginal distribution of parameter with index 'position'."""
         raise NotImplementedError
 
 
@@ -103,94 +144,75 @@ class MultivariateNonparametric(BaseMultivariateDistribution):
     Represents a "freeform" distribution, i.e., one that is defined from
     a random sampling and a kernel density estimate on that sampling.
 
-    This class provides methods to calculate the probability density
-    function (pdf), the logarithm of the pdf, and to generate random
-    variates (rvs) from the distribution.
-
     Parameters
     ----------
     samples : numpy.ndarray
         The random variates to base the distribution on.
     """
 
-    def __init__(self, samples, random_state=None):
-        super().__init__(distribution=stats.gaussian_kde(samples))
-        self.name = "MultivariateNonparametric"
-        self.properties = {}
-        self._n_parameters = samples.shape[0]
+    def __init__(self, samples: np.ndarray):
+        super().__init__(
+            distribution=stats.gaussian_kde(samples), n_parameters=samples.shape[0]
+        )
 
-    @property
-    def compatible_transformations(self):
-        return Transformation
+    def mean(self):
+        # scipy.stats.gaussian_kde does not have the method "mean"
+        # compute mean based on dataset
+        return np.mean(self.distribution.dataset)
 
-    def pdf(self, x):
-        return self.distribution.pdf(x)
+    def std(self):
+        # scipy.stats.gaussian_kde does not have the method "std"
+        # compute standard deviation based on dataset
+        return np.std(self.distribution.dataset, ddof=1)
 
-    def logpdf(self, x):
-        return self.distribution.logpdf(x)
-
-    def rvs(self, size=1, random_state=None):
+    def rvs(self, size: int = 1, random_state: int | None = None):
         return self.distribution.resample(size, random_state)
 
-    def marginal(self, position):
-        return self.distribution.marginal(position)
-
-    def transformed_properties(self, transformation):
-        """Return distribution properties in search space"""
-
-        # properties is an empty dictionary and hence independent of transformation
-        return self.properties
+    def marginal(self, position: int):
+        return MultivariateNonparametric(self.distribution.marginal(position).dataset)
 
 
 class MultivariateUniform(BaseMultivariateDistribution):
     """
     Represents a multivariate uniform distribution.
 
-    This class provides methods to calculate the probability density
-    fuction (pdf), the logarithm of the pdf, and to generate random
-    variates (rvs) from the distribution.
-
     Parameters
     ----------
     bounds : numpy.ndarray
-        The lower and upper bounds for the uniform distribution.
+        The lower and upper bounds for the uniform distribution as an array
+        with dimensions (2, n_parameters).
     """
 
-    def __init__(self, bounds, random_state=None):
+    def __init__(self, bounds: np.ndarray):
+        bounds = np.asarray(bounds)
         super().__init__(
-            distribution=stats.uniform(
-                loc=bounds[0, :], scale=bounds[1, :] - bounds[0, :]
+            distribution=stats.uniform,
+            properties={"loc": bounds[0, :], "scale": bounds[1, :] - bounds[0, :]},
+            n_parameters=bounds.shape[1],
+        )
+
+    def marginal(self, position: int):
+        # return univariate uniform distribution
+        return Uniform(
+            lower=self.properties["loc"][position],
+            upper=self.properties["loc"][position] + self.properties["scale"][position],
+        )
+
+    def _transform(self, transform: Transformation) -> BaseDistribution | None:
+        """Get the transformed distribution in the search space."""
+        if all(isinstance(t, ScaledTransformation) for t in transform.transformations):
+            lower = transform.to_search(self.properties["loc"])
+            upper = transform.to_search(
+                self.properties["loc"] + self.properties["scale"]
             )
-        )
-        self.name = "MultivariateUniform"
-        self.properties = {"bounds": bounds}
-        self._n_parameters = bounds.shape[1]
-
-    @property
-    def compatible_transformations(self):
-        return (
-            IdentityTransformation,
-            ScaledTransformation,
-            UnitHyperCube,
-        )
-
-    def marginal(self, position):
-        # return univariate unfiform distribution
-        return stats.uniform(
-            loc=self.properties["bounds"][0, position],
-            scale=self.properties["bounds"][1, position]
-            - self.properties["bounds"][0, position],
-        )
+            return MultivariateUniform(bounds=[lower, upper])
+        return None
 
 
 class MultivariateGaussian(BaseMultivariateDistribution):
     """
     Represents a multivariate Gaussian (normal) distribution with a
     given mean and covariance.
-
-    This class provides methods to calculate the probability density
-    function (pdf), the logarithm of the pdf, and to generate random
-    variates (rvs) from the distribution.
 
     Parameters
     ----------
@@ -200,67 +222,49 @@ class MultivariateGaussian(BaseMultivariateDistribution):
         The covariance matrix (Σ) of the multivariate Gaussian
         distribution. Note that what is called σ in 1D would be the
         square root of Σ here.
-    bounds : numpy.ndarray
-        Lower and upper bounds (2nd dim) of the parameters (1st dim).
     """
 
-    def __init__(self, mean=None, covariance=None, bounds=None, random_state=None):
-        super().__init__(distribution=stats.multivariate_normal)
-        self.name = "MultivariateGaussian"
-        self.properties = {"mean": np.asarray(mean), "cov": np.asarray(covariance)}
-        self.sigma2 = covariance
-        self._n_parameters = len(mean)
+    def __init__(self, mean: np.ndarray, covariance: np.ndarray):
+        super().__init__(
+            distribution=stats.multivariate_normal,
+            properties={"mean": np.asarray(mean), "cov": np.asarray(covariance)},
+            n_parameters=len(mean),
+        )
 
-    @property
-    def compatible_transformations(self):
-        return (IdentityTransformation, ScaledTransformation, UnitHyperCube)
+    def support(self) -> np.ndarray:
+        """Return the support as a numpy array of dimensions (2, n_parameters)."""
+        return np.asarray([[-np.inf, np.inf]] * self._n_parameters).T
 
-    @property
     def mean(self):
         return self.properties["mean"]
 
-    @property
-    def sigma(self):
-        return sqrtm(self.properties["cov"])
+    def cov(self):
+        return self.properties["cov"]
 
-    def marginal(self, position):
+    def marginal(self, position: int):
         # Note that what is called σ in 1D is the square root of Σ here
-        return stats.norm(
-            loc=self.properties["mean"][position],
-            scale=np.sqrt(self.properties["cov"][position, position]),
+        return Gaussian(
+            mean=self.properties["mean"][position],
+            sigma=np.sqrt(self.properties["cov"][position, position]),
         )
 
-    def transformed_properties(self, transformation):
-        """Return distribution properties in search space"""
-        if isinstance(transformation, self.compatible_transformations) or (
-            isinstance(transformation, ComposedTransformation)
-            and all(
-                isinstance(trans, self.compatible_transformations)
-                for trans in transformation.transformations
+    def _transform(self, transform: Transformation) -> BaseDistribution | None:
+        """Get the transformed distribution in the search space."""
+        if all(isinstance(t, ScaledTransformation) for t in transform.transformations):
+            mean = transform.to_search(self.properties["mean"])
+            return MultivariateGaussian(
+                mean=mean,
+                covariance=transform.convert_covariance_matrix(
+                    self.properties["cov"], mean
+                ),
             )
-        ):
-            mean = transformation.to_search(self.properties["mean"])
-            covariance = transformation.convert_covariance_matrix(
-                self.properties["cov"], mean
-            )
-
-            return {"mean": mean, "cov": covariance}
-
-        else:
-            raise TypeError(
-                "The transformation provided is not compatible with pybop.MultivariateGaussian. "
-                "Only pybop.IdentityTransformation, pybop.ScaledTransformation and pybop.UnitHypercube are allowed."
-            )
+        return None
 
 
 class MultivariateLogNormal(BaseMultivariateDistribution):
     """
     Represents a multivariate log-normal distribution with a
     given mean and covariance of the normally distributed log(x).
-
-    This class provides methods to calculate the probability density
-    function (pdf), the logarithm of the pdf, and to generate random
-    variates (rvs) from the distribution.
 
     Parameters
     ----------
@@ -272,39 +276,44 @@ class MultivariateLogNormal(BaseMultivariateDistribution):
         square root of Σ here.
     """
 
-    def __init__(self, mean_log_x=None, covariance_log_x=None):
-        self.name = "MultivariateLogNormal"
+    def __init__(self, mean_log_x, covariance_log_x):
+        super().__init__(distribution=None, n_parameters=len(mean_log_x))
         self.distribution_log_x = stats.multivariate_normal
         self.properties_log_x = {
             "mean": np.asarray(mean_log_x),
             "cov": np.asarray(covariance_log_x),
         }
-        self._n_parameters = len(mean_log_x)
-        mean, covariance = self._get_covariance_and_mean()
-        self.sigma2 = covariance
-        self.properties = {"mean": mean, "cov": covariance}
+        self.properties = self._get_properties()
 
-    @property
-    def compatible_transformations(self):
-        return (LogTransformation, IdentityTransformation)
-
-    def _get_covariance_and_mean(self):
-        """Method to compute the covariance and mean in the model space based on the
-        covariance and mean of log(x) (i.e. in the search space)"""
-        covariance = np.zeros((self._n_parameters, self._n_parameters))
+    def _get_properties(self):
+        """
+        Method to compute the mean and covariance of x given the mean and
+        covariance of log(x).
+        """
         mean = np.zeros(self._n_parameters)
         for i in range(self._n_parameters):
             mean[i] = np.exp(
                 self.properties_log_x["mean"][i]
                 + 0.5 * self.properties_log_x["cov"][i, i]
             )
-
+        covariance = np.zeros((self._n_parameters, self._n_parameters))
         for i in range(self._n_parameters):
             for j in range(self._n_parameters):
                 covariance[i, j] = (
                     (np.exp(self.properties_log_x["cov"][i, j]) - 1) * mean[i] * mean[j]
                 )
-        return mean, covariance
+
+        return {"mean": mean, "cov": covariance}
+
+    def support(self) -> np.ndarray:
+        """Return the support as a numpy array of dimensions (2, n_parameters)."""
+        return np.asarray([[0, np.inf]] * self._n_parameters).T
+
+    def mean(self):
+        return self.properties["mean"]
+
+    def cov(self):
+        return self.properties["cov"]
 
     def pdf(self, x):
         if np.any(x <= 0):
@@ -316,7 +325,7 @@ class MultivariateLogNormal(BaseMultivariateDistribution):
         # get pdf of normal distribution for transformed variable
         mvn_pdf = self.distribution_log_x.pdf(log_x, **self.properties_log_x)
 
-        # determinant of the jacobion of the transformation
+        # determinant of the jacobian of the transformation
         jacobian = np.prod(x)
 
         return mvn_pdf / jacobian
@@ -344,7 +353,7 @@ class MultivariateLogNormal(BaseMultivariateDistribution):
         # use normal distribution to get cdf of transformed variable
         return self.distribution_log_x.cdf(log_x, **self.properties_log_x)
 
-    def rvs(self, size=1, random_state=None):
+    def rvs(self, size: int = 1, random_state: int | None = None):
         # use normal distribution of log(x) to compute rvs
         return np.exp(
             self.distribution_log_x.rvs(
@@ -352,39 +361,21 @@ class MultivariateLogNormal(BaseMultivariateDistribution):
             )
         )
 
-    def marginal(self, position):
+    def marginal(self, position: int):
         # determine marginal distribution based on properties of distribution of log(x)
-        return stats.lognorm(
-            scale=np.exp(self.properties_log_x["mean"][position]),
-            s=np.sqrt(self.properties_log_x["cov"][position, position]),
+        return LogNormal(
+            mean_log_x=self.properties_log_x["mean"][position],
+            sigma=np.sqrt(self.properties_log_x["cov"][position, position]),
         )
 
-    def transformed_properties(self, transformation):
-        """Return distribution properties in search space"""
-
-        # only allow Indentity- and LogTransformation and use properties or properties_log_x to return correct properties
-        if isinstance(transformation, LogTransformation) or (
-            isinstance(transformation, ComposedTransformation)
-            and all(
-                isinstance(trans, LogTransformation)
-                for trans in transformation.transformations
+    def _transform(self, transform: Transformation) -> BaseDistribution | None:
+        """Get the transformed distribution in the search space."""
+        if all(isinstance(t, LogTransformation) for t in transform.transformations):
+            return MultivariateGaussian(
+                mean=self.properties_log_x["mean"],
+                covariance=self.properties_log_x["cov"],
             )
-        ):
-            return self.properties_log_x
-        elif isinstance(transformation, IdentityTransformation) or (
-            isinstance(transformation, ComposedTransformation)
-            and all(
-                isinstance(trans, IdentityTransformation)
-                for trans in transformation.transformations
-            )
-        ):
-            return self.properties
-
-        else:
-            raise TypeError(
-                "The transformation provided is not compatible with pybop.MultivariateLogNormal. "
-                "Only pybop.LogTransformation and pybop.IdentityTransformation are allowed."
-            )
+        return None
 
 
 class MarginalDistribution(Distribution):
@@ -392,7 +383,7 @@ class MarginalDistribution(Distribution):
     Represents a univariate marginal distribution of a pybop.BaseMultivariateDistribution.
     Relies on the "marginal" method of the multivariate distribution.
 
-    Sub-class of pybop.Distribution with the additional properties
+    Sub-class of `pybop.Distribution` with the additional properties
     "parent_distribution" and "position"
 
     Parameters
@@ -408,28 +399,27 @@ class MarginalDistribution(Distribution):
     ):
         # Get marginal distribution and initialise parent class
         distribution = parent_distribution.marginal(position)
-        super().__init__(distribution)
+        super().__init__(distribution=distribution)
 
         # add additional properties
         self._position = position
         self.parent_distribution = parent_distribution
 
-    def mean(self):
-        if isinstance(self.parent_distribution, MultivariateNonparametric):
-            # scipy.stats.gaussian_kde does not have the method "mean"
-            # compute mean based on dataset
-            return np.mean(self.distribution.dataset)
-        else:
-            return self.distribution.mean()
-
-    def std(self):
-        if isinstance(self.parent_distribution, MultivariateNonparametric):
-            # scipy.stats.gaussian_kde does not have the method "std"
-            # compute standard deviation based on dataset
-            return np.std(self.distribution.dataset, ddof=1)
-        else:
-            return self.distribution.std()
-
     @property
-    def position(self):
+    def position(self) -> int:
         return self._position
+
+    def get_transformed_distribution(
+        self, transform: Transformation
+    ) -> BaseDistribution | None:
+        """
+        Get the transformed distribution in the search space, by first transforming the
+        parent distribution and then fetching the marginal distribution.
+        """
+        transformed_parent_distribution = (
+            self.parent_distribution.get_transformed_distribution(transform)
+        )
+        return MarginalDistribution(transformed_parent_distribution, self._position)
+
+    def __repr__(self) -> str:
+        return f"Marginal, position {self.position}, parent {self.parent_distribution.__repr__()}"

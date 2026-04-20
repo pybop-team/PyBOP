@@ -68,7 +68,7 @@ class Problem:
         evaluation = self.evaluate(inputs=inputs, calculate_sensitivities=False)
 
         return (
-            evaluation.values[0]
+            evaluation.values.item()
             if len(evaluation.values) == 1
             else evaluation.values.tolist()
         )
@@ -128,64 +128,13 @@ class Problem:
         if calculate_sensitivities:
             calculate_sensitivities = self._has_sensitivities
 
-        validity = []
-        valid_inputs = []
-        for x in inputs:
-            # Check the validity of the inputs so we only evaluate valid parameters
-            if self.parameters.verify_inputs(x):
-                validity.append(True)
-                valid_inputs.append(x)
-            else:
-                validity.append(False)
-
-        # Run simulations for the valid parameters
         solutions = self.simulate_batch(
-            valid_inputs, calculate_sensitivities=calculate_sensitivities
-        )
-
-        # Preallocate the evaluation results
-        evaluation = Evaluation()
-        evaluation.preallocate(
             inputs=inputs, calculate_sensitivities=calculate_sensitivities
         )
 
-        # Evaluate the cost for the valid parameters
-        valid_indices = [i for i, valid in enumerate(validity) if valid]
-        # TODO: Parallelise the cost computations
-        if calculate_sensitivities:
-            for i, solution in enumerate(solutions):
-                e, de = self._cost.evaluate(
-                    solution,
-                    inputs=valid_inputs[i],
-                    calculate_sensitivities=calculate_sensitivities,
-                )
-                evaluation.insert_result(
-                    i=valid_indices[i], value=np.asarray(e).item(), sensitivities=de
-                )
-        else:
-            for i, solution in enumerate(solutions):
-                e = self._cost.evaluate(
-                    solution,
-                    inputs=valid_inputs[i],
-                    calculate_sensitivities=calculate_sensitivities,
-                )
-                evaluation.insert_result(i=valid_indices[i], value=np.asarray(e).item())
-
-        if False in validity:
-            # Insert failure outputs for the invalid parameters into the lists of results
-            invalid_indices = [i for i, valid in enumerate(validity) if not valid]
-            if calculate_sensitivities:
-                y, dy = self._cost.failure(
-                    self.parameters.names, calculate_sensitivities
-                )
-                for i in invalid_indices:
-                    evaluation.insert_result(i=i, value=y, sensitivities=dy)
-            else:
-                y = self._cost.failure(self.parameters.names, calculate_sensitivities)
-                for i in invalid_indices:
-                    evaluation.insert_result(i=i, value=y)
-
-        return evaluation
+        return self._cost.evaluate_batch(
+            solutions, inputs=inputs, calculate_sensitivities=calculate_sensitivities
+        )
 
     def simulate(
         self, inputs: Inputs | list[Inputs], calculate_sensitivities: bool = False
@@ -234,24 +183,42 @@ class Problem:
             A list of length(inputs) containing the simulated model output y(t) and (optionally)
             the sensitivities dy/dx(t) for output variable(s) y, domain t and parameter(s) x.
         """
-        model_inputs = [self.get_model_inputs(x) for x in inputs]
-        return self._simulator.solve_batch(
+        # Check the validity of the inputs so we only evaluate valid parameters
+        validity = []
+        valid_inputs = []
+        for x in inputs:
+            if self.parameters.verify_inputs(x):
+                validity.append(True)
+                valid_inputs.append(x)
+            else:
+                validity.append(False)
+
+        # Run simulations for the valid parameters
+        model_inputs = [self.get_model_inputs(x) for x in valid_inputs]
+        solutions = self._simulator.solve_batch(
             inputs=model_inputs, calculate_sensitivities=calculate_sensitivities
         )
+
+        # Insert failed solutions for any invalid inputs
+        invalid_indices = [i for i, valid in enumerate(validity) if not valid]
+        for i in invalid_indices:
+            solutions.insert(i, FailedSolution(self.target, inputs[i].keys()))
+
+        return solutions
 
     def get_finite_initial_cost(self):
         """
         Compute the absolute initial cost, resampling the initial parameters if needed.
         """
         x0 = self.parameters.get_initial_values()
-        cost0 = np.abs(self.evaluate(x0).values[0])
+        cost0 = np.abs(self.evaluate(x0).values.item())
         nsamples = 0
         while np.isinf(cost0) and nsamples < 10:
             x0 = self.parameters.sample_from_distribution()[0]
             if x0 is None:
                 break
 
-            cost0 = np.abs(self.evaluate(x0).values[0])
+            cost0 = np.abs(self.evaluate(x0).values.item())
             nsamples += 1
         if nsamples > 0:
             self.parameters.update(initial_values=x0)

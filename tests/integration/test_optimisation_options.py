@@ -1,7 +1,6 @@
 import numpy as np
 import pybamm
 import pytest
-from scipy import stats
 
 import pybop
 
@@ -16,9 +15,7 @@ class TestOptimisation:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ground_truth = np.clip(
-            np.asarray([0.55, 0.55]) + np.random.normal(loc=0.0, scale=0.05, size=2),
-            a_min=0.4,
-            a_max=0.75,
+            pybop.add_noise(np.asarray([0.55, 0.55]), 0.05), a_min=0.4, a_max=0.75
         )
 
     @pytest.fixture
@@ -41,20 +38,12 @@ class TestOptimisation:
     def parameters(self):
         return {
             "Negative electrode active material volume fraction": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    0.55,
-                    0.05,
-                    truncated_at=[0.375, 0.75],
-                ),
+                distribution=pybop.Gaussian(0.55, 0.05, truncated_at=[0.375, 0.75]),
             ),
             "Positive electrode active material volume fraction": pybop.Parameter(
-                stats.norm(loc=0.55, scale=0.05),
-                # no bounds
+                distribution=pybop.Gaussian(0.55, 0.05)  # no bounds
             ),
         }
-
-    def noisy(self, data, sigma):
-        return data + np.random.normal(0, sigma, len(data))
 
     @pytest.fixture
     def problem(self, model, parameter_values, parameters):
@@ -71,10 +60,7 @@ class TestOptimisation:
 
     @pytest.mark.parametrize(
         "f_guessed",
-        [
-            True,
-            False,
-        ],
+        [True, False],
     )
     def test_optimisation_f_guessed(self, f_guessed, problem):
         x0 = problem.parameters.get_initial_values()
@@ -113,6 +99,6 @@ class TestOptimisation:
             {
                 "Time [s]": solution["Time [s]"].data,
                 "Current [A]": solution["Current [A]"].data,
-                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, 0.002),
+                "Voltage [V]": pybop.add_noise(solution["Voltage [V]"].data, 0.002),
             }
         )

@@ -122,3 +122,7 @@ class Transformation(ABC):
             raise ValueError(f"Transform must have {self._n_parameters} elements")
 
         return input_array
+
+    @property
+    def name(self):
+        return self.__class__.__name__

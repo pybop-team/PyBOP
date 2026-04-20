@@ -30,6 +30,16 @@ def add_spaces(string):
     return re_outer.sub(r"\1 \2", re_inner.sub(r" \1\2", string))
 
 
+def add_noise(y, sigma):
+    """
+    Add random Gaussian noise to an array.
+    """
+    if np.iscomplexobj(y):
+        # Add noise in the imaginary component as well as the real
+        y += 1j * np.random.normal(loc=0.0, scale=sigma, size=np.shape(y))
+    return y + np.random.normal(loc=0.0, scale=sigma, size=np.shape(y))
+
+
 def is_numeric(x):
     """
     Check if a variable is numeric.

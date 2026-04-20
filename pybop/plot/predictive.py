@@ -5,6 +5,7 @@ import numpy as np
 from pybop.plot.plotly_manager import PlotlyManager
 from pybop.plot.standard_plots import StandardPlot
 from pybop.problems.meta_problem import MetaProblem
+from pybop.simulators.failed_solution import FailedSolution
 
 if TYPE_CHECKING:
     from pybop.optimisers.ep_bolfi_optimiser import BayesianOptimisationResult
@@ -59,17 +60,18 @@ def predictive(
         inputs = [problem.parameters.to_dict(s) for s in posterior_samples]
         simulations = problem.simulate_batch(inputs=inputs)
         for pdf, sim in zip(posterior_samples_pdf, simulations, strict=False):
-            plot_dict.add_traces(
-                x=problem.domain_data,
-                y=sim[problem.target[0]].data,
-                line={
-                    "dash": "dot",
-                    "color": px.colors.sample_colorscale(
-                        colour_scale,
-                        (pdf - pdf_range[0]) / (pdf_range[1] - pdf_range[0]),
-                    )[0],
-                },
-            )
+            if not isinstance(sim, FailedSolution):
+                plot_dict.add_traces(
+                    x=problem.domain_data,
+                    y=sim[problem.target[0]].data,
+                    line={
+                        "dash": "dot",
+                        "color": px.colors.sample_colorscale(
+                            colour_scale,
+                            (pdf - pdf_range[0]) / (pdf_range[1] - pdf_range[0]),
+                        )[0],
+                    },
+                )
 
         # Add the colourbar
         plot_dict.add_traces(

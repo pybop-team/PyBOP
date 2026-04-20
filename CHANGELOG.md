@@ -2,7 +2,12 @@
 
 ## Features
 
+- [#918](https://github.com/pybop-team/PyBOP/pull/918) - Adds a plot for predictions sampled from a posterior distribution (`pybop.plot.predictive`).
+- [#940](https://github.com/pybop-team/PyBOP/pull/940) - Adds support for Python 3.14 (EP-BOLFI optimiser and PyProBE still restricted to Python 3.12 or below).
+
 ## Optimisations
+
+- [#925](https://github.com/pybop-team/PyBOP/pull/925) - Add `UnboundedDistribution` and the `get_transformed_distribution` functionality.
 
 ## Bug Fixes
 
@@ -11,6 +16,8 @@
 - [#905](https://github.com/pybop-team/PyBOP/pull/905) - Remove restriction on numpy.
 
 ## Breaking Changes
+
+- [#942](https://github.com/pybop-team/PyBOP/pull/942) - Adds `evaluate_batch` to the costs and ensures that an `Evaluation` is returned.
 
 # [v26.3](https://github.com/pybop-team/PyBOP/tree/v26.3) - 2026-03-05
 
