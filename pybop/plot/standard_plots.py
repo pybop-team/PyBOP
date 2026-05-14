@@ -200,12 +200,7 @@ class StandardPlot:
         plotly.graph_objs.Scatter
             A trace for a Plotly figure.
         """
-
-        return self.go.Scatter(
-            x=x,
-            y=y,
-            **trace_options,
-        )
+        return self.go.Scatter(x=x, y=y, **trace_options)
 
     @staticmethod
     def wrap_text(text, width):

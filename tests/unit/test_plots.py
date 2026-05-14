@@ -181,7 +181,7 @@ class TestPlots:
         )
         log_likelihood = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma=2e-3)
         log_pdf = pybop.LogPosterior(simulator, log_likelihood)
-        options = pybop.PintsSamplerOptions(n_chains=1, max_iterations=1)
+        options = pybop.PintsSamplerOptions(n_chains=1, max_iterations=2)
         sampler = pybop.SliceStepoutMCMC(log_pdf, options=options)
         return sampler.run()
 
@@ -199,6 +199,14 @@ class TestPlots:
 
         # Plot summary table
         sampling_result.summary_table()
+
+        # Plot posterior predictions
+        sampling_result.plot_predictive()
+
+        # Plot the prior and posterior distributions
+        pybop.plot.distribution(
+            sampling_result.problem.parameters, sampling_result.posterior
+        )
 
     def test_with_ipykernel(self, dataset, fitting_problem, result):
         import ipykernel
