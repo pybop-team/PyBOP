@@ -44,13 +44,13 @@ In editable mode, changes you make to the source code will immediately affect th
 
 Optional Dependencies
 ---------------------
-``plotly`` - For plotting, PyBOP uses `plotly <https://plotly.com/python/>`. It can be installed with:
+``plotly`` - For plotting, PyBOP uses `plotly <https://plotly.com/python/>`_. It can be installed with:
 
 .. code-block:: console
 
     pip install pybop[plot]
 
-``salib`` - To compute sensitivities, PyBOP can be paired with the `Sensitivity Analysis Library (SALib) <https://salib.readthedocs.io/en/latest/>`:
+``salib`` - To compute sensitivities, PyBOP can be paired with the `Sensitivity Analysis Library (SALib) <https://salib.readthedocs.io/en/latest/>`_:
 
 .. code-block:: console
 
@@ -62,19 +62,19 @@ Optional Dependencies
 
     pip install pybop[scifem]
 
-``bpx`` - To use the Faraday Institution's `Battery Parameter eXchange (BPX) package <https://bpxstandard.com/>`:
+``bpx`` - To use the Faraday Institution's `Battery Parameter eXchange (BPX) package <https://bpxstandard.com/>`_:
 
 .. code-block:: console
 
     pip install pybop[bpx]
 
-``ep-bolfi`` - To use Expectation Propagation with Bayesian Optimization for Likelihood-Free Inference (`EP-BOLFI <https://github.com/YannickNoelStephanKuhn/EP-BOLFI>`):
+``ep-bolfi`` - To use Expectation Propagation with Bayesian Optimization for Likelihood-Free Inference (`EP-BOLFI <https://github.com/YannickNoelStephanKuhn/EP-BOLFI>`_):
 
 .. code-block:: console
 
     pip install pybop[ep-bolfi]
 
-``pyprobe`` - To import data from battery cyclers, use `Python Processing for Battery Experiments (PyProBE) <https://pyprobe.readthedocs.io/en/latest/>`:
+``pyprobe`` - To import data from battery cyclers, use `Python Processing for Battery Experiments (PyProBE) <https://pyprobe.readthedocs.io/en/latest/>`_:
 
 .. code-block:: console
 
