@@ -63,10 +63,12 @@ def test_initialization_with_plotly_installed(plotly_installed):
     assert is_package_installed("plotly")
     plotly_manager = PlotlyManager()
 
+    import plotly.express as px
     import plotly.graph_objs as go
     import plotly.io as pio
     from plotly.subplots import make_subplots
 
+    assert plotly_manager.px == px
     assert plotly_manager.go == go
     assert plotly_manager.pio == pio
     assert plotly_manager.make_subplots == make_subplots

@@ -1,7 +1,6 @@
 import numpy as np
 import pybamm
 import pytest
-from scipy import stats
 
 import pybop
 
@@ -42,25 +41,10 @@ class Test_SPM_Parameterisation:
     def parameters(self):
         return {
             "Negative electrode active material volume fraction": pybop.Parameter(
-                stats.uniform(0.3, 0.9 - 0.3),
-                initial_value=stats.uniform(0.4, 0.75 - 0.4).rvs(),
+                distribution=pybop.Uniform(0.3, 0.9)
             ),
             "Positive electrode active material volume fraction": pybop.Parameter(
-                stats.uniform(0.3, 0.9 - 0.3),
-                initial_value=stats.uniform(0.4, 0.75 - 0.4).rvs(),
-            ),
-        }
-
-    @pytest.fixture
-    def priors(self):
-        return {
-            "Negative electrode active material volume fraction": pybop.Parameter(
-                pybop.Uniform(0.3, 0.9),
-                initial_value=stats.uniform(0.4, 0.75 - 0.4).rvs(),
-            ),
-            "Positive electrode active material volume fraction": pybop.Parameter(
-                pybop.Uniform(0.3, 0.9),
-                initial_value=stats.uniform(0.4, 0.75 - 0.4).rvs(),
+                distribution=pybop.Uniform(0.3, 0.9)
             ),
         }
 
@@ -142,18 +126,12 @@ class Test_SPM_Parameterisation:
                 )
             problem.parameters["Negative electrode active material volume fraction"] = (
                 pybop.Parameter(
-                    stats.uniform(
-                        bounds["lower"][0], bounds["upper"][0] - bounds["lower"][0]
-                    ),
-                    initial_value=stats.uniform(0.4, 0.75 - 0.4).rvs(),
+                    distribution=pybop.Uniform(bounds["lower"][0], bounds["upper"][0])
                 )
             )
             problem.parameters["Positive electrode active material volume fraction"] = (
                 pybop.Parameter(
-                    stats.uniform(
-                        bounds["lower"][1], bounds["upper"][1] - bounds["lower"][1]
-                    ),
-                    initial_value=stats.uniform(0.4, 0.75 - 0.4).rvs(),
+                    distribution=pybop.Uniform(bounds["lower"][1], bounds["upper"][1])
                 )
             )
 
@@ -258,18 +236,12 @@ class Test_SPM_Parameterisation:
             two_signal_problem.parameters[
                 "Negative electrode active material volume fraction"
             ] = pybop.Parameter(
-                stats.uniform(
-                    bounds["lower"][0], bounds["upper"][0] - bounds["lower"][0]
-                ),
-                initial_value=stats.uniform(0.4, 0.75 - 0.4).rvs(),
+                distribution=pybop.Uniform(bounds["lower"][0], bounds["upper"][0])
             )
             two_signal_problem.parameters[
                 "Positive electrode active material volume fraction"
             ] = pybop.Parameter(
-                stats.uniform(
-                    bounds["lower"][1], bounds["upper"][1] - bounds["lower"][1]
-                ),
-                initial_value=stats.uniform(0.4, 0.75 - 0.4).rvs(),
+                distribution=pybop.Uniform(bounds["lower"][1], bounds["upper"][1])
             )
 
         # Test each optimiser

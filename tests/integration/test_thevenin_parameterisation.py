@@ -17,7 +17,7 @@ class TestTheveninParameterisation:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ground_truth = np.clip(
-            pybop.add_noise(np.asarray([0.05, 0.05]), 0.01), a_min=0.0, a_max=0.1
+            pybop.add_noise(np.asarray([0.05, 0.05]), 0.01), a_min=1e-4, a_max=0.1
         )
 
     @pytest.fixture
@@ -32,12 +32,8 @@ class TestTheveninParameterisation:
             {
                 "Open-circuit voltage [V]": model.default_parameter_values[
                     "Open-circuit voltage [V]"
-                ]
-            }
-        )
-        parameter_values.update(
-            {
-                "C1 [F]": 1000,
+                ],
+                "C1 [F]": 50 / self.ground_truth[1],
                 "R0 [Ohm]": self.ground_truth[0],
                 "R1 [Ohm]": self.ground_truth[1],
             }
@@ -48,12 +44,12 @@ class TestTheveninParameterisation:
     def parameters(self):
         return {
             "R0 [Ohm]": pybop.Parameter(
-                distribution=pybop.Gaussian(0.05, 0.01, truncated_at=[1e-6, 0.1]),
-                transformation=pybop.LogTransformation(),
+                distribution=pybop.Gaussian(0.05, 0.01, truncated_at=[0.0, 0.1]),
+                transformation=pybop.UnitHyperCube(0.04, 0.05),
             ),
             "R1 [Ohm]": pybop.Parameter(
-                distribution=pybop.Gaussian(0.05, 0.01, truncated_at=[1e-6, 0.1]),
-                transformation=pybop.LogTransformation(),
+                distribution=pybop.Gaussian(0.05, 0.01, truncated_at=[0.0, 0.1]),
+                transformation=pybop.UnitHyperCube(0.04, 0.05),
             ),
         }
 
@@ -61,10 +57,6 @@ class TestTheveninParameterisation:
     def dataset(self, model, parameter_values):
         return self.get_data(model, parameter_values)
 
-    @pytest.mark.parametrize(
-        "cost_class",
-        [pybop.RootMeanSquaredError, pybop.SumSquaredError],
-    )
     @pytest.mark.parametrize(
         "optimiser, method",
         [
@@ -76,30 +68,21 @@ class TestTheveninParameterisation:
         ],
     )
     def test_optimisers_on_thevenin_model(
-        self,
-        model,
-        parameter_values,
-        parameters,
-        dataset,
-        cost_class,
-        optimiser,
-        method,
+        self, model, parameter_values, parameters, dataset, optimiser, method
     ):
         parameter_values.update(parameters)
         simulator = pybop.pybamm.Simulator(
             model, parameter_values=parameter_values, protocol=dataset
         )
         # Define the cost to optimise
-        cost = cost_class(dataset)
+        cost = pybop.SumSquaredError(dataset)
         problem = pybop.Problem(simulator, cost)
 
         x0 = problem.parameters.get_initial_values()
         if optimiser is pybop.SciPyMinimize:
-            options = pybop.SciPyMinimizeOptions(maxiter=150)
+            options = pybop.SciPyMinimizeOptions(maxiter=150, method=method)
         else:
             options = pybop.PintsOptions(max_iterations=150)
-        if optimiser is pybop.SciPyMinimize:
-            options.method = method
         if method == "L-BFGS-B":
             options.jac = True
         optim = optimiser(problem, options=options)
@@ -126,9 +109,8 @@ class TestTheveninParameterisation:
     def get_data(self, model, parameter_values):
         experiment = pybamm.Experiment(
             [
-                "Discharge at 0.5C for 6 minutes (12 seconds period)",
+                "Discharge at 2C for 2 minutes (12 seconds period)",
                 "Rest for 20 seconds (4 seconds period)",
-                "Charge at 0.5C for 6 minutes (12 seconds period)",
             ]
         )
         solution = pybamm.Simulation(

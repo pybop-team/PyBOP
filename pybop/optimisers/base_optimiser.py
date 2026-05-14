@@ -144,8 +144,6 @@ class BaseOptimiser:
         results = []
         for i in range(self._multistart):
             if i >= 1:
-                if self.problem.parameters.distribution is None:
-                    raise RuntimeError("Distributions must be provided for multi-start")
                 initial_values = self.problem.parameters.sample_from_distribution(1)[0]
                 self.problem.parameters.update(initial_values=initial_values)
                 self._set_up_optimiser()

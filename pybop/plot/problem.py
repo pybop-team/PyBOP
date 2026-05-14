@@ -46,10 +46,10 @@ def problem(
 
     domain = problem.domain
     if problem.domain_data is None:
-        # Simulate the model for the both the initial and the given inputs
+        # Simulate the model for both the initial and the given inputs
         target = problem.target
         problem.set_target(target + [domain])
-        initial_inputs = problem.simulator.parameters.to_dict("initial")
+        initial_inputs = problem.parameters.to_dict("initial")
         target_output = problem.simulate(initial_inputs)
         target_domain = target_output[domain].data
         model_output = problem.simulate(inputs)

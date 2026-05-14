@@ -3,10 +3,6 @@ import pybamm
 import pytest
 
 import pybop
-from pybop.costs.feature_distances import (
-    ExponentialFeatureDistance,
-    SquareRootFeatureDistance,
-)
 
 
 class TestCosts:
@@ -58,8 +54,14 @@ class TestCosts:
             0.2 + 0.4 * np.sqrt(domain_data[0:200]),
             0.2 + 0.4 * 20**0.5 + 3 * (2 / 3 - np.exp(-0.02 * domain_data[200:])),
         )
+        dataset = pybop.Dataset(
+            {
+                "Time [s]": domain_data,
+                "Voltage [V]": target_data,
+            }
+        )
         switchover_point = 20.0
-        return domain_data, target_data, switchover_point
+        return dataset, switchover_point
 
     def test_base(self, dataset):
         cost = pybop.ErrorMeasure(dataset)
@@ -425,51 +427,41 @@ class TestCosts:
             pybop.WeightedCost(cost1, cost2)
 
     def test_square_root_feature_distance(self, gitt_like_dataset):
-        domain_data, target_data, switchover_point = gitt_like_dataset
-        srfd = SquareRootFeatureDistance(
-            domain_data, target_data, feature="offset", time_end=switchover_point
+        dataset, switchover_point = gitt_like_dataset
+        srfd = pybop.SquareRootFeatureDistance(
+            dataset=dataset, feature="offset", time_end=switchover_point
         )
         assert abs(srfd.data_fit - 0.2) < 1e-4
-        srfd = SquareRootFeatureDistance(
-            domain_data, target_data, feature="slope", time_end=switchover_point
+        srfd = pybop.SquareRootFeatureDistance(
+            dataset=dataset, feature="slope", time_end=switchover_point
         )
         assert abs(srfd.data_fit - 0.4) < 1e-4
-        srfd = SquareRootFeatureDistance(
-            domain_data, target_data, feature="inverse_slope", time_end=switchover_point
+        srfd = pybop.SquareRootFeatureDistance(
+            dataset=dataset, feature="inverse_slope", time_end=switchover_point
         )
         assert abs(srfd.data_fit - 1 / 0.4) < 1e-4
         with pytest.raises(ValueError):
-            srfd = SquareRootFeatureDistance(
-                domain_data, target_data, feature="non_existent"
+            srfd = pybop.SquareRootFeatureDistance(
+                dataset=dataset, feature="non_existent"
             )
 
+        assert srfd(y=np.asarray([])) == np.inf
+
     def test_exponential_feature_distance(self, gitt_like_dataset):
-        domain_data, target_data, switchover_point = gitt_like_dataset
-        efd = ExponentialFeatureDistance(
-            domain_data,
-            target_data,
-            feature="asymptote",
-            time_start=switchover_point,
+        dataset, switchover_point = gitt_like_dataset
+        efd = pybop.ExponentialFeatureDistance(
+            dataset=dataset, feature="asymptote", time_start=switchover_point
         )
         assert abs(efd.data_fit - (2.2 + 0.4 * 20**0.5)) < 1e-4
-        efd = ExponentialFeatureDistance(
-            domain_data,
-            target_data,
-            feature="magnitude",
-            time_start=switchover_point,
+        efd = pybop.ExponentialFeatureDistance(
+            dataset=dataset, feature="magnitude", time_start=switchover_point
         )
         assert abs(efd.data_fit + 2.0) < 1e-1
-        efd = ExponentialFeatureDistance(
-            domain_data,
-            target_data,
-            feature="timescale",
-            time_start=switchover_point,
+        efd = pybop.ExponentialFeatureDistance(
+            dataset=dataset, feature="timescale", time_start=switchover_point
         )
         assert abs(efd.data_fit - 1 / 0.02) < 1e-2
-        efd = ExponentialFeatureDistance(
-            domain_data,
-            target_data,
-            feature="inverse_timescale",
-            time_start=switchover_point,
+        efd = pybop.ExponentialFeatureDistance(
+            dataset=dataset, feature="inverse_timescale", time_start=switchover_point
         )
         assert abs(efd.data_fit - 0.02) < 1e-4

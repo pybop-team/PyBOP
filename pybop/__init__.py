@@ -49,7 +49,7 @@ from .transformation.transformations import (
 # Parameter classes
 #
 from .parameters.parameter import Parameter, Parameters
-from .parameters.distributions import Distribution, Gaussian, Uniform, Exponential, JointDistribution
+from .parameters.distributions import Distribution, Exponential, Gaussian, JointDistribution, LogNormal, LogUniform, Unbounded, Uniform
 from .parameters.multivariate_distributions import MultivariateNonparametric, MultivariateUniform, MultivariateGaussian, MultivariateLogNormal, MarginalDistribution
 
 #
