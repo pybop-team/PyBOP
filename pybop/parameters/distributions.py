@@ -431,7 +431,7 @@ class Unbounded(BaseDistribution):
         self.initial_value = (
             None
             if initial_value is None
-            else float(np.minimum(np.maximum(initial_value, lower), upper))
+            else float(np.clip(initial_value, lower, upper))
         )
 
     def support(self) -> tuple[float]:
