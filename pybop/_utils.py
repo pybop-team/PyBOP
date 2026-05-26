@@ -117,13 +117,13 @@ def save_data_dict(
         df = pd.DataFrame(data_dict_copy)
         return df.to_csv(filename, index=False)
     elif to_format == "json":
-        # Format with identation
+        # Format with indentation
         json_clean = json.dumps(data_dict, cls=NumpyEncoder, indent=4) + "\n"
         if filename is None:
             return json_clean
         else:
             with open(filename, "w") as outfile:
-                outfile.write(json_clean + "\n")
+                outfile.write(json_clean)
     else:
         raise ValueError(f"format '{to_format}' is not supported")
 
