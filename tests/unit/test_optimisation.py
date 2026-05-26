@@ -327,7 +327,9 @@ class TestOptimisation:
                 assert optim.optimiser.population_size() == 100
 
         if optimiser == pybop.SciPyDifferentialEvolution:
-            options = pybop.SciPyDifferentialEvolutionOptions(maxiter=3, popsize=5)
+            options = pybop.SciPyDifferentialEvolutionOptions(
+                maxiter=3, popsize=5, vectorized=False
+            )
             pop_maxiter_optim = optimiser(problem, options=options)
             assert pop_maxiter_optim._options.maxiter == 3
             assert pop_maxiter_optim._options.popsize == 5
