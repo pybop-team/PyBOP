@@ -351,14 +351,14 @@ class TestPintsSamplers:
             result.save_data(filename, to_format=to_format)
 
             # load result
-            result_load = SamplingResult.load_data(filename, file_format=to_format)
+            result_load = pybop.Result.load_data(filename, file_format=to_format)
             self.compare_result_data(result, result_load)
             assert sampler2.logger is None
 
         # test save whole result
         filename = f"{test_stub}.pickle"
         result.save(filename)
-        result_load = SamplingResult.load(filename)
+        result_load = pybop.Result.load(filename)
         self.compare_result_data(result, result_load)
         assert result.problem.parameters.names == result_load.problem.parameters.names
         np.testing.assert_array_equal(result.chains, result_load.chains)
