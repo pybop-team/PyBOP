@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import pybamm
 
@@ -56,13 +58,15 @@ result = optim.run()
 
 # Save the result: either pickle the whole result or save the data in
 # one of these formats: "pickle", "json", "matlab"
-result.save("examples/results/saved_result_object.pkl")
-result.save_data("examples/results/saved_result_data.json", to_format="json")
+save_path = "examples/results/"
+os.makedirs(os.path.dirname(save_path), exist_ok=True)
+result.save(save_path + "saved_result_object.pkl")
+result.save_data(save_path + "saved_result_data.json", to_format="json")
 
 # Load the result
-result = pybop.Result.load("examples/results/saved_result_object.pkl")
+result = pybop.Result.load(save_path + "saved_result_object.pkl")
 result = pybop.Result.load_data(
-    "examples/results/saved_result_data.json", file_format="json"
+    save_path + "saved_result_data.json", file_format="json"
 )
 
 # Plot the optimisation result
