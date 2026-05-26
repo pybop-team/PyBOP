@@ -423,7 +423,9 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
                 with_sensitivities=self._needs_sensitivities,
                 logger=self._logger,
             )
-            self._func = lambda positions: pop_evaluator.evaluate(positions.T)
+            self._func = lambda positions: pop_evaluator.evaluate(
+                np.atleast_2d(positions.T)
+            )
             self._options_dict["updating"] = "deferred"
         else:
             self._func = self._evaluator.evaluate
@@ -452,7 +454,7 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
         total_time = time() - start_time
 
         # Log the optimised result as the final evaluation
-        self._func(np.asarray(result.x).T)
+        self._evaluator.evaluate(result.x)
 
         return OptimisationResult(
             optim=self,
