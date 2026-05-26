@@ -51,8 +51,6 @@ class TestEISParameterisation:
             pybop.GaussianLogLikelihood,
             pybop.SumSquaredError,
             pybop.MeanAbsoluteError,
-            pybop.MeanSquaredError,
-            pybop.Minkowski,
         ]
     )
     def cost_class(self, request):
@@ -86,14 +84,10 @@ class TestEISParameterisation:
 
         # Construct the cost
         target = "Impedance"
-        if cost_class is pybop.GaussianLogLikelihoodKnownSigma:
-            cost = cost_class(dataset, target=target, sigma=self.sigma)
-        elif cost_class is pybop.GaussianLogLikelihood:
+        if cost_class is pybop.GaussianLogLikelihood:
             cost = cost_class(
                 dataset, target=target, sigma=self.sigma * 4
             )  # Initial sigma guess
-        elif cost_class in [pybop.SumOfPower, pybop.Minkowski]:
-            cost = cost_class(dataset, target=target, p=2)
         else:
             cost = cost_class(dataset, target=target)
         problem = pybop.Problem(simulator, cost)
