@@ -259,7 +259,7 @@ def surface(
     points = result.x_model
     parameters = result.problem.parameters
 
-    if points[0].shape[0] != 2:
+    if np.shape(points[0])[0] != 2:
         raise ValueError("This plot method requires two parameters.")
 
     x_optim, y_optim = map(list, zip(*points, strict=False))
