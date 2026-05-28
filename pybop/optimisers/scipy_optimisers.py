@@ -449,7 +449,6 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
         self._logger.iteration = 1
 
         result = differential_evolution(func=self._func, **self._options_dict)
-        self._logger.iteration -= 1  # undo the final callback
 
         total_time = time() - start_time
 
