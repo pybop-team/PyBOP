@@ -64,12 +64,17 @@ result.save(save_path + "saved_result_object.pkl")
 result.save_data(save_path + "saved_result_data.json", to_format="json")
 
 # Load the result
-result = pybop.Result.load(save_path + "saved_result_object.pkl")
-result = pybop.Result.load_data(
+result_from_pkl = pybop.Result.load(save_path + "saved_result_object.pkl")
+result_from_json = pybop.Result.load_data(
     save_path + "saved_result_data.json", file_format="json"
 )
 
-# Plot the optimisation result
-result.plot_convergence()
-result.plot_parameters()
-result.plot_surface(bounds=problem.parameters.get_bounds_array())
+# Plot the optimisation result from .pkl
+result_from_pkl.plot_convergence()
+result_from_pkl.plot_parameters()
+result_from_pkl.plot_surface(bounds=problem.parameters.get_bounds_array())
+
+# Plot the optimisation result from .json (it is the same)
+result_from_json.plot_convergence()
+result_from_json.plot_parameters()
+result_from_json.plot_surface(bounds=problem.parameters.get_bounds_array())
