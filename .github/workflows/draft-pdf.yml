@@ -3,11 +3,12 @@ name: JossPaperCompilation
 on:
   push:
     paths:
-      - papers/joss/**
+      - 'papers/joss/**'
   pull_request:
     paths:
-    - 'papers/joss/**'
+      - 'papers/joss/**'
   workflow_dispatch:
+
 jobs:
   paper:
     runs-on: ubuntu-latest
