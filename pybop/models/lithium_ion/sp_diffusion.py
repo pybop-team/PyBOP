@@ -122,6 +122,7 @@ class SPDiffusion(BaseGroupedModel):
             "Discharge capacity [A.h]": Q,
             "Throughput capacity [A.h]": Qt,
             "Voltage [V]": V,
+            "Voltage expression [V]": V,  # for compatibility with "voltage as a state"
             "Open-circuit voltage [V]": U,
         }
 

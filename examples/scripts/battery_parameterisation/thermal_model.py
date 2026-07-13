@@ -36,17 +36,14 @@ parameter_values.update(
         "Voltage function [V]": pybamm.Interpolant(
             solution.t, solution["Voltage [V]"].data, pybamm.t
         ),
-    },
-    check_already_exists=False,
+    }
 )
 
 # Group the parameters and relate the entropic coefficients to the cell-level
 grouped_parameter_values = pybop.lithium_ion.CellTemperature.create_grouped_parameters(
     parameter_values
 )
-grouped_parameter_values.update(
-    {"OCV entropic change [V.K-1]": 2e-5}, check_already_exists=False
-)
+grouped_parameter_values.update({"OCV entropic change [V.K-1]": 2e-5})
 grouped_parameter_values.update(
     {
         "Negative electrode OCP entropic change [V.K-1]": (

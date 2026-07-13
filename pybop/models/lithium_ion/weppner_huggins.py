@@ -73,6 +73,7 @@ class WeppnerHuggins(BaseGroupedModel):
         ######################
         self.variables = {
             "Voltage [V]": V,
+            "Voltage expression [V]": V,  # for compatibility with "voltage as a state"
             "Time [s]": pybamm_t,
             "Current [A]": I,
             "Current variable [A]": I,  # for compatibility with pybamm.Experiment

@@ -373,6 +373,7 @@ class GroupedSPMe(BaseGroupedModel):
             "Discharge capacity [A.h]": Q,
             "Throughput capacity [A.h]": Qt,
             "Voltage [V]": V,
+            "Voltage expression [V]": V,  # for compatibility with "voltage as a state"
             "Battery voltage [V]": V,
             "Open-circuit voltage [V]": U_p - U_n,
         }

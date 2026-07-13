@@ -33,6 +33,10 @@ class CellTemperature(BaseGroupedModel):
     def __init__(self, name="Cell Temperature Model", **model_kwargs):
         super().__init__(name=name, **model_kwargs)
 
+        if self.options["voltage as a state"] == "true":
+            # Voltage is an input to this model, not a state
+            self.options["voltage as a state"] = "false"
+
         ######################
         # Variables
         ######################
@@ -166,8 +170,7 @@ class CellTemperature(BaseGroupedModel):
                 "Voltage function [V]": param.evaluate(self.param.ocv_init),
                 "Cell thermal mass [J/K]": 20,
                 "Heat transfer coefficient [W/K]": 0.05,
-            },
-            check_already_exists=False,
+            }
         )
         return self.create_grouped_parameters(param)
 
