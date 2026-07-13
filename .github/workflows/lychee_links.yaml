@@ -50,7 +50,6 @@ jobs:
             --exclude "https://doi.org/*"
             --exclude "https://raw.githubusercontent.com/paramm-team/pybamm-param/develop/pbparam/input/data/"
             --exclude-path ./CHANGELOG.md
-            --exclude-path asv.conf.json
             --exclude-path docs/conf.py
             './**/*.rst'
             './**/*.md'
