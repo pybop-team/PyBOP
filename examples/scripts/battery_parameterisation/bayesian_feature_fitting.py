@@ -45,17 +45,7 @@ simulator = pybop.pybamm.Simulator(
             "Rest for 15 minutes (1 second period)",
         ]
     ),
-    solver=pybamm.CasadiSolver(
-        rtol=1e-5,
-        atol=1e-5,
-        root_tol=1e-3,
-        max_step_decrease_count=10,
-        extra_options_setup={
-            "disable_internal_warnings": True,
-            "newton_scheme": "tfqmr",
-        },
-        return_solution_if_failed_early=True,
-    ),
+    solver=pybamm.IDAKLUSolver(rtol=1e-5, atol=1e-5, root_tol=1e-3),
     output_variables=["Voltage [V]"],
     submesh_types=submesh_types,
     var_pts=var_pts,
