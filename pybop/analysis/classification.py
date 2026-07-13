@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.linalg import eig
 
 from pybop import Result
 
@@ -124,7 +125,7 @@ def classify_using_hessian(
             cfd_hessian[1, 1] /= dx[1] ** 2
 
         # Compute the eigenvalues and sort into ascending order
-        eigenvalues, eigenvectors = np.linalg.eig(cfd_hessian)
+        eigenvalues, eigenvectors = eig(cfd_hessian)
         idx = eigenvalues.argsort()
         eigenvalues = eigenvalues[idx]
         eigenvectors = eigenvectors[:, idx]
