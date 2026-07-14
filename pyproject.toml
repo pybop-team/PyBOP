@@ -80,13 +80,10 @@ dev = [
 exclude = [
   "papers/",
   "tests/",
-  "benchmarks/",
   "docs/",
   "assets/",
   "scripts/",
-  "multiprocessing_bench.py",
   "noxfile.py",
-  "asv.conf.json",
   "conftest.py",
   "CONTRIBUTING.md",
 ]
@@ -97,14 +94,11 @@ exclude = [
 exclude = [
   "papers/",
   "tests/",
-  "benchmarks/",
   "docs/",
   "assets/",
   "scripts/",
   "examples/",
-  "multiprocessing_bench.py",
   "noxfile.py",
-  "asv.conf.json",
   "conftest.py",
   "CONTRIBUTING.md",
   "CHANGELOG.md",
