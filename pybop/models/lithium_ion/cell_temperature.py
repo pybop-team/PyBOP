@@ -33,9 +33,8 @@ class CellTemperature(BaseGroupedModel):
     def __init__(self, name="Cell Temperature Model", **model_kwargs):
         super().__init__(name=name, **model_kwargs)
 
-        if self.options["voltage as a state"] == "true":
-            # Voltage is an input to this model, not a state
-            self.options["voltage as a state"] = "false"
+        # Voltage is an input to this model, not a state
+        self.options["voltage as a state"] = "false"
 
         ######################
         # Variables
