@@ -204,7 +204,7 @@ class GroupedDFN(BaseGroupedModel):
         j_n = self.j(sto_n_surf, sto_e_n, eta_n / RT_F, "negative") / tau_ct_n
         j_p = self.j(sto_p_surf, sto_e_p, eta_p / RT_F, "positive") / tau_ct_p
 
-        # Electrolyte current
+        # Electrolyte currents [s-1]
         i_e_n = (beta_n * gamma_e) * (
             pybamm.grad(v_s_n)
             + (2 * RT_F * (1 - t_plus)) * pybamm.grad(sto_e_n) / sto_e_n
@@ -286,8 +286,9 @@ class GroupedDFN(BaseGroupedModel):
                 pybamm.grad(sto_e_n)
                 * beta_n
                 / self.tau_e(sto_e_n, T, "negative electrode")
-                + (1 - t_plus) * i_e_n
+                - t_plus * i_e_n
             )
+            + (3 / Q_e) * Q_th_n * j_n / l_n
         ) / zeta_n
         self.rhs[sto_e_sep] = pybamm.div(
             pybamm.grad(sto_e_sep) / self.tau_e(sto_e_sep, T, "separator")
@@ -298,8 +299,9 @@ class GroupedDFN(BaseGroupedModel):
                 pybamm.grad(sto_e_p)
                 * beta_p
                 / self.tau_e(sto_e_p, T, "positive electrode")
-                + (1 - t_plus) * i_e_p
+                - t_plus * i_e_p
             )
+            + (3 / Q_e) * Q_th_p * j_p / l_p
         ) / zeta_p
 
         self.boundary_conditions[sto_e_n] = {
