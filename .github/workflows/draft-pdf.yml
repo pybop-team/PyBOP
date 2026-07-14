@@ -3,18 +3,19 @@ name: JossPaperCompilation
 on:
   push:
     paths:
-      - papers/joss/**
+      - 'papers/joss/**'
   pull_request:
     paths:
-    - 'papers/joss/**'
+      - 'papers/joss/**'
   workflow_dispatch:
+
 jobs:
   paper:
     runs-on: ubuntu-latest
     name: Paper Draft
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
       - name: Build draft PDF
@@ -24,7 +25,7 @@ jobs:
           # This should be the path to the paper within your repo.
           paper-path: papers/joss/paper.md
       - name: Upload
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: paper
           # This is the output path where Pandoc will write the compiled
