@@ -1,5 +1,6 @@
 import pybamm
 from pybamm import (
+    ConcatenationVariable,
     Event,
     FunctionParameter,
     Parameter,
@@ -95,6 +96,7 @@ class GroupedDFN(BaseGroupedModel):
             "Positive electrode electrolyte stoichiometry",
             domain="positive electrode",
         )
+        sto_e = ConcatenationVariable(sto_e_n, sto_e_sep, sto_e_p)
 
         # Surf takes the surface value of a variable, i.e. its boundary value on the
         # right side. This is also accessible via `boundary_value(x, "right")`, with
@@ -281,45 +283,43 @@ class GroupedDFN(BaseGroupedModel):
         ######################
         # Electrolyte
         ######################
-        self.rhs[sto_e_n] = (
-            pybamm.div(
-                pybamm.grad(sto_e_n)
-                * beta_n
-                / self.tau_e(sto_e_n, T, "negative electrode")
-                - t_plus * i_e_n
-            )
-            + (3 / Q_e) * Q_th_n * j_n / l_n
-        ) / zeta_n
-        self.rhs[sto_e_sep] = pybamm.div(
-            pybamm.grad(sto_e_sep) / self.tau_e(sto_e_sep, T, "separator")
-            - t_plus * I / Q_e
+        beta = pybamm.concatenation(
+            PrimaryBroadcast(beta_n, "negative electrode"),
+            PrimaryBroadcast(Scalar(1), "separator"),
+            PrimaryBroadcast(beta_p, "positive electrode"),
         )
-        self.rhs[sto_e_p] = (
-            pybamm.div(
-                pybamm.grad(sto_e_p)
-                * beta_p
-                / self.tau_e(sto_e_p, T, "positive electrode")
-                - t_plus * i_e_p
-            )
-            + (3 / Q_e) * Q_th_p * j_p / l_p
-        ) / zeta_p
+        tau_e = pybamm.concatenation(
+            self.tau_e(sto_e_n, T, "negative electrode"),
+            self.tau_e(sto_e_sep, T, "separator"),
+            self.tau_e(sto_e_p, T, "positive electrode"),
+        )
+        i_e = pybamm.concatenation(
+            i_e_n,
+            PrimaryBroadcast(I / Q_e, "separator"),
+            i_e_p,
+        )
+        N_e = -pybamm.grad(sto_e) * beta / tau_e + t_plus * i_e
 
-        self.boundary_conditions[sto_e_n] = {
+        j_e_n = (3 / Q_e) * Q_th_n * j_n / l_n
+        j_e_sep = PrimaryBroadcast(Scalar(0), "separator")
+        j_e_p = (3 / Q_e) * Q_th_p * j_p / l_p
+        j_e = pybamm.concatenation(j_e_n, j_e_sep, j_e_p)
+
+        zeta = pybamm.concatenation(
+            PrimaryBroadcast(zeta_n, "negative electrode"),
+            PrimaryBroadcast(Scalar(1), "separator"),
+            PrimaryBroadcast(zeta_p, "positive electrode"),
+        )
+
+        # The concatenated stoichiometry (sto_e) and flux (N_e) are continuous across interfaces
+        self.rhs[sto_e] = (-pybamm.div(N_e) + j_e) / zeta
+
+        self.boundary_conditions[sto_e] = {
             "left": (Scalar(0), "Neumann"),
-            "right": (pybamm.boundary_gradient(sto_e_sep, "left") / beta_n, "Neumann"),
-        }
-        self.boundary_conditions[sto_e_sep] = {
-            "left": (pybamm.boundary_value(sto_e_n, "right"), "Dirichlet"),
-            "right": (pybamm.boundary_value(sto_e_p, "left"), "Dirichlet"),
-        }
-        self.boundary_conditions[sto_e_p] = {
-            "left": (pybamm.boundary_gradient(sto_e_sep, "right") / beta_p, "Neumann"),
             "right": (Scalar(0), "Neumann"),
         }
 
-        self.initial_conditions[sto_e_n] = Scalar(1)
-        self.initial_conditions[sto_e_sep] = Scalar(1)
-        self.initial_conditions[sto_e_p] = Scalar(1)
+        self.initial_conditions[sto_e] = Scalar(1)
 
         # Electrolyte overpotential
         eta_e = (2 * (1 - t_plus) * RT_F) * (
@@ -416,18 +416,15 @@ class GroupedDFN(BaseGroupedModel):
             "Negative electrode electrolyte stoichiometry": sto_e_n,
             "Separator electrolyte stoichiometry": sto_e_sep,
             "Positive electrode electrolyte stoichiometry": sto_e_p,
-            "Electrolyte stoichiometry": pybamm.concatenation(
-                sto_e_n, sto_e_sep, sto_e_p
-            ),
+            "Electrolyte stoichiometry": sto_e,
             "Positive particle stoichiometry": sto_p,
             "Positive particle surface stoichiometry": sto_p_surf,
             "Positive particle surface voltage [V]": v_s_p,
             "Positive electrode potential [V]": V
             + eta_p
             - pybamm.boundary_value(eta_p, "right"),
-            "Electrolyte scaled current density [s-1]": pybamm.concatenation(
-                i_e_n, PrimaryBroadcast(I / Q_e, "separator"), i_e_p
-            ),
+            "Electrolyte scaled current density [s-1]": i_e,
+            "Electrolyte flux [s-1]": N_e,
             "Time [s]": pybamm_t,
             "Time [h]": pybamm_t / 3600,
             "Current [A]": I,
