@@ -61,11 +61,11 @@ EIS_COLUMN_DEFINITIONS: dict[str, str] = {
 def _canonical_cell_format(cell_type: str) -> str:
     """Normalize cell type string to archive format."""
     value = cell_type.strip().lower()
-    if value in {"full cell", "full", "full-cell"}:
+    if value in ["full cell", "full", "full-cell"]:
         return "Full cell"
-    if value in {"half cell positive", "half-cell positive", "positive half cell"}:
+    elif value in ["half cell positive", "half-cell positive", "positive half cell"]:
         return "Half cell positive"
-    if value in {"half cell negative", "half-cell negative", "negative half cell"}:
+    elif value in ["half cell negative", "half-cell negative", "negative half cell"]:
         return "Half cell negative"
     raise ValueError(f"Unsupported cell type: {cell_type}")
 
@@ -81,7 +81,7 @@ def convert_to_half_cell_parameters(
     """
     updated_parameter_values = parameter_values.copy()
 
-    if electrode_type == "negative":
+    if electrode_type.lower() == "negative":
         for parameter_name in PARAMETERS_TO_SWAP:
             parameter_name_negative = parameter_name.replace(
                 "Positive", "Negative"
@@ -232,7 +232,7 @@ def _build_frequency_grid(frequency_spec: list[float] | dict[str, Any]) -> np.nd
 
     if spacing == "log":
         return np.geomspace(maximum, minimum, count)
-    if spacing == "linear":
+    elif spacing == "linear":
         return np.linspace(maximum, minimum, count)
     raise ValueError(f"Unsupported EIS frequency spacing: {spacing}")
 
@@ -384,16 +384,15 @@ def simulate_procedure(
     model: pybamm.BaseModel,
     parameter_values: pybamm.ParameterValues,
     spec_path: Path,
-    archive_root: Path,
     solve_kwargs: dict[str, float] | None = None,
 ) -> None:
     """Run synthetic data generation from a spec file."""
     if isinstance(spec_path, list):
         procedures = {}
         for sp in spec_path:
-            procedures.update(validate_spec(sp))
+            procedures.update(_validate_spec(sp))
     else:
-        procedures = validate_spec(spec_path)
+        procedures = _validate_spec(spec_path)
 
     cell_type = info.get("Cell type", "Unknown type")
     cell_format = _canonical_cell_format(info.get("Cell format", "Full cell"))
@@ -428,6 +427,7 @@ def simulate_procedure(
         print("-" * 80)
 
         readme_dict = {}
+        model = model.new_copy()
         procedure_frames: list[pl.LazyFrame] = []
         latest_solution: pybamm.Solution | None = None
         next_step_offset = 0
@@ -517,7 +517,17 @@ def simulate_procedure(
         else:
             print("  Simulation completed: EIS-only procedure")
 
-    # Export archive so 01_plot_data.py and 02_associate_data.py can consume the data.
+    return cell
+
+
+def archive_data(cell: pyprobe.Cell, archive_root: Path):
+    """Archive the data fron the cell object."""
+    # Get info
+    cell_label = cell.info["Cell label"]
+    cell_format = cell.info["Cell format"]
+    cell_type = cell.info["Cell type"]
+
+    # Export archive
     archive_dir = archive_root / cell_type / cell_format / cell_label
     archive_dir.mkdir(parents=True, exist_ok=True)
     cell.archive(path=str(archive_dir))
@@ -530,10 +540,6 @@ def simulate_procedure(
             f.write(json.dumps(metadata, indent=4) + "\n")
 
     print(f"\nArchived cell to: {archive_dir}")
-
-    print("\n" + "=" * 80)
-    print("SYNTHETIC DATA GENERATION COMPLETED")
-    print("=" * 80)
 
 
 def _validate_steps(experiment_name: str, experiment_info: dict[str, Any]) -> None:
@@ -590,7 +596,7 @@ def _load_spec(path: Path) -> dict[str, Any]:
         return json.load(f)
 
 
-def validate_spec(spec_path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
+def _validate_spec(spec_path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     procedures = _load_spec(spec_path)
 
     for procedure_name, procedure_info in procedures.items():
@@ -599,8 +605,6 @@ def validate_spec(spec_path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
                 f"Procedure '{procedure_name}' in {spec_path} must be an object"
             )
         for experiment_name, experiment_info in procedure_info.items():
-            if experiment_name == "Initial SoC":
-                continue
             _validate_experiment(experiment_name, experiment_info)
 
     return procedures
