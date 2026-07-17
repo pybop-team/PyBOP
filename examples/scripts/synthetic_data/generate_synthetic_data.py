@@ -5,14 +5,26 @@ Outputs are written to:
   - Archive/<Battery Name>/<Cell format>/<Cell label>/
 """
 
+import sys
 from pathlib import Path
 
 import pybamm
-from synthetic_utils import convert_to_half_cell_parameters, simulate_procedure
+
+# Define the script's directory to resolve relative paths
+SCRIPT_DIR = Path(__file__).parent
+
+# Add to sys.path to allow importing from the script's directory
+
+
+sys.path.insert(0, str(SCRIPT_DIR))
+from synthetic_utils import (  # noqa: E402
+    convert_to_half_cell_parameters,
+    simulate_procedure,
+)
 
 model_class = pybamm.lithium_ion.DFN
 full_cell_parameters = pybamm.ParameterValues("Chen2020")
-archive_root = Path("../../data")
+archive_root = SCRIPT_DIR.parent.parent / "data"
 
 """ Generate time-domain data for the LG M50. """
 cell_info = {
@@ -35,7 +47,7 @@ simulate_procedure(
     info=cell_info,
     model=full_cell_model,
     parameter_values=full_cell_parameters,
-    spec_path=[Path("procedures") / p for p in procedures],
+    spec_path=[SCRIPT_DIR / "procedures" / p for p in procedures],
     archive_root=archive_root,
 )
 
@@ -51,7 +63,7 @@ simulate_procedure(
     info=cell_info,
     model=full_cell_eis_model,
     parameter_values=full_cell_parameters,
-    spec_path=Path("procedures") / "EIS charge.json",
+    spec_path=SCRIPT_DIR / "procedures" / "EIS charge.json",
     archive_root=archive_root,
 )
 
@@ -73,7 +85,7 @@ simulate_procedure(
     info=cell_info,
     model=negative_electrode_model,
     parameter_values=negative_electrode_parameters,
-    spec_path=Path("procedures") / "pOCP negative.json",
+    spec_path=SCRIPT_DIR / "procedures" / "pOCP negative.json",
     archive_root=archive_root,
 )
 
@@ -93,6 +105,6 @@ simulate_procedure(
     info=cell_info,
     model=positive_electrode_model,
     parameter_values=positive_electrode_parameters,
-    spec_path=Path("procedures") / "pOCP positive.json",
+    spec_path=SCRIPT_DIR / "procedures" / "pOCP positive.json",
     archive_root=archive_root,
 )
