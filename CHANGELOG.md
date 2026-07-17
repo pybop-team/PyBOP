@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#963](https://github.com/pybop-team/PyBOP/pull/963) - Adds an example for generating synthetic data from a specification and exporting it to a PyProBE-compatible parquet file.
 - [#962](https://github.com/pybop-team/PyBOP/pull/962) - Separate the surface from the bulk temperature in the `CellTemperature` model.
 - [#918](https://github.com/pybop-team/PyBOP/pull/918) - Adds a plot for predictions sampled from a posterior distribution (`pybop.plot.predictive`).
 - [#940](https://github.com/pybop-team/PyBOP/pull/940) - Adds support for Python 3.14 (EP-BOLFI optimiser and PyProBE still restricted to Python 3.12 or below).
