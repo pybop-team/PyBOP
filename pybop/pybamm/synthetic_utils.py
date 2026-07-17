@@ -7,8 +7,6 @@ from typing import Any
 import numpy as np
 import polars as pl
 import pybamm
-import pyprobe
-from pyprobe.filters import Procedure
 
 import pybop
 
@@ -386,6 +384,9 @@ def simulate_procedure(
     spec_path: Path,
     solve_kwargs: dict[str, float] | None = None,
 ) -> None:
+    from pyprobe import Cell
+    from pyprobe.filters import Procedure
+
     """Run synthetic data generation from a spec file."""
     if isinstance(spec_path, list):
         procedures = {}
@@ -419,7 +420,7 @@ def simulate_procedure(
         "Synthetic": True,
         "Nominal cell capacity [A.h]": cell_capacity,
     }
-    cell = pyprobe.Cell(info=cell_info)
+    cell = Cell(info=cell_info)
 
     for procedure_name, procedure_info in procedures.items():
         print("\n" + "-" * 80)
@@ -520,7 +521,7 @@ def simulate_procedure(
     return cell
 
 
-def archive_data(cell: pyprobe.Cell, archive_root: Path):
+def archive_data(cell, archive_root: Path):
     """Archive the data fron the cell object."""
     # Get info
     cell_label = cell.info["Cell label"]

@@ -2,7 +2,6 @@ import sys
 from pathlib import Path
 
 import pybamm
-import pyprobe
 import pytest
 
 import pybop
@@ -22,6 +21,8 @@ class TestPybammUtils:
     )
 
     def test_simulate_procedure(self, tmp_path):
+        import pyprobe
+
         model = pybamm.lithium_ion.SPM()
         full_cell_parameters = pybamm.ParameterValues("Chen2020")
         cell_info = {
@@ -49,6 +50,8 @@ class TestPybammUtils:
         pybop.pybamm.archive_data(cell=cell, archive_root=tmp_path)
 
     def test_convert_to_half_cell_parameters(self):
+        import pyprobe
+
         model_options = {
             "working electrode": "positive"
         }  # PyBaMM uses "positive" for all half-cells
