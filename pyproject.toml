@@ -50,7 +50,7 @@ ep-bolfi = [
     "ep-bolfi>=3.0.2; python_version < '3.13'"
 ]
 pyprobe = [
-  "PyProBE-Data>=2.5.0;python_version >= '3.11' and python_version < '3.13'"
+  "PyProBE-Data>=2.6.0;python_version >= '3.11' and python_version < '3.13'"
 ]
 all = ["pybop[plot,salib,scifem,bpx,pyprobe,ep-bolfi]"]
 
