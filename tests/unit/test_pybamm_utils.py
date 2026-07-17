@@ -9,16 +9,18 @@ import pybop
 PROCEDURE_DIR = Path("examples") / "scripts" / "synthetic_data" / "procedures"
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 11), reason="requires a python version >= 3.11"
+)
+@pytest.mark.skipif(
+    sys.version_info >= (3, 13), reason="requires a python version < 3.13"
+)
 class TestPybammUtils:
     """
     A class to test the synthetic generation procedure.
     """
 
     pytestmark = pytest.mark.unit
-    skipmeif = pytest.mark.skipif(
-        sys.version_info < (3, 11) or sys.version_info >= (3, 13),
-        reason="requires a python version >= 3.11 and < 3.13",
-    )
 
     def test_simulate_procedure(self, tmp_path):
         import pyprobe
