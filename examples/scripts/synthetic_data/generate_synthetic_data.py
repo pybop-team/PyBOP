@@ -14,8 +14,6 @@ import pybamm
 SCRIPT_DIR = Path(__file__).parent
 
 # Add to sys.path to allow importing from the script's directory
-
-
 sys.path.insert(0, str(SCRIPT_DIR))
 from synthetic_utils import (  # noqa: E402
     convert_to_half_cell_parameters,
