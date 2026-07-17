@@ -50,14 +50,14 @@ parameter_values.update(
     {
         "Positive electrode thickness [m]": pybop.Parameter(
             initial_value=8.88e-05,
-            prior=pybop.Gaussian(7.56e-05, 3e-05),
-            bounds=[50e-06, 120e-06],
+            distribution=pybop.Gaussian(
+                7.56e-05, 3e-05, truncated_at=[50e-06, 120e-06]
+            ),
             transformation=pybop.UnitHyperCube(lower=50e-6, upper=120e-6),
         ),
         "Positive electrode active material volume fraction": pybop.Parameter(
             initial_value=0.42,
-            prior=pybop.Gaussian(0.58, 0.1),
-            bounds=[0.3, 0.825],
+            distribution=pybop.Gaussian(0.58, 0.1, truncated_at=[0.3, 0.825]),
             transformation=pybop.UnitHyperCube(lower=0.3, upper=0.825),
         ),
     }
@@ -88,6 +88,8 @@ print(result)
 print("Estimated parameters:", result.x)
 print(f"Initial gravimetric energy density: {problem(result.x0):.1f} W.h.kg-1")
 print(f"Optimised gravimetric energy density: {problem(result.x):.1f} W.h.kg-1")
+initial_energy_density = problem(result.x0)
+optimised_energy_density = problem(result.x)
 
 if create_plot["gravimetric"]:
     # Plot the cost landscape with optimisation path
@@ -119,7 +121,7 @@ if create_plot["gravimetric"]:
 
 if create_plot["prediction"]:
     # Plot the timeseries output
-    problem.target = "Voltage [V]"
+    problem.set_target("Voltage [V]")
     figs = pybop.plot.problem(
         problem,
         inputs=result.best_inputs,
@@ -156,9 +158,11 @@ if create_plot["prediction"]:
     prediction_fig.data[1].update(line=dict(color="#00CC97"))
     prediction_fig.data[
         0
-    ].name = f"Initial: {problem(result.x0):.1f} W&#8239;h&#8239;kg<sup>-1</sup>"
+    ].name = f"Initial: {initial_energy_density:.1f} W&#8239;h&#8239;kg<sup>-1</sup>"
     prediction_fig.data[
         1
-    ].name = f"Optimised: {problem(result.x):.1f} W&#8239;h&#8239;kg<sup>-1</sup>"
+    ].name = (
+        f"Optimised: {optimised_energy_density:.1f} W&#8239;h&#8239;kg<sup>-1</sup>"
+    )
     prediction_fig.show()
     prediction_fig.write_image("figures/individual/design_prediction.pdf")
