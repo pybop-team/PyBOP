@@ -1,0 +1,713 @@
+{
+    "info": {
+        "Name": "LG M50 Synthetic C02",
+        "Cell type": "LG M50 Synthetic",
+        "Cell format": "Full cell",
+        "Cell label": "C02",
+        "Synthetic": true,
+        "Nominal cell capacity [A.h]": 5.0,
+        "Associated": {
+            "Negative electrode": "../../Half cell negative/neg_01",
+            "Positive electrode": "../../Half cell positive/pos_01",
+            "Full-cell EIS": "../EIS"
+        }
+    },
+    "procedure": {
+        "Capacity determination": {
+            "lf": "Capacity determination.parquet",
+            "info": {
+                "Name": "LG M50 Synthetic C02",
+                "Cell type": "LG M50 Synthetic",
+                "Cell format": "Full cell",
+                "Cell label": "C02",
+                "Synthetic": true,
+                "Nominal cell capacity [A.h]": 5.0
+            },
+            "column_definitions": {
+                "Time": "The time passed from the start of the procedure.",
+                "Step": "The step number.",
+                "Event": "The event number. Counts the changes in cycles and steps.",
+                "Current": "The current through the cell.",
+                "Voltage": "The terminal voltage.",
+                "Capacity": "The net charge passed since the start of the procedure.",
+                "Procedure Time": "Time elapsed since beginning of procedure.",
+                "Procedure Capacity": "The net charge passed since beginning of procedure."
+            },
+            "step_descriptions": {
+                "Step": [
+                    0,
+                    1,
+                    2,
+                    3
+                ],
+                "Description": [
+                    "Charge at C/10 until 4.2 V",
+                    "Hold at 4.2 V until C/50",
+                    "Rest for 2 hours",
+                    "Discharge at C/10 until 2.5 V"
+                ]
+            },
+            "readme_dict": {
+                "Precondition": {
+                    "Steps": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "Step Descriptions": [
+                        "Charge at C/10 until 4.2 V",
+                        "Hold at 4.2 V until C/50",
+                        "Rest for 2 hours"
+                    ],
+                    "Cycles": []
+                },
+                "Capacity determination": {
+                    "Steps": [
+                        3
+                    ],
+                    "Step Descriptions": [
+                        "Discharge at C/10 until 2.5 V"
+                    ],
+                    "Cycles": []
+                }
+            },
+            "cycle_info": []
+        },
+        "pOCV": {
+            "lf": "pOCV.parquet",
+            "info": {
+                "Name": "LG M50 Synthetic C02",
+                "Cell type": "LG M50 Synthetic",
+                "Cell format": "Full cell",
+                "Cell label": "C02",
+                "Synthetic": true,
+                "Nominal cell capacity [A.h]": 5.0
+            },
+            "column_definitions": {
+                "Time": "The time passed from the start of the procedure.",
+                "Step": "The step number.",
+                "Event": "The event number. Counts the changes in cycles and steps.",
+                "Current": "The current through the cell.",
+                "Voltage": "The terminal voltage.",
+                "Capacity": "The net charge passed since the start of the procedure.",
+                "Procedure Time": "Time elapsed since beginning of procedure.",
+                "Procedure Capacity": "The net charge passed since beginning of procedure."
+            },
+            "step_descriptions": {
+                "Step": [
+                    0,
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6
+                ],
+                "Description": [
+                    "Discharge at C/10 until 2.5 V",
+                    "Hold at 2.5 V until C/50",
+                    "Rest for 2 hours",
+                    "Charge at C/30 until 4.2 V",
+                    "Rest for 2 hours",
+                    "Discharge at C/30 until 2.5 V",
+                    "Rest for 2 hours"
+                ]
+            },
+            "readme_dict": {
+                "Precondition": {
+                    "Steps": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "Step Descriptions": [
+                        "Discharge at C/10 until 2.5 V",
+                        "Hold at 2.5 V until C/50",
+                        "Rest for 2 hours"
+                    ],
+                    "Cycles": []
+                },
+                "Pseudo OCV": {
+                    "Steps": [
+                        3,
+                        4,
+                        5,
+                        6
+                    ],
+                    "Step Descriptions": [
+                        "Charge at C/30 until 4.2 V",
+                        "Rest for 2 hours",
+                        "Discharge at C/30 until 2.5 V",
+                        "Rest for 2 hours"
+                    ],
+                    "Cycles": []
+                }
+            },
+            "cycle_info": []
+        },
+        "GITT": {
+            "lf": "GITT.parquet",
+            "info": {
+                "Name": "LG M50 Synthetic C02",
+                "Cell type": "LG M50 Synthetic",
+                "Cell format": "Full cell",
+                "Cell label": "C02",
+                "Synthetic": true,
+                "Nominal cell capacity [A.h]": 5.0
+            },
+            "column_definitions": {
+                "Time": "The time passed from the start of the procedure.",
+                "Step": "The step number.",
+                "Event": "The event number. Counts the changes in cycles and steps.",
+                "Current": "The current through the cell.",
+                "Voltage": "The terminal voltage.",
+                "Capacity": "The net charge passed since the start of the procedure.",
+                "Procedure Time": "Time elapsed since beginning of procedure.",
+                "Procedure Capacity": "The net charge passed since beginning of procedure."
+            },
+            "step_descriptions": {
+                "Step": [
+                    0,
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6
+                ],
+                "Description": [
+                    "Discharge at C/10 until 2.5 V",
+                    "Hold at 2.5 V until C/50",
+                    "Rest for 2 hours",
+                    "Charge at C/10 for 10 minutes or until 4.2 V",
+                    "Rest for 3 hours",
+                    "Discharge at C/10 for 10 minutes or until 2.5 V",
+                    "Rest for 3 hours"
+                ]
+            },
+            "readme_dict": {
+                "Precondition": {
+                    "Steps": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "Step Descriptions": [
+                        "Discharge at C/10 until 2.5 V",
+                        "Hold at 2.5 V until C/50",
+                        "Rest for 2 hours"
+                    ],
+                    "Cycles": []
+                },
+                "GITT charge": {
+                    "Steps": [
+                        3,
+                        4
+                    ],
+                    "Step Descriptions": [
+                        "Charge at C/10 for 10 minutes or until 4.2 V",
+                        "Rest for 3 hours"
+                    ],
+                    "Cycles": [
+                        [
+                            3,
+                            4,
+                            61
+                        ]
+                    ]
+                },
+                "GITT discharge": {
+                    "Steps": [
+                        5,
+                        6
+                    ],
+                    "Step Descriptions": [
+                        "Discharge at C/10 for 10 minutes or until 2.5 V",
+                        "Rest for 3 hours"
+                    ],
+                    "Cycles": [
+                        [
+                            5,
+                            6,
+                            61
+                        ]
+                    ]
+                }
+            },
+            "cycle_info": []
+        },
+        "Validation cycling": {
+            "lf": "Validation cycling.parquet",
+            "info": {
+                "Name": "LG M50 Synthetic C02",
+                "Cell type": "LG M50 Synthetic",
+                "Cell format": "Full cell",
+                "Cell label": "C02",
+                "Synthetic": true,
+                "Nominal cell capacity [A.h]": 5.0
+            },
+            "column_definitions": {
+                "Time": "The time passed from the start of the procedure.",
+                "Step": "The step number.",
+                "Event": "The event number. Counts the changes in cycles and steps.",
+                "Current": "The current through the cell.",
+                "Voltage": "The terminal voltage.",
+                "Capacity": "The net charge passed since the start of the procedure.",
+                "Procedure Time": "Time elapsed since beginning of procedure.",
+                "Procedure Capacity": "The net charge passed since beginning of procedure."
+            },
+            "step_descriptions": {
+                "Step": [
+                    0,
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    12,
+                    13,
+                    14,
+                    15,
+                    16,
+                    17,
+                    18,
+                    19,
+                    20,
+                    21,
+                    22,
+                    23,
+                    24,
+                    25,
+                    26,
+                    27
+                ],
+                "Description": [
+                    "Charge at C/10 until 4.18 V",
+                    "Hold at 4.18 V until C/50",
+                    "Rest for 2 hours",
+                    "Discharge at C/10 until 2.6 V",
+                    "Rest for 1 hour",
+                    "Charge at C/10 until 4.18 V",
+                    "Hold at 4.18 V until C/20",
+                    "Rest for 1 hour",
+                    "Discharge at C/5 until 2.6 V",
+                    "Rest for 1 hour",
+                    "Charge at C/5 until 4.18 V",
+                    "Hold at 4.18 V until C/20",
+                    "Rest for 1 hour",
+                    "Discharge at C/3 until 2.6 V",
+                    "Rest for 1 hour",
+                    "Charge at C/3 until 4.18 V",
+                    "Hold at 4.18 V until C/20",
+                    "Rest for 1 hour",
+                    "Discharge at C/2 until 2.6 V",
+                    "Rest for 1 hour",
+                    "Charge at C/2 until 4.18 V",
+                    "Hold at 4.18 V until C/20",
+                    "Rest for 1 hour",
+                    "Discharge at 1C until 2.6 V",
+                    "Rest for 1 hour",
+                    "Charge at 1C until 4.18 V",
+                    "Hold at 4.18 V until C/20",
+                    "Rest for 1 hour"
+                ]
+            },
+            "readme_dict": {
+                "Precondition": {
+                    "Steps": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "Step Descriptions": [
+                        "Charge at C/10 until 4.18 V",
+                        "Hold at 4.18 V until C/50",
+                        "Rest for 2 hours"
+                    ],
+                    "Cycles": []
+                },
+                "Validation cycling": {
+                    "Steps": [
+                        3,
+                        4,
+                        5,
+                        6,
+                        7,
+                        8,
+                        9,
+                        10,
+                        11,
+                        12,
+                        13,
+                        14,
+                        15,
+                        16,
+                        17,
+                        18,
+                        19,
+                        20,
+                        21,
+                        22,
+                        23,
+                        24,
+                        25,
+                        26,
+                        27
+                    ],
+                    "Step Descriptions": [
+                        "Discharge at C/10 until 2.6 V",
+                        "Rest for 1 hour",
+                        "Charge at C/10 until 4.18 V",
+                        "Hold at 4.18 V until C/20",
+                        "Rest for 1 hour",
+                        "Discharge at C/5 until 2.6 V",
+                        "Rest for 1 hour",
+                        "Charge at C/5 until 4.18 V",
+                        "Hold at 4.18 V until C/20",
+                        "Rest for 1 hour",
+                        "Discharge at C/3 until 2.6 V",
+                        "Rest for 1 hour",
+                        "Charge at C/3 until 4.18 V",
+                        "Hold at 4.18 V until C/20",
+                        "Rest for 1 hour",
+                        "Discharge at C/2 until 2.6 V",
+                        "Rest for 1 hour",
+                        "Charge at C/2 until 4.18 V",
+                        "Hold at 4.18 V until C/20",
+                        "Rest for 1 hour",
+                        "Discharge at 1C until 2.6 V",
+                        "Rest for 1 hour",
+                        "Charge at 1C until 4.18 V",
+                        "Hold at 4.18 V until C/20",
+                        "Rest for 1 hour"
+                    ],
+                    "Cycles": []
+                }
+            },
+            "cycle_info": []
+        },
+        "Validation different SOC": {
+            "lf": "Validation different SOC.parquet",
+            "info": {
+                "Name": "LG M50 Synthetic C02",
+                "Cell type": "LG M50 Synthetic",
+                "Cell format": "Full cell",
+                "Cell label": "C02",
+                "Synthetic": true,
+                "Nominal cell capacity [A.h]": 5.0
+            },
+            "column_definitions": {
+                "Time": "The time passed from the start of the procedure.",
+                "Step": "The step number.",
+                "Event": "The event number. Counts the changes in cycles and steps.",
+                "Current": "The current through the cell.",
+                "Voltage": "The terminal voltage.",
+                "Capacity": "The net charge passed since the start of the procedure.",
+                "Procedure Time": "Time elapsed since beginning of procedure.",
+                "Procedure Capacity": "The net charge passed since beginning of procedure."
+            },
+            "step_descriptions": {
+                "Step": [
+                    0,
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    12,
+                    13,
+                    14,
+                    15,
+                    16,
+                    17,
+                    18,
+                    19,
+                    20,
+                    21,
+                    22,
+                    23,
+                    24,
+                    25,
+                    26
+                ],
+                "Description": [
+                    "Discharge at C/10 until 4.2 V",
+                    "Hold at 4.2 V until C/50",
+                    "Rest for 2 hours",
+                    "Discharge at C/5 for 30 minutes",
+                    "Rest for 4 hours",
+                    "Charge at C/10 for 100 seconds",
+                    "Rest for 100 seconds",
+                    "Discharge at C/10 for 100 seconds",
+                    "Rest for 100 seconds",
+                    "Charge at C/5 for 100 seconds",
+                    "Rest for 100 seconds",
+                    "Discharge at C/5 for 100 seconds",
+                    "Rest for 100 seconds",
+                    "Charge at C/3 for 100 seconds",
+                    "Rest for 100 seconds",
+                    "Discharge at C/3 for 100 seconds",
+                    "Rest for 100 seconds",
+                    "Charge at C/2 for 100 seconds",
+                    "Rest for 100 seconds",
+                    "Discharge at C/2 for 100 seconds",
+                    "Rest for 100 seconds",
+                    "Charge at 1C for 100 seconds",
+                    "Rest for 100 seconds",
+                    "Discharge at 1C for 100 seconds",
+                    "Rest for 100 seconds",
+                    "Discharge at C/5 for 30 minutes",
+                    "Rest for 4 hours"
+                ]
+            },
+            "readme_dict": {
+                "Precondition": {
+                    "Steps": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4
+                    ],
+                    "Step Descriptions": [
+                        "Discharge at C/10 until 4.2 V",
+                        "Hold at 4.2 V until C/50",
+                        "Rest for 2 hours",
+                        "Discharge at C/5 for 30 minutes",
+                        "Rest for 4 hours"
+                    ],
+                    "Cycles": []
+                },
+                "Validation different SOC": {
+                    "Steps": [
+                        5,
+                        6,
+                        7,
+                        8,
+                        9,
+                        10,
+                        11,
+                        12,
+                        13,
+                        14,
+                        15,
+                        16,
+                        17,
+                        18,
+                        19,
+                        20,
+                        21,
+                        22,
+                        23,
+                        24,
+                        25,
+                        26
+                    ],
+                    "Step Descriptions": [
+                        "Charge at C/10 for 100 seconds",
+                        "Rest for 100 seconds",
+                        "Discharge at C/10 for 100 seconds",
+                        "Rest for 100 seconds",
+                        "Charge at C/5 for 100 seconds",
+                        "Rest for 100 seconds",
+                        "Discharge at C/5 for 100 seconds",
+                        "Rest for 100 seconds",
+                        "Charge at C/3 for 100 seconds",
+                        "Rest for 100 seconds",
+                        "Discharge at C/3 for 100 seconds",
+                        "Rest for 100 seconds",
+                        "Charge at C/2 for 100 seconds",
+                        "Rest for 100 seconds",
+                        "Discharge at C/2 for 100 seconds",
+                        "Rest for 100 seconds",
+                        "Charge at 1C for 100 seconds",
+                        "Rest for 100 seconds",
+                        "Discharge at 1C for 100 seconds",
+                        "Rest for 100 seconds",
+                        "Discharge at C/5 for 30 minutes",
+                        "Rest for 4 hours"
+                    ],
+                    "Cycles": [
+                        [
+                            5,
+                            26,
+                            9
+                        ]
+                    ]
+                }
+            },
+            "cycle_info": []
+        },
+        "Validation pulses": {
+            "lf": "Validation pulses.parquet",
+            "info": {
+                "Name": "LG M50 Synthetic C02",
+                "Cell type": "LG M50 Synthetic",
+                "Cell format": "Full cell",
+                "Cell label": "C02",
+                "Synthetic": true,
+                "Nominal cell capacity [A.h]": 5.0
+            },
+            "column_definitions": {
+                "Time": "The time passed from the start of the procedure.",
+                "Step": "The step number.",
+                "Event": "The event number. Counts the changes in cycles and steps.",
+                "Current": "The current through the cell.",
+                "Voltage": "The terminal voltage.",
+                "Capacity": "The net charge passed since the start of the procedure.",
+                "Procedure Time": "Time elapsed since beginning of procedure.",
+                "Procedure Capacity": "The net charge passed since beginning of procedure."
+            },
+            "step_descriptions": {
+                "Step": [
+                    0,
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    12,
+                    13,
+                    14,
+                    15,
+                    16,
+                    17,
+                    18,
+                    19,
+                    20,
+                    21,
+                    22,
+                    23,
+                    24,
+                    25,
+                    26
+                ],
+                "Description": [
+                    "Discharge at C/10 until 2.5 V",
+                    "Hold at 2.5 V until C/50",
+                    "Rest for 2 hours",
+                    "Charge at C/2 for 12 minutes",
+                    "Rest for 30 min",
+                    "Charge at C/10 for 100 seconds",
+                    "Rest for 100 seconds",
+                    "Discharge at C/10 for 100 seconds",
+                    "Rest for 100 seconds",
+                    "Charge at C/5 for 100 seconds",
+                    "Rest for 100 seconds",
+                    "Discharge at C/5 for 100 seconds",
+                    "Rest for 100 seconds",
+                    "Charge at C/3 for 100 seconds",
+                    "Rest for 100 seconds",
+                    "Discharge at C/3 for 100 seconds",
+                    "Rest for 100 seconds",
+                    "Charge at C/2 for 100 seconds",
+                    "Rest for 100 seconds",
+                    "Discharge at C/2 for 100 seconds",
+                    "Rest for 100 seconds",
+                    "Charge at 1C for 100 seconds",
+                    "Rest for 100 seconds",
+                    "Discharge at 1C for 100 seconds",
+                    "Rest for 100 seconds",
+                    "Charge at C/2 until 4.2 V",
+                    "Hold at 4.2 V until C/20"
+                ]
+            },
+            "readme_dict": {
+                "Precondition": {
+                    "Steps": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "Step Descriptions": [
+                        "Discharge at C/10 until 2.5 V",
+                        "Hold at 2.5 V until C/50",
+                        "Rest for 2 hours"
+                    ],
+                    "Cycles": []
+                },
+                "Validation pulses": {
+                    "Steps": [
+                        3,
+                        4,
+                        5,
+                        6,
+                        7,
+                        8,
+                        9,
+                        10,
+                        11,
+                        12,
+                        13,
+                        14,
+                        15,
+                        16,
+                        17,
+                        18,
+                        19,
+                        20,
+                        21,
+                        22,
+                        23,
+                        24,
+                        25,
+                        26
+                    ],
+                    "Step Descriptions": [
+                        "Charge at C/2 for 12 minutes",
+                        "Rest for 30 min",
+                        "Charge at C/10 for 100 seconds",
+                        "Rest for 100 seconds",
+                        "Discharge at C/10 for 100 seconds",
+                        "Rest for 100 seconds",
+                        "Charge at C/5 for 100 seconds",
+                        "Rest for 100 seconds",
+                        "Discharge at C/5 for 100 seconds",
+                        "Rest for 100 seconds",
+                        "Charge at C/3 for 100 seconds",
+                        "Rest for 100 seconds",
+                        "Discharge at C/3 for 100 seconds",
+                        "Rest for 100 seconds",
+                        "Charge at C/2 for 100 seconds",
+                        "Rest for 100 seconds",
+                        "Discharge at C/2 for 100 seconds",
+                        "Rest for 100 seconds",
+                        "Charge at 1C for 100 seconds",
+                        "Rest for 100 seconds",
+                        "Discharge at 1C for 100 seconds",
+                        "Rest for 100 seconds",
+                        "Charge at C/2 until 4.2 V",
+                        "Hold at 4.2 V until C/20"
+                    ],
+                    "Cycles": [
+                        [
+                            3,
+                            24,
+                            9
+                        ]
+                    ]
+                }
+            },
+            "cycle_info": []
+        }
+    },
+    "PyProBE Version": "2.6.0"
+}
