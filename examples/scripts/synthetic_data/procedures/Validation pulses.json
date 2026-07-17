@@ -1,0 +1,77 @@
+{
+  "Validation pulses": {
+    "Precondition": {
+      "Steps": [
+        0,
+        1,
+        2
+      ],
+      "Step Descriptions": [
+        "Discharge at C/10 until 2.5 V",
+        "Hold at 2.5 V until C/50",
+        "Rest for 2 hours"
+      ]
+    },
+    "Validation pulses": {
+      "Steps": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26
+      ],
+      "Step Descriptions": [
+        "Charge at C/2 for 12 minutes",
+        "Rest for 30 min",
+        "Charge at C/10 for 100 seconds",
+        "Rest for 100 seconds",
+        "Discharge at C/10 for 100 seconds",
+        "Rest for 100 seconds",
+        "Charge at C/5 for 100 seconds",
+        "Rest for 100 seconds",
+        "Discharge at C/5 for 100 seconds",
+        "Rest for 100 seconds",
+        "Charge at C/3 for 100 seconds",
+        "Rest for 100 seconds",
+        "Discharge at C/3 for 100 seconds",
+        "Rest for 100 seconds",
+        "Charge at C/2 for 100 seconds",
+        "Rest for 100 seconds",
+        "Discharge at C/2 for 100 seconds",
+        "Rest for 100 seconds",
+        "Charge at 1C for 100 seconds",
+        "Rest for 100 seconds",
+        "Discharge at 1C for 100 seconds",
+        "Rest for 100 seconds",
+        "Charge at C/2 until 4.2 V",
+        "Hold at 4.2 V until C/20"
+      ],
+      "Cycles": [
+        [
+          3,
+          24,
+          9
+        ]
+      ]
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "Capacity determination": {
+    "Precondition": {
+      "Steps": [
+        0,
+        1,
+        2
+      ],
+      "Step Descriptions": [
+        "Charge at C/10 until 4.2 V",
+        "Hold at 4.2 V until C/50",
+        "Rest for 2 hours"
+      ]
+    },
+    "Capacity determination": {
+      "Steps": [
+        3
+      ],
+      "Step Descriptions": [
+        "Discharge at C/10 until 2.5 V"
+      ]
+    }
+  }
+}

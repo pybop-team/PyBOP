@@ -1,0 +1,72 @@
+{
+  "Validation cycling": {
+    "Precondition": {
+      "Steps": [
+        0,
+        1,
+        2
+      ],
+      "Step Descriptions": [
+        "Charge at C/10 until 4.18 V",
+        "Hold at 4.18 V until C/50",
+        "Rest for 2 hours"
+      ]
+    },
+    "Validation cycling": {
+      "Steps": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27
+      ],
+      "Step Descriptions": [
+        "Discharge at C/10 until 2.6 V",
+        "Rest for 1 hour",
+        "Charge at C/10 until 4.18 V",
+        "Hold at 4.18 V until C/20",
+        "Rest for 1 hour",
+        "Discharge at C/5 until 2.6 V",
+        "Rest for 1 hour",
+        "Charge at C/5 until 4.18 V",
+        "Hold at 4.18 V until C/20",
+        "Rest for 1 hour",
+        "Discharge at C/3 until 2.6 V",
+        "Rest for 1 hour",
+        "Charge at C/3 until 4.18 V",
+        "Hold at 4.18 V until C/20",
+        "Rest for 1 hour",
+        "Discharge at C/2 until 2.6 V",
+        "Rest for 1 hour",
+        "Charge at C/2 until 4.18 V",
+        "Hold at 4.18 V until C/20",
+        "Rest for 1 hour",
+        "Discharge at 1C until 2.6 V",
+        "Rest for 1 hour",
+        "Charge at 1C until 4.18 V",
+        "Hold at 4.18 V until C/20",
+        "Rest for 1 hour"
+      ]
+    }
+  }
+}
