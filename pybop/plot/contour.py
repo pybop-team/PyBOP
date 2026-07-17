@@ -4,7 +4,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from pybop.plot.plotly_manager import PlotlyManager
+from pybop.plot.backends import PlotBackend
+from pybop.plot.util import get_backend_from_figure
 from pybop.problems.problem import Problem
 
 if TYPE_CHECKING:
@@ -17,8 +18,11 @@ def contour(
     bounds: np.ndarray | None = None,
     transformed: bool = False,
     steps: int = 10,
+    title="Cost Landscape",
     show: bool = True,
-    **layout_kwargs,
+    backend: str | PlotBackend = None,
+    figures=None,
+    axes=None,
 ):
     """
     Plot a 2D visualisation of a cost landscape using Plotly.
@@ -32,6 +36,8 @@ def contour(
         Either:
         - the cost function to be evaluated. Must accept a list of parameter values and return a cost value.
         - an optimiser result which provides a specific optimisation trace overlaid on the cost landscape.
+    title: str, optional
+        The title of the figure (default: "Cost Landscape")
     gradient : bool, optional
         If True, the gradient is shown (default: False).
     bounds : numpy.ndarray | list[list[float]], optional
@@ -43,21 +49,30 @@ def contour(
         The number of grid points to divide the parameter space into along each dimension (default: 10).
     show : bool, optional
         If True, the figure is shown upon creation (default: True).
-    **layout_kwargs : optional
-        Valid Plotly layout keys and their values,
-        e.g. `xaxis_title="Time [s]"` or
-        `xaxis={"title": "Time [s]", font={"size":14}}`
+    backend: str or pybop.plot.backends.PlotBackend, optional
+        The plotting backend to be used.
+    figures: figure object or list of figure objects, optional
+        Either a single figure or the same number of figures as axes.
+    axes: single axis or list of axes, optional
+        plotly: axes expected to be of the form tuple(row, col)
+        If gradient is false this must be a single axis. If gradient is
+        true this must be one axis for the cost contour plot and one
+        axis for each parameter to plot the gradient.
 
     Returns
     -------
-    plotly.graph_objs.Figure
-        The Plotly figure object containing the cost landscape plot.
+    None: if show is True
+    figure object containing the cost landscape: if show is False and gradient is False
+    tuple (fig, grad_figs): if show is False and gradient is True
+        fig - figure object containing the cost landscape
+        grad_figs - list of figure objects containing the gradient for each parameter
 
     Raises
     ------
     ValueError
         If the cost function does not return a valid cost when called with a parameter list.
     """
+    backend = get_backend_from_figure(backend, figures)
     plot_optim = False
     problem = call_object
 
@@ -95,6 +110,23 @@ def contour(
         bounds = parameters.get_bounds_for_plotly()
     else:
         bounds = np.asarray(bounds)
+
+    # Process input figures and axes
+    num_plots = 1 + len(parameters) if gradient else 1
+    figures, axes, create_figure, _ = backend.parse_input_axes(
+        figures, axes, num_plots=num_plots, allow_single_axis=False
+    )
+    if create_figure:
+        fig = backend.create_figure(
+            style={
+                "width": 600,
+                "height": 600,
+            },
+        )
+        ax = None
+    else:
+        fig = figures[0]
+        ax = axes[0]
 
     # Generate grid
     x = np.linspace(bounds[0, 0], bounds[0, 1], steps)
@@ -143,121 +175,121 @@ def contour(
     bounds[0] = transform_array_of_values(bounds[0], parameters[names[0]])
     bounds[1] = transform_array_of_values(bounds[1], parameters[names[1]])
 
-    # Import plotly only when needed
-    go = PlotlyManager().go
-
-    # Set default layout properties
-    layout_options = dict(
-        title="Cost Landscape",
-        title_x=0.5,
-        title_y=0.905,
-        width=600,
-        height=600,
-        xaxis=dict(range=bounds[0], showexponent="last", exponentformat="e"),
-        yaxis=dict(range=bounds[1], showexponent="last", exponentformat="e"),
-        legend=dict(orientation="h", yanchor="bottom", y=1, xanchor="right", x=1),
+    backend.update_axes_titles(
+        fig,
+        ax,
+        "Transformed " + names[0] if transformed else names[0],
+        "Transformed " + names[1] if transformed else names[1],
     )
-    layout_options["xaxis_title"] = (
-        "Transformed " + names[0] if transformed else names[0]
-    )
-    layout_options["yaxis_title"] = (
-        "Transformed " + names[1] if transformed else names[1]
-    )
-    layout = go.Layout(layout_options)
+    backend.update_plot_titles(fig, ax, title, pad=30)
+    backend.update_axes_ranges(fig, ax, bounds[0], bounds[1])
 
     # Create contour plot and update the layout
-    fig = go.Figure(
-        data=[go.Contour(x=x, y=y, z=costs, colorscale="Viridis", connectgaps=True)],
-        layout=layout,
-    )
+    backend.contour_plot(x=x, y=y, z=costs, fig=fig, ax=ax)
 
     if plot_optim:
         # Plot the optimisation trace
         optim_trace = np.asarray([item[:2] for item in result.x_model])
         optim_trace = optim_trace.reshape(-1, 2)
-
-        fig.add_trace(
-            go.Scatter(
-                x=transform_array_of_values(optim_trace[:, 0], parameters[names[0]]),
-                y=transform_array_of_values(optim_trace[:, 1], parameters[names[1]]),
-                mode="markers",
-                marker=dict(
-                    color=[i / len(optim_trace) for i in range(len(optim_trace))],
-                    colorscale="Greys",
-                    size=8,
-                    showscale=False,
-                ),
-                showlegend=False,
-            )
+        backend.plot_trace(
+            backend.scatter(
+                transform_array_of_values(optim_trace[:, 0], parameters[names[0]]),
+                transform_array_of_values(optim_trace[:, 1], parameters[names[1]]),
+                [i / optim_trace.shape[0] for i in range(optim_trace.shape[0])],
+            ),
+            fig,
+            ax=ax,
         )
 
         # Plot the initial guess
         if len(result.x_model) > 0:
             x0 = result.x_model[0]
-            fig.add_trace(
-                go.Scatter(
+            backend.plot_trace(
+                backend.line(
                     x=transform_array_of_values([x0[0]], parameters[names[0]]),
                     y=transform_array_of_values([x0[1]], parameters[names[1]]),
-                    mode="markers",
-                    marker_symbol="x",
-                    marker=dict(
-                        color="white",
-                        line_color="black",
-                        line_width=1,
-                        size=14,
-                        showscale=False,
+                    label="Initial values",
+                    style=dict(
+                        marker="X",
+                        markersize=14,
+                        markerfacecolor="white",
+                        markeredgecolor="black",
+                        linestyle="None",
+                        zorder=2.6,
                     ),
-                    name="Initial values",
-                )
+                ),
+                fig,
+                ax=ax,
             )
 
         # Plot optimised value
         if result.x is not None:
             x_best = result.x
-            fig.add_trace(
-                go.Scatter(
+            backend.plot_trace(
+                backend.line(
                     x=transform_array_of_values([x_best[0]], parameters[names[0]]),
                     y=transform_array_of_values([x_best[1]], parameters[names[1]]),
-                    mode="markers",
-                    marker_symbol="cross",
-                    marker=dict(
-                        color="black",
-                        line_color="white",
-                        line_width=1,
-                        size=14,
-                        showscale=False,
+                    style=dict(
+                        marker="P",
+                        markersize=14,
+                        markerfacecolor="black",
+                        markeredgecolor="white",
+                        linestyle="None",
+                        zorder=2.6,
                     ),
-                    name="Final values",
-                )
+                    label="Final values",
+                ),
+                fig,
+                ax=ax,
             )
 
-    # Update the layout and display the figure
-    fig.update_layout(**layout_kwargs)
-    if show:
-        fig.show()
+    backend.legend(
+        fig,
+        style={
+            "horizontal": True,
+            "loc": "lower right",
+            "coords": (1, 1),
+        },
+        axes=ax,
+    )
 
     if gradient:
-        grad_figs = []
+        if create_figure:
+            figures = np.asarray([fig])
+
         for i, grad_costs in enumerate(grad_parameter_costs):
-            # Update title for gradient plots
-            updated_layout_options = layout_options.copy()
-            updated_layout_options["title"] = f"Gradient for Parameter: {i + 1}"
-
-            # Create contour plot with updated layout options
-            grad_layout = go.Layout(updated_layout_options)
-
             # Create fig
-            grad_fig = go.Figure(
-                data=[go.Contour(x=x, y=y, z=grad_costs)], layout=grad_layout
+            if create_figure:
+                grad_fig = backend.create_figure(
+                    style={
+                        "width": 600,
+                        "height": 600,
+                    },
+                )
+                figures = np.append(figures, grad_fig)
+                ax = None
+            else:
+                ax = axes[i + 1]
+                grad_fig = figures[i + 1]
+
+            backend.update_plot_titles(grad_fig, ax, f"Gradient for Parameter: {i + 1}")
+            backend.update_axes_titles(
+                grad_fig,
+                ax,
+                "Transformed " + names[0] if transformed else names[0],
+                "Transformed " + names[1] if transformed else names[1],
             )
-            grad_fig.update_layout(**layout_kwargs)
 
-            if show:
-                grad_fig.show()
+            backend.contour_plot(x=x, y=y, z=grad_costs, fig=grad_fig, ax=ax)
 
-            # append grad_fig to list
-            grad_figs.append(grad_fig)
+        # display the figures
+        if show:
+            backend.show_figure(figures)
 
-        return fig, grad_figs
+        return fig, figures[1:]
 
-    return fig
+    # display the figure
+    if show:
+        backend.show_figure(fig)
+    else:
+        return fig

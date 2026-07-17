@@ -2,8 +2,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from pybop.plot.plotly_manager import PlotlyManager
-from pybop.plot.standard_plots import StandardPlot
+from pybop.plot.util import get_backend_from_figure, remove_brackets
 from pybop.problems.meta_problem import MetaProblem
 from pybop.simulators.failed_solution import FailedSolution
 
@@ -21,14 +20,64 @@ def predictive(
     pdf_label: str = "PDF",
     colour_scale="viridis",
     show: bool = True,
-    **layout_kwargs,
+    backend: str | None = None,
+    figures=None,
+    axes=None,
 ):
     """
     Plot the predictive posterior of a Bayesian optimisation result.
-    """
-    # Import plotly only when needed
-    px = PlotlyManager().px
 
+    Parameters
+    ----------
+    result : pybop.BayesianOptimisationResult or pybop.SamplingResult
+        The result of the Bayesian optimisation or sampling process.
+    number_of_traces : int, optional
+        The number of posterior predictive traces to plot (default: 8).
+    data_legend_entry : str, optional
+        The legend entry for the observed data (default: None).
+    rvs_legend_entry : str, optional
+        The legend entry for the random variable samples (default: None).
+    pdf_plot : tuple, optional
+        A tuple containing the x and y values for a PDF plot to overlay on the predictive plot (default: None).
+    pdf_label : str, optional
+        The label for the PDF plot (default: "PDF").
+    colour_scale : str, optional
+        The colour scale to use for the predictive traces (default: "viridis").
+    show : bool, optional
+        If True, the figure is shown upon creation (default: True).
+    backend : str or pybop.plot.backends.PlotBackend, optional
+        Select a plotting backend. If None, the current default backend is used.
+    figures: figure object, optional
+        Figure for plotting. If not provided a new figure is created for each problem.
+        Can be a single figure or one figure per problem.
+    axes: axis, optional
+        The axes to be used for plotting. One axis per problem is expected.
+        plotly: axes expected to be of the form list of tuple(row, col)
+
+    Returns
+    -------
+    None: if show is True
+    Figure or list of figures: if show is False
+        If show is False, returns a single figure or a list of figures containing the predictive posterior
+        for each problem.
+    """
+
+    # Create a plot for each problem
+    problems = (
+        result.problem.problems
+        if isinstance(result.problem, MetaProblem)
+        else [result.problem]
+    )
+
+    # Import plotting backend
+    backend = get_backend_from_figure(backend, figures)
+
+    # Process input figures
+    figures, axes, create_figure, _ = backend.parse_input_axes(
+        figures, axes, num_plots=len(problems), allow_single_axis=False
+    )
+
+    # Retrieve data for plotting
     posterior_samples = result.posterior.sample_from_distribution(
         n_samples=number_of_traces
     )
@@ -37,23 +86,28 @@ def predictive(
     )
     pdf_range = np.asarray([posterior_samples_pdf.min(), posterior_samples_pdf.max()])
 
-    # Create a plot for each problem
-    problems = (
-        result.problem.problems
-        if isinstance(result.problem, MetaProblem)
-        else [result.problem]
-    )
-    figure_list = []
+    for i, problem in enumerate(problems):
+        if create_figure:
+            fig = backend.create_figure(
+                style={"bg_color": "white", "width": 600, "height": 600},
+            )
+            figures = np.append(figures, fig)
+            ax = None
+        else:
+            fig = figures[i]
+            ax = axes[i]
 
-    for problem in problems:
-        plot_dict = StandardPlot(
-            x=problem.domain_data,
-            y=problem.target_data[problem.target[0]],
-            layout_options=dict(
-                xaxis_title=StandardPlot.remove_brackets(problem.domain),
-                yaxis_title=StandardPlot.remove_brackets(problem.target[0]),
+        backend.update_axes_titles(
+            fig, ax, remove_brackets(problem.domain), remove_brackets(problem.target[0])
+        )
+        backend.plot_trace(
+            backend.line(
+                x=problem.domain_data,
+                y=problem.target_data[problem.target[0]],
+                label=data_legend_entry,
             ),
-            trace_names=data_legend_entry,
+            fig,
+            ax=ax,
         )
 
         # Simulate the samples and add to plot
@@ -61,44 +115,36 @@ def predictive(
         simulations = problem.simulate_batch(inputs=inputs)
         for pdf, sim in zip(posterior_samples_pdf, simulations, strict=False):
             if not isinstance(sim, FailedSolution):
-                plot_dict.add_traces(
-                    x=problem.domain_data,
-                    y=sim[problem.target[0]].data,
-                    line={
-                        "dash": "dot",
-                        "color": px.colors.sample_colorscale(
-                            colour_scale,
-                            (pdf - pdf_range[0]) / (pdf_range[1] - pdf_range[0]),
-                        )[0],
-                    },
+                colors = backend.sample_color_scale(
+                    pdf, d_min=pdf_range[0], d_max=pdf_range[1]
+                )
+                backend.plot_trace(
+                    backend.line(
+                        x=problem.domain_data,
+                        y=sim[problem.target[0]].data,
+                        style=dict(color=colors[0], linestyle="dotted"),
+                    ),
+                    fig,
+                    ax=ax,
                 )
 
         # Add the colourbar
-        plot_dict.add_traces(
-            x=[None],
-            y=[None],
-            mode="markers",
-            marker={
-                "size": 0,
-                "color": pdf_range,
-                "colorscale": colour_scale,
-                "showscale": True,
-                "colorbar": {"title": {"text": "Posterior PDF", "side": "right"}},
-            },
+        backend.colorbar(
+            fig, pdf_range, colorscale=colour_scale, label="Posterior PDF", ax=ax
         )
 
         if pdf_plot is not None:
-            plot_dict.add_traces(
-                x=pdf_plot[0],
-                y=pdf_plot[1],
-                trace_names=pdf_label,
+            backend.plot_trace(
+                backend.line(
+                    x=pdf_plot[0],
+                    y=pdf_plot[1],
+                    label=pdf_label,
+                ),
+                fig,
+                ax=ax,
             )
-
-        fig = plot_dict(show=False)
-        fig.update_layout(**layout_kwargs)
         if show:
-            fig.show()
+            backend.show_figure(fig)
 
-        figure_list.append(fig)
-
-    return figure_list
+    if not show:
+        return figures[0] if len(figures) == 1 else figures

@@ -11,11 +11,9 @@ identification purposes.
 """
 
 # Prepare figure
-layout_options = dict(
-    xaxis_title="Time / s",
-    yaxis_title="Voltage / V",
-)
-plot_dict = pybop.plot.StandardPlot(layout_options=layout_options)
+fig = plt.figure()
+plt.xlabel("Time / s")
+plt.ylabel("Voltage / V")
 
 # Use the Chen2020 parameters
 parameter_values = pybamm.ParameterValues("Chen2020")
@@ -46,20 +44,23 @@ grouped_parameter_values = pybop.lithium_ion.GroupedSPMe.create_grouped_paramete
 )
 SPMe_model = pybamm.lithium_ion.SPMe(options=model_options)
 grouped_SPMe_model = pybop.lithium_ion.GroupedSPMe(options=model_options)
-for model, param, line_style in zip(
+for model, param, linestyle in zip(
     [SPMe_model, grouped_SPMe_model],
     [parameter_values, grouped_parameter_values],
-    ["solid", "dash"],
+    ["-", "--"],
     strict=False,
 ):
     solution = pybamm.Simulation(
         model, parameter_values=param, experiment=experiment, cache_esoh=False
     ).solve(initial_soc=init_soc)
     dataset = pybop.import_pybamm_solution(solution)
-    plot_dict.add_traces(
-        dataset["Time [s]"], dataset["Voltage [V]"], line_dash=line_style
+    plt.plot(
+        dataset["Time [s]"],
+        dataset["Voltage [V]"],
+        label=model.name,
+        linestyle=linestyle,
     )
-plot_dict()
+plt.legend()
 
 # Set up figure
 fig, ax = plt.subplots()
