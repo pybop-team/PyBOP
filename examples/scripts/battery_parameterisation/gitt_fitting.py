@@ -91,7 +91,7 @@ pybop.plot.trajectories(
         fitted_values["Voltage [V]"].data,
         solution["Voltage [V]"].data,
     ],
-    trace_names=["Ground truth", "Fitted GITT Model", "Identified Model"],
+    labels=["Ground truth", "Fitted GITT Model", "Identified Model"],
     xaxis_title="Time / s",
     yaxis_title="Voltage / V",
 )

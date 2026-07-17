@@ -3,7 +3,7 @@ import numpy as np
 from pybop.costs.design_cost import DesignCost
 from pybop.costs.error_measures import ErrorMeasure
 from pybop.parameters.parameter import Inputs
-from pybop.plot.standard_plots import StandardPlot
+from pybop.plot.util import get_backend_from_figure, remove_brackets
 from pybop.problems.meta_problem import MetaProblem
 from pybop.problems.problem import Problem
 from pybop.simulators.solution import Solution
@@ -12,8 +12,11 @@ from pybop.simulators.solution import Solution
 def problem(
     problem: Problem,
     inputs: Inputs = None,
+    title="Scatter Plot",
     show: bool = True,
-    **layout_kwargs,
+    backend: str = None,
+    figures=None,
+    axes=None,
 ):
     """
     Produce a quick plot of the target dataset against optimised model output.
@@ -27,17 +30,25 @@ def problem(
         Problem object with dataset and targets attributes.
     inputs : Inputs
         Optimised (or example) parameter values.
+    title: str, optional:
+        The title of the plot (default: "Scatter Plot")
     show : bool, optional
         If True, the figure is shown upon creation (default: True).
-    **layout_kwargs : optional
-            Valid Plotly layout keys and their values,
-            e.g. `xaxis_title="Time / s"` or
-            `xaxis={"title": "Time [s]", font={"size":14}}`
+    backend: str or pybop.plot.backends.PlotBackend, optional
+        The plotting backend to be used.
+    figures: figure object, optional
+        Figure for plotting. If not provided a new figure is created for each problem.
+        Can be a single figure or one figure per target.
+    axes: axis, optional
+        The axes to be used for plotting. One axis per target is expected.
+        plotly: axes expected to be of the form list of tuple(row, col)
 
     Returns
     -------
-    plotly.graph_objs.Figure
-        The Plotly figure object for the scatter plot.
+    None: if show is True
+    Figure or list of figures: if show is False
+        A single figure or a list of figures containing the plots for each target in the
+        problem. If show is True, the figures will be displayed and None will be returned.
     """
     if inputs is None:
         inputs = problem.parameters.to_dict()
@@ -67,66 +78,73 @@ def problem(
         model_domain = target_domain[: len(model_output[target].data)]
 
     # Create a plot for each output
-    figure_list = []
-    for var in problem.target:
-        # Create a plot dictionary
-        plot_dict = StandardPlot(
-            layout_options=dict(
-                title="Scatter Plot",
-                xaxis_title=StandardPlot.remove_brackets(domain),
-                yaxis_title=StandardPlot.remove_brackets(var),
-            )
-        )
+    # Import plotting backend
+    backend = get_backend_from_figure(backend, figures)
 
-        model_trace = plot_dict.create_trace(
+    # Process input
+    figures, axes, create_figure, _ = backend.parse_input_axes(
+        figures, axes, num_plots=len(problem.target), allow_single_axis=False
+    )
+    for i, var in enumerate(problem.target):
+        ax = axes[i % len(axes)]
+        if create_figure:
+            fig = backend.create_figure(
+                style={"bg_color": "white", "width": 600, "height": 600},
+            )
+            figures = np.append(figures, fig)
+        else:
+            fig = figures[i % len(figures)]
+
+        backend.update_axes_titles(
+            fig, ax, remove_brackets(domain), remove_brackets(var)
+        )
+        backend.update_plot_titles(fig, ax, title)
+        traces = []
+
+        model_trace = backend.line(
             x=model_domain,
             y=model_output[var].data,
-            name="Optimised" if isinstance(problem.cost, DesignCost) else "Model",
-            mode="markers" if isinstance(problem, MetaProblem) else "lines",
-            showlegend=True,
+            label="Optimised" if isinstance(problem.cost, DesignCost) else "Model",
+            style={
+                "linestyle": "none" if isinstance(problem, MetaProblem) else "solid",
+                "marker": "." if isinstance(problem, MetaProblem) else "none",
+            },
         )
-        plot_dict.traces.append(model_trace)
+        traces.append(model_trace)
 
-        target_trace = plot_dict.create_trace(
+        target_trace = backend.line(
             x=target_domain,
             y=target_output[var].data,
-            name="Reference",
-            mode="markers",
-            showlegend=True,
+            label="Reference",
+            style={"linestyle": "none", "marker": "."},
         )
-        plot_dict.traces.append(target_trace)
+        traces.append(target_trace)
 
         if isinstance(problem.cost, ErrorMeasure) and len(
             model_output[var].data
         ) == len(target_output[var].data):
             # Compute the standard deviation as proxy for uncertainty
-            plot_dict.sigma = np.std(model_output[var].data - target_output[var].data)
+            sigma = np.std(model_output[var].data - target_output[var].data)
 
             # Convert x and upper and lower limits into lists to create a filled trace
             x = target_domain.tolist()
-            y_upper = (model_output[var].data + plot_dict.sigma).tolist()
-            y_lower = (model_output[var].data - plot_dict.sigma).tolist()
+            y_upper = (model_output[var].data + sigma).tolist()
+            y_lower = (model_output[var].data - sigma).tolist()
 
-            fill_trace = plot_dict.create_trace(
-                x=x + x[::-1],
-                y=y_upper + y_lower[::-1],
-                fill="toself",
-                fillcolor="rgba(255,229,204,0.8)",
-                line=dict(color="rgba(255,255,255,0)"),
-                hoverinfo="skip",
-                showlegend=False,
-            )
-            plot_dict.traces.append(fill_trace)
+            fill_trace = backend.fill_between(x, y_upper, y_lower, color="#FFE5CC")
+            traces.append(fill_trace)
 
         # Reverse the order of the traces to put the model on top
-        plot_dict.traces = plot_dict.traces[::-1]
+        traces = traces[::-1]
+
+        for trace in traces:
+            backend.plot_trace(trace, fig, ax=ax)
+
+        backend.legend(fig, axes=ax)
 
         # Generate the figure and update the layout
-        fig = plot_dict(show=False)
-        fig.update_layout(**layout_kwargs)
         if show:
-            fig.show()
+            backend.show_figure(fig)
 
-        figure_list.append(fig)
-
-    return figure_list
+    if not show:
+        return figures[0] if len(figures) == 1 else figures

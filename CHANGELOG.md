@@ -3,6 +3,7 @@
 ## Features
 
 - [#963](https://github.com/pybop-team/PyBOP/pull/963) - Adds an example for generating synthetic data from a specification and exporting it to a PyProBE-compatible parquet file.
+- [#928](https://github.com/pybop-team/PyBOP/pull/928) - Adds the option to choose `matplotlib` as the plotting library for plotting functions. Additionally, figures and axes can be created manually and passed as keyword arguments to plotting functions. An example notebook `plotting.ipynb` was added to the `getting_started` directory to demonstrate usage of the new features.
 - [#962](https://github.com/pybop-team/PyBOP/pull/962) - Separate the surface from the bulk temperature in the `CellTemperature` model.
 - [#918](https://github.com/pybop-team/PyBOP/pull/918) - Adds a plot for predictions sampled from a posterior distribution (`pybop.plot.predictive`).
 - [#940](https://github.com/pybop-team/PyBOP/pull/940) - Adds support for Python 3.14 (EP-BOLFI optimiser and PyProBE still restricted to Python 3.12 or below).
@@ -20,6 +21,7 @@
 
 ## Breaking Changes
 
+- [#928](https://github.com/pybop-team/PyBOP/pull/928) - Deprecates `StandardPlot` and `StandardSubplot` in favour of new standardised backend functionality.
 - [#960](https://github.com/pybop-team/PyBOP/pull/960) - Remove `asv` benchmarking.
 - [#938](https://github.com/pybop-team/PyBOP/pull/938) - Make SALib an optional dependency and remove `sensitivity_analysis` in favour of using SALib directly.
 - [#942](https://github.com/pybop-team/PyBOP/pull/942) - Adds `evaluate_batch` to the costs and ensures that an `Evaluation` is returned.

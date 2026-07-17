@@ -8,15 +8,16 @@ import pybamm
 from matplotlib.ticker import ScalarFormatter
 
 import pybop
-from pybop.plot import PlotlyManager
+from pybop.plot.backends import PlotlyManager
 
+pybop.plot.use_backend("plotly")
 go = PlotlyManager().go
 px = PlotlyManager().px
 make_subplots = PlotlyManager().make_subplots
 plt.rcParams.update({"text.usetex": True})  # Enable LaTeX
 np.random.seed(8)  # Set random seed for reproducibility
-axis_font_size = 24
-tick_font_size = 16
+axis_font_size = 22
+tick_font_size = 14
 
 # Choose which plots to show and save
 create_plot = {}
@@ -54,18 +55,28 @@ corrupt_values = values + np.random.normal(0, sigma, len(values))
 
 if create_plot["simulation"]:
     # Plot the data and the simulation
-    simulation_plot_dict = pybop.plot.StandardPlot(
-        x=solution["Time [s]"].data,
-        y=[corrupt_values, solution["Battery open-circuit voltage [V]"].data, values],
-        trace_names=[
-            "Voltage w. noise",
-            "Open-circuit voltage",
-            "Voltage",
-        ],
-    )
-    simulation_plot_dict.traces[0].mode = "markers"
-    simulation_fig = simulation_plot_dict(show=False)
+    simulation_plot_lines = []
+    y = [corrupt_values, solution["Battery open-circuit voltage [V]"].data, values]
+    labels = [
+        "Voltage w. noise",
+        "Open-circuit voltage",
+        "Voltage",
+    ]
+    x = (solution["Time [s]"].data,)
+    for i, yi in enumerate(y):
+        simulation_plot_lines.append(
+            go.Scatter(
+                x=x[0],
+                y=yi,
+                mode="lines",
+                name=labels[i],
+                line=dict(width=4, dash="solid"),
+            )
+        )
+    simulation_plot_lines[0].mode = "markers"
+    simulation_fig = go.Figure(data=simulation_plot_lines)
     simulation_fig.update_layout(
+        plot_bgcolor="white",
         width=600,
         height=600,
         xaxis=dict(
@@ -101,7 +112,7 @@ if create_plot["simulation"]:
 dataset = pybop.Dataset(
     {
         "Time [s]": solution["Time [s]"].data,
-        "Current function [A]": solution["Current [A]"].data,
+        "Current [A]": solution["Current [A]"].data,
         "Voltage [V]": corrupt_values,
     }
 )
@@ -116,15 +127,13 @@ parameter_values.update(
     {
         "Contact resistance [Ohm]": pybop.Parameter(
             initial_value=initial_value[0],
-            prior=pybop.Gaussian(0.02, 0.005),
+            distribution=pybop.Gaussian(0.02, 0.005, truncated_at=[0.005, 0.025]),
             transformation=pybop.ScaledTransformation(coefficient=200),
-            bounds=[0.005, 0.025],
         ),
         "Negative particle diffusivity [m2.s-1]": pybop.Parameter(
             initial_value=initial_value[1],
-            prior=pybop.Gaussian(9e-14, 2e-14),
+            distribution=pybop.LogUniform(1.9e-14, 12e-14),
             transformation=pybop.LogTransformation(),
-            bounds=[1.9e-14, 12e-14],
         ),
     }
 )
@@ -143,6 +152,8 @@ if create_plot["landscape"]:
         steps=25,
         title=None,
         show=False,
+    )
+    landscape_fig.update_layout(
         xaxis=dict(
             title=dict(text="Contact resistance / Ω", font_size=axis_font_size),
             tickfont_size=tick_font_size,
@@ -241,13 +252,14 @@ if create_plot["minimising"]:
         # Plot convergence
         cost_log = result.cost_convergence
         iteration_numbers = list(range(1, len(cost_log) + 1))
-        convergence_plot_dict = pybop.plot.StandardPlot(
+        convergence_plot = go.Scatter(
             x=iteration_numbers,
             y=cost_log,
-            trace_names=[cost.name],
-            trace_options={"line": {"width": 4, "dash": "dash"}},
+            mode="lines",
+            name=cost.name,
+            line=dict(width=4, dash="dash"),
         )
-        convergence_traces.extend(convergence_plot_dict.traces)
+        convergence_traces.append(convergence_plot)
 
     # Plot minimising convergence traces together
     convergence_fig = go.Figure(
@@ -293,22 +305,22 @@ if create_plot["maximising"]:
     first_MAP = True
 
     for cost in maximising_cost_classes:
+        # Define the cost and problem
         if cost is pybop.GaussianLogLikelihoodKnownSigma:
-            cost = cost(dataset, sigma0=sigma)
+            cost = cost(dataset, sigma=sigma)
+            problem = pybop.Problem(simulator, cost)
         elif cost is pybop.GaussianLogLikelihood:
-            cost = cost(dataset, sigma0=4 * sigma)
+            cost = cost(dataset, sigma=4 * sigma)
+            problem = pybop.Problem(simulator, cost)
         elif cost is pybop.LogPosterior and first_MAP:
-            cost = cost(
-                log_likelihood=pybop.GaussianLogLikelihoodKnownSigma(
-                    dataset, sigma0=sigma
-                )
-            )
+            cost = pybop.GaussianLogLikelihoodKnownSigma(dataset, sigma=sigma)
+            problem = pybop.LogPosterior(simulator, cost)
             first_MAP = False
         elif cost is pybop.LogPosterior:
-            cost = cost(log_likelihood=pybop.GaussianLogLikelihood(dataset))
+            cost = pybop.GaussianLogLikelihood(dataset)
+            problem = pybop.LogPosterior(simulator, cost)
 
-        # Define the problem and optimiser
-        problem = pybop.Problem(simulator, cost)
+        # Define the optimiser
         options = pybop.SciPyMinimizeOptions(maxiter=50, method="BFGS", jac=True)
         optim = pybop.SciPyMinimize(problem, options=options)
 
@@ -320,17 +332,19 @@ if create_plot["maximising"]:
         # Plot convergence
         cost_log = result.cost_convergence
         iteration_numbers = list(range(1, len(cost_log) + 1))
-        convergence_plot_dict = pybop.plot.StandardPlot(
+        convergence_plot = go.Scatter(
             x=iteration_numbers,
             y=cost_log,
-            trace_names=cost.name
-            + " "
-            + (
-                cost.log_likelihood.name if isinstance(cost, pybop.LogPosterior) else ""
+            mode="lines",
+            name=pybop.plot.wrap_text(
+                ("Log Posterior " if isinstance(problem, pybop.LogPosterior) else "")
+                + cost.name,
+                width=40,
+                backend="plotly",
             ),
-            trace_options={"line": {"width": 4, "dash": "dash"}},
+            line={"width": 4, "dash": "dash"},
         )
-        convergence_traces.extend(convergence_plot_dict.traces)
+        convergence_traces.extend([convergence_plot])
 
     # Plot maximising convergence traces together
     convergence_fig = go.Figure(
@@ -476,8 +490,10 @@ if create_plot["gradient"]:
             result,
             steps=25,
             title="",
-            showlegend=False,
             show=False,
+        )
+        contour.update_layout(
+            showlegend=False,
             margin=dict(l=20, r=20, t=20, b=20),
         )
         if i == num_optimisers - 1:
@@ -506,6 +522,7 @@ if create_plot["gradient"]:
             tickfont_size=tick_font_size,
             linewidth=1,
             linecolor="black",
+            showexponent="last",
         ),
         yaxis=dict(
             title=dict(
@@ -518,6 +535,7 @@ if create_plot["gradient"]:
             linewidth=1,
             linecolor="black",
             range=bounds[0],
+            showexponent="last",
         ),
         legend=dict(
             yanchor="bottom", y=1.02, xanchor="left", x=-0.05, font_size=tick_font_size
@@ -542,7 +560,9 @@ if create_plot["gradient"]:
             linewidth=1,
             linecolor="black",
             range=bounds[1],
+            showexponent="last",
         ),
+        margin=dict(l=10, r=10, b=10, t=75, pad=4),
     )
     parameter_fig.data = []
     parameter_fig.add_traces(parameter_traces)
@@ -587,8 +607,10 @@ if create_plot["evolution"]:
             result,
             steps=25,
             title="",
-            showlegend=False,
             show=False,
+        )
+        contour.update_layout(
+            showlegend=False,
             margin=dict(l=20, r=20, t=20, b=20),
         )
         contour.update_traces(showscale=False, selector=dict(type="contour"))
@@ -642,7 +664,9 @@ if create_plot["evolution"]:
             linewidth=1,
             linecolor="black",
             range=bounds[1],
+            showexponent="last",
         ),
+        margin=dict(l=10, r=10, b=10, t=75, pad=4),
     )
     parameter_fig.data = []
     parameter_fig.add_traces(parameter_traces)
@@ -688,8 +712,10 @@ if create_plot["heuristic"]:
             result,
             steps=25,
             title="",
-            showlegend=False,
             show=False,
+        )
+        contour.update_layout(
+            showlegend=False,
             margin=dict(l=20, r=20, t=20, b=20),
         )
         contour.update_traces(showscale=False, selector=dict(type="contour"))
@@ -773,7 +799,9 @@ if create_plot["heuristic"]:
             linewidth=1,
             linecolor="black",
             range=bounds[1],
+            showexponent="last",
         ),
+        margin=dict(l=10, r=10, b=10, t=75, pad=4),
     )
     parameter_fig.data = []
     parameter_fig.add_traces(parameter_traces)
@@ -785,26 +813,44 @@ if create_plot["heuristic"]:
 if create_plot["posteriors"]:
     sigma0 = pybop.Parameter(
         initial_value=sigma,
-        prior=pybop.Uniform(1e-8 * sigma, 10 * sigma),
         bounds=[1e-8, 10 * sigma],
     )
-    likelihood = pybop.GaussianLogLikelihood(dataset, sigma0=sigma0)
-    posterior = pybop.Problem(simulator, pybop.LogPosterior(likelihood))
+    parameter_values2 = pybamm.ParameterValues("Chen2020")
+    parameter_values2["Contact resistance [Ohm]"] = 0.01
+    parameter_values2.update(
+        {
+            "Contact resistance [Ohm]": pybop.Parameter(
+                initial_value=initial_value[0],
+                distribution=pybop.Gaussian(0.02, 0.005, truncated_at=[0.005, 0.025]),
+                transformation=pybop.ScaledTransformation(coefficient=200),
+            ),
+            "Negative particle diffusivity [m2.s-1]": pybop.Parameter(
+                initial_value=initial_value[1],
+                distribution=pybop.Gaussian(
+                    9e-14, 2e-14, truncated_at=[1.9e-14, 12e-14]
+                ),
+            ),
+        }
+    )
+    simulator = pybop.pybamm.Simulator(
+        model, parameter_values=parameter_values2, protocol=dataset, solver=solver
+    )
+    likelihood = pybop.GaussianLogLikelihood(dataset, sigma=sigma0)
+    posterior = pybop.LogPosterior(simulator, likelihood)
 
     options = pybop.PintsSamplerOptions(
         n_chains=5,
         max_iterations=3500,
         warm_up_iterations=1500,
-        cov=posterior.parameters.get_sigma0(transformed=True),
     )
     sampler = pybop.HaarioBardenetACMC(posterior, options=options)
 
     result = sampler.run()
     print(result)
     print("True parameter values:", [true_value, sigma])
-    summary = pybop.PosteriorSummary(result.chains)
-    print(summary.rhat())
-    print(summary.effective_sample_size(mixed_chains=True))
+    summary = result.get_summary_statistics()
+    print(result.rhat())
+    print(result.effective_sample_size(mixed_chains=True))
 
     # Create a grid for subplots
     fig = plt.figure(figsize=(15, 6))
@@ -822,7 +868,7 @@ if create_plot["posteriors"]:
     # Subplot for parameter 0
     ax1 = fig.add_subplot(gs[0, 0])
     ax1.hist(
-        summary.all_samples[:, 0],
+        result.all_samples[:, 0],
         bins=50,
         density=False,
         alpha=0.6,
@@ -833,8 +879,8 @@ if create_plot["posteriors"]:
     ax1.set_ylim(0, 775)
     ax1.tick_params(axis="both", which="major", labelsize=tick_font_size)
     ax1.axvspan(
-        summary.get_summary_statistics()[("ci_lower")][0],
-        summary.get_summary_statistics()[("ci_upper")][0],
+        summary[("ci_lower")][0],
+        summary[("ci_upper")][0],
         alpha=0.1,
         color="tab:blue",
     )
@@ -844,7 +890,7 @@ if create_plot["posteriors"]:
     # Subplot for parameter 1
     ax2 = fig.add_subplot(gs[0, 1])
     ax2.hist(
-        summary.all_samples[:, 1],
+        result.all_samples[:, 1],
         bins=50,
         density=False,
         alpha=0.6,
@@ -855,8 +901,8 @@ if create_plot["posteriors"]:
     ax2.set_ylim(0, 775)
     ax2.tick_params(axis="both", which="major", labelsize=tick_font_size)
     ax2.axvspan(
-        summary.get_summary_statistics()[("ci_lower")][1],
-        summary.get_summary_statistics()[("ci_upper")][1],
+        summary[("ci_lower")][1],
+        summary[("ci_upper")][1],
         alpha=0.1,
         color="tab:red",
     )
@@ -866,7 +912,7 @@ if create_plot["posteriors"]:
     # Subplot for sigma
     ax3 = fig.add_subplot(gs[0, 2])
     ax3.hist(
-        summary.all_samples[:, 2],
+        result.all_samples[:, 2],
         bins=50,
         density=False,
         alpha=0.6,
@@ -876,8 +922,8 @@ if create_plot["posteriors"]:
     ax3.set_ylim(0, 775)
     ax3.tick_params(axis="both", which="major", labelsize=tick_font_size)
     ax3.axvspan(
-        summary.get_summary_statistics()[("ci_lower")][2],
-        summary.get_summary_statistics()[("ci_upper")][2],
+        summary[("ci_lower")][2],
+        summary[("ci_upper")][2],
         alpha=0.1,
         color="tab:purple",
     )
@@ -954,19 +1000,35 @@ if create_plot["eis"]:
         problem,
         result.best_inputs,
         title="",
+        show=False,
+    )
+    parameter_fig.update_layout(
         width=600,
         height=600,
         margin=dict(t=60, b=84, r=50, l=15),
-        xaxis=dict(title_font_size=axis_font_size, linewidth=1),
-        yaxis=dict(title_font_size=axis_font_size, linewidth=1),
+        xaxis=dict(
+            title_font_size=axis_font_size,
+            linewidth=1,
+            showline=True,
+            linecolor="black",
+        ),
+        yaxis=dict(
+            title_font_size=axis_font_size,
+            linewidth=1,
+            showline=True,
+            linecolor="black",
+        ),
     )
-    parameter_fig[0].data[1].update(line=dict(color="#00CC97"))
-    parameter_fig[0].write_image("figures/individual/impedance_spectrum.pdf")
+    parameter_fig.data[1].update(line=dict(color="#00CC97"))
+    parameter_fig.write_image("figures/individual/impedance_spectrum.pdf")
 
     landscape_fig = pybop.plot.contour(
         problem,
         steps=25,
         show=False,
+        title=None,
+    )
+    landscape_fig.update_layout(
         xaxis=dict(
             title=dict(text="Contact resistance / Ω", font_size=axis_font_size),
             tickfont_size=tick_font_size,
@@ -990,7 +1052,6 @@ if create_plot["eis"]:
         ),
         coloraxis_colorbar=dict(tickfont_size=tick_font_size),
         margin=dict(t=50),
-        title=None,
     )
     landscape_fig.add_trace(
         go.Scatter(

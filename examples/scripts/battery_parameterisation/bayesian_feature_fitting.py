@@ -107,8 +107,18 @@ if __name__ == "__main__":
     print("True values:", [original_D_n, original_D_p])
 
     # Plot the optimisation result
-    result.plot_convergence(yaxis={"type": "log"})
-    result.plot_parameters(yaxis={"type": "log"}, yaxis2={"type": "log"})
+    pybop.plot.use_backend("plotly")
+    fig1 = result.plot_convergence(show=False)
+    fig1.update_layout(
+        yaxis={"type": "log"}
+    )  # use ax.set_yscale('log') if using matplotlib (where ax = fig1.gca())
+    fig1.show()
+
+    fig2 = result.plot_parameters(show=False)
+    fig2.update_layout(
+        yaxis={"type": "log"}, yaxis2={"type": "log"}
+    )  # use ax.set_yscale('log') if using matplotlib (for ax in fig2.axes)
+    fig2.show()
 
     # Plot the prior and posterior distributions
     pybop.plot.distribution(result.problem.parameters, result.posterior)

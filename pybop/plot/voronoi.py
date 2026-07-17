@@ -3,9 +3,10 @@ from typing import TYPE_CHECKING
 import numpy as np
 from scipy.spatial import Voronoi, cKDTree
 
+from pybop.plot.util import get_backend_from_figure
+
 if TYPE_CHECKING:
     from pybop._result import Result
-from pybop.plot.plotly_manager import PlotlyManager
 
 
 def _voronoi_regions(x, y, f, xlim, ylim):
@@ -228,11 +229,14 @@ def assign_nearest_value(x, y, f, xi, yi):
 
 def surface(
     result: "Result",
+    title="Voronoi Cost Landscape",
     bounds=None,
     normalise=True,
     resolution=250,
     show=True,
-    **layout_kwargs,
+    backend=None,
+    figures=None,
+    axes=None,
 ):
     """
     Plot a 2D representation of the Voronoi diagram with color-coded regions.
@@ -241,6 +245,8 @@ def surface(
     -----------
     result : pybop.Result
         Optimisation result containing the history of parameter values and associated cost.
+    title: str, optional
+        The title of the plot (default: "Voronoi Cost Landscape")
     bounds : numpy.ndarray, optional
         A 2x2 array specifying the [min, max] bounds for each parameter. If None, uses
         `cost.parameters.get_bounds_for_plotly`.
@@ -251,11 +257,20 @@ def surface(
         Resolution of the plot. Default is 500.
     show : bool, optional
         If True, the figure is shown upon creation (default: True).
-    **layout_kwargs : optional
-        Valid Plotly layout keys and their values,
-        e.g. `xaxis_title="Time [s]"` or
-        `xaxis={"title": "Time [s]", font={"size":14}}`
+    backend: str or pybop.plot.backends.PlotBackend, optional
+        The plotting backend to be used.
+    figures: figure object, optional
+        Figure for plotting. If not provided a new figure is created.
+    axes: axis, optional
+        The axes to be used for plotting. A single axis is expected.
+
+    Returns
+    -------
+    None: if show is True
+    Figure object: if show is False
+
     """
+    backend = get_backend_from_figure(backend, figures)
     points = result.x_model
     parameters = result.problem.parameters
 
@@ -319,106 +334,112 @@ def surface(
     )
 
     # Construct figure
-    go = PlotlyManager().go
-    fig = go.Figure()
-
-    # Heatmap
-    fig.add_trace(
-        go.Heatmap(
-            x=xi[0],
-            y=yi[:, 0],
-            z=zi,
-            colorscale="Viridis",
-            zsmooth="best",
-        )
+    names = parameters.names
+    num_plots = 1
+    figures, axes, create_figure, _ = backend.parse_input_axes(
+        figures, axes, num_plots=num_plots
     )
+    if create_figure:
+        fig = backend.create_figure(
+            style={
+                "width": 600,
+                "height": 600,
+            },
+        )
+        ax = None
+    else:
+        fig = figures[0]
+        ax = axes[0]
+
+    backend.update_axes_titles(fig, ax, names[0], names[1])
+    backend.update_plot_titles(fig, ax, title, pad=30)
+    backend.update_axes_ranges(fig, ax, xlim, ylim)
+
+    backend.plot_trace(
+        backend.heatmap(xi[0], yi[:, 0], zi, colorscale="viridis"), fig, ax=ax
+    )
+    backend.colorbar(fig, f, ax=ax)
 
     # Add Voronoi edges
     for region, size in zip(regions, relative_sizes, strict=False):
         x_region = region[:, 0].tolist() + [region[0, 0]]
         y_region = region[:, 1].tolist() + [region[0, 1]]
 
-        fig.add_trace(
-            go.Scatter(
-                x=x_region,
-                y=y_region,
-                mode="lines",
-                line=dict(color="white", width=0.5 + size * 0.1),
-                showlegend=False,
-            )
+        backend.plot_trace(
+            backend.line(
+                x_region,
+                y_region,
+                style=dict(color="white", linewidth=0.5 + size * 0.1),
+            ),
+            fig,
+            ax=ax,
         )
 
     # Add original points
-    fig.add_trace(
-        go.Scatter(
+    backend.plot_trace(
+        backend.scatter(
             x=x_optim,
             y=y_optim,
-            mode="markers",
-            marker=dict(
-                color=[i / len(x_optim) for i in range(len(x_optim))],
-                colorscale="Greys",
-                size=8,
-                showscale=False,
-            ),
-            text=[f"f={val:.2f}" for val in f],
-            hoverinfo="text",
-            showlegend=False,
-        )
+            colors=[i / len(x_optim) for i in range(len(x_optim))],
+            labels=[f"f={val:.2f}" for val in f],
+        ),
+        fig,
+        ax=ax,
     )
 
     # Plot the initial guess
     if len(result.x_model) > 0:
         x0 = result.x_model[0]
-        fig.add_trace(
-            go.Scatter(
+        backend.plot_trace(
+            backend.line(
                 x=[x0[0]],
                 y=[x0[1]],
-                mode="markers",
-                marker_symbol="x",
-                marker=dict(
-                    color="white",
-                    line_color="black",
-                    line_width=1,
-                    size=14,
-                    showscale=False,
+                label="Initial values",
+                style=dict(
+                    marker="X",
+                    markersize=14,
+                    markerfacecolor="white",
+                    markeredgecolor="black",
+                    linestyle="none",
+                    zorder=2.6,
                 ),
-                name="Initial values",
-            )
+            ),
+            fig,
+            ax=ax,
         )
 
         # Plot optimised value
         if result.x is not None:
             x_best = result.x
-            fig.add_trace(
-                go.Scatter(
+            backend.plot_trace(
+                backend.line(
                     x=[x_best[0]],
                     y=[x_best[1]],
-                    mode="markers",
-                    marker_symbol="cross",
-                    marker=dict(
-                        color="black",
-                        line_color="white",
-                        line_width=1,
-                        size=14,
-                        showscale=False,
+                    label="Final values",
+                    style=dict(
+                        marker="P",
+                        markersize=14,
+                        markerfacecolor="black",
+                        markeredgecolor="white",
+                        linestyle="none",
+                        zorder=2.6,
                     ),
-                    name="Final values",
-                )
+                ),
+                fig,
+                ax=ax,
             )
 
-    names = parameters.names
-    fig.update_layout(
-        title="Voronoi Cost Landscape",
-        title_x=0.5,
-        title_y=0.905,
-        xaxis_title=names[0],
-        yaxis_title=names[1],
-        width=600,
-        height=600,
-        xaxis=dict(range=xlim, showexponent="last", exponentformat="e"),
-        yaxis=dict(range=ylim, showexponent="last", exponentformat="e"),
-        legend=dict(orientation="h", yanchor="bottom", y=1, xanchor="right", x=1),
+    backend.legend(
+        fig,
+        style={
+            "horizontal": True,
+            "loc": "lower left",
+            "coords": (0, 1),
+        },
+        axes=ax,
     )
-    fig.update_layout(**layout_kwargs)
+
     if show:
-        fig.show()
+        backend.show_figure(fig)
+    else:
+        return fig
