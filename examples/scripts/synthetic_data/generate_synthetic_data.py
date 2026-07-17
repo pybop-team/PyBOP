@@ -5,6 +5,7 @@ Outputs are written to:
   - examples/data/<Cell type>/<Cell format>/<Cell label>/
 """
 
+import json
 from pathlib import Path
 
 import pybamm
@@ -18,12 +19,14 @@ archive_root = SCRIPT_DIR.parent.parent / "data"
 
 model_class = pybamm.lithium_ion.DFN
 full_cell_parameters = pybamm.ParameterValues("Chen2020")
+cell_type = "LG M50 Synthetic"
+cell_label = "C02"
 
 """ Generate time-domain data for the LG M50. """
 cell_info = {
-    "Cell type": "LG M50 Synthetic",
+    "Cell type": cell_type,
     "Cell format": "full cell",
-    "Cell label": "C02",
+    "Cell label": cell_label,
 }
 model_options = None
 full_cell_model = model_class(model_options)
@@ -46,7 +49,7 @@ pybop.pybamm.archive_data(cell=cell, archive_root=archive_root)
 
 """ Generate EIS data for the LG M50. """
 cell_info = {
-    "Cell type": "LG M50 Synthetic",
+    "Cell type": cell_type,
     "Cell format": "full cell",
     "Cell label": "EIS",
 }
@@ -62,7 +65,7 @@ pybop.pybamm.archive_data(cell=cell, archive_root=archive_root)
 
 """ Generate time-domain data for the negative electrode of the LG M50. """
 cell_info = {
-    "Cell type": "LG M50 Synthetic",
+    "Cell type": cell_type,
     "Cell format": "negative half cell",
     "Cell label": "neg_01",
 }
@@ -84,7 +87,7 @@ pybop.pybamm.archive_data(cell=cell, archive_root=archive_root)
 
 """ Generate time-domain data for the positive electrode of the LG M50. """
 cell_info = {
-    "Cell type": "LG M50 Synthetic",
+    "Cell type": cell_type,
     "Cell format": "positive half cell",
     "Cell label": "pos_01",
 }
@@ -101,3 +104,23 @@ cell = pybop.pybamm.simulate_procedure(
     spec_path=procedure_root / "pOCP positive.json",
 )
 pybop.pybamm.archive_data(cell=cell, archive_root=archive_root)
+
+# Associate all the synthetic data with the full-cell data
+archive = (
+    archive_root / cell_info["Cell type"] / "Full cell" / cell_label / "metadata.json"
+)
+with open(archive) as file:
+    metadata = json.load(file)
+    cell_label = metadata["info"]["Cell label"]
+    cell_format = metadata["info"].get("Cell format", "")
+
+    associated_data = {}
+    associated_data["Negative electrode"] = "../../Half cell negative/neg_01"
+    associated_data["Positive electrode"] = "../../Half cell positive/pos_01"
+    associated_data["Full-cell EIS"] = "../EIS"
+
+    metadata["info"]["Associated"] = associated_data
+
+    json_clean = json.dumps(metadata, indent=4)
+    with open(archive, "w") as file:
+        file.write(json_clean + "\n")
