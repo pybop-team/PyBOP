@@ -37,7 +37,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-plot = ["plotly>=6"]
+plotly = ["plotly>=6"]
 scienceplots = ["SciencePlots>=2.2"]
 salib = ["SALib>=1.5"]
 scifem = [
@@ -53,7 +53,7 @@ ep-bolfi = [
 pyprobe = [
   "PyProBE-Data>=2.6.0;python_version >= '3.11' and python_version < '3.13'"
 ]
-all = ["pybop[plot,scienceplots,salib,scifem,bpx,pyprobe,ep-bolfi]"]
+all = ["pybop[plotly,scienceplots,salib,scifem,bpx,pyprobe,ep-bolfi]"]
 
 [dependency-groups]
 docs = [
