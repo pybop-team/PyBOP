@@ -319,9 +319,8 @@ examples/**/*.json
 !examples/parameters/example_BPX.json
 !examples/parameters/initial_ecm_parameters.json
 examples/**/*.svg
+examples/**/*.pkl
 examples/**/*.pickle
-!examples/scripts/dfn_parameterisation/**/params_charge.pickle
-!examples/scripts/dfn_parameterisation/**/params_discharge.pickle
 
 # Pycharm
 *.idea/
