@@ -28,7 +28,7 @@ cell_info = {
     "Cell format": "full cell",
     "Cell label": cell_label,
 }
-model_options = None
+model_options = {"thermal": "lumped", "contact resistance": "true"}
 full_cell_model = model_class(model_options)
 full_cell_parameters["Nominal cell capacity [A.h]"] = 5.0
 procedures = [
@@ -53,7 +53,7 @@ cell_info = {
     "Cell format": "full cell",
     "Cell label": "EIS",
 }
-model_options = {"surface form": "differential"}
+model_options.update({"surface form": "differential"})
 full_cell_eis_model = model_class(model_options)
 cell = pybop.pybamm.simulate_procedure(
     info=cell_info,
@@ -72,7 +72,7 @@ cell_info = {
 model_options = {
     "working electrode": "positive"
 }  # PyBaMM uses "positive" for all half-cells
-negative_electrode_model = model_class({"working electrode": "positive"})
+negative_electrode_model = model_class(model_options)
 negative_electrode_parameters = pybop.pybamm.convert_to_half_cell_parameters(
     full_cell_parameters, "negative"
 )
@@ -92,7 +92,7 @@ cell_info = {
     "Cell label": "pos_01",
 }
 model_options = {"working electrode": "positive"}
-positive_electrode_model = model_class({"working electrode": "positive"})
+positive_electrode_model = model_class(model_options)
 positive_electrode_parameters = pybop.pybamm.convert_to_half_cell_parameters(
     full_cell_parameters, "positive"
 )
