@@ -314,9 +314,14 @@ $RECYCLE.BIN/
 # Visual Studio Code settings
 .vscode/*
 
-# Output JSON files
-**/fit_ecm_parameters.json
-results/
+# Output files
+examples/**/*.json
+!examples/parameters/example_BPX.json
+!examples/parameters/initial_ecm_parameters.json
+examples/**/*.svg
+examples/**/*.pickle
+!examples/scripts/dfn_parameterisation/**/params_charge.pickle
+!examples/scripts/dfn_parameterisation/**/params_discharge.pickle
 
 # Pycharm
 *.idea/
