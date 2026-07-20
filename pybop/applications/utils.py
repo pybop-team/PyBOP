@@ -6,6 +6,31 @@ import pyprobe
 from pybop import Interpolant
 
 
+class OpenCircuitVoltage:
+    def __init__(
+        self,
+        positive_ocp_function,
+        sto_p_0,
+        sto_p_100,
+        negative_ocp_function,
+        sto_n_0,
+        sto_n_100,
+    ):
+        self.positive_ocp_function = positive_ocp_function
+        self.sto_p_0 = sto_p_0
+        self.sto_p_100 = sto_p_100
+        self.negative_ocp_function = negative_ocp_function
+        self.sto_n_0 = sto_n_0
+        self.sto_n_100 = sto_n_100
+
+    def __call__(self, soc):
+        return self.positive_ocp_function(
+            self.sto_p_0 + (self.sto_p_100 - self.sto_p_0) * soc
+        ) - self.negative_ocp_function(
+            self.sto_n_0 + (self.sto_n_100 - self.sto_n_0) * soc
+        )
+
+
 def get_cells(match: str = "C0"):
     # Define the script's directory to resolve relative paths
     SCRIPT_DIR = Path(__file__).parent

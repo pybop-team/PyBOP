@@ -8,7 +8,7 @@ import scienceplots  # noqa: F401
 from pyprobe.analysis import smoothing
 
 import pybop
-from pybop.applications.utils import get_cells, get_ocp_functions
+from pybop.applications.utils import OpenCircuitVoltage, get_cells, get_ocp_functions
 
 """
 Our data is stored in this folder structure:
@@ -216,7 +216,7 @@ for cell in get_cells():
     print(result, "\n")
 
     for i, (direction, model_param, dataset, problem, CE) in enumerate(
-        zip(["charge", "discharge"], params, datasets, problems, CEs)
+        zip(["charge", "discharge"], params, datasets, problems, CEs, strict=False)
     ):
         print("Direction:", direction)
 
@@ -261,11 +261,14 @@ for cell in get_cells():
 
         # Find the stoichiometry limits and capacity corresponding to the voltage limits
         # (rather than the voltage range of the measurement, although should be similar)
-
-        def measured_ocv_function(naive_soc):
-            return positive_ocp_function(
-                sto_p_0 + (sto_p_100 - sto_p_0) * naive_soc
-            ) - negative_ocp_function(sto_n_0 + (sto_n_100 - sto_n_0) * naive_soc)
+        measured_ocv_function = OpenCircuitVoltage(
+            positive_ocp_function,
+            sto_p_0,
+            sto_p_100,
+            negative_ocp_function,
+            sto_n_0,
+            sto_n_100,
+        )
 
         # Obtain naive SoC values corresponding to the voltages limits
         inverse_measured_ocv = pybop.InverseOCV(measured_ocv_function)
@@ -280,11 +283,14 @@ for cell in get_cells():
         # Convert from the naive SOC to SOC based on the voltage limits
         dataset["SoC"] = (dataset["Naive SoC"] - lower_soc) / (upper_soc - lower_soc)
         Q_soc = Q_cell * (upper_soc - lower_soc)
-
-        def ocv_function(soc):
-            return positive_ocp_function(
-                y_0 + (y_100 - y_0) * soc
-            ) - negative_ocp_function(x_0 + (x_100 - x_0) * soc)
+        ocv_function = OpenCircuitVoltage(
+            positive_ocp_function,
+            y_0,
+            y_100,
+            negative_ocp_function,
+            x_0,
+            x_100,
+        )
 
         # Plot the whole range of electrode lithiation
         colour = "tab:red" if direction == "charge" else "tab:blue"
