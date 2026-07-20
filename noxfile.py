@@ -51,7 +51,7 @@ def coverage(session):
 @nox.session
 def plots(session):
     """Run the tests that generate plots."""
-    session.install("-e", ".[plot]", "--upgrade", silent=False)
+    session.install("-e", ".[plotly]", "--upgrade", silent=False)
     session.install(*nox.project.dependency_groups(PYPROJECT, "dev"), silent=False)
     session.install("pip")
     session.run("pytest", "--plots", "-n", "0")
@@ -135,7 +135,7 @@ def run_doc_tests(session):
     Checks if the documentation can be built, runs any doctests (currently not
     used).
     """
-    session.install("-e", ".[plot]", "--upgrade", silent=False)
+    session.install("-e", ".[plotly]", "--upgrade", silent=False)
     session.install(
         *nox.project.dependency_groups(PYPROJECT, "dev", "docs"), silent=False
     )

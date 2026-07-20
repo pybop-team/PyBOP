@@ -44,11 +44,11 @@ In editable mode, changes you make to the source code will immediately affect th
 
 Optional Dependencies
 ---------------------
-``plotly`` - For plotting, PyBOP uses `plotly <https://plotly.com/python/>`_. It can be installed with:
+``plotly`` - For plotting, PyBOP uses `matlplotlib <https://matplotlib.org/>`_ or `plotly <https://plotly.com/python/>`_. Plotly can be installed with:
 
 .. code-block:: console
 
-    pip install pybop[plot]
+    pip install pybop[plotly]
 
 ``salib`` - To compute sensitivities, PyBOP can be paired with the `Sensitivity Analysis Library (SALib) <https://salib.readthedocs.io/en/latest/>`_:
 
