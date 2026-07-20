@@ -2,7 +2,6 @@ from collections.abc import Callable
 from pathlib import Path
 
 import polars as pl
-import pyprobe
 
 from pybop import Interpolant
 
@@ -33,6 +32,8 @@ class OpenCircuitVoltage:
 
 
 def get_cells(match: str = "C0"):
+    import pyprobe
+
     # Define the script's directory to resolve relative paths
     SCRIPT_DIR = Path(__file__).parent
     archive_root = SCRIPT_DIR.parent.parent / "examples" / "data"

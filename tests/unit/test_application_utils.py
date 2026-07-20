@@ -1,3 +1,4 @@
+import sys
 from copy import copy
 from types import SimpleNamespace
 
@@ -12,6 +13,7 @@ from pybamm.models.full_battery_models.lithium_ion.electrode_soh import (
 import pybop
 from pybop.applications.utils import (
     OpenCircuitVoltage,
+    get_cells,
     get_ocp_functions,
     make_voltage_monotonic,
 )
@@ -79,3 +81,13 @@ class TestUtils:
         data.lf = pl.LazyFrame({"Voltage [V]": copy(voltage)})
         data = make_voltage_monotonic(data)
         assert np.all(data.lf["Voltage [V]"].to_numpy() >= voltage)
+
+    @pytest.mark.skipif(
+        sys.version_info < (3, 11), reason="requires a python version >= 3.11"
+    )
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 13), reason="requires a python version < 3.13"
+    )
+    def test_get_cells(self):
+        cells = get_cells()
+        assert isinstance(cells, list)
