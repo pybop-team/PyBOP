@@ -35,6 +35,7 @@ parser.add_argument("--show-plots", action="store_true", help="Show plots")
 args = parser.parse_args()
 
 plt.style.use("science")
+plt.rcParams.update({"text.usetex": False})  # users can remove this line
 
 # Options
 smoothing_options = {
