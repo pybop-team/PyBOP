@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from pathlib import Path
 
 import polars as pl
@@ -9,12 +10,12 @@ from pybop import Interpolant
 class OpenCircuitVoltage:
     def __init__(
         self,
-        positive_ocp_function,
-        sto_p_0,
-        sto_p_100,
-        negative_ocp_function,
-        sto_n_0,
-        sto_n_100,
+        positive_ocp_function: Callable,
+        sto_p_0: float,
+        sto_p_100: float,
+        negative_ocp_function: Callable,
+        sto_n_0: float,
+        sto_n_100: float,
     ):
         self.positive_ocp_function = positive_ocp_function
         self.sto_p_0 = sto_p_0

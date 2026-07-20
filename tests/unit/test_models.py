@@ -88,7 +88,7 @@ class TestModels:
                     param.set_initial_state("-1 V")
 
 
-class TestUtils:
+class TestModelUtils:
     """
     A class to test PyBOP models utility functions.
     """
