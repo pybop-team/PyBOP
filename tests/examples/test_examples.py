@@ -31,5 +31,15 @@ class TestExamples:
             and os.path.basename(example) == "bayesian_feature_fitting.py"
         ):
             pytest.skip("This example requires a python version < 3.13")
+        elif (
+            sys.version_info < (3, 11)
+            and os.path.basename(example) == "generate_synthetic_data.py"
+        ):
+            pytest.skip("This example requires a python version >= 3.11")
+        elif (
+            sys.version_info >= (3, 13)
+            and os.path.basename(example) == "generate_synthetic_data.py"
+        ):
+            pytest.skip("This example requires a python version < 3.13")
         else:
             runpy.run_path(example)
