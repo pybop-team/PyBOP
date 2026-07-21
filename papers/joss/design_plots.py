@@ -12,9 +12,10 @@ import pybamm
 from pybamm import Parameter
 
 import pybop
-from pybop.plot import PlotlyManager
+from pybop.plot.backends import PlotlyManager
 
 go = PlotlyManager().go
+pybop.plot.use_backend("plotly")
 np.random.seed(8)
 axis_font_size = 24
 tick_font_size = 20
@@ -98,10 +99,8 @@ optimised_energy_density = problem(result.x)
 
 if create_plot["gravimetric"]:
     # Plot the cost landscape with optimisation path
-    gravimetric_fig = pybop.plot.contour(
-        result,
-        steps=25,
-        show=False,
+    gravimetric_fig = pybop.plot.contour(result, steps=25, show=False)
+    gravimetric_fig.update_layout(
         xaxis=dict(
             title=dict(
                 text="Positive electrode thickness / m", font_size=axis_font_size
@@ -124,13 +123,17 @@ if create_plot["gravimetric"]:
     )
     gravimetric_fig.write_image("figures/individual/design_gravimetric.pdf")
 
+
 if create_plot["prediction"]:
     # Plot the timeseries output
     problem.set_target("Voltage [V]")
-    figs = pybop.plot.problem(
+    prediction_fig = pybop.plot.problem(
         problem,
         inputs=result.best_inputs,
         title=None,
+        show=False,
+    )
+    prediction_fig.update_layout(
         legend=dict(
             orientation="h",
             yanchor="bottom",
@@ -156,10 +159,8 @@ if create_plot["prediction"]:
             tickfont_size=tick_font_size,
         ),
         margin=dict(t=60, b=84, r=50, l=15),
-        show=False,
     )
 
-    prediction_fig = figs[0]
     prediction_fig.data[1].update(line=dict(color="#00CC97"))
     prediction_fig.data[
         0

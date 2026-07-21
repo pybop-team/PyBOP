@@ -8,7 +8,7 @@ import pybamm
 import pytest
 
 import pybop
-from pybop.plot import PlotlyManager
+from pybop.plot.backends import PlotlyManager
 
 # Find the Python executable
 python_executable = which("python")
@@ -129,21 +129,9 @@ def dataset(plotly_installed):
 
 
 @pytest.mark.unit
-def test_standard_plot(dataset, plotly_installed):
-    # Check the StandardPlot class
-    pybop.plot.StandardPlot(dataset["Time [s]"], dataset["Voltage [V]"])
-
-    # Check the StandardSubplot class
-    pybop.plot.StandardSubplot(
-        dataset["Time [s]"],
-        [dataset["Voltage [V]"], dataset["Current [A]"]],
-        num_rows=1,
-    )
-    pybop.plot.StandardSubplot(
-        dataset["Time [s]"],
-        [dataset["Voltage [V]"], dataset["Current [A]"]],
-        num_cols=1,
-    )
+def test_trajectories_plot(dataset, plotly_installed):
+    # Set plotting backend
+    pybop.plot.use_backend("plotly")
 
     # Check plot numpy arrays, lists, and lists of numpy arrays
     pybop.plot.trajectories(dataset["Time [s]"], dataset["Voltage [V]"])
@@ -169,6 +157,9 @@ def test_standard_plot(dataset, plotly_installed):
 
 @pytest.mark.unit
 def test_plot_dataset(dataset, plotly_installed):
+    # Set plotting backend
+    pybop.plot.use_backend("plotly")
+
     # Test plot of a dataset
     pybop.plot.dataset(dataset, signal=["Voltage [V]"])
     pybop.plot.dataset(dataset, signal=["Voltage [V]", "Current [A]"])

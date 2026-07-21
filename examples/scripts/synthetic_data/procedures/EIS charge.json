@@ -1,0 +1,42 @@
+{
+  "EIS charge": {
+    "Precondition": {
+      "Steps": [
+        0,
+        1,
+        2
+      ],
+      "Step Descriptions": [
+        "Discharge at C/10 until 2.5 V",
+        "Hold at 2.5 V until C/50",
+        "Rest for 2 hours"
+      ]
+    },
+    "EIS charge": {
+      "Type": "EIS",
+      "Steps": [
+        3,
+        4,
+        5
+      ],
+      "Step Descriptions": [
+        "Charge at C/10 for 1 hour",
+        "Rest for 4 hours",
+        "Potentiostatic EIS with 0.0042 V amplitude"
+      ],
+      "Cycles": [
+        [
+          3,
+          5,
+          9
+        ]
+      ],
+      "Frequencies [Hz]": {
+        "Min": 0.001,
+        "Max": 1000.0,
+        "Count": 65,
+        "Spacing": "log"
+      }
+    }
+  }
+}

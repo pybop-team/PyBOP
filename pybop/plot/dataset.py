@@ -1,7 +1,10 @@
-from pybop.plot.standard_plots import StandardPlot, trajectories
+from pybop.plot.trajectories import trajectories
+from pybop.plot.util import get_backend_from_figure, remove_brackets
 
 
-def dataset(dataset, signal=None, trace_names=None, show=True, **layout_kwargs):
+def dataset(
+    dataset, signal=None, labels=None, show=True, backend=None, figures=None, axes=None
+):
     """
     Quickly plot a PyBOP Dataset using Plotly.
 
@@ -11,20 +14,25 @@ def dataset(dataset, signal=None, trace_names=None, show=True, **layout_kwargs):
         A PyBOP dataset.
     signal : list or str, optional
         The name of the time series to plot (default: "Voltage [V]").
-    trace_names : list or str, optional
+    labels : list or str, optional
         Name(s) for the trace(s) (default: "Data").
     show : bool, optional
         If True, the figure is shown upon creation (default: True).
-    **layout_kwargs : optional
-        Valid Plotly layout keys and their values,
-        e.g. `xaxis_title="Time / s"` or
-        `xaxis={"title": "Time [s]", font={"size":14}}`
+    backend: str or pybop.plot.backends.PlotBackend, optional
+        The plotting backend to be used.
+    figures: figure object, optional
+        Figure for plotting. If not provided a new figure is created
+    axes: axis, optional
+        Thes axis to be used for plotting
+        plotly: axis expected to be of the form tuple(row, col)
 
     Returns
     -------
-    plotly.graph_objs.Figure
-        The Plotly figure object for the scatter plot.
+    fig : if show is False; plotly.graph_objs.Figure or matplotlib.figure.Figure
+        The figure object for the scatter plot.
+    None : if show is True
     """
+    backend = get_backend_from_figure(backend, figures)
 
     # Get data dictionary
     if signal is None:
@@ -34,25 +42,28 @@ def dataset(dataset, signal=None, trace_names=None, show=True, **layout_kwargs):
     # Compile ydata and labels or legend
     y = [dataset[s] for s in signal]
     if len(signal) == 1:
-        yaxis_title = StandardPlot.remove_brackets(signal[0])
-        if trace_names is None:
-            trace_names = ["Data"]
+        yaxis_title = remove_brackets(signal[0])
+        if labels is None:
+            labels = ["Data"]
     else:
         yaxis_title = "Output"
-        if trace_names is None:
-            trace_names = StandardPlot.remove_brackets(signal)
+        if labels is None:
+            labels = remove_brackets(signal)
 
     # Create the figure
     fig = trajectories(
         x=dataset[dataset.domain],
         y=y,
-        trace_names=trace_names,
+        labels=labels,
         show=False,
-        xaxis_title=StandardPlot.remove_brackets(dataset.domain),
+        xaxis_title=remove_brackets(dataset.domain),
         yaxis_title=yaxis_title,
+        backend=backend,
+        figures=figures,
+        axes=axes,
     )
-    fig.update_layout(**layout_kwargs)
-    if show:
-        fig.show()
 
-    return fig
+    if show:
+        backend.show_figure(fig)
+    else:
+        return fig

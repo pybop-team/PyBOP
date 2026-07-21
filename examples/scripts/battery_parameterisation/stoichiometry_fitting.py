@@ -30,7 +30,7 @@ fig = pybop.plot.trajectories(
         parameter_values["Positive electrode OCP [V]"](stoichiometry),
         fitted_dataset["Voltage [V]"],
     ],
-    trace_names=["Ground truth", "Data vs. stoichiometry"],
+    labels=["Ground truth", "Data vs. stoichiometry"],
     xaxis_title="Stoichiometry",
     yaxis_title="Voltage / V",
 )

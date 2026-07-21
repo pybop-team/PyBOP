@@ -1,0 +1,37 @@
+{
+  "pOCP": {
+    "Precondition": {
+      "Steps": [
+        0,
+        1,
+        2
+      ],
+      "Step Descriptions": [
+        "Charge at C/10 until 1.5 V",
+        "Hold at 1.5 V until C/50",
+        "Rest for 2 hours"
+      ]
+    },
+    "Pseudo OCP": {
+      "Steps": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "Step Descriptions": [
+        "Discharge at C/30 until 0.09 V",
+        "Rest for 2 hours",
+        "Charge at C/30 until 1.5 V",
+        "Rest for 2 hours"
+      ],
+      "Cycles": [
+        [
+          3,
+          6,
+          2
+        ]
+      ]
+    }
+  }
+}
