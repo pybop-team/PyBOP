@@ -3,8 +3,9 @@ A script to generate design optimisation plots for the JOSS paper.
 
 NOTE: The design optimisation plots that appear in Figure 8 of the paper were
 unfortunately generated with a bug in simulator._create_experiment_simulation().
-PR 857 fixed and replaced this function with simulator.create_simulation().
-The two design plots in figures/individual were updated in July 2026.
+PR 857 fixed and replaced this function with simulator.create_simulation() in
+January 2026. The two design plots in figures/individual and one in
+figures/combined were updated in PR 966, July 2026.
 """
 
 import numpy as np
