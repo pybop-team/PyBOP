@@ -373,7 +373,9 @@ class Simulator(BaseSimulator):
                             print(f"Ignoring this sample due to: {e}")
                         solutions.append(
                             FailedSolution(
-                                self.output_variables, self._input_parameter_names
+                                self.output_variables
+                                or self._model.default_quick_plot_variables,
+                                self._input_parameter_names,
                             )
                         )
                 return solutions
@@ -429,7 +431,8 @@ class Simulator(BaseSimulator):
         for solution in solutions:
             if hasattr(solution, "termination") and solution.termination == "failure":
                 failed_solution = FailedSolution(
-                    self.output_variables, self._input_parameter_names
+                    self.output_variables or self._model.default_quick_plot_variables,
+                    self._input_parameter_names,
                 )
                 processed_solutions.append(failed_solution)
             else:
