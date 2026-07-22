@@ -18,10 +18,6 @@ class TestEvaluation:
         self.x_search = [1 / 0.25 * (self.x_model[0] - 0.375), np.log(self.x_model[1])]
 
     @pytest.fixture
-    def solver(self):
-        return pybamm.IDAKLUSolver(atol=5e-6, rtol=5e-6)
-
-    @pytest.fixture
     def model(self):
         return pybamm.lithium_ion.SPM()
 
@@ -45,21 +41,16 @@ class TestEvaluation:
         return pybamm.Experiment(["Discharge at 1C for 1 minutes (6 second period)"])
 
     @pytest.fixture
-    def dataset(self, model, experiment, solver):
-        solution = pybamm.Simulation(
-            model, experiment=experiment, solver=solver
-        ).solve()
+    def dataset(self, model, experiment):
+        solution = pybamm.Simulation(model, experiment=experiment).solve()
         return pybop.import_pybamm_solution(solution)
 
     @pytest.fixture
-    def simulator(self, model, parameters, dataset, solver, request):
+    def simulator(self, model, parameters, dataset, request):
         parameter_values = model.default_parameter_values
         parameter_values.update(parameters)
         return pybop.pybamm.Simulator(
-            model,
-            parameter_values=parameter_values,
-            protocol=dataset,
-            solver=solver,
+            model, parameter_values=parameter_values, protocol=dataset
         )
 
     @pytest.fixture(
