@@ -8,7 +8,7 @@ class RecommendedSolver(pybamm.IDAKLUSolver):
     """A shortcut for creating the PyBaMM solver recommended for optimisation."""
 
     def __init__(self, output_variables: list[str] | None = None):
-        solver_options = {}
+        solver_options = {"suppress_algebraic_error": True}
 
         if platform.system() != "Windows":
             solver_options["num_threads"] = max(1, mp.cpu_count())
