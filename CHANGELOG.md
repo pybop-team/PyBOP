@@ -10,6 +10,7 @@
 
 ## Optimisations
 
+- [#967](https://github.com/pybop-team/PyBOP/pull/967) - Add `Dataset.get_discontinuities` and update the `pybop.pybamm.RecommendedSolver` options.
 - [#946](https://github.com/pybop-team/PyBOP/pull/946) - Use `vectorized` evaluation for SciPy differential evolution by default instead of multiprocessing `workers`.
 - [#925](https://github.com/pybop-team/PyBOP/pull/925) - Add `UnboundedDistribution` and the `get_transformed_distribution` functionality.
 
