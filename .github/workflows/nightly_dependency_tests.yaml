@@ -57,7 +57,7 @@ jobs:
           uv pip install -e .[all]
           uv pip install --group dev
           uv pip uninstall pybamm
-          uv pip install "pybamm[all] @ git+https://github.com/pybamm-team/PyBaMM@main"
+          uv pip install --no-sources "pybamm[all] @ git+https://github.com/pybamm-team/PyBaMM@main#subdirectory=packages/pybamm"
           uv pip install pytest-reportlog
 
       - name: Install dependencies (lowest)

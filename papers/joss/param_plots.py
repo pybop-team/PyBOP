@@ -1,5 +1,6 @@
-# A script to generate parameterisation plots for the JOSS paper.
-
+"""
+A script to generate parameterisation plots for the JOSS paper.
+"""
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -455,6 +456,7 @@ if create_plot["gradient"]:
             optim.optimiser.b1 = 0.85
             optim.optimiser.b2 = 0.9
             optim.optimiser.lam = 0.005
+            optim.optimiser._alpha = np.asarray([1.0, 0.22222222])  # noqa: SLF001  # retain the initial step size used for paper
         if optimiser is pybop.GradientDescent:
             optim.optimiser.set_learning_rate(eta=[11, 4.5])
 

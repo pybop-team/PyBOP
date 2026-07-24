@@ -146,6 +146,21 @@ class Dataset:
             data, domain=self.domain, control_functions=self.control_functions
         )
 
+    def get_discontinuities(self, tol: float = 1e-6) -> np.ndarray:
+        """Returns the start, end and any discontinuous points in the domain data."""
+        discontinuities = [np.atleast_2d([0, len(self.data[self.domain]) - 1])]
+
+        # Check all control variables for discontinuities
+        for key in self.control_functions:
+            control_data = self.data[key.replace(" function", "")]
+            var_tol = np.max(np.abs(control_data)) * tol
+            d = np.asarray(np.where(np.abs(np.diff(control_data)) > var_tol))
+            discontinuities.append(d)
+            discontinuities.append(d + 1)
+
+        ind = np.unique(np.hstack(discontinuities))
+        return self.data[self.domain][ind]
+
     def get_interpolant(self, control: str = "Current [A]") -> Interpolant:
         """Returns a linear interpolant for the control as a function of the domain."""
 

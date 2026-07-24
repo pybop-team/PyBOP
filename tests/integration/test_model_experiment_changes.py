@@ -41,12 +41,8 @@ class TestModelAndExperimentChanges:
     def parameters_and_inputs(self, request):
         return request.param
 
-    @pytest.fixture
-    def solver(self):
-        return pybamm.IDAKLUSolver(atol=1e-6, rtol=1e-6)
-
     @pytest.mark.integration
-    def test_changing_experiment(self, parameters_and_inputs, solver):
+    def test_changing_experiment(self, parameters_and_inputs):
         parameters, inputs = parameters_and_inputs
         # Change the experiment and check that the results are different.
 
@@ -62,7 +58,6 @@ class TestModelAndExperimentChanges:
             parameter_values=parameter_values,
             initial_state=initial_state,
             protocol=t_eval,
-            solver=solver,
         )
         solution_1 = simulator_1.solve(inputs)
         cost_1 = self.final_cost(simulator_1, solution_1)
@@ -87,7 +82,7 @@ class TestModelAndExperimentChanges:
         np.testing.assert_allclose(cost_1, 0, atol=1e-5)
         np.testing.assert_allclose(cost_2, 0, atol=1e-5)
 
-    def test_changing_model(self, parameters_and_inputs, solver):
+    def test_changing_model(self, parameters_and_inputs):
         # Change the model and check that the results are different.
 
         parameter_values = pybamm.ParameterValues("Chen2020")
@@ -103,7 +98,6 @@ class TestModelAndExperimentChanges:
             parameter_values=parameter_values,
             protocol=experiment,
             initial_state=initial_state,
-            solver=solver,
         )
         solution_1 = simulator_1.solve(inputs)
         cost_1 = self.final_cost(simulator_1, solution_1)
@@ -114,7 +108,6 @@ class TestModelAndExperimentChanges:
             parameter_values=parameter_values,
             protocol=experiment,
             initial_state=initial_state,
-            solver=solver,
         )
         solution_2 = simulator_2.solve(inputs)
         cost_2 = self.final_cost(simulator_2, solution_2)
@@ -138,7 +131,7 @@ class TestModelAndExperimentChanges:
         result = optim.run()
         return result.best_cost
 
-    def test_multi_fitting_problem(self, solver):
+    def test_multi_fitting_problem(self):
         parameter_values = pybamm.ParameterValues("Chen2020")
         ground_truth = parameter_values[
             "Negative electrode active material volume fraction"
@@ -148,7 +141,7 @@ class TestModelAndExperimentChanges:
         experiment_1 = pybamm.Experiment(
             ["Discharge at 0.5C for 5 minutes (10 seconds period)"]
         )
-        dataset_1 = self.get_data(model_1, parameter_values, experiment_1, solver)
+        dataset_1 = self.get_data(model_1, parameter_values, experiment_1)
 
         parameter_values.update(
             {
@@ -158,10 +151,7 @@ class TestModelAndExperimentChanges:
             }
         )
         simulator_1 = pybop.pybamm.Simulator(
-            model_1,
-            parameter_values=parameter_values,
-            protocol=dataset_1,
-            solver=solver,
+            model_1, parameter_values=parameter_values, protocol=dataset_1
         )
 
         parameter_values.update(
@@ -171,7 +161,7 @@ class TestModelAndExperimentChanges:
         experiment_2 = pybamm.Experiment(
             ["Discharge at 1C for 3 minutes (10 seconds period)"]
         )
-        dataset_2 = self.get_data(model_2, parameter_values, experiment_2, solver)
+        dataset_2 = self.get_data(model_2, parameter_values, experiment_2)
 
         parameter_values.update(
             {
@@ -181,10 +171,7 @@ class TestModelAndExperimentChanges:
             }
         )
         simulator_2 = pybop.pybamm.Simulator(
-            model_2,
-            parameter_values=parameter_values,
-            protocol=dataset_2,
-            solver=solver,
+            model_2, parameter_values=parameter_values, protocol=dataset_2
         )
 
         # Define a problem for each dataset and combine them into one
@@ -204,11 +191,11 @@ class TestModelAndExperimentChanges:
             np.testing.assert_allclose(result.x, ground_truth, atol=2e-5)
             np.testing.assert_allclose(result.best_cost, 0, atol=3e-5)
 
-    def get_data(self, model, parameter_values, experiment, solver):
+    def get_data(self, model, parameter_values, experiment):
         solution = pybamm.Simulation(
             model,
             parameter_values=parameter_values,
             experiment=experiment,
-            solver=solver,
+            solver=pybop.pybamm.RecommendedSolver(),
         ).solve()
         return pybop.import_pybamm_solution(solution)
