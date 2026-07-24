@@ -113,9 +113,8 @@ class TestUtils:
         cell = cells[0]
         assert isinstance(cell, pyprobe.Cell)
 
-        charge_dataset = pybop.import_pyprobe_result(
-            cell.procedure["pOCV"].experiment("Pseudo OCV").cycle(0).charge().step(0)
-        )
+        cycle = cell.procedure["pOCV"].experiment("Pseudo OCV").cycle(0)
+        charge_dataset = pybop.import_pyprobe_result(cycle.charge().step(0))
         dataset = pybop.import_pyprobe_result(
             filter_with_preceding_row(
                 cell.procedure["pOCV"],
@@ -126,3 +125,27 @@ class TestUtils:
             )
         )
         assert len(dataset) == len(charge_dataset) + 1
+
+        discharge_dataset = pybop.import_pyprobe_result(cycle.discharge().step(0))
+        dataset = pybop.import_pyprobe_result(
+            filter_with_preceding_row(
+                cell.procedure["pOCV"],
+                experiment="Pseudo OCV",
+                cycle=0,
+                phase="discharge",
+                step=0,
+            )
+        )
+        assert len(dataset) == len(discharge_dataset) + 1
+
+        rest_dataset = pybop.import_pyprobe_result(cycle.rest().step(0))
+        dataset = pybop.import_pyprobe_result(
+            filter_with_preceding_row(
+                cell.procedure["pOCV"],
+                experiment="Pseudo OCV",
+                cycle=0,
+                phase="rest",
+                step=0,
+            )
+        )
+        assert len(dataset) == len(rest_dataset) + 1
