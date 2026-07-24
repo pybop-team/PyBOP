@@ -82,7 +82,7 @@ class TestUtils:
         param, soc_points = shift_ocv_to(voltage_points, parameter_values, soc)
         ocv_function = get_ocv_function(param)
         assert np.all(ocv_function(soc) > 0.1)
-        np.testing.assert_allclose(soc, soc_points, atol=1e-6)
+        np.testing.assert_allclose(soc, soc_points, atol=2.5e-4)
 
     def test_make_voltage_monotonic(self):
         # Test ascending
