@@ -34,6 +34,7 @@ full_cell_parameters["Nominal cell capacity [A.h]"] = 5.0
 procedures = [
     "Capacity determination.json",
     "pOCV.json",
+    "Temperature experiment.json",
     "GITT.json",
     "Validation cycling.json",
     "Validation different SOC.json",
