@@ -25,6 +25,7 @@
                 "Current": "The current through the cell.",
                 "Voltage": "The terminal voltage.",
                 "Capacity": "The net charge passed since the start of the procedure.",
+                "Temperature": "The temperature of the cell.",
                 "Procedure Time": "Time elapsed since beginning of procedure.",
                 "Procedure Capacity": "The net charge passed since beginning of procedure."
             },
