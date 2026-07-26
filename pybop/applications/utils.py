@@ -1,9 +1,8 @@
 from collections.abc import Callable
-from pathlib import Path
 
 import polars as pl
 
-from pybop import Interpolant
+from pybop import Interpolant, script_path
 
 
 class OpenCircuitVoltage:
@@ -34,9 +33,8 @@ class OpenCircuitVoltage:
 def get_cells(match: str = "C0"):
     import pyprobe
 
-    # Define the script's directory to resolve relative paths
-    SCRIPT_DIR = Path(__file__).parent
-    archive_root = SCRIPT_DIR.parent.parent / "examples" / "data"
+    # Define paths relative to the pybop directory
+    archive_root = script_path / "../examples/data"
 
     if not archive_root.is_dir():
         raise FileNotFoundError(f"No such directory: {archive_root}")
