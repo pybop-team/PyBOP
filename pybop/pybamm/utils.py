@@ -1,7 +1,9 @@
 import multiprocessing as mp
 import platform
+from concurrent.futures import TimeoutError as CFTimeoutError
 
 import pybamm
+from pebble import ProcessPool
 
 
 class RecommendedSolver(pybamm.IDAKLUSolver):
@@ -20,6 +22,88 @@ class RecommendedSolver(pybamm.IDAKLUSolver):
             options=solver_options,
             output_variables=output_variables,
         )
+
+
+class SafeSolver(pybamm.CasadiSolver):
+    """
+    A version of PyBaMM's CasadiSolver with a timeout option.
+
+    Additional parameters
+    ---------------------
+    timeout : float, optional
+        If timeout is a positive number, simulations are terminated after timeout
+        seconds if not completed successfully within this time. Default is None.
+    """
+
+    def __init__(self, timeout: float | None = None, **kwargs):
+        super().__init__(**kwargs)
+        self.timeout = timeout
+
+    def _integrate(
+        self,
+        model: pybamm.BaseModel,
+        t_eval,
+        inputs_list: list[dict] | None = None,
+        t_interp=None,
+        nproc=1,
+    ):
+        """
+        Solve a DAE model defined by residuals with initial conditions y0.
+
+        Parameters
+        ----------
+        model : :class:`pybamm.BaseModel`
+            The model whose solution to calculate.
+        t_eval : numeric type
+            The times at which to compute the solution
+        inputs_list : list of dict, optional
+            Any input parameters to pass to the model when solving
+        """
+
+        inputs_list = inputs_list or [{}]
+
+        ninputs = len(inputs_list)
+        if ninputs == 1 and self.timeout is None:
+            new_solution = self._integrate_single(
+                model,
+                t_eval,
+                inputs_list[0],
+                model.y0_list[0],
+            )
+            new_solutions = [new_solution]
+        else:
+            with ProcessPool(
+                context=mp.get_context(self._mp_context),
+                max_workers=nproc or mp.cpu_count(),
+            ) as p:
+                model_list = [model] * ninputs
+                t_eval_list = [t_eval] * ninputs
+                y0_list = model.y0_list
+
+                futures = p.map(
+                    self._integrate_single,
+                    model_list,
+                    t_eval_list,
+                    inputs_list,
+                    y0_list,
+                    timeout=self.timeout,
+                )
+                iterator = futures.result()
+
+                new_solutions = []
+                while True:
+                    try:
+                        new_solutions.append(next(iterator))
+                    except StopIteration:
+                        break
+                    except (TimeoutError, CFTimeoutError) as e:
+                        raise pybamm.SolverError(
+                            f"Timeout after {e.args[1]:.1f} seconds."
+                        ) from e
+                    except Exception as e:
+                        raise pybamm.SolverError(str(e)) from None
+
+        return new_solutions
 
 
 class SymbolReplacer:
