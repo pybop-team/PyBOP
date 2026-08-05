@@ -6,16 +6,14 @@ Outputs are written to:
 """
 
 import json
-from pathlib import Path
 
 import pybamm
 
 import pybop
 
-# Define the script's directory to resolve relative paths
-SCRIPT_DIR = Path(__file__).parent
-procedure_root = SCRIPT_DIR / "procedures"
-archive_root = SCRIPT_DIR.parent.parent / "data"
+# Define paths relative to the pybop directory
+procedure_root = pybop.script_path / "../examples/scripts/synthetic_data/procedures"
+archive_root = pybop.script_path / "../examples/data"
 
 model_class = pybamm.lithium_ion.DFN
 full_cell_parameters = pybamm.ParameterValues("Chen2020")

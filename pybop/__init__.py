@@ -6,7 +6,7 @@
 # (see https://github.com/pints-team/pints)
 #
 import sys
-from os import path
+from pathlib import Path
 
 #
 # Version info
@@ -20,7 +20,7 @@ from pybop._version import __version__
 # loss of information
 FLOAT_FORMAT = "{: .17e}"
 # Absolute path to the pybop repo
-script_path = path.dirname(__file__)
+script_path = Path(__file__).parent
 
 #
 # Utilities

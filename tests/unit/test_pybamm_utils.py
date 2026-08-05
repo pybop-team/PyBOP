@@ -6,7 +6,7 @@ import pytest
 
 import pybop
 
-PROCEDURE_DIR = Path("examples") / "scripts" / "synthetic_data" / "procedures"
+PROCEDURE_DIR = Path("examples") / "scripts/synthetic_data/procedures"
 
 
 @pytest.mark.skipif(

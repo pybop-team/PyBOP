@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 
 import numpy as np
 import pybamm
@@ -56,17 +56,19 @@ optim = pybop.PSO(problem, options=options)
 # Run the optimisation
 result = optim.run()
 
+# Define paths relative to the script's directory
+save_path = Path(__file__).parent / "results"
+save_path.mkdir(exist_ok=True)
+
 # Save the result: either pickle the whole result or save the data in
 # one of these formats: "pickle", "json", "matlab"
-save_path = "examples/results/"
-os.makedirs(os.path.dirname(save_path), exist_ok=True)
-result.save(save_path + "saved_result_object.pkl")
-result.save_data(save_path + "saved_result_data.json", to_format="json")
+result.save(save_path / "saved_result_object.pkl")
+result.save_data(save_path / "saved_result_data.json", to_format="json")
 
 # Load the result
-result_from_pkl = pybop.Result.load(save_path + "saved_result_object.pkl")
+result_from_pkl = pybop.Result.load(save_path / "saved_result_object.pkl")
 result_from_json = pybop.Result.load_data(
-    save_path + "saved_result_data.json", file_format="json"
+    save_path / "saved_result_data.json", file_format="json"
 )
 
 # Plot the optimisation result from .pkl
