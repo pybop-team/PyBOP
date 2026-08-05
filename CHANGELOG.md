@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#969](https://github.com/pybop-team/PyBOP/pull/969) - Updates synthetic data and adds example script for thermal parameterisation.
 - [#965](https://github.com/pybop-team/PyBOP/pull/965) - Adds synthetic data and example scripts for OCV parameterisation.
 - [#963](https://github.com/pybop-team/PyBOP/pull/963) - Adds an example for generating synthetic data from a specification and exporting it to a PyProBE-compatible parquet file.
 - [#928](https://github.com/pybop-team/PyBOP/pull/928) - Adds the option to choose `matplotlib` as the plotting library for plotting functions. Additionally, figures and axes can be created manually and passed as keyword arguments to plotting functions. An example notebook `plotting.ipynb` was added to the `getting_started` directory to demonstrate usage of the new features.
