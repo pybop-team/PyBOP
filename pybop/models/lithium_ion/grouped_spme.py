@@ -170,7 +170,6 @@ class GroupedSPMe(BaseGroupedModel):
         zeta_n = Parameter("Negative electrode relative porosity")
         zeta_p = Parameter("Positive electrode relative porosity")
 
-        tau_e = Parameter("Electrolyte diffusion time scale [s]")
         beta_n = Parameter("Negative electrode relative transport efficiency")
         beta_p = Parameter("Positive electrode relative transport efficiency")
 
@@ -278,16 +277,22 @@ class GroupedSPMe(BaseGroupedModel):
         ######################
         self.rhs[sto_e_n] = (
             pybamm.div(
-                pybamm.grad(sto_e_n) * beta_n / tau_e - (t_plus * I / Q_e) * x_n / l_n
+                pybamm.grad(sto_e_n)
+                * beta_n
+                / self.tau_e(sto_e_n, T, "negative electrode")
+                - (t_plus * I / Q_e) * x_n / l_n
             )
             + (3 / Q_e) * Q_th_n * j_n / l_n
         ) / zeta_n
         self.rhs[sto_e_sep] = pybamm.div(
-            pybamm.grad(sto_e_sep) / tau_e - t_plus * I / Q_e
+            pybamm.grad(sto_e_sep) / self.tau_e(sto_e_sep, T, "separator")
+            - t_plus * I / Q_e
         )
         self.rhs[sto_e_p] = (
             pybamm.div(
-                pybamm.grad(sto_e_p) * beta_p / tau_e
+                pybamm.grad(sto_e_p)
+                * beta_p
+                / self.tau_e(sto_e_p, T, "positive electrode")
                 - (t_plus * I / Q_e) * (1 - x_p) / l_p
             )
             + (3 / Q_e) * Q_th_p * j_p / l_p
@@ -444,6 +449,14 @@ class GroupedSPMe(BaseGroupedModel):
         inputs = {f"{Domain} particle surface stoichiometry": sto, "Temperature [K]": T}
         return FunctionParameter(f"{Domain} particle diffusion time scale [s]", inputs)
 
+    def tau_e(self, sto_e, T, domain):
+        """
+        Dimensional electolyte diffusion time scale [s].
+        """
+        Domain = domain.capitalize()
+        inputs = {f"{Domain} electrolyte stoichiometry": sto_e, "Temperature [K]": T}
+        return FunctionParameter("Electrolyte diffusion time scale [s]", inputs)
+
     def j(self, sto_surf, sto_e, eta_RT_F, domain):
         """
         Dimensionless exchange rate.
@@ -465,9 +478,6 @@ class GroupedSPMe(BaseGroupedModel):
         T = param["Ambient temperature [K]"]
         param["Electrolyte conductivity [S.m-1]"] = param[
             "Electrolyte conductivity [S.m-1]"
-        ](ce0, T)
-        param["Electrolyte diffusivity [m2.s-1]"] = param[
-            "Electrolyte diffusivity [m2.s-1]"
         ](ce0, T)
         return self.create_grouped_parameters(param)
 
@@ -605,7 +615,7 @@ class GroupedSPMe(BaseGroupedModel):
 
         # Separator and electrolyte properties
         ce0 = param["Initial concentration in electrolyte [mol.m-3]"]
-        De = param["Electrolyte diffusivity [m2.s-1]"]  # (ce0, T)
+        De = param["Electrolyte diffusivity [m2.s-1]"]
         L_s = param["Separator thickness [m]"]
         epsilon_sep = param["Separator porosity"]
         b_sep = param["Separator Bruggeman coefficient (electrolyte)"]
@@ -671,7 +681,12 @@ class GroupedSPMe(BaseGroupedModel):
         except TypeError:
             tau_d_n = FunctionalDiffusionTime(R_n**2, D_n, c_max_n)
 
-        tau_e = epsilon_sep * L**2 / (epsilon_sep**b_sep * De)
+        try:
+            tau_e = epsilon_sep * L**2 / (epsilon_sep**b_sep * De)
+        except TypeError:
+            De_prefactor = epsilon_sep * L**2 / epsilon_sep**b_sep
+            tau_e = FunctionalDiffusionTime(De_prefactor, De, ce0)
+
         beta_p = epsilon_p**b_p / epsilon_sep**b_sep
         beta_n = epsilon_n**b_n / epsilon_sep**b_sep
 
