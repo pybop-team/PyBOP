@@ -6,12 +6,16 @@ from matplotlib.figure import Figure
 
 import pybop
 
-GROUPED_MODEL = pybop.lithium_ion.GroupedSPM | pybop.lithium_ion.GroupedSPMe
+GROUPED_MODEL = (
+    pybop.lithium_ion.GroupedSPM
+    | pybop.lithium_ion.GroupedSPMe
+    | pybop.lithium_ion.GroupedDFN
+)
 
 
 class TestModels:
     """
-    A class to test pybop created models.
+    A class to test pybop models.
     """
 
     pytestmark = pytest.mark.unit
@@ -24,6 +28,8 @@ class TestModels:
             pybop.lithium_ion.GroupedSPM(options={"surface form": "differential"}),
             pybop.lithium_ion.GroupedSPMe(),
             pybop.lithium_ion.GroupedSPMe(options={"surface form": "differential"}),
+            pybop.lithium_ion.GroupedDFN(),
+            pybop.lithium_ion.GroupedDFN(options={"surface form": "differential"}),
             pybop.li_half_cell.WeppnerHuggins(),
             pybop.li_half_cell.SPDiffusion(),
         ],
