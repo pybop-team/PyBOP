@@ -6,8 +6,9 @@ from pybamm import (
     Parameter,
     ParameterValues,
     PrimaryBroadcast,
+    PrimaryBroadcastToEdges,
     Scalar,
-    SpatialVariable,
+    SpatialVariableEdge,
     Variable,
 )
 from pybamm import t as pybamm_t
@@ -94,8 +95,8 @@ class GroupedSPMe(BaseGroupedModel):
         sto_e = ConcatenationVariable(sto_e_n, sto_e_sep, sto_e_p)
 
         # Spatial variables
-        x_n = SpatialVariable("x_n", domain=["negative electrode"])
-        x_p = SpatialVariable("x_p", domain=["positive electrode"])
+        x_n_edge = SpatialVariableEdge("x_n", domain=["negative electrode"])
+        x_p_edge = SpatialVariableEdge("x_p", domain=["positive electrode"])
 
         # Surf takes the surface value of a variable, i.e. its boundary value on the
         # right side. This is also accessible via `boundary_value(x, "right")`, with
@@ -240,27 +241,19 @@ class GroupedSPMe(BaseGroupedModel):
         ######################
         # The div and grad operators will be converted to the appropriate matrix
         # multiplication at the discretisation stage
-        self.rhs[sto_n] = pybamm.div(
-            pybamm.grad(sto_n) / self.tau_d(sto_n, T, "negative")
-        )
-        self.rhs[sto_p] = pybamm.div(
-            pybamm.grad(sto_p) / self.tau_d(sto_p, T, "positive")
-        )
+        N_s_n = -pybamm.grad(sto_n) / self.tau_d(sto_n, T, "negative")
+        N_s_p = -pybamm.grad(sto_p) / self.tau_d(sto_p, T, "positive")
+        self.rhs[sto_n] = -pybamm.div(N_s_n)
+        self.rhs[sto_p] = -pybamm.div(N_s_p)
 
         # Boundary conditions must be provided for equations with spatial derivatives
         self.boundary_conditions[sto_n] = {
-            "left": (Scalar(0), "Neumann"),
-            "right": (
-                -self.tau_d(sto_n_surf, T, "negative") * pybamm.x_average(j_n),
-                "Neumann",
-            ),
+            "left": (Scalar(0), ("Flux", N_s_n)),
+            "right": (pybamm.x_average(j_n), ("Flux", N_s_n)),
         }
         self.boundary_conditions[sto_p] = {
-            "left": (Scalar(0), "Neumann"),
-            "right": (
-                -self.tau_d(sto_p_surf, T, "positive") * pybamm.x_average(j_p),
-                "Neumann",
-            ),
+            "left": (Scalar(0), ("Flux", N_s_p)),
+            "right": (pybamm.x_average(j_p), ("Flux", N_s_p)),
         }
 
         self.initial_conditions[sto_n] = sto_n_init
@@ -280,17 +273,17 @@ class GroupedSPMe(BaseGroupedModel):
             self.tau_e(sto_e_p, T, "positive electrode"),
         )
         i_e = pybamm.concatenation(
-            (I / Q_e) * x_n / l_n,
-            PrimaryBroadcast(I / Q_e, "separator"),
-            (I / Q_e) * (1 - x_p) / l_p,
+            (I / Q_e) * x_n_edge / l_n,
+            PrimaryBroadcastToEdges(I / Q_e, "separator"),
+            (I / Q_e) * (1 - x_p_edge) / l_p,
         )
         N_e = -pybamm.grad(sto_e) * beta / tau_e + t_plus * i_e
 
-        j_e_n = (3 / Q_e) * Q_th_n * j_n / l_n
-        j_e_sep = PrimaryBroadcast(Scalar(0), "separator")
-        j_e_p = (3 / Q_e) * Q_th_p * j_p / l_p
-        j_e = pybamm.concatenation(j_e_n, j_e_sep, j_e_p)
-
+        j_e = pybamm.concatenation(
+            (3 / Q_e) * Q_th_n * j_n / l_n,
+            PrimaryBroadcast(Scalar(0), "separator"),
+            (3 / Q_e) * Q_th_p * j_p / l_p,
+        )
         zeta = pybamm.concatenation(
             PrimaryBroadcast(zeta_n, "negative electrode"),
             PrimaryBroadcast(Scalar(1), "separator"),
@@ -301,8 +294,8 @@ class GroupedSPMe(BaseGroupedModel):
         self.rhs[sto_e] = (-pybamm.div(N_e) + j_e) / zeta
 
         self.boundary_conditions[sto_e] = {
-            "left": (Scalar(0), "Neumann"),
-            "right": (Scalar(0), "Neumann"),
+            "left": (Scalar(0), ("Flux", N_e)),
+            "right": (Scalar(0), ("Flux", N_e)),
         }
 
         self.initial_conditions[sto_e] = Scalar(1)

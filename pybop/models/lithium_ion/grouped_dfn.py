@@ -6,6 +6,7 @@ from pybamm import (
     Parameter,
     ParameterValues,
     PrimaryBroadcast,
+    PrimaryBroadcastToEdges,
     Scalar,
     Variable,
 )
@@ -235,24 +236,12 @@ class GroupedDFN(BaseGroupedModel):
         self.initial_conditions[v_s_p] = U_p_init
 
         self.boundary_conditions[v_s_n] = {
-            "left": (Scalar(0), "Neumann"),
-            "right": (
-                I / (beta_n * gamma_e * Q_e)
-                - (2 * RT_F * (1 - t_plus))
-                * (pybamm.boundary_gradient(sto_e_sep, "left") / beta_n)
-                / pybamm.boundary_value(sto_e_sep, "left"),
-                "Neumann",
-            ),
+            "left": (Scalar(0), ("Flux", i_e_n)),
+            "right": (I / Q_e, ("Flux", i_e_n)),
         }
         self.boundary_conditions[v_s_p] = {
-            "left": (
-                I / (beta_p * gamma_e * Q_e)
-                - (2 * RT_F * (1 - t_plus))
-                * (pybamm.boundary_gradient(sto_e_sep, "right") / beta_p)
-                / pybamm.boundary_value(sto_e_sep, "right"),
-                "Neumann",
-            ),
-            "right": (Scalar(0), "Neumann"),
+            "left": (I / Q_e, ("Flux", i_e_p)),
+            "right": (Scalar(0), ("Flux", i_e_p)),
         }
 
         ######################
@@ -260,21 +249,19 @@ class GroupedDFN(BaseGroupedModel):
         ######################
         # The div and grad operators will be converted to the appropriate matrix
         # multiplication at the discretisation stage
-        self.rhs[sto_n] = pybamm.div(
-            pybamm.grad(sto_n) / self.tau_d(sto_n, T, "negative")
-        )
-        self.rhs[sto_p] = pybamm.div(
-            pybamm.grad(sto_p) / self.tau_d(sto_p, T, "positive")
-        )
+        N_s_n = -pybamm.grad(sto_n) / self.tau_d(sto_n, T, "negative")
+        N_s_p = -pybamm.grad(sto_p) / self.tau_d(sto_p, T, "positive")
+        self.rhs[sto_n] = -pybamm.div(N_s_n)
+        self.rhs[sto_p] = -pybamm.div(N_s_p)
 
         # Boundary conditions must be provided for equations with spatial derivatives
         self.boundary_conditions[sto_n] = {
-            "left": (Scalar(0), "Neumann"),
-            "right": (-self.tau_d(sto_n_surf, T, "negative") * j_n, "Neumann"),
+            "left": (Scalar(0), ("Flux", N_s_n)),
+            "right": (j_n, ("Flux", N_s_n)),
         }
         self.boundary_conditions[sto_p] = {
-            "left": (Scalar(0), "Neumann"),
-            "right": (-self.tau_d(sto_p_surf, T, "positive") * j_p, "Neumann"),
+            "left": (Scalar(0), ("Flux", N_s_p)),
+            "right": (j_p, ("Flux", N_s_p)),
         }
 
         self.initial_conditions[sto_n] = sto_n_init
@@ -295,16 +282,16 @@ class GroupedDFN(BaseGroupedModel):
         )
         i_e = pybamm.concatenation(
             i_e_n,
-            PrimaryBroadcast(I / Q_e, "separator"),
+            PrimaryBroadcastToEdges(I / Q_e, "separator"),
             i_e_p,
         )
         N_e = -pybamm.grad(sto_e) * beta / tau_e + t_plus * i_e
 
-        j_e_n = (3 / Q_e) * Q_th_n * j_n / l_n
-        j_e_sep = PrimaryBroadcast(Scalar(0), "separator")
-        j_e_p = (3 / Q_e) * Q_th_p * j_p / l_p
-        j_e = pybamm.concatenation(j_e_n, j_e_sep, j_e_p)
-
+        j_e = pybamm.concatenation(
+            (3 / Q_e) * Q_th_n * j_n / l_n,
+            PrimaryBroadcast(Scalar(0), "separator"),
+            (3 / Q_e) * Q_th_p * j_p / l_p,
+        )
         zeta = pybamm.concatenation(
             PrimaryBroadcast(zeta_n, "negative electrode"),
             PrimaryBroadcast(Scalar(1), "separator"),
@@ -315,8 +302,8 @@ class GroupedDFN(BaseGroupedModel):
         self.rhs[sto_e] = (-pybamm.div(N_e) + j_e) / zeta
 
         self.boundary_conditions[sto_e] = {
-            "left": (Scalar(0), "Neumann"),
-            "right": (Scalar(0), "Neumann"),
+            "left": (Scalar(0), ("Flux", N_e)),
+            "right": (Scalar(0), ("Flux", N_e)),
         }
 
         self.initial_conditions[sto_e] = Scalar(1)
