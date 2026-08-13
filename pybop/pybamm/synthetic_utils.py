@@ -39,7 +39,7 @@ DEFAULT_COLUMN_DEFINITIONS: dict[str, str] = {
     "Current": "The current through the cell.",
     "Voltage": "The terminal voltage.",
     "Capacity": "The net charge passed since the start of the procedure.",
-    # "Temperature": "The temperature of the cell.",
+    "Temperature": "The temperature of the cell.",
 }
 EIS_COLUMN_DEFINITIONS: dict[str, str] = {
     "Time": "The time passed from the start of the procedure.",
@@ -248,6 +248,7 @@ def _solution_to_dataframe(
             "Current [A]",
             "Voltage [V]",
             "Discharge capacity [A.h]",
+            "Volume-averaged cell temperature [K]",
         ]
     )
     pybamm_data["Time [s]"] += start_time
@@ -266,6 +267,9 @@ def _solution_to_dataframe(
             (pl.col("Current [A]") * -1).alias("Current [A]"),
             pl.col("Voltage [V]").alias("Voltage [V]"),
             (pl.col("Discharge capacity [A.h]") * -1).alias("Capacity [Ah]"),
+            (pl.col("Volume-averaged cell temperature [K]") - 273.15).alias(
+                "Temperature [degC]"
+            ),
         ]
     )
 

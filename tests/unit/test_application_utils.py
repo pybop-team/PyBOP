@@ -13,9 +13,12 @@ from pybamm.models.full_battery_models.lithium_ion.electrode_soh import (
 import pybop
 from pybop.applications.utils import (
     OpenCircuitVoltage,
+    filter_with_preceding_row,
     get_cells,
     get_ocp_functions,
+    get_ocv_function,
     make_voltage_monotonic,
+    shift_ocv_to,
 )
 
 
@@ -67,6 +70,20 @@ class TestUtils:
         soc = np.linspace(0, 1, 5)
         assert np.all(ocv_function(soc) > 0)
 
+    def test_get_ocv_function(self, parameter_values):
+        ocv_function = get_ocv_function(parameter_values, OCP_type="OCP")
+        soc = np.linspace(0, 1, 5)
+        assert np.all(ocv_function(soc) > 0)
+
+    def test_shift_ocv_to(self, parameter_values):
+        ocv_function = get_ocv_function(parameter_values, OCP_type="OCP")
+        soc = np.linspace(0, 1, 5)
+        voltage_points = ocv_function(soc) + 0.1
+        param, soc_points = shift_ocv_to(voltage_points, parameter_values, soc)
+        ocv_function = get_ocv_function(param)
+        assert np.all(ocv_function(soc) > 0.1)
+        np.testing.assert_allclose(soc, soc_points, atol=2.5e-4)
+
     def test_make_voltage_monotonic(self):
         # Test ascending
         data = SimpleNamespace()
@@ -88,6 +105,47 @@ class TestUtils:
     @pytest.mark.skipif(
         sys.version_info >= (3, 13), reason="requires a python version < 3.13"
     )
-    def test_get_cells(self):
+    def test_get_cells_and_filter(self):
+        import pyprobe
+
         cells = get_cells()
         assert isinstance(cells, list)
+        cell = cells[0]
+        assert isinstance(cell, pyprobe.Cell)
+
+        cycle = cell.procedure["pOCV"].experiment("Pseudo OCV").cycle(0)
+        charge_dataset = pybop.import_pyprobe_result(cycle.charge().step(0))
+        dataset = pybop.import_pyprobe_result(
+            filter_with_preceding_row(
+                cell.procedure["pOCV"],
+                experiment="Pseudo OCV",
+                cycle=0,
+                phase="charge",
+                step=0,
+            )
+        )
+        assert len(dataset) == len(charge_dataset) + 1
+
+        discharge_dataset = pybop.import_pyprobe_result(cycle.discharge().step(0))
+        dataset = pybop.import_pyprobe_result(
+            filter_with_preceding_row(
+                cell.procedure["pOCV"],
+                experiment="Pseudo OCV",
+                cycle=0,
+                phase="discharge",
+                step=0,
+            )
+        )
+        assert len(dataset) == len(discharge_dataset) + 1
+
+        rest_dataset = pybop.import_pyprobe_result(cycle.rest().step(0))
+        dataset = pybop.import_pyprobe_result(
+            filter_with_preceding_row(
+                cell.procedure["pOCV"],
+                experiment="Pseudo OCV",
+                cycle=0,
+                phase="rest",
+                step=0,
+            )
+        )
+        assert len(dataset) == len(rest_dataset) + 1
