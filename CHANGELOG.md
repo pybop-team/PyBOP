@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#973](https://github.com/pybop-team/PyBOP/pull/973) - Adds example scripts for EIS parameterisation.
 - [#974](https://github.com/pybop-team/PyBOP/pull/974) - Adds voltage components to each grouped model as well as asymmetric and multiphase Butler-Volmer kinetics.
 - [#969](https://github.com/pybop-team/PyBOP/pull/969) - Updates synthetic data and adds example script for thermal parameterisation.
 - [#965](https://github.com/pybop-team/PyBOP/pull/965) - Adds synthetic data and example scripts for OCV parameterisation.
