@@ -56,6 +56,7 @@ from .parameters.multivariate_distributions import MultivariateNonparametric, Mu
 # Model classes
 #
 from .models import lithium_ion
+from .models import li_half_cell
 from .models._exponential_decay import ExponentialDecayModel
 from .models.lithium_ion.utils import Interpolant, InverseOCV
 

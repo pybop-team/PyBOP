@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#974](https://github.com/pybop-team/PyBOP/pull/974) - Adds voltage components to each grouped model as well as asymmetric and multiphase Butler-Volmer kinetics.
 - [#969](https://github.com/pybop-team/PyBOP/pull/969) - Updates synthetic data and adds example script for thermal parameterisation.
 - [#965](https://github.com/pybop-team/PyBOP/pull/965) - Adds synthetic data and example scripts for OCV parameterisation.
 - [#963](https://github.com/pybop-team/PyBOP/pull/963) - Adds an example for generating synthetic data from a specification and exporting it to a PyProBE-compatible parquet file.

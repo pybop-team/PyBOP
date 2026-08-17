@@ -47,7 +47,7 @@ for start, finish in zip(pulse_starts[:-1], pulse_starts[1:], strict=False):
     )
 
 # Group the parameters
-grouped_parameter_values = pybop.lithium_ion.SPDiffusion.create_grouped_parameters(
+grouped_parameter_values = pybop.li_half_cell.SPDiffusion.create_grouped_parameters(
     parameter_values
 )
 
@@ -60,11 +60,13 @@ gitt_fit = pybop.GITTFit(
 gitt_parameter_data = gitt_fit()
 
 # Plot the functional parameters
-pybop.plot.dataset(gitt_parameter_data, signal=["Particle diffusion time scale [s]"])
+pybop.plot.dataset(
+    gitt_parameter_data, signal=["Positive particle diffusion time scale [s]"]
+)
 pybop.plot.dataset(gitt_parameter_data, signal=["Series resistance [Ohm]"])
 
 # Run the identified model
-identified_model = pybop.lithium_ion.SPDiffusion(build=True)
+identified_model = pybop.li_half_cell.SPDiffusion(build=True)
 grouped_parameter_values.update(gitt_fit.best_inputs)
 grouped_parameter_values["Current function [A]"] = pybamm.Interpolant(
     dataset["Time [s]"], dataset["Current [A]"], pybamm.t
@@ -76,7 +78,7 @@ fitted_values = pybamm.Simulation(
 # Return to the original model and update the diffusivity value
 diffusivity = np.mean(
     parameter_values["Positive particle radius [m]"] ** 2
-    / gitt_parameter_data["Particle diffusion time scale [s]"]
+    / gitt_parameter_data["Positive particle diffusion time scale [s]"]
 )
 parameter_values.update({"Positive particle diffusivity [m2.s-1]": diffusivity})
 

@@ -354,7 +354,7 @@ for cell in get_cells():
                 "Maximum negative stoichiometry": x_100,
                 "Minimum positive stoichiometry": y_100,
                 "Maximum positive stoichiometry": y_0,
-                "Measured cell capacity [A.s]": Q_soc / CE * 3600,
+                "Measured cell capacity [A.h]": Q_soc / CE,
                 "Coulombic efficiency": CE,
                 "Negative electrode pOCP [V]": negative_ocp_function,
                 "Positive electrode pOCP [V]": positive_ocp_function,

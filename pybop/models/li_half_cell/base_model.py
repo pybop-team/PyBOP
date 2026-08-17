@@ -2,16 +2,12 @@ import pybamm
 from pybamm import FunctionParameter, Parameter
 from pybamm import lithium_ion as pybamm_lithium_ion
 
-from pybop.models.alternative_functions import (
-    AsymmetricButlerVolmer,
-    MultiphaseButlerVolmer,
-)
 from pybop.models.lithium_ion.utils import InverseOCV
 
 
-class BaseGroupedModel(pybamm_lithium_ion.BaseModel):
+class BaseHalfCellModel(pybamm_lithium_ion.BaseModel):
     """
-    A base model for PyBOP's grouped-parameter lithium-ion battery models.
+    A base model for PyBOP's grouped-parameter lithium-ion half-cell models.
 
     Parameters
     ----------
@@ -56,7 +52,7 @@ class BaseGroupedModel(pybamm_lithium_ion.BaseModel):
         ----------
         initial_value : float
             Target initial value.
-            If float, interpreted as SoC, must be between 0 and 1.
+            If float, interpreted as stoichiometry, must be between 0 and 1.
             If string e.g. "4 V", interpreted as voltage, must be between V_min and V_max.
         parameter_values : :class:`pybamm.ParameterValues`
             Parameters and their corresponding values.
@@ -92,67 +88,25 @@ class BaseGroupedModel(pybamm_lithium_ion.BaseModel):
                     f"Initial voltage {V_init}V is outside the voltage limits ({V_min}, {V_max})."
                 )
 
-            x_0 = Parameter("Minimum negative stoichiometry")
-            x_100 = Parameter("Maximum negative stoichiometry")
-            y_100 = Parameter("Minimum positive stoichiometry")
-            y_0 = Parameter("Maximum positive stoichiometry")
-
-            def ocv_function(soc):
-                sto_p = y_0 - soc * (y_0 - y_100)
-                sto_n = x_0 + soc * (x_100 - x_0)
+            def ocv_function(sto_p):
                 U_p = FunctionParameter(
                     "Positive electrode OCP [V]",
                     {"Positive particle stoichiometry": sto_p},
                 )
-                U_n = FunctionParameter(
-                    "Negative electrode OCP [V]",
-                    {"Negative particle stoichiometry": sto_n},
-                )
-                return parameter_values.evaluate(U_p - U_n, inputs=inputs).squeeze()
+                return parameter_values.evaluate(U_p, inputs=inputs).squeeze()
 
             inverse_ocv = InverseOCV(ocv_function)
-            soc = inverse_ocv(V_init)
+            sto_p = inverse_ocv(V_init)
 
         elif isinstance(initial_value, int | float):
-            soc = initial_value
+            sto_p = initial_value
 
         else:
             raise ValueError("Initial value must be a float or a string ending in 'V'.")
 
-        if not 0 <= soc <= 1:
-            raise ValueError("Initial SoC should be between 0 and 1.")
+        if not 0 <= sto_p <= 1:
+            raise ValueError("Initial stoichiometry should be between 0 and 1.")
 
-        parameter_values["Initial SoC"] = soc
+        parameter_values["Initial stoichiometry"] = sto_p
 
         return parameter_values
-
-    @staticmethod
-    def symmetric_butler_volmer(sto_surf, sto_e, eta_RT_F):
-        """
-        Dimensionless Butler-Volmer exchange rate.
-        """
-        j0 = (sto_surf * sto_e * (1 - sto_surf)) ** 0.5
-        return 2 * j0 * pybamm.sinh(0.5 * eta_RT_F)
-
-    @staticmethod
-    def get_asymmetric_butler_volmer(domain: str):
-        """
-        Get the asymmetric Butler-Volmer exchange rate function for the "positive" or
-        "negative" domain.
-        """
-        Domain = domain.capitalize()
-        alpha = pybamm.Parameter(f"{Domain} electrode charge transfer coefficient")
-
-        return AsymmetricButlerVolmer(alpha)
-
-    @staticmethod
-    def get_multiphase_butler_volmer(domain: str):
-        """
-        Get the multiphase Butler-Volmer exchange rate function for the "positive" or
-        "negative" domain.
-        """
-        Domain = domain.capitalize()
-        alpha = pybamm.Parameter(f"{Domain} electrode charge transfer coefficient")
-        omega = pybamm.Parameter(f"{Domain} electrode charge transfer ideality factor")
-
-        return MultiphaseButlerVolmer(alpha, omega)
