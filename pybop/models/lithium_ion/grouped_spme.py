@@ -14,9 +14,7 @@ from pybamm.models.full_battery_models.lithium_ion.electrode_soh import (
     get_min_max_stoichiometries,
 )
 
-from pybop.models.lithium_ion.alternative_functions import (
-    FunctionalDiffusionTime,
-)
+from pybop.models.alternative_functions import FunctionalDiffusionTime
 from pybop.models.lithium_ion.base_model import BaseGroupedModel
 
 

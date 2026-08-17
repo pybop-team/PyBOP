@@ -2,7 +2,7 @@ import pybamm
 from pybamm import FunctionParameter, Parameter
 from pybamm import lithium_ion as pybamm_lithium_ion
 
-from pybop.models.lithium_ion.alternative_functions import (
+from pybop.models.alternative_functions import (
     AsymmetricButlerVolmer,
     MultiphaseButlerVolmer,
 )
