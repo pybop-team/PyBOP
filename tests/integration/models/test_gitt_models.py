@@ -28,8 +28,8 @@ class TestGITTModels:
 
     @pytest.fixture(
         params=[
-            pybop.lithium_ion.WeppnerHuggins(),
-            pybop.lithium_ion.SPDiffusion(),
+            pybop.li_half_cell.WeppnerHuggins(),
+            pybop.li_half_cell.SPDiffusion(),
         ],
         scope="module",
     )

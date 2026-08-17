@@ -48,14 +48,14 @@ class TestApplications:
         )
 
     def test_interpolant(self, parameter_values, discharge_dataset):
-        parameter_values = pybop.lithium_ion.SPDiffusion.create_grouped_parameters(
+        parameter_values = pybop.li_half_cell.SPDiffusion.create_grouped_parameters(
             parameter_values
         )
         parameter_values["Positive electrode OCP [V]"] = pybop.Interpolant(
             discharge_dataset["Stoichiometry"], discharge_dataset["Voltage [V]"]
         )
         parameter_values.set_initial_state(0.9)
-        model = pybop.lithium_ion.SPDiffusion(build=True)
+        model = pybop.li_half_cell.SPDiffusion(build=True)
         t_eval = np.linspace(0, 10, 100)
         solution = pybamm.Simulation(model, parameter_values=parameter_values).solve(
             t_eval=t_eval, t_interp=t_eval
@@ -187,7 +187,7 @@ class TestApplications:
     def test_gitt_pulse_fit(
         self, half_cell_model, half_cell_parameter_values, pulse_data
     ):
-        parameter_values = pybop.lithium_ion.SPDiffusion.create_grouped_parameters(
+        parameter_values = pybop.li_half_cell.SPDiffusion.create_grouped_parameters(
             half_cell_parameter_values
         )
         diffusion_time = parameter_values["Positive particle diffusion time scale [s]"]
@@ -202,7 +202,7 @@ class TestApplications:
         )
 
     def test_gitt_fit(self, half_cell_model, half_cell_parameter_values, pulse_data):
-        parameter_values = pybop.lithium_ion.SPDiffusion.create_grouped_parameters(
+        parameter_values = pybop.li_half_cell.SPDiffusion.create_grouped_parameters(
             half_cell_parameter_values
         )
         diffusion_time = parameter_values["Positive particle diffusion time scale [s]"]

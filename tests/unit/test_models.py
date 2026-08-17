@@ -20,8 +20,8 @@ class TestModels:
         params=[
             pybop.ExponentialDecayModel(),
             pybop.lithium_ion.CellTemperature(),
-            pybop.lithium_ion.WeppnerHuggins(),
-            pybop.lithium_ion.SPDiffusion(),
+            pybop.li_half_cell.WeppnerHuggins(),
+            pybop.li_half_cell.SPDiffusion(),
             pybop.lithium_ion.GroupedSPM(),
             pybop.lithium_ion.GroupedSPM(options={"surface form": "differential"}),
             pybop.lithium_ion.GroupedSPMe(),
@@ -68,7 +68,7 @@ class TestModels:
         if isinstance(model, pybop.ExponentialDecayModel):
             pass  # Only testing the battery models for now
 
-        elif isinstance(model, pybop.lithium_ion.WeppnerHuggins):
+        elif isinstance(model, pybop.li_half_cell.WeppnerHuggins):
             param = model.default_parameter_values
             with pytest.raises(
                 ValueError,
@@ -93,7 +93,7 @@ class TestModels:
             with pytest.raises(ValueError, match="should be between 0 and 1."):
                 param.set_initial_state(-1)
 
-            if not isinstance(model, pybop.lithium_ion.SPDiffusion):
+            if not isinstance(model, pybop.li_half_cell.SPDiffusion):
                 with pytest.raises(
                     ValueError, match=r"V is outside the voltage limits"
                 ):

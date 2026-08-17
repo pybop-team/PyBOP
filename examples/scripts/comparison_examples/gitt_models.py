@@ -2,6 +2,7 @@ import numpy as np
 import pybamm
 
 import pybop
+from pybop.models.li_half_cell import SPDiffusion, WeppnerHuggins
 
 # Define model and parameter values
 model_options = {"working electrode": "positive"}
@@ -30,13 +31,13 @@ dataset = pybop.Dataset(
     }
 )
 
-for model in [pybop.lithium_ion.WeppnerHuggins(), pybop.lithium_ion.SPDiffusion()]:
+for model in [WeppnerHuggins(), SPDiffusion()]:
     # GITT target parameter
     diffusion_parameter = pybop.Parameter(pybop.Gaussian(5000, 1000))
-    if isinstance(model, pybop.lithium_ion.WeppnerHuggins):
+    if isinstance(model, WeppnerHuggins):
         # Group parameter values
-        grouped_parameter_values = (
-            pybop.lithium_ion.WeppnerHuggins.create_grouped_parameters(parameter_values)
+        grouped_parameter_values = WeppnerHuggins.create_grouped_parameters(
+            parameter_values
         )
 
         # We can fit only the duration of the pulse
@@ -70,8 +71,8 @@ for model in [pybop.lithium_ion.WeppnerHuggins(), pybop.lithium_ion.SPDiffusion(
 
     else:
         # Group parameter values
-        grouped_parameter_values = (
-            pybop.lithium_ion.SPDiffusion.create_grouped_parameters(parameter_values)
+        grouped_parameter_values = SPDiffusion.create_grouped_parameters(
+            parameter_values
         )
 
         # Fitting parameters
@@ -87,7 +88,7 @@ for model in [pybop.lithium_ion.WeppnerHuggins(), pybop.lithium_ion.SPDiffusion(
     # Build the problem
     gitt_dataset = (
         dataset.get_subset(pulse_index)
-        if isinstance(model, pybop.lithium_ion.WeppnerHuggins)
+        if isinstance(model, WeppnerHuggins)
         else dataset
     )
     simulator = pybop.pybamm.Simulator(
@@ -97,7 +98,8 @@ for model in [pybop.lithium_ion.WeppnerHuggins(), pybop.lithium_ion.SPDiffusion(
     problem = pybop.Problem(simulator, cost)
 
     # Build the optimisation problem
-    optim = pybop.SciPyMinimize(problem)
+    options = pybop.SciPyMinimizeOptions(method="Nelder-Mead")
+    optim = pybop.SciPyMinimize(problem, options)
 
     # Run the optimisation problem
     result = optim.run()

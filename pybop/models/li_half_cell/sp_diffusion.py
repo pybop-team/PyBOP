@@ -14,11 +14,10 @@ from pybamm.models.full_battery_models.lithium_ion.electrode_soh_half_cell impor
     get_min_max_stoichiometries,
 )
 
-from pybop.models.lithium_ion.base_model import BaseGroupedModel
-from pybop.models.lithium_ion.utils import InverseOCV
+from pybop.models.li_half_cell.base_model import BaseHalfCellModel
 
 
-class SPDiffusion(BaseGroupedModel):
+class SPDiffusion(BaseHalfCellModel):
     """
     Diffusion model for a single, spherical particle representing a half-cell for GITT.
 
@@ -48,6 +47,10 @@ class SPDiffusion(BaseGroupedModel):
 
         # Variables that vary spatially are created with a domain
         sto_p = Variable("Positive particle stoichiometry", domain="positive particle")
+
+        # Surf takes the surface value of a variable, i.e. its boundary value on the
+        # right side. This is also accessible via `boundary_value(x, "right")`, with
+        # "left" providing the boundary value of the left side
         sto_p_surf = pybamm.surf(sto_p)
 
         # Events specify points at which a solution should terminate
@@ -112,14 +115,11 @@ class SPDiffusion(BaseGroupedModel):
         ######################
         # Cell voltage
         ######################
-        sto_p_average = sto_p_init + Q * 3600 / Q_th_p  # pybamm.r_average(sto_p)
-        U = self.U(sto_p_surf, "positive") - self.U(sto_p_average, "negative")
+        U = self.U(sto_p_surf)
         V = U - self.R0(sto_p_surf) * I
 
         # Save the initial OCV
-        self.param.ocv_init = self.U(sto_p_init, "positive") - self.U(
-            sto_p_init, "negative"
-        )
+        self.param.ocv_init = self.U(sto_p_init)
 
         # Events specify points at which a solution should terminate
         self.events += [
@@ -145,22 +145,15 @@ class SPDiffusion(BaseGroupedModel):
             "Open-circuit voltage [V]": U,
         }
 
-    def U(self, sto, domain):
+    def U(self, sto):
         """
         Dimensional open-circuit potential [V].
         Credit: PyBaMM
         """
-        Domain = domain.capitalize()
-        if domain == "negative":
-            inputs = {"Average positive particle stoichiometry": sto}
-        else:
-            inputs = {f"{Domain} particle surface stoichiometry": sto}
-        out = FunctionParameter(f"{Domain} electrode OCP [V]", inputs)
+        inputs = {"Positive particle surface stoichiometry": sto}
+        out = FunctionParameter("Positive electrode OCP [V]", inputs)
 
-        if domain == "negative":
-            out.print_name = r"U_\mathrm{n}(c^\mathrm{av}_\mathrm{s,p})"
-        elif domain == "positive":
-            out.print_name = r"U_\mathrm{p}(c^\mathrm{surf}_\mathrm{s,p})"
+        out.print_name = r"U_\mathrm{p}(c^\mathrm{surf}_\mathrm{s,p})"
         return out
 
     def tau_d(self, sto):
@@ -280,100 +273,10 @@ class SPDiffusion(BaseGroupedModel):
             "Lower voltage cut-off [V]": param["Lower voltage cut-off [V]"],
             "Upper voltage cut-off [V]": param["Upper voltage cut-off [V]"],
             "Positive electrode OCP [V]": param["Positive electrode OCP [V]"],
-            "Negative electrode OCP [V]": 0.0,
             "Measured cell capacity [A.s]": Q_meas,
             "Positive particle diffusion time scale [s]": tau_d_p,
             "Series resistance [Ohm]": R0,
         }
         parameter_values = ParameterValues(values=parameter_dictionary)
         parameter_values._set_initial_state = SPDiffusion.set_initial_state  # noqa: SLF001
-        return parameter_values
-
-    @staticmethod
-    def set_initial_state(
-        initial_value,
-        parameter_values,
-        direction=None,
-        param=None,
-        inplace=True,
-        options=None,
-        inputs=None,
-        tol=1e-6,
-    ):
-        """
-        Set the value of the initial state of charge.
-
-        Parameters
-        ----------
-        initial_value : float
-            Target initial value.
-            If float, interpreted as SOC, must be between 0 and 1.
-            If string e.g. "4 V", interpreted as voltage, must be between V_min and V_max.
-        parameter_values : :class:`pybamm.ParameterValues`
-            Parameters and their corresponding values.
-        param : :class:`pybamm.LithiumIonParameters`, optional
-            The symbolic parameter set to use for the simulation.
-            If not provided, the default parameter set will be used.
-        inplace: bool, optional
-            If True, replace the parameters values in place. Otherwise, return a new set of
-            parameter values. Default is True.
-        options : dict-like, optional
-            A dictionary of options to be passed to the model, see
-            :class:`pybamm.BatteryModelOptions`.
-        inputs : dict, optional
-            A dictionary of input parameters to pass to the model when solving.
-        tol : float, optional
-            The tolerance for the solver used to compute the initial stoichiometries.
-            A lower value results in higher precision but may increase computation time.
-            Default is 1e-6.
-        """
-        parameter_values = parameter_values if inplace else parameter_values.copy()
-
-        if isinstance(initial_value, str) and initial_value.endswith("V"):
-            V_init = float(initial_value[:-1])
-            V_min = parameter_values.evaluate(
-                Parameter("Lower voltage cut-off [V]"), inputs=inputs
-            )
-            V_max = parameter_values.evaluate(
-                Parameter("Upper voltage cut-off [V]"), inputs=inputs
-            )
-
-            if not V_min - tol <= V_init <= V_max + tol:
-                raise ValueError(
-                    f"Initial voltage {V_init}V is outside the voltage limits ({V_min}, {V_max})."
-                )
-
-            y_100 = parameter_values.evaluate(
-                Parameter("Minimum positive stoichiometry"), inputs=inputs
-            )
-            y_0 = parameter_values.evaluate(
-                Parameter("Maximum positive stoichiometry"), inputs=inputs
-            )
-
-            def ocv_function(soc):
-                sto_p = y_0 - soc * (y_0 - y_100)
-                U_p = FunctionParameter(
-                    "Positive electrode OCP [V]",
-                    {"Positive particle stoichiometry": sto_p},
-                )
-                U_n = FunctionParameter(
-                    "Negative electrode OCP [V]",
-                    {"Positive particle stoichiometry": sto_p},
-                )
-                return parameter_values.evaluate(U_p - U_n, inputs=inputs).squeeze()
-
-            inverse_ocv = InverseOCV(ocv_function)
-            soc = inverse_ocv(V_init)
-
-        elif isinstance(initial_value, int | float):
-            soc = initial_value
-
-        else:
-            raise ValueError("Initial value must be a float or a string ending in 'V'.")
-
-        if not 0 <= soc <= 1:
-            raise ValueError("Initial SOC should be between 0 and 1.")
-
-        parameter_values["Initial SoC"] = soc
-
         return parameter_values

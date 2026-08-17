@@ -46,7 +46,7 @@ class GITTPulseFit(BaseApplication):
         self.optimiser_options = optimiser_options or self.optimiser.default_options()
 
         # Create model
-        self.model = pybop.lithium_ion.SPDiffusion()
+        self.model = pybop.li_half_cell.SPDiffusion()
         self.problem = None
 
     def __call__(

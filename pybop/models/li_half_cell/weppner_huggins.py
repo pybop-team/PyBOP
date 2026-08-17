@@ -3,10 +3,10 @@ import pybamm
 from pybamm import DummySolver, Parameter, ParameterValues
 from pybamm import t as pybamm_t
 
-from pybop.models.lithium_ion.base_model import BaseGroupedModel
+from pybop.models.li_half_cell.base_model import BaseHalfCellModel
 
 
-class WeppnerHuggins(BaseGroupedModel):
+class WeppnerHuggins(BaseHalfCellModel):
     """
     Represents the Weppner & Huggins model to fit diffusion coefficients to GITT data.
 
