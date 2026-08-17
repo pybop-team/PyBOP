@@ -52,7 +52,7 @@ class CellTemperature(BaseGroupedModel):
         # Parameters are purely symbolic at this stage, and will be set by the
         # `ParameterValues` class when the model is processed.
 
-        Q_meas = Parameter("Measured cell capacity [A.s]")
+        Q_meas = Parameter("Measured cell capacity [A.h]") * 3600
 
         soc_init = Parameter("Initial SoC")
         x_0 = Parameter("Minimum negative stoichiometry")
@@ -242,8 +242,8 @@ class CellTemperature(BaseGroupedModel):
         soc_init = (sto_p_init - y_0) / (y_100 - y_0)
 
         # Compute the capacity within the stoichiometry limits
-        Q_th_p = F * alpha_p * c_max_p * L_p * A
-        Q_th_n = F * alpha_n * c_max_n * L_n * A
+        Q_th_p = F * alpha_p * c_max_p * L_p * A / 3600
+        Q_th_n = F * alpha_n * c_max_n * L_n * A / 3600
         Q_meas_p = (y_0 - y_100) * Q_th_p
         Q_meas_n = (x_100 - x_0) * Q_th_n
         if abs(Q_meas_n / Q_meas_p - 1) > 1e-6:
@@ -270,7 +270,7 @@ class CellTemperature(BaseGroupedModel):
             "Upper voltage cut-off [V]": param["Upper voltage cut-off [V]"],
             "Positive electrode OCP [V]": param["Positive electrode OCP [V]"],
             "Negative electrode OCP [V]": param["Negative electrode OCP [V]"],
-            "Measured cell capacity [A.s]": Q_meas,
+            "Measured cell capacity [A.h]": Q_meas,
             "Negative electrode OCP entropic change [V.K-1]": param[
                 "Negative electrode OCP entropic change [V.K-1]"
             ],

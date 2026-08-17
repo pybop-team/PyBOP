@@ -52,7 +52,7 @@ class BaseHalfCellModel(pybamm_lithium_ion.BaseModel):
         ----------
         initial_value : float
             Target initial value.
-            If float, interpreted as SOC, must be between 0 and 1.
+            If float, interpreted as stoichiometry, must be between 0 and 1.
             If string e.g. "4 V", interpreted as voltage, must be between V_min and V_max.
         parameter_values : :class:`pybamm.ParameterValues`
             Parameters and their corresponding values.
@@ -88,15 +88,7 @@ class BaseHalfCellModel(pybamm_lithium_ion.BaseModel):
                     f"Initial voltage {V_init}V is outside the voltage limits ({V_min}, {V_max})."
                 )
 
-            y_100 = parameter_values.evaluate(
-                Parameter("Minimum positive stoichiometry"), inputs=inputs
-            )
-            y_0 = parameter_values.evaluate(
-                Parameter("Maximum positive stoichiometry"), inputs=inputs
-            )
-
-            def ocv_function(soc):
-                sto_p = y_0 - soc * (y_0 - y_100)
+            def ocv_function(sto_p):
                 U_p = FunctionParameter(
                     "Positive electrode OCP [V]",
                     {"Positive particle stoichiometry": sto_p},
@@ -104,17 +96,17 @@ class BaseHalfCellModel(pybamm_lithium_ion.BaseModel):
                 return parameter_values.evaluate(U_p, inputs=inputs).squeeze()
 
             inverse_ocv = InverseOCV(ocv_function)
-            soc = inverse_ocv(V_init)
+            sto_p = inverse_ocv(V_init)
 
         elif isinstance(initial_value, int | float):
-            soc = initial_value
+            sto_p = initial_value
 
         else:
             raise ValueError("Initial value must be a float or a string ending in 'V'.")
 
-        if not 0 <= soc <= 1:
-            raise ValueError("Initial SOC should be between 0 and 1.")
+        if not 0 <= sto_p <= 1:
+            raise ValueError("Initial stoichiometry should be between 0 and 1.")
 
-        parameter_values["Initial SoC"] = soc
+        parameter_values["Initial stoichiometry"] = sto_p
 
         return parameter_values

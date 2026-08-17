@@ -50,7 +50,7 @@ for model in [WeppnerHuggins(), SPDiffusion()]:
                 dataset["Discharge capacity [A.h]"][-1]
                 - dataset["Discharge capacity [A.h]"][0]
             )
-            * (grouped_parameter_values["Theoretical electrode capacity [A.s]"] / 3600)
+            * grouped_parameter_values["Theoretical electrode capacity [A.h]"]
         )
         grouped_parameter_values.update(
             {

@@ -10,9 +10,6 @@ from pybamm import (
     Variable,
 )
 from pybamm import t as pybamm_t
-from pybamm.models.full_battery_models.lithium_ion.electrode_soh_half_cell import (
-    get_min_max_stoichiometries,
-)
 
 from pybop.models.li_half_cell.base_model import BaseHalfCellModel
 
@@ -72,12 +69,10 @@ class SPDiffusion(BaseHalfCellModel):
         # Parameters are purely symbolic at this stage, and will be set by the
         # `ParameterValues` class when the model is processed.
 
-        soc_init = Parameter("Initial SoC")
-        y_100 = Parameter("Minimum positive stoichiometry")
-        y_0 = Parameter("Maximum positive stoichiometry")
-
         # Grouped parameters
-        Q_th_p = Parameter("Measured cell capacity [A.s]") / (y_0 - y_100)
+        Q_th_p = Parameter("Theoretical electrode capacity [A.h]") * 3600
+
+        sto_p_init = Parameter("Initial stoichiometry")
 
         ######################
         # Input current (positive on discharge)
@@ -109,7 +104,6 @@ class SPDiffusion(BaseHalfCellModel):
             "right": (-self.tau_d(sto_p_surf) * j_p, "Neumann"),
         }
 
-        sto_p_init = y_0 + (y_100 - y_0) * soc_init
         self.initial_conditions[sto_p] = sto_p_init
 
         ######################
@@ -243,37 +237,28 @@ class SPDiffusion(BaseHalfCellModel):
         # Compute the cell area
         A = param["Electrode height [m]"] * param["Electrode width [m]"]
 
-        # Compute the stoichiometry limits and initial SOC
-        d = get_min_max_stoichiometries(param)
-        y_0, y_100 = d["x_0"], d["x_100"]
+        # Compute the initial stoichiometry
         sto_p_init = (
             param["Initial concentration in positive electrode [mol.m-3]"] / c_max_p
         )
-        soc_init = (sto_p_init - y_0) / (y_100 - y_0)
-
-        # Compute the capacity within the stoichiometry limits
-        Q_th_p = F * alpha_p * c_max_p * L_p * A
-        Q_meas = (y_0 - y_100) * Q_th_p
 
         # Grouped parameters
+        Q_th_p = F * alpha_p * c_max_p * L_p * A / 3600
         tau_d_p = R_p**2 / D_p
 
         # Estimate the series resistance, neglecting conductivity losses
-        RT_F = pybamm.constants.R.value * param["Ambient temperature [K]"] / F
-        tau_ct_p = c_max_p * F * R_p / (2 * j0_p)
-        Rct_typ = (2 * RT_F * tau_ct_p) / (3 * Q_th_p)
+        RT_F = pybamm.constants.R.value * T / F
+        Rct_typ = (RT_F * R_p) / (3 * alpha_p * L_p * A * j0_p)
         R0 = Rct_typ + param["Contact resistance [Ohm]"]
 
         parameter_dictionary = {
             "Nominal cell capacity [A.h]": param["Nominal cell capacity [A.h]"],
             "Current function [A]": param["Current function [A]"],
-            "Initial SoC": soc_init,
-            "Minimum positive stoichiometry": y_100,
-            "Maximum positive stoichiometry": y_0,
+            "Initial stoichiometry": sto_p_init,
             "Lower voltage cut-off [V]": param["Lower voltage cut-off [V]"],
             "Upper voltage cut-off [V]": param["Upper voltage cut-off [V]"],
             "Positive electrode OCP [V]": param["Positive electrode OCP [V]"],
-            "Measured cell capacity [A.s]": Q_meas,
+            "Theoretical electrode capacity [A.h]": Q_th_p,
             "Positive particle diffusion time scale [s]": tau_d_p,
             "Series resistance [Ohm]": R0,
         }

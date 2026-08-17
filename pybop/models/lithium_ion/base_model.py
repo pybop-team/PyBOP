@@ -56,7 +56,7 @@ class BaseGroupedModel(pybamm_lithium_ion.BaseModel):
         ----------
         initial_value : float
             Target initial value.
-            If float, interpreted as SOC, must be between 0 and 1.
+            If float, interpreted as SoC, must be between 0 and 1.
             If string e.g. "4 V", interpreted as voltage, must be between V_min and V_max.
         parameter_values : :class:`pybamm.ParameterValues`
             Parameters and their corresponding values.
@@ -120,7 +120,7 @@ class BaseGroupedModel(pybamm_lithium_ion.BaseModel):
             raise ValueError("Initial value must be a float or a string ending in 'V'.")
 
         if not 0 <= soc <= 1:
-            raise ValueError("Initial SOC should be between 0 and 1.")
+            raise ValueError("Initial SoC should be between 0 and 1.")
 
         parameter_values["Initial SoC"] = soc
 

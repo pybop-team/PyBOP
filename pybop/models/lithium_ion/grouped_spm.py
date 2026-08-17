@@ -120,8 +120,8 @@ class GroupedSPM(BaseGroupedModel):
         y_0 = Parameter("Maximum positive stoichiometry")
 
         # Grouped parameters
-        Q_th_p = Parameter("Measured cell capacity [A.s]") / (y_0 - y_100)
-        Q_th_n = Parameter("Measured cell capacity [A.s]") / (x_100 - x_0)
+        Q_th_p = Parameter("Measured cell capacity [A.h]") * 3600 / (y_0 - y_100)
+        Q_th_n = Parameter("Measured cell capacity [A.h]") * 3600 / (x_100 - x_0)
 
         tau_ct_p = Parameter("Positive electrode charge transfer time scale [s]")
         tau_ct_n = Parameter("Negative electrode charge transfer time scale [s]")
@@ -534,8 +534,8 @@ class GroupedSPM(BaseGroupedModel):
         soc_init = (sto_p_init - y_0) / (y_100 - y_0)
 
         # Compute the capacity within the stoichiometry limits
-        Q_th_p = F * alpha_p * c_max_p * L_p * A
-        Q_th_n = F * alpha_n * c_max_n * L_n * A
+        Q_th_p = F * alpha_p * c_max_p * L_p * A / 3600
+        Q_th_n = F * alpha_n * c_max_n * L_n * A / 3600
         Q_meas_p = (y_0 - y_100) * Q_th_p
         Q_meas_n = (x_100 - x_0) * Q_th_n
         if abs(Q_meas_n / Q_meas_p - 1) > 1e-6:
@@ -579,7 +579,7 @@ class GroupedSPM(BaseGroupedModel):
             "Upper voltage cut-off [V]": param["Upper voltage cut-off [V]"],
             "Positive electrode OCP [V]": param["Positive electrode OCP [V]"],
             "Negative electrode OCP [V]": param["Negative electrode OCP [V]"],
-            "Measured cell capacity [A.s]": Q_meas,
+            "Measured cell capacity [A.h]": Q_meas,
             "Positive particle diffusion time scale [s]": tau_d_p,
             "Negative particle diffusion time scale [s]": tau_d_n,
             "Positive electrode dimensionless exchange rate": GroupedSPM.symmetric_butler_volmer,

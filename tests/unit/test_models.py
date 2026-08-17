@@ -20,13 +20,14 @@ class TestModels:
         params=[
             pybop.ExponentialDecayModel(),
             pybop.lithium_ion.CellTemperature(),
-            pybop.li_half_cell.WeppnerHuggins(),
-            pybop.li_half_cell.SPDiffusion(),
             pybop.lithium_ion.GroupedSPM(),
             pybop.lithium_ion.GroupedSPM(options={"surface form": "differential"}),
             pybop.lithium_ion.GroupedSPMe(),
             pybop.lithium_ion.GroupedSPMe(options={"surface form": "differential"}),
+            pybop.li_half_cell.WeppnerHuggins(),
+            pybop.li_half_cell.SPDiffusion(),
         ],
+        ids=lambda val: f"{type(val).__name__}",
         scope="module",
     )
     def model(self, request):
@@ -77,12 +78,17 @@ class TestModels:
                 param.set_initial_state(0.5)
 
         else:
+            if isinstance(model, pybop.li_half_cell.SPDiffusion):
+                initial_state = "Initial stoichiometry"
+            else:
+                initial_state = "Initial SoC"
+
             param = model.default_parameter_values
             param.set_initial_state(0.5)
-            assert param["Initial SoC"] == 0.5
+            assert param[initial_state] == 0.5
 
             param.set_initial_state("3.8 V")
-            assert 0 <= param["Initial SoC"] <= 1
+            assert 0 <= param[initial_state] <= 1
 
             with pytest.raises(
                 ValueError,

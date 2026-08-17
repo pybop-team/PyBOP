@@ -14,7 +14,7 @@ ABSOLUTE_TOLERANCE = 1e-5
 
 # Parameter configurations
 DIFFUSION_PARAMS = [
-    ("Theoretical electrode capacity [A.s]", 10),
+    ("Theoretical electrode capacity [A.h]", 0.003),
     ("Positive particle diffusion time scale [s]", 2000),
 ]
 

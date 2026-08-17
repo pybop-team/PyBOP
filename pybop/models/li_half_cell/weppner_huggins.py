@@ -48,7 +48,7 @@ class WeppnerHuggins(BaseHalfCellModel):
         # Parameters are purely symbolic at this stage, and will be set by the
         # `ParameterValues` class when the model is processed.
 
-        Q_th_p = Parameter("Theoretical electrode capacity [A.s]")
+        Q_th_p = Parameter("Theoretical electrode capacity [A.h]") * 3600
 
         U = Parameter("Reference voltage [V]")
         U_prime = Parameter("Derivative of the OCP wrt stoichiometry [V]")
@@ -146,14 +146,14 @@ class WeppnerHuggins(BaseHalfCellModel):
         A = param["Electrode height [m]"] * param["Electrode width [m]"]
 
         # Grouped parameters
-        Q_th_p = F * alpha_p * c_max_p * L_p * A
+        Q_th_p = F * alpha_p * c_max_p * L_p * A / 3600
         tau_d_p = R_p**2 / D_p
 
         parameter_dictionary = {
             "Current function [A]": param["Current function [A]"],
             "Reference voltage [V]": 4,
             "Derivative of the OCP wrt stoichiometry [V]": -1,
-            "Theoretical electrode capacity [A.s]": Q_th_p,
+            "Theoretical electrode capacity [A.h]": Q_th_p,
             "Positive particle diffusion time scale [s]": tau_d_p,
         }
         parameter_values = ParameterValues(values=parameter_dictionary)
