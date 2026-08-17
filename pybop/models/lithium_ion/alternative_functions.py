@@ -4,14 +4,14 @@ import pybamm
 
 
 class FunctionalDiffusionTime:
-    def __init__(self, D_prefactor, D, c_scale):
-        self.D_prefactor = D_prefactor
+    def __init__(self, r2_scale, D, c_scale):
+        self.r2_scale = r2_scale
         self.D = D
         self.c_scale = c_scale
 
     def __call__(self, sto, T):
-        D_prefactor, D, c_scale = self.D_prefactor, self.D, self.c_scale
-        return D_prefactor / D(sto * c_scale, T)
+        r2_scale, D, c_scale = self.r2_scale, self.D, self.c_scale
+        return r2_scale / D(sto * c_scale, T)
 
 
 class AsymmetricButlerVolmer:
