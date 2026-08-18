@@ -56,6 +56,9 @@ class FoKLGP:
                 * 'Bi mean' (float): Mean for subsequent Beta parameters (Bi).
                 * 'Bi standard deviation' (float): Standard deviation for Bi.
                 * 'exp' (bool): If True, applies log-transformation to B0_mean.
+                * 'Normalization min-max' (dict[str(int):tuple]) : Normalization minimum and maximum for `arg_ind` terms
+                                                                  (e.g, {'0':(10,20)} results in argument 0 being
+                                                                  normalized between 10 - 20.
         parameter_values : dict or Mapping
             Dictionary containing base parameter values, used to calculate
             'Constant mean' if it is missing from options.
@@ -134,23 +137,25 @@ class FoKLGP:
             sett = 2
         else:
             sett = 1
-
-        principle = np.zeros((number_of_inputs,))
-        for ind in range(1, number_of_terms+1):
-            indvecs = [i for i in sum_to_n(ind, size=min(number_of_inputs, sett))]
-            principle[0] = ind
-            indvecs.append(list(principle))
-            for indvec in indvecs:
-                new_term = perms(indvec)
-                if np.size(damtx) == 0:
-                    damtx = new_term
-                else:
-                    if all(new_term[0] == new_term[1]):
-                        damtx = np.vstack([damtx, new_term[0]])
+        if number_of_inputs == 1:
+            damtx = np.linspace(1,number_of_terms, number_of_terms).astype(int).reshape(-1,1)
+        else:
+            principle = np.zeros((number_of_inputs,))
+            for ind in range(1, number_of_terms+1):
+                indvecs = [i for i in sum_to_n(ind, size=min(number_of_inputs, sett))]
+                principle[0] = ind
+                indvecs.append(list(principle))
+                for indvec in indvecs:
+                    new_term = perms(indvec)
+                    if np.size(damtx) == 0:
+                        damtx = new_term
                     else:
-                        damtx = np.vstack([damtx, new_term])
+                        if all(new_term[0] == new_term[1]):
+                            damtx = np.vstack([damtx, new_term[0]])
+                        else:
+                            damtx = np.vstack([damtx, new_term])
 
-                indvec[0]+=1
+                    indvec[0]+=1
         damtx = np.array(damtx)
         print(damtx)
         return damtx.astype(int)
@@ -362,12 +367,12 @@ class FoKLGP:
             betas_symbolic.append(pybamm.InputParameter(key_str))
             if i == 0:
                 beta_parameters[key_str] = Parameter(
-                    distribution=Gaussian(GP['Constant mean'], GP['Constant standard deviation']),
+                    Gaussian(GP['Constant mean'], GP['Constant standard deviation']),
                 )
 
             else:
                 beta_parameters[key_str] = Parameter(
-                    distribution=Gaussian(GP['Bi mean'], GP['Bi standard deviation']),
+                    Gaussian(GP['Bi mean'], GP['Bi standard deviation']),
                 )
 
         self.beta_parameters = beta_parameters
