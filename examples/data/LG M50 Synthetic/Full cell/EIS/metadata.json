@@ -45,7 +45,7 @@
                     "Discharge at C/10 until 2.5 V",
                     "Hold at 2.5 V until C/50",
                     "Rest for 2 hours",
-                    "Charge at C/10 for 1 hour",
+                    "Charge at C/10 for 1 hour or until 4.2 V",
                     "Rest for 4 hours",
                     "Potentiostatic EIS with 0.0042 V amplitude"
                 ]
@@ -71,7 +71,7 @@
                         5
                     ],
                     "Step Descriptions": [
-                        "Charge at C/10 for 1 hour",
+                        "Charge at C/10 for 1 hour or until 4.2 V",
                         "Rest for 4 hours",
                         "Potentiostatic EIS with 0.0042 V amplitude"
                     ],
