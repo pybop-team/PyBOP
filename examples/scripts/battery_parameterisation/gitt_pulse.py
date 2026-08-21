@@ -30,7 +30,7 @@ dataset = pybop.Dataset(
 )
 
 # Group the parameters
-grouped_parameter_values = pybop.lithium_ion.SPDiffusion.create_grouped_parameters(
+grouped_parameter_values = pybop.li_half_cell.SPDiffusion.create_grouped_parameters(
     parameter_values
 )
 

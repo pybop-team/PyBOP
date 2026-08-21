@@ -1,4 +1,3 @@
-import numpy as np
 import pybamm
 from pybamm import (
     Event,
@@ -15,6 +14,7 @@ from pybamm.models.full_battery_models.lithium_ion.electrode_soh import (
     get_min_max_stoichiometries,
 )
 
+from pybop.models.alternative_functions import FunctionalDiffusionTime
 from pybop.models.lithium_ion.base_model import BaseGroupedModel
 
 
@@ -57,7 +57,7 @@ class GroupedSPMe(BaseGroupedModel):
             doi       = {10.1149/1945-7111/add41b}
             }
         """
-        )
+        )  # Note that the electrode electrolyte timescales have been replaced by relative transport efficiencies
 
         ######################
         # Variables
@@ -65,6 +65,9 @@ class GroupedSPMe(BaseGroupedModel):
         # Variables that depend on time only are created without a domain
         Q = Variable("Discharge capacity [A.h]")
         Qt = Variable("Throughput capacity [A.h]")
+
+        v_s_n = Variable("Negative particle surface voltage variable [V]")
+        v_s_p = Variable("Positive particle surface voltage variable [V]")
 
         # Variables that vary spatially are created with a domain
         sto_n = Variable(
@@ -99,22 +102,36 @@ class GroupedSPMe(BaseGroupedModel):
         sto_p_surf = pybamm.surf(sto_p)
 
         # Events specify points at which a solution should terminate
+        tol = pybamm.settings.tolerances["U__c_s"]
         self.events += [
             Event(
                 "Minimum negative particle surface stoichiometry",
-                pybamm.min(sto_n_surf) - 0.01,
+                pybamm.min(sto_n_surf) - tol,
             ),
             Event(
                 "Maximum negative particle surface stoichiometry",
-                (1 - 0.01) - pybamm.max(sto_n_surf),
+                (1 - tol) - pybamm.max(sto_n_surf),
             ),
             Event(
                 "Minimum positive particle surface stoichiometry",
-                pybamm.min(sto_p_surf) - 0.01,
+                pybamm.min(sto_p_surf) - tol,
             ),
             Event(
                 "Maximum positive particle surface stoichiometry",
-                (1 - 0.01) - pybamm.max(sto_p_surf),
+                (1 - tol) - pybamm.max(sto_p_surf),
+            ),
+            # model does not capture electrolyte depletion, use the DFN instead
+            Event(
+                "Minimum negative electrode electrolyte stoichiometry",
+                pybamm.min(sto_e_n) - 0,
+            ),
+            Event(
+                "Minimum separator electrolyte stoichiometry",
+                pybamm.min(sto_e_sep) - 0,
+            ),
+            Event(
+                "Minimum positive electrode electrolyte stoichiometry",
+                pybamm.min(sto_e_p) - 0,
             ),
         ]
 
@@ -136,12 +153,9 @@ class GroupedSPMe(BaseGroupedModel):
         y_0 = Parameter("Maximum positive stoichiometry")
 
         # Grouped parameters
-        Q_th_p = Parameter("Measured cell capacity [A.s]") / (y_0 - y_100)
-        Q_th_n = Parameter("Measured cell capacity [A.s]") / (x_100 - x_0)
-        Q_e = Parameter("Reference electrolyte capacity [A.s]")
-
-        tau_d_p = Parameter("Positive particle diffusion time scale [s]")
-        tau_d_n = Parameter("Negative particle diffusion time scale [s]")
+        Q_th_p = Parameter("Measured cell capacity [A.h]") * 3600 / (y_0 - y_100)
+        Q_th_n = Parameter("Measured cell capacity [A.h]") * 3600 / (x_100 - x_0)
+        Q_e = Parameter("Reference electrolyte capacity [A.h]") * 3600
 
         tau_ct_p = Parameter("Positive electrode charge transfer time scale [s]")
         tau_ct_n = Parameter("Negative electrode charge transfer time scale [s]")
@@ -156,9 +170,9 @@ class GroupedSPMe(BaseGroupedModel):
         zeta_n = Parameter("Negative electrode relative porosity")
         zeta_p = Parameter("Positive electrode relative porosity")
 
-        tau_e_n = Parameter("Negative electrode electrolyte diffusion time scale [s]")
-        tau_e_sep = Parameter("Separator electrolyte diffusion time scale [s]")
-        tau_e_p = Parameter("Positive electrode electrolyte diffusion time scale [s]")
+        tau_e = Parameter("Electrolyte diffusion time scale [s]")
+        beta_n = Parameter("Negative electrode relative transport efficiency")
+        beta_p = Parameter("Positive electrode relative transport efficiency")
 
         ######################
         # Input current (positive on discharge)
@@ -197,74 +211,63 @@ class GroupedSPMe(BaseGroupedModel):
         ######################
         # Primary broadcasts are used to broadcast scalar quantities across a domain
         # into a vector of the right shape, for multiplying with other vectors
-        alpha = 0.5  # cathodic transfer coefficient
-        j0_n = (
-            sto_n_surf**alpha * (sto_e_n * (1 - sto_n_surf)) ** (1 - alpha) / tau_ct_n
+
+        # Overpotentials
+        eta_n = (v_s_n - U_n) + (2 * RT_F * (1 - t_plus)) * (
+            pybamm.x_average(pybamm.log(sto_e_n)) - pybamm.log(sto_e_n)
         )
-        j0_p = (
-            sto_p_surf**alpha * (sto_e_p * (1 - sto_p_surf)) ** (1 - alpha) / tau_ct_p
+        eta_p = (v_s_p - U_p) + (2 * RT_F * (1 - t_plus)) * (
+            pybamm.x_average(pybamm.log(sto_e_p)) - pybamm.log(sto_e_p)
         )
-        if not include_double_layer:
-            # Assuming alpha = 0.5
-            j_n = PrimaryBroadcast(I / (3 * Q_th_n), "negative electrode")
-            j_p = PrimaryBroadcast(-I / (3 * Q_th_p), "positive electrode")
-            eta_n = 2 * RT_F * pybamm.arcsinh(j_n / (2 * j0_n))
-            eta_p = 2 * RT_F * pybamm.arcsinh(j_p / (2 * j0_p))
-            v_s_n = pybamm.x_average(eta_n + U_n)
-            v_s_p = pybamm.x_average(eta_p + U_p)
+
+        # Exchange rates
+        j_n = self.j(sto_n_surf, sto_e_n, eta_n / RT_F, "negative") / tau_ct_n
+        j_p = self.j(sto_p_surf, sto_e_p, eta_p / RT_F, "positive") / tau_ct_p
 
         ######################
         # Double layer
         ######################
         if include_double_layer:
-            # Additional variables
-            v_s_n = Variable("Negative particle surface voltage variable [V]")
-            v_s_p = Variable("Positive particle surface voltage variable [V]")
-
             # Additional parameters
             C_p = Parameter("Positive electrode capacitance [F]")
             C_n = Parameter("Negative electrode capacitance [F]")
 
-            # Overpotentials
-            eta_n = (v_s_n - U_n) + (2 * RT_F * (1 - t_plus)) * (
-                pybamm.x_average(pybamm.log(sto_e_n)) - pybamm.log(sto_e_n)
-            )
-            eta_p = (v_s_p - U_p) + (2 * RT_F * (1 - t_plus)) * (
-                pybamm.x_average(pybamm.log(sto_e_p)) - pybamm.log(sto_e_p)
-            )
-
-            # Exchange current
-            j_n = j0_n * (
-                pybamm.exp((1 - alpha) * eta_n / RT_F)
-                - pybamm.exp(-alpha * eta_n / RT_F)
-            )
-            j_p = j0_p * (
-                pybamm.exp((1 - alpha) * eta_p / RT_F)
-                - pybamm.exp(-alpha * eta_p / RT_F)
-            )
-
             # Electrode surface potentials
-            self.rhs[v_s_n] = 1 / C_n * (I - 3 * Q_th_n * pybamm.x_average(j_n))
-            self.rhs[v_s_p] = 1 / C_p * (-I - 3 * Q_th_p * pybamm.x_average(j_p))
-            self.initial_conditions[v_s_n] = U_n_init
-            self.initial_conditions[v_s_p] = U_p_init
+            self.rhs[v_s_n] = (I - 3 * Q_th_n * pybamm.x_average(j_n)) / C_n
+            self.rhs[v_s_p] = (-I - 3 * Q_th_p * pybamm.x_average(j_p)) / C_p
+        else:
+            self.algebraic[v_s_n] = I - 3 * Q_th_n * pybamm.x_average(j_n)
+            self.algebraic[v_s_p] = -I - 3 * Q_th_p * pybamm.x_average(j_p)
+
+        self.initial_conditions[v_s_n] = U_n_init
+        self.initial_conditions[v_s_p] = U_p_init
 
         ######################
         # Particles
         ######################
         # The div and grad operators will be converted to the appropriate matrix
         # multiplication at the discretisation stage
-        self.rhs[sto_n] = pybamm.div(pybamm.grad(sto_n) / tau_d_n)
-        self.rhs[sto_p] = pybamm.div(pybamm.grad(sto_p) / tau_d_p)
+        self.rhs[sto_n] = pybamm.div(
+            pybamm.grad(sto_n) / self.tau_d(sto_n, T, "negative")
+        )
+        self.rhs[sto_p] = pybamm.div(
+            pybamm.grad(sto_p) / self.tau_d(sto_p, T, "positive")
+        )
 
         # Boundary conditions must be provided for equations with spatial derivatives
         self.boundary_conditions[sto_n] = {
             "left": (Scalar(0), "Neumann"),
-            "right": (-tau_d_n * pybamm.x_average(j_n), "Neumann"),
+            "right": (
+                -self.tau_d(sto_n_surf, T, "negative") * pybamm.x_average(j_n),
+                "Neumann",
+            ),
         }
         self.boundary_conditions[sto_p] = {
             "left": (Scalar(0), "Neumann"),
-            "right": (-tau_d_p * pybamm.x_average(j_p), "Neumann"),
+            "right": (
+                -self.tau_d(sto_p_surf, T, "positive") * pybamm.x_average(j_p),
+                "Neumann",
+            ),
         }
 
         self.initial_conditions[sto_n] = sto_n_init
@@ -274,45 +277,38 @@ class GroupedSPMe(BaseGroupedModel):
         # Electrolyte
         ######################
         self.rhs[sto_e_n] = (
-            pybamm.div(pybamm.grad(sto_e_n) / tau_e_n - (t_plus * I / Q_e) * x_n / l_n)
+            pybamm.div(
+                pybamm.grad(sto_e_n) * beta_n / tau_e - (t_plus * I / Q_e) * x_n / l_n
+            )
             + (3 / Q_e) * Q_th_n * j_n / l_n
         ) / zeta_n
         self.rhs[sto_e_sep] = pybamm.div(
-            pybamm.grad(sto_e_sep) / tau_e_sep - t_plus * I / Q_e
+            pybamm.grad(sto_e_sep) / tau_e - t_plus * I / Q_e
         )
         self.rhs[sto_e_p] = (
             pybamm.div(
-                pybamm.grad(sto_e_p) / tau_e_p - (t_plus * I / Q_e) * (1 - x_p) / l_p
+                pybamm.grad(sto_e_p) * beta_p / tau_e
+                - (t_plus * I / Q_e) * (1 - x_p) / l_p
             )
             + (3 / Q_e) * Q_th_p * j_p / l_p
         ) / zeta_p
 
         self.boundary_conditions[sto_e_n] = {
             "left": (Scalar(0), "Neumann"),
-            "right": (
-                tau_e_n * pybamm.boundary_gradient(sto_e_sep, "left") / tau_e_sep,
-                "Neumann",
-            ),
+            "right": (pybamm.boundary_gradient(sto_e_sep, "left") / beta_n, "Neumann"),
         }
         self.boundary_conditions[sto_e_sep] = {
             "left": (pybamm.boundary_value(sto_e_n, "right"), "Dirichlet"),
             "right": (pybamm.boundary_value(sto_e_p, "left"), "Dirichlet"),
         }
         self.boundary_conditions[sto_e_p] = {
-            "left": (
-                tau_e_p * pybamm.boundary_gradient(sto_e_sep, "right") / tau_e_sep,
-                "Neumann",
-            ),
+            "left": (pybamm.boundary_gradient(sto_e_sep, "right") / beta_p, "Neumann"),
             "right": (Scalar(0), "Neumann"),
         }
 
-        self.initial_conditions[sto_e_n] = PrimaryBroadcast(
-            Scalar(1), "negative electrode"
-        )
-        self.initial_conditions[sto_e_sep] = PrimaryBroadcast(Scalar(1), "separator")
-        self.initial_conditions[sto_e_p] = PrimaryBroadcast(
-            Scalar(1), "positive electrode"
-        )
+        self.initial_conditions[sto_e_n] = Scalar(1)
+        self.initial_conditions[sto_e_sep] = Scalar(1)
+        self.initial_conditions[sto_e_p] = Scalar(1)
 
         ######################
         # Cell voltage
@@ -327,6 +323,52 @@ class GroupedSPMe(BaseGroupedModel):
             Event("Minimum voltage [V]", V - self.param.voltage_low_cut),
             Event("Maximum voltage [V]", self.param.voltage_high_cut - V),
         ]
+
+        ######################
+        # Voltage components
+        ######################
+        # Include the following variables to enable plotting via PyBaMM's plot_voltage_components
+        ocp_n_bulk = self.U(
+            pybamm.x_average(Q_th_n * pybamm.r_average(sto_n))
+            / pybamm.x_average(Q_th_n),
+            "negative",
+        )
+        ocp_p_bulk = self.U(
+            pybamm.x_average(Q_th_p * pybamm.r_average(sto_p))
+            / pybamm.x_average(Q_th_p),
+            "positive",
+        )
+        voltage_components = {
+            "Battery voltage [V]": V,
+            "Battery open-circuit voltage [V]": ocp_p_bulk - ocp_n_bulk,
+            "Battery particle concentration overpotential [V]": (
+                (pybamm.x_average(self.U(sto_p_surf, "positive")) - ocp_p_bulk)
+                - (pybamm.x_average(self.U(sto_n_surf, "negative")) - ocp_n_bulk)
+            ),
+            "X-averaged battery reaction overpotential [V]": pybamm.x_average(eta_p)
+            - pybamm.x_average(eta_n),
+            "X-averaged battery concentration overpotential [V]": eta_e,
+            "X-averaged battery electrolyte ohmic losses [V]": Scalar(0),
+            "X-averaged battery solid phase ohmic losses [V]": Scalar(0),
+            "Contact overpotential [V]": R0 * I,  #  includes Ohmic losses in this model
+            # and split by electrode
+            "Negative electrode bulk open-circuit potential [V]": ocp_n_bulk,
+            "Positive electrode bulk open-circuit potential [V]": ocp_p_bulk,
+            "Negative particle concentration overpotential [V]": pybamm.x_average(
+                self.U(sto_n_surf, "negative")
+            )
+            - ocp_n_bulk,
+            "Positive particle concentration overpotential [V]": pybamm.x_average(
+                self.U(sto_p_surf, "positive")
+            )
+            - ocp_p_bulk,
+            "X-averaged negative electrode reaction overpotential [V]"
+            "": pybamm.x_average(eta_n),
+            "X-averaged positive electrode reaction overpotential [V]"
+            "": pybamm.x_average(eta_p),
+            "X-averaged battery negative solid phase ohmic losses [V]": Scalar(0),
+            "X-averaged battery positive solid phase ohmic losses [V]": Scalar(0),
+        }
 
         ######################
         # (Some) variables
@@ -368,39 +410,53 @@ class GroupedSPMe(BaseGroupedModel):
                 - pybamm.log(pybamm.concatenation(sto_e_n, sto_e_sep, sto_e_p))
             ),
             "Time [s]": pybamm_t,
+            "Time [h]": pybamm_t / 3600,
             "Current [A]": I,
             "Current variable [A]": I,  # for compatibility with pybamm.Experiment
             "Discharge capacity [A.h]": Q,
             "Throughput capacity [A.h]": Qt,
             "Voltage [V]": V,
             "Voltage expression [V]": V,  # for compatibility with "voltage as a state"
-            "Battery voltage [V]": V,
             "Open-circuit voltage [V]": U_p - U_n,
+            **voltage_components,
         }
 
     def U(self, sto, domain):
         """
-        Dimensional open-circuit potential [V], calculated as U(x) = U_ref(x).
+        Dimensional open-circuit potential [V].
         Credit: PyBaMM
         """
-        # bound stoichiometry between tol and 1-tol. Adding 1/sto + 1/(sto-1) later
-        # will ensure that ocp goes to +- infinity if sto goes into that region
-        # anyway
         Domain = domain.capitalize()
-        tol = pybamm.settings.tolerances["U__c_s"]
-        sto = pybamm.maximum(pybamm.minimum(sto, 1 - tol), tol)
         inputs = {f"{Domain} particle surface stoichiometry": sto}
-        u_ref = FunctionParameter(f"{Domain} electrode OCP [V]", inputs)
-
-        # add a term to ensure that the OCP goes to infinity at 0 and -infinity at 1
-        # this will not affect the OCP for most values of sto
-        out = u_ref + 1e-6 * (1 / sto + 1 / (sto - 1))
+        out = FunctionParameter(f"{Domain} electrode OCP [V]", inputs)
 
         if domain == "negative":
             out.print_name = r"U_\mathrm{n}(c^\mathrm{surf}_\mathrm{s,n})"
         elif domain == "positive":
             out.print_name = r"U_\mathrm{p}(c^\mathrm{surf}_\mathrm{s,p})"
         return out
+
+    def tau_d(self, sto, T, domain):
+        """
+        Dimensional solid-state diffusion time scale [s].
+        """
+        Domain = domain.capitalize()
+        inputs = {f"{Domain} particle surface stoichiometry": sto, "Temperature [K]": T}
+        return FunctionParameter(f"{Domain} particle diffusion time scale [s]", inputs)
+
+    def j(self, sto_surf, sto_e, eta_RT_F, domain):
+        """
+        Dimensionless exchange rate.
+        """
+        Domain = domain.capitalize()
+        inputs = {
+            f"{Domain} particle surface stoichiometry": sto_surf,
+            f"{Domain} electrode electrolyte stoichiometry": sto_e,
+            f"{Domain} electrode dimensionless overpotential": eta_RT_F,
+        }
+        return FunctionParameter(
+            f"{Domain} electrode dimensionless exchange rate", inputs
+        )
 
     @property
     def default_parameter_values(self) -> ParameterValues:
@@ -418,9 +474,9 @@ class GroupedSPMe(BaseGroupedModel):
     @property
     def default_quick_plot_variables(self):
         return [
-            "Negative particle surface stoichiometry",
+            "Negative particle stoichiometry",
             "Electrolyte stoichiometry",
-            "Positive particle surface stoichiometry",
+            "Positive particle stoichiometry",
             "Current [A]",
             {
                 "Negative electrode potential [V]",
@@ -521,6 +577,7 @@ class GroupedSPMe(BaseGroupedModel):
 
         # Unpack physical parameters
         F = pybamm.constants.F.value
+        T = param["Ambient temperature [K]"]
         alpha_p = param["Positive electrode active material volume fraction"]
         alpha_n = param["Negative electrode active material volume fraction"]
         c_max_p = param["Maximum concentration in positive electrode [mol.m-3]"]
@@ -537,8 +594,6 @@ class GroupedSPMe(BaseGroupedModel):
         b_n = param["Negative electrode Bruggeman coefficient (electrolyte)"]
         Cdl_p = param["Positive electrode double-layer capacity [F.m-2]"]
         Cdl_n = param["Negative electrode double-layer capacity [F.m-2]"]
-        m_p = 3.42e-6  # (A/m2)(m3/mol)**1.5
-        m_n = 6.48e-7  # (A/m2)(m3/mol)**1.5
         sigma_p = (
             param["Positive electrode conductivity [S.m-1]"]
             * alpha_p ** param["Positive electrode Bruggeman coefficient (electrode)"]
@@ -555,7 +610,19 @@ class GroupedSPMe(BaseGroupedModel):
         epsilon_sep = param["Separator porosity"]
         b_sep = param["Separator Bruggeman coefficient (electrolyte)"]
         t_plus = param["Cation transference number"]
-        sigma_e = param["Electrolyte conductivity [S.m-1]"]  # (ce0, T)
+        kappa_e = param["Electrolyte conductivity [S.m-1]"]  # (ce0, T)
+
+        # Get reference exchange current density [A.m-2]
+        j0_p = param.evaluate(
+            param["Positive electrode exchange-current density [A.m-2]"](
+                ce0, c_max_p / 2, c_max_p, T
+            )
+        )
+        j0_n = param.evaluate(
+            param["Negative electrode exchange-current density [A.m-2]"](
+                ce0, c_max_n / 2, c_max_n, T
+            )
+        )
 
         # Compute the cell area and thickness
         A = param["Electrode height [m]"] * param["Electrode width [m]"]
@@ -566,7 +633,7 @@ class GroupedSPMe(BaseGroupedModel):
             L_p / (3 * epsilon_p**b_p)
             + L_s / (epsilon_sep**b_sep)
             + L_n / (3 * epsilon_n**b_n)
-        ) / (sigma_e * A)
+        ) / (kappa_e * A)
         Rs = (L_p / sigma_p + L_n / sigma_n) / (3 * A)
         R0 = Re + Rs + param["Contact resistance [Ohm]"]
 
@@ -578,8 +645,8 @@ class GroupedSPMe(BaseGroupedModel):
         soc_init = (sto_p_init - y_0) / (y_100 - y_0)
 
         # Compute the capacity within the stoichiometry limits
-        Q_th_p = F * alpha_p * c_max_p * L_p * A
-        Q_th_n = F * alpha_n * c_max_n * L_n * A
+        Q_th_p = F * alpha_p * c_max_p * L_p * A / 3600
+        Q_th_n = F * alpha_n * c_max_n * L_n * A / 3600
         Q_meas_p = (y_0 - y_100) * Q_th_p
         Q_meas_n = (x_100 - x_0) * Q_th_n
         if abs(Q_meas_n / Q_meas_p - 1) > 1e-6:
@@ -589,20 +656,27 @@ class GroupedSPMe(BaseGroupedModel):
 
         # Grouped parameters
         Q_meas = (Q_meas_n + Q_meas_p) / 2
-        Q_e = F * epsilon_sep * ce0 * L * A
+        Q_e = F * epsilon_sep * ce0 * L * A / 3600
 
         zeta_p = epsilon_p / epsilon_sep
         zeta_n = epsilon_n / epsilon_sep
 
-        tau_d_p = R_p**2 / D_p
-        tau_d_n = R_n**2 / D_n
+        try:
+            tau_d_p = R_p**2 / D_p
+        except TypeError:
+            tau_d_p = FunctionalDiffusionTime(R_p**2, D_p, c_max_p)
 
-        tau_e_p = epsilon_sep * L**2 / (epsilon_p**b_p * De)
-        tau_e_n = epsilon_sep * L**2 / (epsilon_n**b_n * De)
-        tau_e_sep = epsilon_sep * L**2 / (epsilon_sep**b_sep * De)
+        try:
+            tau_d_n = R_n**2 / D_n
+        except TypeError:
+            tau_d_n = FunctionalDiffusionTime(R_n**2, D_n, c_max_n)
 
-        tau_ct_p = F * R_p / (m_p * np.sqrt(ce0))
-        tau_ct_n = F * R_n / (m_n * np.sqrt(ce0))
+        tau_e = epsilon_sep * L**2 / (epsilon_sep**b_sep * De)
+        beta_p = epsilon_p**b_p / epsilon_sep**b_sep
+        beta_n = epsilon_n**b_n / epsilon_sep**b_sep
+
+        tau_ct_p = c_max_p * F * R_p / (2 * j0_p)
+        tau_ct_n = c_max_n * F * R_n / (2 * j0_n)
 
         C_p = 3 * alpha_p * Cdl_p * L_p * A / R_p
         C_n = 3 * alpha_n * Cdl_n * L_n * A / R_n
@@ -613,8 +687,8 @@ class GroupedSPMe(BaseGroupedModel):
         parameter_dictionary = {
             "Nominal cell capacity [A.h]": param["Nominal cell capacity [A.h]"],
             "Current function [A]": param["Current function [A]"],
-            "Ambient temperature [K]": param["Ambient temperature [K]"],
-            "Initial temperature [K]": param["Ambient temperature [K]"],
+            "Ambient temperature [K]": T,
+            "Initial temperature [K]": T,
             "Initial SoC": soc_init,
             "Minimum negative stoichiometry": x_0,
             "Maximum negative stoichiometry": x_100,
@@ -624,15 +698,17 @@ class GroupedSPMe(BaseGroupedModel):
             "Upper voltage cut-off [V]": param["Upper voltage cut-off [V]"],
             "Positive electrode OCP [V]": param["Positive electrode OCP [V]"],
             "Negative electrode OCP [V]": param["Negative electrode OCP [V]"],
-            "Measured cell capacity [A.s]": Q_meas,
-            "Reference electrolyte capacity [A.s]": Q_e,
+            "Measured cell capacity [A.h]": Q_meas,
+            "Reference electrolyte capacity [A.h]": Q_e,
             "Positive electrode relative porosity": zeta_p,
             "Negative electrode relative porosity": zeta_n,
             "Positive particle diffusion time scale [s]": tau_d_p,
             "Negative particle diffusion time scale [s]": tau_d_n,
-            "Positive electrode electrolyte diffusion time scale [s]": tau_e_p,
-            "Negative electrode electrolyte diffusion time scale [s]": tau_e_n,
-            "Separator electrolyte diffusion time scale [s]": tau_e_sep,
+            "Electrolyte diffusion time scale [s]": tau_e,
+            "Positive electrode relative transport efficiency": beta_p,
+            "Negative electrode relative transport efficiency": beta_n,
+            "Positive electrode dimensionless exchange rate": GroupedSPMe.symmetric_butler_volmer,
+            "Negative electrode dimensionless exchange rate": GroupedSPMe.symmetric_butler_volmer,
             "Positive electrode charge transfer time scale [s]": tau_ct_p,
             "Negative electrode charge transfer time scale [s]": tau_ct_n,
             "Positive electrode capacitance [F]": C_p,
