@@ -133,7 +133,7 @@ class InverseOCV:
                 for x in inputs:
                     diff = np.abs(ocv_function(x["Root"]) - self.ocv_value)
                     sol = Solution()
-                    sol.set_solution_variable("Difference", data=np.asarray([diff]))
+                    sol.set_solution_variable("Difference", data=np.atleast_1d(diff))
                     solutions.append(sol)
                 return solutions
 

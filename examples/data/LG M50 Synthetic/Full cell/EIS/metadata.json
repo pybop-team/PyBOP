@@ -28,7 +28,7 @@
                 "Initial voltage": "The terminal voltage prior to the EIS measurement.",
                 "Frequency": "The input perturbation frequency.",
                 "Impedance (real)": "The real component of the complex impedance.",
-                "Impedance (imag)": "The negative imaginary component of the complex impedance.",
+                "Impedance (imag)": "The imaginary component of the complex impedance.",
                 "Procedure Time": "Time elapsed since beginning of procedure.",
                 "Procedure Capacity": "The net charge passed since beginning of procedure."
             },

@@ -3,10 +3,10 @@ import pybamm
 from pybamm import DummySolver, Parameter, ParameterValues
 from pybamm import t as pybamm_t
 
-from pybop.models.lithium_ion.base_model import BaseGroupedModel
+from pybop.models.li_half_cell.base_model import BaseHalfCellModel
 
 
-class WeppnerHuggins(BaseGroupedModel):
+class WeppnerHuggins(BaseHalfCellModel):
     """
     Represents the Weppner & Huggins model to fit diffusion coefficients to GITT data.
 
@@ -48,12 +48,12 @@ class WeppnerHuggins(BaseGroupedModel):
         # Parameters are purely symbolic at this stage, and will be set by the
         # `ParameterValues` class when the model is processed.
 
-        Q_th = Parameter("Theoretical electrode capacity [A.s]")
+        Q_th_p = Parameter("Theoretical electrode capacity [A.h]") * 3600
 
         U = Parameter("Reference voltage [V]")
         U_prime = Parameter("Derivative of the OCP wrt stoichiometry [V]")
 
-        tau_d = Parameter("Particle diffusion time scale [s]")
+        tau_d_p = Parameter("Positive particle diffusion time scale [s]")
 
         ######################
         # Input current (positive on discharge)
@@ -64,9 +64,9 @@ class WeppnerHuggins(BaseGroupedModel):
         # Governing equations
         ######################
         # Surface stoichiometry
-        sto_surf = 2 * I / (3 * Q_th) * (pybamm_t * tau_d / np.pi) ** 0.5
+        sto_p_surf = 2 * I / (3 * Q_th_p) * (pybamm_t * tau_d_p / np.pi) ** 0.5
         # Linearised voltage
-        V = U + U_prime * sto_surf
+        V = U + U_prime * sto_p_surf
 
         ######################
         # (Some) variables
@@ -136,25 +136,25 @@ class WeppnerHuggins(BaseGroupedModel):
 
         # Unpack physical parameters
         F = pybamm.constants.F.value
-        alpha = param["Positive electrode active material volume fraction"]
-        c_max = param["Maximum concentration in positive electrode [mol.m-3]"]
-        L = param["Positive electrode thickness [m]"]
-        R = param["Positive particle radius [m]"]
-        D = param["Positive particle diffusivity [m2.s-1]"]
+        alpha_p = param["Positive electrode active material volume fraction"]
+        c_max_p = param["Maximum concentration in positive electrode [mol.m-3]"]
+        L_p = param["Positive electrode thickness [m]"]
+        R_p = param["Positive particle radius [m]"]
+        D_p = param["Positive particle diffusivity [m2.s-1]"]
 
         # Compute the cell area
         A = param["Electrode height [m]"] * param["Electrode width [m]"]
 
         # Grouped parameters
-        Q_th = F * alpha * c_max * L * A
-        tau_d = R**2 / D
+        Q_th_p = F * alpha_p * c_max_p * L_p * A / 3600
+        tau_d_p = R_p**2 / D_p
 
         parameter_dictionary = {
             "Current function [A]": param["Current function [A]"],
             "Reference voltage [V]": 4,
             "Derivative of the OCP wrt stoichiometry [V]": -1,
-            "Theoretical electrode capacity [A.s]": Q_th,
-            "Particle diffusion time scale [s]": tau_d,
+            "Theoretical electrode capacity [A.h]": Q_th_p,
+            "Positive particle diffusion time scale [s]": tau_d_p,
         }
         parameter_values = ParameterValues(values=parameter_dictionary)
         parameter_values._set_initial_state = WeppnerHuggins.set_initial_state  # noqa: SLF001

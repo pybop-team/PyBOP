@@ -51,7 +51,7 @@ EIS_COLUMN_DEFINITIONS: dict[str, str] = {
     "Initial voltage": "The terminal voltage prior to the EIS measurement.",
     "Frequency": "The input perturbation frequency.",
     "Impedance (real)": "The real component of the complex impedance.",
-    "Impedance (imag)": "The negative imaginary component of the complex impedance.",
+    "Impedance (imag)": "The imaginary component of the complex impedance.",
     # "Temperature": "The temperature of the cell.",
 }
 

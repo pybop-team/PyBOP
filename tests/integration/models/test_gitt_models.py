@@ -14,8 +14,8 @@ ABSOLUTE_TOLERANCE = 1e-5
 
 # Parameter configurations
 DIFFUSION_PARAMS = [
-    ("Theoretical electrode capacity [A.s]", 10),
-    ("Particle diffusion time scale [s]", 2000),
+    ("Theoretical electrode capacity [A.h]", 0.003),
+    ("Positive particle diffusion time scale [s]", 2000),
 ]
 
 
@@ -28,8 +28,8 @@ class TestGITTModels:
 
     @pytest.fixture(
         params=[
-            pybop.lithium_ion.WeppnerHuggins(),
-            pybop.lithium_ion.SPDiffusion(),
+            pybop.li_half_cell.WeppnerHuggins(),
+            pybop.li_half_cell.SPDiffusion(),
         ],
         scope="module",
     )
