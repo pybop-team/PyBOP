@@ -117,7 +117,7 @@ class TestProblem:
         assert not np.isfinite(out["Voltage [V]"].data)
 
     def test_fitting_problem_eis(self, parameters):
-        model = pybamm.lithium_ion.SPM()
+        model = pybamm.lithium_ion.SPM(options={"surface form": "differential"})
         dataset = pybop.Dataset(
             {
                 "Frequency [Hz]": np.logspace(-4, 5, 30),
