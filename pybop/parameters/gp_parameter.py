@@ -28,12 +28,25 @@ class FoKLGP:
         parameter_values=None,
         kernel="Bernoulli Polynomial",
         twoway=True,
+        model=None,
     ):
+        """
+        Parameters
+        ----------
+        name : str
+            Name of the parameter being processed
+        options : dict
+            options dictionary for GP creation
+        kernel : str
+            sets GP kernel, only "Bernoulli Polynomials
+
+        """
         if not FOKL_AVAILABLE:
             raise ModuleNotFoundError(
                 "The `FoKL` package is required to use FoKLGP objects. "
                 "Please install it using: pip install FoKL"
             )
+        self.model = model
         GP_dict_list = self._process_options(name, options, parameter_values)
         self.evaluate_func = self._evaluate_parameter(kernel)
         self.damtx = self._create_interaction_matrix(
@@ -92,12 +105,10 @@ class FoKLGP:
 
         """
         default_options = {
-            "arg_inds": None,
+            "Arguments": None,
             "exp": True,
             "Number of inputs": 1,
-            "div_arg": None,
-            "div_const": None,
-            "inv_arg": None,
+            "Division Arguments": None,
             "Number of terms": 1,
             "Constant standard deviation": 0.2,
             "Bi mean": 0,
@@ -124,20 +135,40 @@ class FoKLGP:
                 ) from err
 
         num_inputs = 0
-        if default_options["arg_inds"] is not None:
-            num_inputs += len(default_options["arg_inds"])
-        if default_options["div_arg"] is not None:
-            num_inputs += len(default_options["div_arg"])
-        if default_options["inv_arg"] is not None:
-            num_inputs += len(default_options["inv_arg"])
 
-        for arg in default_options["arg_inds"] or []:
-            if str(arg) not in default_options["Normalization min-max"]:
-                default_options["Normalization min-max"] = {str(arg): (0, 1)}
+        default_options["Input names"] = self._check_arguments(default_options)
+
+        if default_options["Arguments"] is not None:
+            num_inputs += len(default_options["Arguments"])
+        if default_options["Division Arguments"] is not None:
+            num_inputs += len(default_options["Division Arguments"])
+
+        for arg in default_options["Arguments"] or []:
+            if arg not in default_options["Normalization min-max"]:
+                default_options["Normalization min-max"] = {arg: (0, 1)}
         self.verbose = default_options["Verbose"]
         default_options["Number of inputs"] = num_inputs
         self.parameter_values = parameter_values
         return default_options
+
+    def _check_arguments(self, GP_options):
+        input_names = self._get_function_parameter_input_names(
+            self.model, GP_options["Name"]
+        )
+        if GP_options["Arguments"] is not None:
+            for n in GP_options["Arguments"]:
+                if n not in input_names:
+                    raise ValueError(
+                        f"Input argument {n} not found. Possible inputs are {input_names}"
+                    )
+        if GP_options["Division Arguments"] is not None:
+            for div_arg in GP_options["Division Arguments"]:
+                for n in div_arg:
+                    if n not in input_names:
+                        raise ValueError(
+                            f"Input argument {n} not found. Possible inputs are {input_names}"
+                        )
+        return input_names
 
     def _create_interaction_matrix(
         self, number_of_terms, number_of_inputs, twoway, damtx=None
@@ -214,7 +245,7 @@ class FoKLGP:
         Returns:
         ---------
         evaluate_pybamm : function
-            Symbolic GP function for basis function
+            Symbolic GP function for defined kernel
         """
         self._set_kernel(kernel)
 
@@ -228,20 +259,16 @@ class FoKLGP:
 
                 mtx = np.array(mtx)
                 phind = []
+                X_sc = []
+                A = [1, 2, 3]
                 for i in range(num_inputs):
-                    phind_temp = inputs[i] * 499
-                    sett = phind_temp == 0
+                    phind_temp = inputs[i][0] * 499
+                    sett = pybamm.EqualHeaviside(0, phind_temp)
                     phind_temp = phind_temp + sett
                     phind.append(phind_temp - 1)
+                    X_sc.append([(1 - inputs[0][i]) ** a for a in A])
 
-                A = [1, 2, 3]
-
-                X_sc = [(1 - inputs[0]) ** a for a in A]
-
-                lspace = []
-                for _i in range(num_inputs):
-                    lspace.append(np.linspace(0, 499, 499))
-                lspace = np.array(lspace)
+                lspace = np.linspace(0, 499, 499)
 
                 for j in range(num_basis_terms):
                     phi = 1
@@ -255,17 +282,18 @@ class FoKLGP:
                                 for jj in range(4):
                                     phispace = self.phis[nid][jj].reshape(1, -1)
                                     phi_interp = pybamm.Interpolant(
-                                        lspace[0], phispace[0], phind[k]
+                                        lspace, phispace[0], phind[k]
                                     )
                                     coeff.append(phi_interp)
 
                             phi *= (
                                 coeff[0]
-                                + coeff[1] * X_sc[0]
-                                + coeff[2] * X_sc[1]
-                                + coeff[3] * X_sc[2]
+                                + coeff[1] * X_sc[k][0]
+                                + coeff[2] * X_sc[k][1]
+                                + coeff[3] * X_sc[k][2]
                             )
-                    X_sol.append(phi)
+                        coeff = None
+                        X_sol.append(phi)
 
                 X_sol_ones = betas[0]
                 mean = X_sol_ones
@@ -277,10 +305,6 @@ class FoKLGP:
         elif kernel == "Bernoulli Polynomial":
 
             def evaluate_pybamm(betas, mtx, inputs, coeff=None):
-                """
-                Pybamm Function evaluation, creates symbolic
-                betas: indexed from beta list that scales basis function expansion
-                """
 
                 num_basis_terms = len(mtx)
                 num_inputs = len(mtx[0])
@@ -318,15 +342,54 @@ class FoKLGP:
 
         return evaluate_pybamm
 
+    @staticmethod
+    def _get_function_parameter_input_names(model, name):
+        """
+        Return the ordered, PyBaMM-standard descriptive input names for the
+        FunctionParameter called `name`, e.g.
+        ["Electrolyte concentration [mol.m-3]", "Temperature [K]"].
+
+        `model` must be the un-built/un-discretised pybamm.BaseModel — once
+        parameters are processed, FunctionParameter nodes are replaced by
+        plain Function nodes and this info is gone.
+        """
+        info = model.get_parameter_info()
+        for var_symbol, _ in info.values():
+            if (
+                isinstance(var_symbol, pybamm.FunctionParameter)
+                and var_symbol.name == name
+            ):
+                return list(var_symbol.input_names)
+        raise ValueError(
+            f"No FunctionParameter named '{name}' found in the model. "
+            "Call model.print_parameter_info() to see the available names."
+        )
+
+    def _unpack_str_inputs(self, arguments, input_names):
+        arg_inds = []
+        for arg in arguments:
+            pos = input_names.index(arg)
+            arg_inds.append(pos)
+        return arg_inds
+
+    def _unpack_div_str_inputs(self, div_args_str, input_names):
+        div_arg = []
+        for term in div_args_str:
+            num = term[0]
+            dom = term[1]
+            div_arg.append([num, dom])
+        return div_arg
+
     def add_function(
         self,
         name,
         mtx,
-        arg_inds,
         betas_function,
-        norm_bounds,
+        input_names,
+        arguments=None,
+        division_arguments=None,
+        norm_bounds=None,
         exp=False,
-        div_arg=None,
     ):
         """
         Creates Parameter function specified as a GP object
@@ -334,10 +397,14 @@ class FoKLGP:
 
         beta_func = betas_function
 
-        if arg_inds is None:
+        if arguments is None:
             arg_inds = []
-        if div_arg is None:
+        else:
+            arg_inds = self._unpack_str_inputs(arguments, input_names)
+        if division_arguments is None:
             div_arg = []
+        else:
+            div_arg = self._unpack_div_str_inputs(division_arguments, input_names)
 
         if exp:
 
@@ -365,34 +432,30 @@ class FoKLGP:
                 for x in arg_inds:
                     xs.append(
                         [
-                            (args[x] - norm_bounds[str(x)][0])
-                            / (norm_bounds[str(x)][1] - norm_bounds[str(x)][0])
+                            (args[x] - norm_bounds[input_names[x]][0])
+                            / (
+                                norm_bounds[input_names[x]][1]
+                                - norm_bounds[input_names[x]][0]
+                            )
                         ]
                     )
                 res = self.evaluate_func(beta_func, mtx, xs)
                 return res
 
         if self.verbose:
-            # Try to pull function string arguments
-            if type(self.parameter_values[name]) is not float:
-                function_args = self.parameter_values[name].__code__.co_varnames
-                function_args_mod = []
-
-                for x in div_arg:
-                    function_args_mod.append(
-                        function_args[x[0]] + "/" + function_args[x[1]]
-                    )
-
-                for x in arg_inds:
+            function_args_mod = []
+            if division_arguments is not None:
+                for x in division_arguments:
+                    function_args_mod.append(x[0] + "/" + x[1])
+            if arguments is not None:
+                for x in arguments:
                     function_args_mod.append(
                         "("
-                        + function_args[x]
-                        + str(f" - {norm_bounds[str(x)][0]}) / ")
-                        + str(f"({norm_bounds[str(x)][1] - norm_bounds[str(x)][0]})")
+                        + x
+                        + str(f" - {norm_bounds[x][0]}) / ")
+                        + str(f"({norm_bounds[x][1] - norm_bounds[x][0]})")
                     )
-                print(
-                    f"GP function created for {name} \n inputs are {function_args_mod}"
-                )
+            print(f"GP function created for {name} \n inputs are {function_args_mod}")
         self.pybamm_function = pybamm_function
         return pybamm_function
 
@@ -443,11 +506,12 @@ class FoKLGP:
         pybamm_function = self.add_function(
             GP["Name"],
             damtxs,
-            GP["arg_inds"],
             betas_function,
-            GP["Normalization min-max"],
+            GP["Input names"],
+            arguments=GP["Arguments"],
+            division_arguments=GP["Division Arguments"],
+            norm_bounds=GP["Normalization min-max"],
             exp=GP["exp"],
-            div_arg=GP["div_arg"],
         )
         self.parameter_values.update({GP["Name"]: pybamm_function})
 

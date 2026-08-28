@@ -26,8 +26,6 @@ experiment = pybamm.Experiment(
 experiment_validate = pybamm.Experiment(
     [
         "Discharge at 3C until 2.7 V",
-        "Charge at 1C until 4.0 V",
-        "Discharge at 1C until 2.7 V",
     ]
 )
 
@@ -73,13 +71,15 @@ dataset_validate = pybop.Dataset(
 
 # Create GP terms
 
-num_of_terms = 2
+num_of_terms = 3
 
 GP_options = {
     "Number of terms": num_of_terms,
-    "arg_inds": [0],  # Argument [0] corresponds to concentration in the electrolyte
+    "Arguments": [
+        "Electrolyte concentration [mol.m-3]"
+    ],  # Argument [0] corresponds to concentration in the electrolyte
     "Normalization min-max": {
-        "0": (-1, 4500)
+        "Electrolyte concentration [mol.m-3]": (-1, 5000)
     },  # Normalizing such that inputs are between 0-1 is necessary
     "Constant mean": 1.8e-10,  # Beta 0 mean
     "Constant standard deviation": 1e-11,
@@ -93,6 +93,7 @@ GP_param_neg = pybop.FoKLGP(
     parameter_values=parameter_values.copy(),
     options=GP_options,
     twoway=True,
+    model=model,
 )
 new_parameters = GP_param_neg.get_parameter_values()
 
@@ -166,43 +167,6 @@ V_test_constant = solution_final_test_constant["Voltage [V]"].entries
 V_train_constant = solution_final_train_constant["Voltage [V]"].entries
 t_eval_validate_constant = solution_final_test_constant["Time [s]"].entries
 t_eval_validate_constant_train = solution_final_train_constant["Time [s]"].entries
-
-c_e_train = solution["Electrolyte concentration [mol.m-3]"].entries
-c_e_test = solution_validate["Electrolyte concentration [mol.m-3]"].entries
-c_e_train_GP = solution_final_train["Electrolyte concentration [mol.m-3]"].entries
-c_e_test_GP = solution_final_test["Electrolyte concentration [mol.m-3]"].entries
-
-
-for i in range(4):
-    fig = go.Figure()
-    fig.add_trace(
-        go.Scatter(x=t_eval, y=c_e_train[i * 19, :], mode="lines", name="Training")
-    )
-    fig.add_trace(
-        go.Scatter(
-            x=t_eval_validate, y=c_e_test[i * 19, :], mode="lines", name="Testing"
-        )
-    )
-    fig.add_trace(
-        go.Scatter(
-            x=t_eval_validate_GP_train,
-            y=c_e_train_GP[i * 19, :],
-            mode="lines",
-            name="GP train",
-        )
-    )
-    fig.add_trace(
-        go.Scatter(
-            x=t_eval_validate_GP, y=c_e_test_GP[i * 19, :], mode="lines", name="GP test"
-        )
-    )
-    fig.update_layout(
-        xaxis_title="Time [s]",
-        yaxis_title="Concentration [mol.m-3]",
-        title=f"Concentration profile (index {i * 19})",
-        legend=dict(x=0.01, y=0.99),
-    )
-    fig.show()
 
 # --- Validation experiment (3C discharge) ---
 fig_val = go.Figure()
