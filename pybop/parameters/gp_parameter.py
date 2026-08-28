@@ -365,14 +365,16 @@ class FoKLGP:
             "Call model.print_parameter_info() to see the available names."
         )
 
-    def _unpack_str_inputs(self, arguments, input_names):
+    @staticmethod
+    def _unpack_str_inputs(arguments, input_names):
         arg_inds = []
         for arg in arguments:
             pos = input_names.index(arg)
             arg_inds.append(pos)
         return arg_inds
 
-    def _unpack_div_str_inputs(self, div_args_str, input_names):
+    @staticmethod
+    def _unpack_div_str_inputs(div_args_str, input_names):
         div_arg = []
         for term in div_args_str:
             num = term[0]
