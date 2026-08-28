@@ -29,14 +29,16 @@ classifiers = [
 # versions in the tests in nightly_dependency_tests.yml as appropriate
 requires-python = ">=3.10, <3.15"
 dependencies = [
-    "pybamm>=26.3.0",
+    "pybamm[plot]>=26.3.0",
     "numpy>=1.26",
     "scipy>=1.12",
     "pints>=0.6.0",
+    "polars>=1.18.0",
 ]
 
 [project.optional-dependencies]
-plot = ["plotly>=6"]
+plotly = ["plotly>=6"]
+scienceplots = ["SciencePlots>=2.2"]
 salib = ["SALib>=1.5"]
 scifem = [
   "scikit-fem>=8.1.0" # scikit-fem is a dependency for the multi-dimensional pybamm models
@@ -49,7 +51,7 @@ ep-bolfi = [
     "ep-bolfi>=3.0.2; python_version < '3.13'"
 ]
 pyprobe = [
-  "PyProBE-Data>=2.5.0;python_version >= '3.11' and python_version < '3.13'"
+  "PyProBE-Data>=2.6.0;python_version >= '3.11' and python_version < '3.13'"
 ]
 fokl = [
     "FoKL>=1.2.0"
@@ -83,13 +85,10 @@ dev = [
 exclude = [
   "papers/",
   "tests/",
-  "benchmarks/",
   "docs/",
   "assets/",
   "scripts/",
-  "multiprocessing_bench.py",
   "noxfile.py",
-  "asv.conf.json",
   "conftest.py",
   "CONTRIBUTING.md",
 ]
@@ -100,14 +99,11 @@ exclude = [
 exclude = [
   "papers/",
   "tests/",
-  "benchmarks/",
   "docs/",
   "assets/",
   "scripts/",
   "examples/",
-  "multiprocessing_bench.py",
   "noxfile.py",
-  "asv.conf.json",
   "conftest.py",
   "CONTRIBUTING.md",
   "CHANGELOG.md",
