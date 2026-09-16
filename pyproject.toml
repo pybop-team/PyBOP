@@ -53,7 +53,8 @@ ep-bolfi = [
 pyprobe = [
   "PyProBE-Data>=2.6.0;python_version >= '3.11' and python_version < '3.13'"
 ]
-all = ["pybop[plotly,scienceplots,salib,scifem,bpx,pyprobe,ep-bolfi]"]
+fokl = ["FoKL>=1.2.0"]
+all = ["pybop[plotly,scienceplots,salib,scifem,bpx,pyprobe,ep-bolfi,fokl]"]
 
 [dependency-groups]
 docs = [
