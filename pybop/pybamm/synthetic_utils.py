@@ -252,12 +252,7 @@ def _solution_to_dataframe(
         ]
     )
     pybamm_data["Time [s]"] += start_time
-    try:
-        raw_dataframe = pl.LazyFrame(pybamm_data)
-    except pl.exceptions.ShapeError:
-        # Account for an error where the Step is one longer than the Solution
-        pybamm_data["Step"] = pybamm_data["Step"][:-1]
-        raw_dataframe = pl.LazyFrame(pybamm_data)
+    raw_dataframe = pl.LazyFrame(pybamm_data)
     raw_dataframe = _remap_cycle_info(raw_dataframe, step_sequence, event_offset)
     return raw_dataframe.select(
         [
