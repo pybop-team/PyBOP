@@ -18,12 +18,9 @@ plt.ylabel("Voltage / V")
 # Use the Chen2020 parameters
 parameter_values = pybamm.ParameterValues("Chen2020")
 
-# Fix the electrolyte diffusivity and conductivity
+# Fix the electrolyte conductivity
 ce0 = parameter_values["Initial concentration in electrolyte [mol.m-3]"]
 T = parameter_values["Ambient temperature [K]"]
-parameter_values["Electrolyte diffusivity [m2.s-1]"] = parameter_values[
-    "Electrolyte diffusivity [m2.s-1]"
-](ce0, T)
 parameter_values["Electrolyte conductivity [S.m-1]"] = parameter_values[
     "Electrolyte conductivity [S.m-1]"
 ](ce0, T)
