@@ -1,3 +1,4 @@
+import re
 import warnings
 from typing import Protocol
 
@@ -66,6 +67,16 @@ class Dataset:
 
         return self.data[key]
 
+    def keys(self):
+        """
+        Return the keys of the data dictionary.
+
+        Returns
+        -------
+        dict_keys
+        """
+        return self.data.keys()
+
     def __len__(self) -> int:
         """Return the length of the data, based on the length of the domain data."""
         return len(self.data[self.domain])
@@ -131,7 +142,7 @@ class Dataset:
     ) -> None:
         n_domain_data = len(domain_data)
         for s in signals:
-            if len(self.data[s]) != n_domain_data:
+            if np.shape(self.data[s])[-1] != n_domain_data:
                 raise ValueError(
                     f"{self.domain} data and {s} data must be the same length."
                 )
@@ -178,6 +189,67 @@ class Dataset:
                 )
 
         return Interpolant(self.data["Time [s]"], self.data[control], pybamm_t)
+
+
+def get_impedance_variables(frequencies: np.ndarray | list[float]) -> list[str]:
+    """
+    Return the names of the dataset variables which hold an impedance spectrum, being
+    two real-valued variables, the real and the imaginary component, per frequency.
+
+    Complex data is split into real components because the error measures square the
+    residual, and `r**2` is not `abs(r)**2` for a complex array.
+
+    Parameters
+    ----------
+    frequencies : np.ndarray or list[float]
+        The frequencies at which the impedance is evaluated.
+
+    Returns
+    -------
+    list[str]
+        Variable names, ordered (real, imaginary) for each frequency in turn.
+    """
+    return [
+        f"Impedance {component} [Ohm] ({frequency:.6g} Hz)"
+        for frequency in frequencies
+        for component in ("real", "imaginary")
+    ]
+
+
+def parse_impedance_variables(
+    variables: list[str],
+) -> tuple[np.ndarray, list[str], list[str]]:
+    """
+    Pick out the impedance variables from a list of variable names, inverting
+    :func:`get_impedance_variables`.
+
+    Parameters
+    ----------
+    variables : list[str]
+        Variable names, which may or may not include impedance variables.
+
+    Returns
+    -------
+    tuple[np.ndarray, list[str], list[str]]
+        The frequencies in increasing order, and the corresponding real and imaginary
+        variable names. All three are empty if no impedance variables are present.
+    """
+    pattern = re.compile(r"^Impedance (real|imaginary) \[Ohm\] \((\S+) Hz\)$")
+
+    frequencies = {}
+    for variable in variables:
+        match = pattern.match(variable)
+        if match:
+            component, frequency = match.group(1), float(match.group(2))
+            frequencies.setdefault(frequency, {})[component] = variable
+
+    # Ignore any frequency which is missing one of its two components
+    ordered = sorted(f for f, components in frequencies.items() if len(components) == 2)
+    return (
+        np.asarray(ordered),
+        [frequencies[f]["real"] for f in ordered],
+        [frequencies[f]["imaginary"] for f in ordered],
+    )
 
 
 def import_pybamm_solution(
