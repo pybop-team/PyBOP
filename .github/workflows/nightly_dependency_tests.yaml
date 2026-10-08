@@ -57,7 +57,10 @@ jobs:
           uv pip install -e .[all]
           uv pip install --group dev
           uv pip uninstall pybamm
-          uv pip install --no-sources "pybamm[all] @ git+https://github.com/pybamm-team/PyBaMM@main#subdirectory=packages/pybamm"
+          # pybamm@main requires an unreleased pybammsolvers, so build both from the same monorepo
+          uv pip install --no-sources \
+            "pybammsolvers @ git+https://github.com/pybamm-team/PyBaMM@main#subdirectory=packages/pybammsolvers" \
+            "pybamm[all] @ git+https://github.com/pybamm-team/PyBaMM@main#subdirectory=packages/pybamm"
           uv pip install pytest-reportlog
 
       - name: Install dependencies (lowest)
