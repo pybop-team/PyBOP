@@ -49,6 +49,16 @@ jobs:
           python-version: ${{ matrix.python-version }}
           activate-environment: "true"
 
+      - name: Install pybammsolvers build toolchain
+        if: matrix.dep-type == 'latest'
+        run: |
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+              sudo apt-get update
+              sudo apt-get install -y libopenblas-dev gcc gfortran make g++ build-essential
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+              brew install libomp gcc
+          fi
+
       - name: Install dependencies (latest)
         if: matrix.dep-type == 'latest'
         # uv pip install pip needed to allow %pip install within notebooks
