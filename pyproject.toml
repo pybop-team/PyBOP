@@ -33,7 +33,7 @@ dependencies = [
     "numpy>=1.26",
     "scipy>=1.12",
     "pints>=0.6.0",
-    "polars>=1.18.0, <2.0",
+    "polars>=1.18.0",
 ]
 
 [project.optional-dependencies]
@@ -51,7 +51,8 @@ ep-bolfi = [
     "ep-bolfi>=3.0.2; python_version < '3.13'"
 ]
 pyprobe = [
-  "PyProBE-Data>=2.6.0;python_version >= '3.11' and python_version < '3.13'"
+  "PyProBE-Data>=2.6.0;python_version >= '3.11' and python_version < '3.13'",
+  "polars<2.0.0"
 ]
 all = ["pybop[plotly,scienceplots,salib,scifem,bpx,pyprobe,ep-bolfi]"]
 
