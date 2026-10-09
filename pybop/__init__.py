@@ -51,6 +51,7 @@ from .transformation.transformations import (
 from .parameters.parameter import Parameter, Parameters
 from .parameters.distributions import Distribution, Exponential, Gaussian, JointDistribution, LogNormal, LogUniform, Unbounded, Uniform
 from .parameters.multivariate_distributions import MultivariateNonparametric, MultivariateUniform, MultivariateGaussian, MultivariateLogNormal, MarginalDistribution
+from .parameters.gp_parameter import FoKLGP
 
 #
 # Model classes
