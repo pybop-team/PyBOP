@@ -30,7 +30,7 @@ from ._utils import add_spaces, add_noise, is_numeric, load_data_dict, save_data
 #
 # Dataset class
 #
-from .processing.dataset import Dataset, import_pybamm_solution, import_pyprobe_result
+from .processing.dataset import Dataset, get_impedance_variables, parse_impedance_variables, import_pybamm_solution, import_pyprobe_result
 from .processing.interpolate_current import generate_consistent_current, downsample_constant_current
 
 #
