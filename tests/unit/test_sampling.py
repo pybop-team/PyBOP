@@ -1,4 +1,5 @@
 import logging
+from types import SimpleNamespace
 from unittest.mock import call, patch
 
 import numpy as np
@@ -353,6 +354,10 @@ class TestPintsSamplers:
             # load result
             result_load = pybop.Result.load_data(filename, file_format=to_format)
             self.compare_result_data(result, result_load)
+            sampling_result_load = SamplingResult.load_data(
+                filename, file_format=to_format
+            )
+            np.testing.assert_array_equal(sampling_result_load.chains, result.chains)
             assert sampler2.logger is None
 
         # test save whole result
@@ -362,3 +367,60 @@ class TestPintsSamplers:
         self.compare_result_data(result, result_load)
         assert result.problem.parameters.names == result_load.problem.parameters.names
         np.testing.assert_array_equal(result.chains, result_load.chains)
+
+    @pytest.mark.parametrize("chain_shape", [(2, 3, 2), (1, 3, 1), (2, 0, 2)])
+    def test_sampling_result_save_data_round_trip(self, tmp_path, chain_shape):
+        n_parameters = chain_shape[2]
+        parameter_names = [f"p{i}" for i in range(n_parameters)]
+        values = np.arange(n_parameters, dtype=float)
+        parameters = SimpleNamespace(
+            names=parameter_names,
+            to_dict=lambda values: dict(zip(parameter_names, values, strict=True)),
+        )
+        problem = SimpleNamespace(minimising=True, parameters=parameters)
+        logger = SimpleNamespace(
+            x_model_best=values,
+            x_model=np.stack([values, values + 0.2, values + 0.3]),
+            x0=values,
+            cost_best=2.0,
+            cost_convergence=np.array([3.0, 2.0]),
+            cost=np.array([3.0, 2.0]),
+            iteration=2,
+            iteration_number=np.array([1, 2]),
+            evaluations=3,
+        )
+        sampler = SimpleNamespace(log_pdf=problem, logger=logger)
+        chains = np.arange(np.prod(chain_shape), dtype=float).reshape(chain_shape)
+        result = SamplingResult(
+            sampler=sampler,
+            time=0.01,
+            chains=chains,
+            method_name="test sampler",
+            message="complete",
+        )
+
+        for to_format in ["json", "matlab", "pickle"]:
+            filename = tmp_path / f"sampling_result.{to_format}"
+            result.save_data(filename, to_format=to_format)
+
+            result_load = SamplingResult.load_data(filename, file_format=to_format)
+
+            assert isinstance(result_load, SamplingResult)
+            self.compare_result_data(result, result_load)
+            np.testing.assert_array_equal(result_load.chains, chains)
+            np.testing.assert_array_equal(
+                result_load.all_samples, np.concatenate(chains, axis=0)
+            )
+            assert result_load.n_parameters == n_parameters
+
+        legacy_result = pybop.Result(
+            problem=problem,
+            logger=logger,
+            time=0.01,
+            method_name="test sampler",
+            message="complete",
+        )
+        legacy_filename = tmp_path / "legacy_result.pickle"
+        legacy_result.save_data(legacy_filename)
+        with pytest.raises(ValueError, match="cannot be reconstructed reliably"):
+            SamplingResult.load_data(legacy_filename)

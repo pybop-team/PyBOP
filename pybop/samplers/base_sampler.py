@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from math import prod
 
 import numpy as np
 import pints
@@ -174,6 +175,60 @@ class SamplingResult(Result):
         self.chains = chains
         self.all_samples = np.concatenate(chains, axis=0)
         self.n_parameters = self.chains.shape[2]
+
+    def data_dict(self) -> dict:
+        """Return the base result data and the retained sampling chains."""
+        data = super().data_dict()
+        data["chains"] = self.chains
+        data["chains_shape"] = np.asarray(self.chains.shape)
+        return data
+
+    @staticmethod
+    def load_data(filename: str, file_format: str = "pickle") -> "SamplingResult":
+        """Load a sampling result saved with ``save_data``.
+
+        The serialized data must contain the explicit ``chains`` field. Older
+        files that only contain evaluation logs cannot reliably reconstruct
+        accepted chain states or the discarded warm-up iterations. The returned
+        result restores the saved chains and result fields, but its problem
+        metadata contains parameter names only. Methods that need the original
+        parameter distributions or transformations require the original problem.
+        """
+        data = Result._load_data_dict(filename, file_format)  # noqa: SLF001
+        if "chains" not in data:
+            raise ValueError(
+                "Saved data does not contain sampling chains; they cannot be "
+                "reconstructed reliably from evaluation logs."
+            )
+
+        chains = np.asarray(data["chains"])
+        if "chains_shape" in data:
+            try:
+                shape = tuple(int(dimension) for dimension in data["chains_shape"])
+            except (TypeError, ValueError, OverflowError) as exc:
+                raise ValueError(
+                    "Saved sampling chain shape metadata is invalid."
+                ) from exc
+            if len(shape) != 3 or any(dimension < 0 for dimension in shape):
+                raise ValueError("Saved sampling chain shape metadata is invalid.")
+            if prod(shape) != chains.size:
+                raise ValueError(
+                    "Saved sampling chains do not match their recorded shape."
+                )
+            chains = chains.reshape(shape)
+        elif chains.ndim != 3:
+            raise ValueError(
+                "Saved sampling chains must have shape "
+                "(n_chains, n_iterations, n_parameters)."
+            )
+
+        result = Result._from_data_dict(data)  # noqa: SLF001
+        sampling_result = SamplingResult.__new__(SamplingResult)
+        sampling_result.__dict__.update(result.__dict__)
+        sampling_result.chains = chains
+        sampling_result.all_samples = np.concatenate(chains, axis=0)
+        sampling_result.n_parameters = chains.shape[2]
+        return sampling_result
 
     def signif(self, x, p: int):
         """

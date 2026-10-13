@@ -397,31 +397,9 @@ class Result:
         return save_data_dict(data, filename=filename, to_format=to_format)
 
     @staticmethod
-    def load_data(filename: str, file_format: str = "pickle") -> dict:
-        """
-        Load results data as dictionary from a given file. Restores data saved with
-        save_data.
-
-        Calls load_data_dict defined in _utils.py and provides the keys of
-        data that is 0-d and 1-d to ensure consistent data dimensions.
-
-        Parameters
-        ----------
-        filename : str
-            The name of the file containing the data.
-        file_format : str, optional
-            The format the data was save to. Options are:
-            - 'pickle' (default)
-            - 'matlab'
-            - 'csv'
-            - 'json'
-
-        Returns
-        -------
-        data_dict :
-            python dictionary containing the data in the file.
-        """
-        data = load_data_dict(
+    def _load_data_dict(filename: str, file_format: str) -> dict:
+        """Load result data with dimensions normalised across formats."""
+        return load_data_dict(
             filename,
             file_format=file_format,
             data_keys_0d=["_minimising", "n_runs", "best_run"],
@@ -435,8 +413,13 @@ class Result:
                 "message",
                 "scipy_result",
                 "time",
+                "chains_shape",
             ],
         )
+
+    @staticmethod
+    def _from_data_dict(data: dict) -> "Result":
+        """Reconstruct a Result from data returned by ``_load_data_dict``."""
 
         # Create a dummy problem
         problem = types.SimpleNamespace()
@@ -477,3 +460,33 @@ class Result:
             )
 
         return Result.combine(results=list_of_results)
+
+    @staticmethod
+    def load_data(filename: str, file_format: str = "pickle") -> "Result":
+        """
+        Load results data as dictionary from a given file. Restores data saved with
+        save_data.
+
+        Calls load_data_dict defined in _utils.py and provides the keys of
+        data that is 0-d and 1-d to ensure consistent data dimensions.
+
+        Parameters
+        ----------
+        filename : str
+            The name of the file containing the data.
+        file_format : str, optional
+            The format the data was save to. Options are:
+            - 'pickle' (default)
+            - 'matlab'
+            - 'csv'
+            - 'json'
+
+        Returns
+        -------
+        Result
+            The reconstructed result. The problem metadata contains parameter
+            names only; reconstructing a complete problem requires the original
+            problem definition.
+        """
+        data = Result._load_data_dict(filename, file_format)
+        return Result._from_data_dict(data)
