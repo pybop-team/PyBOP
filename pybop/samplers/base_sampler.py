@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from math import prod
+from operator import index
 
 import numpy as np
 import pints
@@ -204,19 +205,28 @@ class SamplingResult(Result):
         chains = np.asarray(data["chains"])
         if "chains_shape" in data:
             try:
-                shape = tuple(int(dimension) for dimension in data["chains_shape"])
+                dimensions = tuple(data["chains_shape"])
+                if any(
+                    isinstance(dimension, (bool, np.bool_)) for dimension in dimensions
+                ):
+                    raise TypeError("Boolean values are not valid shape dimensions.")
+                shape = tuple(index(dimension) for dimension in dimensions)
             except (TypeError, ValueError, OverflowError) as exc:
                 raise ValueError(
                     "Saved sampling chain shape metadata is invalid."
                 ) from exc
-            if len(shape) != 3 or any(dimension < 0 for dimension in shape):
+            if (
+                len(shape) != 3
+                or any(dimension < 0 for dimension in shape)
+                or shape[0] == 0
+            ):
                 raise ValueError("Saved sampling chain shape metadata is invalid.")
             if prod(shape) != chains.size:
                 raise ValueError(
                     "Saved sampling chains do not match their recorded shape."
                 )
             chains = chains.reshape(shape)
-        elif chains.ndim != 3:
+        elif chains.ndim != 3 or chains.shape[0] == 0:
             raise ValueError(
                 "Saved sampling chains must have shape "
                 "(n_chains, n_iterations, n_parameters)."

@@ -424,3 +424,70 @@ class TestPintsSamplers:
         legacy_result.save_data(legacy_filename)
         with pytest.raises(ValueError, match="cannot be reconstructed reliably"):
             SamplingResult.load_data(legacy_filename)
+
+    @pytest.mark.parametrize(
+        ("data", "error"),
+        [
+            pytest.param(
+                {"chains": np.zeros((1, 2, 1)), "chains_shape": [1, "invalid", 1]},
+                "shape metadata is invalid",
+                id="non-integer-shape-metadata",
+            ),
+            pytest.param(
+                {"chains": np.zeros((1, 2, 1)), "chains_shape": [1, 2.9, 1]},
+                "shape metadata is invalid",
+                id="fractional-shape-metadata",
+            ),
+            pytest.param(
+                {"chains": np.zeros((1, 2, 1)), "chains_shape": [1, True, 1]},
+                "shape metadata is invalid",
+                id="boolean-shape-metadata",
+            ),
+            pytest.param(
+                {"chains": np.zeros((1, 2, 1)), "chains_shape": [1, np.bool_(True), 1]},
+                "shape metadata is invalid",
+                id="numpy-boolean-shape-metadata",
+            ),
+            pytest.param(
+                {"chains": np.zeros((1, 2, 1)), "chains_shape": [1, 2]},
+                "shape metadata is invalid",
+                id="wrong-shape-dimensions",
+            ),
+            pytest.param(
+                {"chains": np.zeros((1, 2, 1)), "chains_shape": [1, -2, 1]},
+                "shape metadata is invalid",
+                id="negative-shape-dimension",
+            ),
+            pytest.param(
+                {"chains": np.zeros((0, 2, 1)), "chains_shape": [0, 2, 1]},
+                "shape metadata is invalid",
+                id="zero-chain-dimension",
+            ),
+            pytest.param(
+                {"chains": np.zeros((1, 2, 1)), "chains_shape": [1, 2, 2]},
+                "do not match their recorded shape",
+                id="chain-size-does-not-match-shape",
+            ),
+            pytest.param(
+                {"chains": np.zeros((1, 2))},
+                "must have shape",
+                id="legacy-chains-have-invalid-dimensions",
+            ),
+            pytest.param(
+                {"chains": np.zeros((0, 2, 1))},
+                "must have shape",
+                id="legacy-chains-have-no-chains",
+            ),
+        ],
+    )
+    def test_sampling_result_load_data_rejects_invalid_chain_shapes(
+        self, monkeypatch, data, error
+    ):
+        monkeypatch.setattr(
+            pybop.Result,
+            "_load_data_dict",
+            lambda filename, file_format: data,
+        )
+
+        with pytest.raises(ValueError, match=error):
+            SamplingResult.load_data("unused.pickle")
