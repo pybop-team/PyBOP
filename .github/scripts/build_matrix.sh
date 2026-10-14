@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# This helper script generates a matrix for further use in the
-# scheduled/nightly builds for PyBOP, i.e., in scheduled_tests.yaml
+# This helper script generates a matrix for further use in the scheduled
+# continuous integration tests for PyBOP, i.e., in scheduled_tests.yaml
 # It generates a matrix of all combinations of the following variables:
 # - python_version: 3.X
 # - os: ubuntu-latest, windows-latest, macos-15-intel (amd64), macos-latest (arm64)
@@ -9,7 +9,7 @@
 
 # To update the matrix, the variables below can be modified as needed.
 
-python_version=("3.10" "3.11" "3.12")
+python_version=("3.10" "3.11" "3.12" "3.13" "3.14")
 os=("ubuntu-latest" "windows-latest" "macos-15-intel" "macos-latest")
 # This command fetches the last PyBaMM version excluding release candidates from PyPI
 pybamm_version=($(curl -s https://pypi.org/pypi/pybamm/json | jq -r '.releases | keys[]' | grep -v rc | sort -V | tail -n 1 | paste -sd " " -))
