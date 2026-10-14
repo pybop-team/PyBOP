@@ -2,7 +2,7 @@
 
 ## Features
 
-- [#987](https://github.com/pybop-team/PyBOP/pull/987) - Adds save/load support for retained sampling chains in JSON, MATLAB, and pickle result data.
+- [#988](https://github.com/pybop-team/PyBOP/pull/988) - Adds save/load support for retained sampling chains in JSON, MATLAB, and pickle result data.
 - [#973](https://github.com/pybop-team/PyBOP/pull/973) - Adds example scripts for EIS parameterisation.
 - [#974](https://github.com/pybop-team/PyBOP/pull/974) - Adds voltage components to each grouped model as well as asymmetric and multiphase Butler-Volmer kinetics.
 - [#969](https://github.com/pybop-team/PyBOP/pull/969) - Updates synthetic data and adds example script for thermal parameterisation.
