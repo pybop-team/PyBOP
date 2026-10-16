@@ -38,7 +38,7 @@ dependencies = [
 
 [project.optional-dependencies]
 plotly = ["plotly>=6"]
-scienceplots = ["SciencePlots>=2.2"]
+scienceplots = ["SciencePlots>=2.2.2"]
 salib = ["SALib>=1.5"]
 scifem = [
   "scikit-fem>=8.1.0" # scikit-fem is a dependency for the multi-dimensional pybamm models
