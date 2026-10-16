@@ -97,15 +97,11 @@ class TestDataset:
         assert dataset_dictionary.data == dataset_pybamm.data
 
     @pytest.mark.skipif(
-        sys.version_info < (3, 11), reason="requires a python version >= 3.11"
-    )
-    @pytest.mark.skipif(
         sys.version_info >= (3, 13), reason="requires a python version < 3.13"
     )
     def test_pyprobe_import(self):
         """
         Function to test import of PyProBE Result into a pybop.Dataset.
-        PyProBE requires Python 3.11 or higher.
         """
         import pyprobe
 
