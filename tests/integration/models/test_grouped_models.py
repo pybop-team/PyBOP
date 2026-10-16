@@ -32,6 +32,8 @@ class TestGroupedModels:
             pybop.lithium_ion.GroupedSPM(options={"surface form": "differential"}),
             pybop.lithium_ion.GroupedSPMe(),
             pybop.lithium_ion.GroupedSPMe(options={"surface form": "differential"}),
+            pybop.lithium_ion.GroupedDFN(),
+            pybop.lithium_ion.GroupedDFN(options={"surface form": "differential"}),
         ],
         scope="module",
     )

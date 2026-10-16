@@ -192,27 +192,19 @@ class GroupedSPM(BaseGroupedModel):
         ######################
         # The div and grad operators will be converted to the appropriate matrix
         # multiplication at the discretisation stage
-        self.rhs[sto_n] = pybamm.div(
-            pybamm.grad(sto_n) / self.tau_d(sto_n, T, "negative")
-        )
-        self.rhs[sto_p] = pybamm.div(
-            pybamm.grad(sto_p) / self.tau_d(sto_p, T, "positive")
-        )
+        N_s_n = -pybamm.grad(sto_n) / self.tau_d(sto_n, T, "negative")
+        N_s_p = -pybamm.grad(sto_p) / self.tau_d(sto_p, T, "positive")
+        self.rhs[sto_n] = -pybamm.div(N_s_n)
+        self.rhs[sto_p] = -pybamm.div(N_s_p)
 
         # Boundary conditions must be provided for equations with spatial derivatives
         self.boundary_conditions[sto_n] = {
-            "left": (Scalar(0), "Neumann"),
-            "right": (
-                -self.tau_d(sto_n_surf, T, "negative") * pybamm.x_average(j_n),
-                "Neumann",
-            ),
+            "left": (Scalar(0), ("Flux", N_s_n)),
+            "right": (pybamm.x_average(j_n), ("Flux", N_s_n)),
         }
         self.boundary_conditions[sto_p] = {
-            "left": (Scalar(0), "Neumann"),
-            "right": (
-                -self.tau_d(sto_p_surf, T, "positive") * pybamm.x_average(j_p),
-                "Neumann",
-            ),
+            "left": (Scalar(0), ("Flux", N_s_p)),
+            "right": (pybamm.x_average(j_p), ("Flux", N_s_p)),
         }
 
         self.initial_conditions[sto_n] = sto_n_init
