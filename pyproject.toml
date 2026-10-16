@@ -22,12 +22,13 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
   "Intended Audience :: Science/Research",
   "Topic :: Scientific/Engineering",
 ]
 # When updating the Python version ranges, please also bump the Python
 # versions in the tests in nightly_dependency_tests.yml as appropriate
-requires-python = ">=3.10, <3.15"
+requires-python = ">=3.10, <3.16"
 dependencies = [
     "pybamm[plot]>=26.3.0",
     "numpy>=1.26",
