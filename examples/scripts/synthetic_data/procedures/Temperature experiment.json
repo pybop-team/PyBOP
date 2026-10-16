@@ -21,10 +21,10 @@
         7
       ],
       "Step Descriptions": [
-        "Charge at C/2 for 12 minutes",
+        "Charge at C/2 for 12 minutes or until 4.2 V",
         "Rest for 4 hours",
-        "Charge at 1C for 50 seconds",
-        "Discharge at 1C for 50 seconds",
+        "Charge at 1C for 50 seconds or until 4.2 V",
+        "Discharge at 1C for 50 seconds or until 2.5 V",
         "Rest for 1 hour"
       ],
       "Cycles": [
