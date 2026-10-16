@@ -100,9 +100,6 @@ class TestUtils:
         assert np.all(data.lf["Voltage [V]"].to_numpy() >= voltage)
 
     @pytest.mark.skipif(
-        sys.version_info < (3, 11), reason="requires a python version >= 3.11"
-    )
-    @pytest.mark.skipif(
         sys.version_info >= (3, 13), reason="requires a python version < 3.13"
     )
     def test_get_cells_and_filter(self):

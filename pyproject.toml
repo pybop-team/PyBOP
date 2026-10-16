@@ -17,7 +17,6 @@ license = "BSD-3-Clause"
 license-files = ["LICENSE"]
 classifiers = [
   "Development Status :: 4 - Beta",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
@@ -28,7 +27,7 @@ classifiers = [
 ]
 # When updating the Python version ranges, please also bump the Python
 # versions in the tests in nightly_dependency_tests.yml as appropriate
-requires-python = ">=3.10, <3.16"
+requires-python = ">=3.11, <3.16"
 dependencies = [
     "pybamm[plot]>=26.3.0",
     "numpy>=1.26",
@@ -51,7 +50,7 @@ ep-bolfi = [
     "ep-bolfi>=3.0.2; python_version < '3.13'"
 ]
 pyprobe = [
-  "PyProBE-Data>=2.6.0;python_version >= '3.11' and python_version < '3.13'",
+  "PyProBE-Data>=2.6.0; python_version < '3.13'",
   "polars<2.0.0"
 ]
 all = ["pybop[plotly,scienceplots,salib,scifem,bpx,pyprobe,ep-bolfi]"]
