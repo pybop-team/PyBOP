@@ -59,6 +59,7 @@ all = ["pybop[plotly,scienceplots,salib,scifem,bpx,pyprobe,ep-bolfi]"]
 override-dependencies = [
     {package = {name = "ep-bolfi", version = "3.0.2"}, dependencies = ["numpy>=1.26.4", "GPy>=1.13.2"]},
     {package = {name = "elfi"}, dependencies = ["matplotlib>=1.1"]},
+    {package = {name = "pyarrow", version = "26.0.0"}, dependencies = ["numpy>=2.0"]},
 ]
 
 [dependency-groups]
