@@ -22,12 +22,13 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
   "Intended Audience :: Science/Research",
   "Topic :: Scientific/Engineering",
 ]
 # When updating the Python version ranges, please also bump the Python
 # versions in the tests in nightly_dependency_tests.yml as appropriate
-requires-python = ">=3.10, <3.15"
+requires-python = ">=3.10, <3.16"
 dependencies = [
     "pybamm[plot]>=26.3.0",
     "numpy>=1.26",
@@ -47,13 +48,19 @@ bpx = [
     "bpx>=0.5, <0.6",
 ]
 ep-bolfi = [
-    "GPy>=1.13.2; python_version < '3.13'",
     "ep-bolfi>=3.0.2; python_version < '3.13'"
 ]
 pyprobe = [
-  "PyProBE-Data>=2.6.0;python_version >= '3.11' and python_version < '3.13'"
+  "PyProBE-Data>=2.6.0;python_version >= '3.11' and python_version < '3.13'",
+  "polars<2.0.0"
 ]
 all = ["pybop[plotly,scienceplots,salib,scifem,bpx,pyprobe,ep-bolfi]"]
+
+[tool.uv]
+override-dependencies = [
+    {package = {name = "ep-bolfi", version = "3.0.2"}, dependencies = ["numpy>=1.26.4", "GPy>=1.13.2, ==1.13.2; python_version < '3.11'"]},
+    {package = {name = "elfi"}, dependencies = ["matplotlib>=1.1"]},
+]
 
 [dependency-groups]
 docs = [
