@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#976](https://github.com/pybop-team/PyBOP/pull/976) - Updates experimental procedures and synthetic validation data.
 - [#991](https://github.com/pybop-team/PyBOP/pull/991) - Adds support for Python 3.15 (EP-BOLFI optimiser and PyProBE still restricted to Python 3.12 or below).
 - [#973](https://github.com/pybop-team/PyBOP/pull/973) - Adds example scripts for EIS parameterisation.
 - [#974](https://github.com/pybop-team/PyBOP/pull/974) - Adds voltage components to each grouped model as well as asymmetric and multiphase Butler-Volmer kinetics.
