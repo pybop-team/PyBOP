@@ -164,6 +164,7 @@ class GroupedSPMe(BaseGroupedModel):
         l_n = Parameter("Negative electrode relative thickness")
 
         t_plus = Parameter("Cation transference number")
+        chiRT_F = 2 * RT_F * (1 - t_plus) * Parameter("Thermodynamic factor")
 
         R0 = Parameter("Series resistance [Ohm]")
 
@@ -200,7 +201,7 @@ class GroupedSPMe(BaseGroupedModel):
         U_n_init = self.U(sto_n_init, "negative")
         U_p_init = self.U(sto_p_init, "positive")
 
-        eta_e = (2 * RT_F * (1 - t_plus)) * (
+        eta_e = chiRT_F * (
             pybamm.x_average(pybamm.log(sto_e_p))
             - pybamm.x_average(pybamm.log(sto_e_n))
         )
@@ -212,10 +213,10 @@ class GroupedSPMe(BaseGroupedModel):
         # into a vector of the right shape, for multiplying with other vectors
 
         # Overpotentials
-        eta_n = (v_s_n - U_n) + (2 * RT_F * (1 - t_plus)) * (
+        eta_n = (v_s_n - U_n) + chiRT_F * (
             pybamm.x_average(pybamm.log(sto_e_n)) - pybamm.log(sto_e_n)
         )
-        eta_p = (v_s_p - U_p) + (2 * RT_F * (1 - t_plus)) * (
+        eta_p = (v_s_p - U_p) + chiRT_F * (
             pybamm.x_average(pybamm.log(sto_e_p)) - pybamm.log(sto_e_p)
         )
 
@@ -407,7 +408,7 @@ class GroupedSPMe(BaseGroupedModel):
             + eta_p
             - pybamm.boundary_value(eta_p, "right"),
             "Electrolyte potential [V]": -v_s_n
-            - (2 * RT_F * (1 - t_plus))
+            - chiRT_F
             * (
                 pybamm.boundary_value(pybamm.log(sto_e_n), "left")
                 - pybamm.log(pybamm.concatenation(sto_e_n, sto_e_sep, sto_e_p))
@@ -617,7 +618,6 @@ class GroupedSPMe(BaseGroupedModel):
         L_s = param["Separator thickness [m]"]
         epsilon_sep = param["Separator porosity"]
         b_sep = param["Separator Bruggeman coefficient (electrolyte)"]
-        t_plus = param["Cation transference number"]
         kappa_e = param["Electrolyte conductivity [S.m-1]"]  # (ce0, T)
 
         # Get reference exchange current density [A.m-2]
@@ -730,7 +730,8 @@ class GroupedSPMe(BaseGroupedModel):
             "Negative electrode charge transfer time scale [s]": tau_ct_n,
             "Positive electrode capacitance [F]": C_p,
             "Negative electrode capacitance [F]": C_n,
-            "Cation transference number": t_plus,
+            "Cation transference number": param["Cation transference number"],
+            "Thermodynamic factor": param["Thermodynamic factor"],
             "Positive electrode relative thickness": l_p,
             "Negative electrode relative thickness": l_n,
             "Series resistance [Ohm]": R0,
