@@ -31,7 +31,7 @@ requires-python = ">=3.10, <3.15"
 dependencies = [
     "pybamm[plot]>=26.3.0",
     "numpy>=1.26",
-    "scipy>=1.12",
+    "scipy>=1.12, !=1.15.3",  # scipy 1.15.3 fails to load on macOS 27
     "pints>=0.6.0",
     "polars>=1.18.0",
 ]
@@ -57,7 +57,7 @@ all = ["pybop[plotly,scienceplots,salib,scifem,bpx,pyprobe,ep-bolfi]"]
 
 [tool.uv]
 override-dependencies = [
-    {package = {name = "ep-bolfi", version = "3.0.2"}, dependencies = ["numpy>=1.26.4", "GPy>=1.13.2"]},
+    {package = {name = "ep-bolfi", version = "3.0.2"}, dependencies = ["numpy>=1.26.4", "GPy>=1.13.2, ==1.13.2; python_version < '3.11'"]},
     {package = {name = "elfi"}, dependencies = ["matplotlib>=1.1"]},
 ]
 
