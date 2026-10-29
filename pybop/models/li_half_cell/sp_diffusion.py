@@ -235,7 +235,11 @@ class SPDiffusion(BaseHalfCellModel):
         )
 
         # Compute the cell area
-        A = param["Electrode height [m]"] * param["Electrode width [m]"]
+        A = (
+            param["Electrode height [m]"]
+            * param["Electrode width [m]"]
+            * param["Number of electrodes connected in parallel to make a cell"]
+        )
 
         # Compute the initial stoichiometry
         sto_p_init = (

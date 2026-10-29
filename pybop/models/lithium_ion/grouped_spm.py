@@ -514,7 +514,11 @@ class GroupedSPM(BaseGroupedModel):
         )
 
         # Compute the cell area and thickness
-        A = param["Electrode height [m]"] * param["Electrode width [m]"]
+        A = (
+            param["Electrode height [m]"]
+            * param["Electrode width [m]"]
+            * param["Number of electrodes connected in parallel to make a cell"]
+        )
         L = L_p + L_n + L_s
 
         # Compute the series resistance
