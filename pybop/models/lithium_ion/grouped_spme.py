@@ -246,12 +246,10 @@ class GroupedSPMe(BaseGroupedModel):
         ######################
         # The div and grad operators will be converted to the appropriate matrix
         # multiplication at the discretisation stage
-        self.rhs[sto_n] = pybamm.div(
-            pybamm.grad(sto_n) / self.tau_d(sto_n, T, "negative")
-        )
-        self.rhs[sto_p] = pybamm.div(
-            pybamm.grad(sto_p) / self.tau_d(sto_p, T, "positive")
-        )
+        N_s_n = -pybamm.grad(sto_n) / self.tau_d(sto_n, T, "negative")
+        N_s_p = -pybamm.grad(sto_p) / self.tau_d(sto_p, T, "positive")
+        self.rhs[sto_n] = -pybamm.div(N_s_n)
+        self.rhs[sto_p] = -pybamm.div(N_s_p)
 
         # Boundary conditions must be provided for equations with spatial derivatives
         self.boundary_conditions[sto_n] = {
@@ -602,8 +600,8 @@ class GroupedSPMe(BaseGroupedModel):
         D_n = param["Negative particle diffusivity [m2.s-1]"]
         b_p = param["Positive electrode Bruggeman coefficient (electrolyte)"]
         b_n = param["Negative electrode Bruggeman coefficient (electrolyte)"]
-        Cdl_p = param["Positive electrode double-layer capacity [F.m-2]"]
-        Cdl_n = param["Negative electrode double-layer capacity [F.m-2]"]
+        Cdl_p = param.get("Positive electrode double-layer capacity [F.m-2]", 0.0)
+        Cdl_n = param.get("Negative electrode double-layer capacity [F.m-2]", 0.0)
         sigma_p = (
             param["Positive electrode conductivity [S.m-1]"]
             * alpha_p ** param["Positive electrode Bruggeman coefficient (electrode)"]
