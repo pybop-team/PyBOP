@@ -4,7 +4,7 @@ import pybamm
 
 
 class FunctionalDiffusionTime:
-    def __init__(self, r2_scale, D, c_scale):
+    def __init__(self, r2_scale, D, c_scale=1.0):
         self.r2_scale = r2_scale
         self.D = D
         self.c_scale = c_scale

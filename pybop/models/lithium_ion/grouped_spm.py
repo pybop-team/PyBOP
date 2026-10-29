@@ -553,12 +553,12 @@ class GroupedSPM(BaseGroupedModel):
         try:
             tau_d_p = R_p**2 / D_p
         except TypeError:
-            tau_d_p = FunctionalDiffusionTime(R_p**2, D_p, c_max_p)
+            tau_d_p = FunctionalDiffusionTime(R_p**2, D_p)
 
         try:
             tau_d_n = R_n**2 / D_n
         except TypeError:
-            tau_d_n = FunctionalDiffusionTime(R_n**2, D_n, c_max_n)
+            tau_d_n = FunctionalDiffusionTime(R_n**2, D_n)
 
         tau_ct_p = c_max_p * F * R_p / (2 * j0_p)
         tau_ct_n = c_max_n * F * R_n / (2 * j0_n)
