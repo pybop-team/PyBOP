@@ -31,7 +31,7 @@ requires-python = ">=3.10, <3.15"
 dependencies = [
     "pybamm[plot]>=26.3.0",
     "numpy>=1.26",
-    "scipy>=1.12, !=1.15.3",  # scipy 1.15.3 fails to load on macOS 27
+    "scipy>=1.12",
     "pints>=0.6.0",
     "polars>=1.18.0",
 ]
