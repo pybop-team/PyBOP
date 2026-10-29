@@ -5,7 +5,7 @@
         "Cell format": "Half cell negative",
         "Cell label": "neg_01",
         "Synthetic": true,
-        "Nominal cell capacity [A.h]": 3.75
+        "Nominal cell capacity [A.h]": 6.0
     },
     "procedure": {
         "pOCP": {
@@ -16,7 +16,7 @@
                 "Cell format": "Half cell negative",
                 "Cell label": "neg_01",
                 "Synthetic": true,
-                "Nominal cell capacity [A.h]": 3.75
+                "Nominal cell capacity [A.h]": 6.0
             },
             "column_definitions": {
                 "Time": "The time passed from the start of the procedure.",
@@ -43,7 +43,7 @@
                     "Charge at C/10 until 1.5 V",
                     "Hold at 1.5 V until C/50",
                     "Rest for 2 hours",
-                    "Discharge at C/30 until 0.09 V",
+                    "Discharge at C/30 until 0.05 V",
                     "Rest for 2 hours",
                     "Charge at C/30 until 1.5 V",
                     "Rest for 2 hours"
@@ -71,7 +71,7 @@
                         6
                     ],
                     "Step Descriptions": [
-                        "Discharge at C/30 until 0.09 V",
+                        "Discharge at C/30 until 0.05 V",
                         "Rest for 2 hours",
                         "Charge at C/30 until 1.5 V",
                         "Rest for 2 hours"
@@ -88,5 +88,5 @@
             "cycle_info": []
         }
     },
-    "PyProBE Version": "2.6.0"
+    "PyProBE Version": "2.6.1"
 }
