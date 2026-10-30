@@ -3,6 +3,7 @@ import warnings
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+import scienceplots  # noqa: F401
 
 from pybop.applications.utils import get_cells
 
@@ -19,8 +20,14 @@ For each procedure, plot the data and show the various steps and cycles.
 """
 
 parser = argparse.ArgumentParser()
+parser.add_argument("--draft", action="store_true", help="Draft mode")
 parser.add_argument("--show-plots", action="store_true", help="Show plots")
 args = parser.parse_args()
+
+plt.style.use("science")
+
+if args.draft:
+    plt.rcParams.update({"text.usetex": False})
 
 for cell in get_cells(match=""):
     cell_label = cell.info["Cell label"]
@@ -38,12 +45,10 @@ for cell in get_cells(match=""):
             step_descriptions = procedure.readme_dict[experiment_name][
                 "Step Descriptions"
             ]
-            title = f"Cell: {cell.info['Name']}, Experiment: {experiment_name}\n" + str(
-                step_descriptions
-            )
+            title = f"Cell: {cell.info['Name']}, Experiment: {experiment_name}"
 
             # Plot the experiment
-            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6), dpi=300)
             ax_properties = dict(x="Time [s]", y="Voltage [V]", grid=True)
 
             # Plot the cycles over the full dataset
@@ -80,13 +85,14 @@ for cell in get_cells(match=""):
                         label=name,
                         ls="--",
                     )
-                ax2.legend()
+                ax2.legend(loc="center left", bbox_to_anchor=(1, 0.5))
 
-            fig.suptitle(title, fontsize=10, wrap=True)
-            fig.savefig(cell_path / f"{cell_label}_{experiment_name}.svg")
+            fig.suptitle(title, fontsize=14, wrap=True)
+            fig.tight_layout()
+            fig.savefig(cell_path / f"{cell_label}_{experiment_name}.png")
 
             if "EIS" in experiment_name:
-                fig, ax = plt.subplots(figsize=(6, 6))
+                fig, ax = plt.subplots(figsize=(6, 6), dpi=300)
                 ax_properties = dict(
                     ax=ax,
                     x="Impedance (real) [Ohm]",
@@ -108,8 +114,10 @@ for cell in get_cells(match=""):
                 ax.yaxis.set_inverted(True)
                 ax.set_aspect("equal", adjustable="box")
 
-                fig.suptitle(title, fontsize=10, wrap=True)
-                fig.savefig(cell_path / f"{cell_label}_{experiment_name}_Nyquist.svg")
+                title += "\n" + str(step_descriptions)
+                fig.suptitle(title, fontsize=14, wrap=True)
+                fig.tight_layout()
+                fig.savefig(cell_path / f"{cell_label}_{experiment_name}_Nyquist.png")
 
         if args.show_plots:
             plt.show()
