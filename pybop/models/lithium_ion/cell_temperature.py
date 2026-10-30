@@ -232,7 +232,11 @@ class CellTemperature(BaseGroupedModel):
         L_n = param["Negative electrode thickness [m]"]
 
         # Compute the cell area
-        A = param["Electrode height [m]"] * param["Electrode width [m]"]
+        A = (
+            param["Electrode height [m]"]
+            * param["Electrode width [m]"]
+            * param["Number of electrodes connected in parallel to make a cell"]
+        )
 
         # Compute the stoichiometry limits and initial SOC
         x_0, x_100, y_100, y_0 = get_min_max_stoichiometries(param)
