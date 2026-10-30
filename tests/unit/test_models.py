@@ -126,6 +126,16 @@ class TestModels:
             ).solve(t_eval=t_eval, t_interp=t_eval)
             np.testing.assert_allclose(solution["Time [s]"].data, t_eval)
 
+            # Test functional diffusion time
+            parameter_values = pybamm.ParameterValues("Ai2020")
+            ce0 = parameter_values["Initial concentration in electrolyte [mol.m-3]"]
+            T = parameter_values["Ambient temperature [K]"]
+            parameter_values["Electrolyte conductivity [S.m-1]"] = parameter_values[
+                "Electrolyte conductivity [S.m-1]"
+            ](ce0, T)
+            grouped_parameters = model.create_grouped_parameters(parameter_values)
+            assert isinstance(grouped_parameters, pybamm.ParameterValues)
+
 
 class TestModelUtils:
     """

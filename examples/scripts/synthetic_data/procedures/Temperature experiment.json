@@ -3,39 +3,37 @@
     "Precondition": {
       "Steps": [
         0,
-        1,
-        2
+        1
       ],
       "Step Descriptions": [
-        "Discharge at C/10 until 2.5 V",
-        "Hold at 2.5 V until C/50",
+        "Discharge at C/10 until {Vmin} V",
         "Rest for 2 hours"
       ]
     },
     "Temperature experiment": {
       "Steps": [
+        2,
         3,
         4,
         5,
-        6,
-        7
+        6
       ],
       "Step Descriptions": [
-        "Charge at C/2 for 12 minutes",
+        "Charge at C/2 for 12 minutes or until {Vmax} V",
         "Rest for 4 hours",
-        "Charge at 1C for 50 seconds",
-        "Discharge at 1C for 50 seconds",
+        "Charge at 1C for 50 seconds or until {Vmax} V",
+        "Discharge at 1C for 50 seconds or until {Vmin} V",
         "Rest for 1 hour"
       ],
       "Cycles": [
         [
-          3,
-          7,
+          2,
+          6,
           9
         ],
         [
+          4,
           5,
-          6,
           36
         ]
       ]

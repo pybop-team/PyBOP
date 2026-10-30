@@ -3,17 +3,16 @@
     "Precondition": {
       "Steps": [
         0,
-        1,
-        2
+        1
       ],
       "Step Descriptions": [
-        "Discharge at C/10 until 2.5 V",
-        "Hold at 2.5 V until C/50",
+        "Discharge at C/10 until {Vmin} V",
         "Rest for 2 hours"
       ]
     },
     "Validation pulses": {
       "Steps": [
+        2,
         3,
         4,
         5,
@@ -36,39 +35,38 @@
         22,
         23,
         24,
-        25,
-        26
+        25
       ],
       "Step Descriptions": [
-        "Charge at C/2 for 12 minutes",
+        "Charge at C/2 for 12 minutes or until {Vmax} V",
         "Rest for 30 min",
-        "Charge at C/10 for 100 seconds",
+        "Charge at C/10 for 100 seconds or until {Vmax + 0.05} V",
         "Rest for 100 seconds",
-        "Discharge at C/10 for 100 seconds",
+        "Discharge at C/10 for 100 seconds or until {Vmin} V",
         "Rest for 100 seconds",
-        "Charge at C/5 for 100 seconds",
+        "Charge at C/5 for 100 seconds or until {Vmax + 0.05} V",
         "Rest for 100 seconds",
-        "Discharge at C/5 for 100 seconds",
+        "Discharge at C/5 for 100 seconds or until {Vmin} V",
         "Rest for 100 seconds",
-        "Charge at C/3 for 100 seconds",
+        "Charge at C/3 for 100 seconds or until {Vmax + 0.05} V",
         "Rest for 100 seconds",
-        "Discharge at C/3 for 100 seconds",
+        "Discharge at C/3 for 100 seconds or until {Vmin} V",
         "Rest for 100 seconds",
-        "Charge at C/2 for 100 seconds",
+        "Charge at C/2 for 100 seconds or until {Vmax + 0.05} V",
         "Rest for 100 seconds",
-        "Discharge at C/2 for 100 seconds",
+        "Discharge at C/2 for 100 seconds or until {Vmin} V",
         "Rest for 100 seconds",
-        "Charge at 1C for 100 seconds",
+        "Charge at 1C for 100 seconds or until {Vmax + 0.05} V",
         "Rest for 100 seconds",
-        "Discharge at 1C for 100 seconds",
+        "Discharge at 1C for 100 seconds or until {Vmin} V",
         "Rest for 100 seconds",
-        "Charge at C/2 until 4.2 V",
-        "Hold at 4.2 V until C/20"
+        "Charge at C/2 until {Vmax} V",
+        "Hold at {Vmax} V until C/20"
       ],
       "Cycles": [
         [
-          3,
-          24,
+          2,
+          23,
           9
         ]
       ]

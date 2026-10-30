@@ -27,12 +27,12 @@ jobs:
           persist-credentials: false
           sparse-checkout-cone-mode: false
           sparse-checkout: |
-            scripts/ci/build_matrix.sh
+            .github/scripts/build_matrix.sh
 
       - name: Run script to create matrix
         id: set-matrix
         run: |
-          echo "matrix=$(bash scripts/ci/build_matrix.sh)" >> "$GITHUB_OUTPUT"
+          echo "matrix=$(bash .github/scripts/build_matrix.sh)" >> "$GITHUB_OUTPUT"
     outputs:
       pybop_matrix: ${{ steps.set-matrix.outputs.matrix }}
 
