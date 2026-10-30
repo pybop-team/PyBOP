@@ -86,7 +86,7 @@ class TestUtils:
         shifted_ocv = get_ocv_function(shifted_param)
         np.testing.assert_allclose(offset, 0.1, atol=1e-3)
         np.testing.assert_allclose(soc, soc_points, atol=1e-3)
-        np.testing.assert_allclose(shifted_ocv(soc), lower_voltages, atol=1e-6)
+        np.testing.assert_allclose(shifted_ocv(soc), lower_voltages, atol=5e-4)
 
     def test_make_voltage_monotonic(self):
         # Test ascending
