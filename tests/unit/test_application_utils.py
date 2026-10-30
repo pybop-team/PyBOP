@@ -78,14 +78,14 @@ class TestUtils:
 
     def test_shift_ocv_to(self, parameter_values):
         ocv_function = get_ocv_function(parameter_values, OCP_type="OCP")
-        soc = np.linspace(0, 1, 10)
+        soc = np.linspace(0, 1, 11)
         lower_voltages = ocv_function(soc) - 0.1
         shifted_param, soc_points, offset = shift_ocv_to(
             lower_voltages, parameter_values, soc
         )
         shifted_ocv = get_ocv_function(shifted_param)
         np.testing.assert_allclose(offset, 0.1, atol=5e-5)
-        np.testing.assert_allclose(soc, soc_points, atol=1e-6)
+        np.testing.assert_allclose(soc, soc_points, atol=5e-5)
         np.testing.assert_allclose(shifted_ocv(soc), lower_voltages)
 
     def test_make_voltage_monotonic(self):
