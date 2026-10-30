@@ -9,7 +9,11 @@ import scienceplots  # noqa: F401
 from pyprobe.analysis import smoothing
 
 import pybop
-from pybop.applications.utils import get_cells, make_voltage_monotonic
+from pybop.applications.utils import (
+    filter_with_preceding_row,
+    get_cells,
+    make_voltage_monotonic,
+)
 
 """
 Our data is stored in this folder structure:
@@ -21,21 +25,23 @@ examples/data
                 - metadata.json
 
 The pseudo-OCP procedure for positive (/negative) half-cells is:
-0. Rest
-1. Charge (/discharge) at C/30 until voltage limit (direction corresponding to full-cell charging)
-2. Rest for 2 hours
-3. Discharge (/charge) at C/30 until voltage limit (direction corresponding to full-cell discharging)
-4. Rest for 2 hours
+0. Charge (/discharge) at C/30 until voltage limit (direction corresponding to full-cell charging)
+1. Rest for 2 hours
+2. Discharge (/charge) at C/30 until voltage limit (direction corresponding to full-cell discharging)
+3. Rest for 2 hours
 
 For each full-cell, load the half-cell pOCPs and add as interpolants to the parameter set.
 """
 
 parser = argparse.ArgumentParser()
+parser.add_argument("--draft", action="store_true", help="Draft mode")
 parser.add_argument("--show-plots", action="store_true", help="Show plots")
 args = parser.parse_args()
 
 plt.style.use("science")
-plt.rcParams.update({"text.usetex": False})  # users can remove this line
+
+if args.draft:
+    plt.rcParams.update({"text.usetex": False})
 
 # Options
 smoothing_options = {
@@ -44,6 +50,8 @@ smoothing_options = {
     "monotonic": True,
 }
 account_for_overpotential = True
+margin = 0.01  # to keep the stoichiometry within [margin, 1-margin]
+
 
 for cell in get_cells():
     cell_label = cell.info["Cell label"]
@@ -67,14 +75,18 @@ for cell in get_cells():
         half_cell = pyprobe.load_archive(
             str(cell.info["Archive"] / cell.info["Associated"][electrode])
         )
-        experiment = half_cell.procedure["pOCP"].experiment("Pseudo OCP")
+        procedure = half_cell.procedure["pOCP"]
+        experiment = procedure.experiment("Pseudo OCP")
         cycle = 1  #  use the second cycle for fitting
 
         # Plot data for validation
-        validation_data = pybop.import_pyprobe_result(experiment)
+        validation_data = pybop.import_pyprobe_result(
+            filter_with_preceding_row(procedure, experiment="Pseudo OCP")
+        )
         ax_v.plot(
-            (validation_data["Time [s]"] - validation_data["Time [s]"][0]) / 3600,
+            validation_data["Time [h]"] - validation_data["Time [h]"][0],
             validation_data["Voltage [V]"],
+            ls=":",
             label=f"{electrode}",
         )
 
@@ -82,11 +94,11 @@ for cell in get_cells():
         if "Positive" in electrode:
             # Starts fully lithiated and then delithiates
             direction_order = ["charge", "discharge"]
-            x0_order = [1.0, 0.0]
+            x0_order = [1.0 - margin, margin]
         else:
             # starts fully delithiated and then lithiates
             direction_order = ["discharge", "charge"]
-            x0_order = [0.0, 1.0]
+            x0_order = [margin, 1.0 - margin]
 
         for j, (direction, x0) in enumerate(
             zip(direction_order, x0_order, strict=False)
@@ -102,27 +114,41 @@ for cell in get_cells():
                 )
             )
 
-            # Ensure that the charge throughput starts at zero
-            Q_start = dataset["Discharge capacity [A.h]"][0]
+            # Ensure that the charge throughput starts from zero
+            Q_start = -filter_with_preceding_row(
+                procedure, experiment="Pseudo OCP", cycle=cycle, phase=direction
+            ).get("Capacity [Ah]")[0]
             charge_throughput = dataset["Discharge capacity [A.h]"] - Q_start
             Q_meas = np.abs(charge_throughput[-1])
 
-            # Compute the Coulombic efficiency to take account of dynamic overshoot and make a closed loop
-            CE = 1.0
+            # Compute the dynamic efficiency to take account of voltage overshoot
+            DE = 1.0
             if account_for_overpotential:
+                rest_phase_voltage = (
+                    experiment.rest().step(2 * cycle + j).get("Voltage [V]")
+                )
                 inverse_ocv_interpolant = pybop.Interpolant(
                     dataset["Voltage [V]"],
                     charge_throughput / charge_throughput[-1],
                     name="Inverse OCV",
                 )
-                V_relax = experiment.rest().step(2 * cycle + j).get("Voltage [V]")[-1]
+                V_relax = rest_phase_voltage[-1]
+
+                # Get the local overpotential at the current switch-off and add it
+                # back onto the rest voltage to make it comparable with pseudo-OCV
+                V_relax += (
+                    (dataset["Voltage [V]"][-1] - rest_phase_voltage[1])
+                    / dataset["Current [A]"][-1]
+                    * np.mean(dataset["Current [A]"][1:101])
+                )
 
                 # Find the scaling needed to make the rest voltage correspond to a fully de/lithiated state
-                CE = np.minimum(inverse_ocv_interpolant(V_relax), 1.0)
-            Q_cell = CE * Q_meas
+                DE = np.minimum(inverse_ocv_interpolant(V_relax), 1.0)
+            Q_th = Q_meas / (1.0 - 2 * margin)
+            Q_scale = Q_th * DE
 
             # Define state of lithiation
-            dataset["State of lithiation"] = x0 + charge_throughput / Q_cell
+            dataset["State of lithiation"] = x0 + charge_throughput / Q_scale
 
             if direction == "charge":
                 assert (
@@ -146,26 +172,27 @@ for cell in get_cells():
                 )
 
             # Plot
-            sol = np.linspace(0, 1, 501)
+            sol = np.linspace(margin, 1.0 - margin, 501)
             colour = "tab:red" if direction == "charge" else "tab:blue"
             ax[i].scatter(
                 dataset["State of lithiation"],
                 dataset["Voltage [V]"],
-                marker="x",
-                s=2,
+                marker=".",
+                s=4,
                 color=colour,
                 label=direction,
             )
-            ax[i].plot(sol, ocp_branch(sol), color=colour)
+            ax[i].plot(sol, ocp_branch(sol), linewidth=1, color=colour, alpha=0.8)
 
             # Plot validation, align the dis/charge branches at the start of the first dis/charge
-            offset = experiment.rest().step(j - 1).df["Capacity [Ah]"][-1] / Q_meas
+            offset = (
+                experiment.charge() if direction == "charge" else experiment.discharge()
+            ).get("Capacity [Ah]")[0]
+            state = x0 + (validation_data["Discharge capacity [A.h]"] + offset) / Q_th
             ax_v.plot(
-                (validation_data["Time [s]"] - validation_data["Time [s]"][0]) / 3600,
-                ocp_branch(
-                    x0 + offset + validation_data["Discharge capacity [A.h]"] / Q_meas
-                ),
-                ls="--",
+                validation_data["Time [h]"] - validation_data["Time [h]"][0],
+                ocp_branch(state),
+                linewidth=0.7,
                 label=f"Fit to {direction}",
             )
 
@@ -175,8 +202,8 @@ for cell in get_cells():
                 param = pickle.load(file)
             param.update(
                 {
-                    f"{electrode} theoretical capacity (half-cell) [A.h]": Q_cell,
-                    f"{electrode} Coulombic efficiency (half-cell)": CE,
+                    f"{electrode} theoretical capacity (half-cell) [A.h]": Q_th,
+                    f"{electrode} pOCP dynamic efficiency (half-cell)": DE,
                     f"{electrode} pOCP (half-cell) [V]": ocp_branch,
                 }
             )
@@ -186,9 +213,9 @@ for cell in get_cells():
         ax[i].title.set_text(electrode)
         ax[i].legend()
 
-    fig.savefig(cell_path / f"{cell_label}_electrode_pOCPs.svg")
+    fig.savefig(cell_path / f"{cell_label}_electrode_pOCPs.png")
     ax_v.legend()
-    fig_v.savefig(cell_path / f"{cell_label}_pOCP_validation.svg")
+    fig_v.savefig(cell_path / f"{cell_label}_pOCP_validation.png")
 
 if args.show_plots:
     plt.show()
