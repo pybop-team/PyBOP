@@ -127,9 +127,8 @@ class WeightedCost(BaseCost):
             # Keep the target of each cost, which may differ between them. Broadcasting
             # self._target here would instead give every cost the union of the targets.
             target = [cost.target for cost in self.costs]
-        elif isinstance(target, str):
-            target = [[target]] * len(self.costs)
-        elif isinstance(target[0], str):
+        else:
+            target = [target] if isinstance(target, str) else target
             target = [target] * len(self.costs)
 
         self._target = []
