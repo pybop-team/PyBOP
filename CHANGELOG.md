@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#975](https://github.com/pybop-team/PyBOP/pull/975) - Adds coupled GITT-EIS parameterisation: `pybop.pybamm.EISSimulator` accepts a `protocol` and computes an impedance spectrum about the state reached at each acquisition time, solving the time-domain trajectory once. Adds `pybop.get_impedance_variables` and `pybop.parse_impedance_variables` to name the impedance variables of a `Dataset`, plots the acquired spectra as Nyquist subplots in `pybop.plot.problem`, and adds an example script `gitt_eis.py`.
 - [#995](https://github.com/pybop-team/PyBOP/pull/995) - Updates the cell models, including adding the thermodynamic factor to the GroupedSPMe.
 - [#976](https://github.com/pybop-team/PyBOP/pull/976) - Updates experimental procedures and synthetic validation data.
 - [#991](https://github.com/pybop-team/PyBOP/pull/991) - Adds support for Python 3.15 (EP-BOLFI optimiser and PyProBE still restricted to Python 3.12 or below).
@@ -17,6 +18,7 @@
 
 ## Optimisations
 
+- [#975](https://github.com/pybop-team/PyBOP/pull/975) - Set up the EIS solver, mass matrix and forcing vector once rather than on every evaluation.
 - [#967](https://github.com/pybop-team/PyBOP/pull/967) - Add `Dataset.get_discontinuities` and update the `pybop.pybamm.RecommendedSolver` options.
 - [#946](https://github.com/pybop-team/PyBOP/pull/946) - Use `vectorized` evaluation for SciPy differential evolution by default instead of multiprocessing `workers`.
 - [#925](https://github.com/pybop-team/PyBOP/pull/925) - Add `UnboundedDistribution` and the `get_transformed_distribution` functionality.
@@ -30,6 +32,7 @@
 
 ## Breaking Changes
 
+- [#975](https://github.com/pybop-team/PyBOP/pull/975) - `pybop.pybamm.EISSimulator` no longer modifies the model passed to it and warns when the model has no differential surface form. Adds `equal_aspect` to the plotting backends, removes the unused `Simulator.time_data` property and removes the superseded `operando_eis.py` example.
 - [#928](https://github.com/pybop-team/PyBOP/pull/928) - Deprecates `StandardPlot` and `StandardSubplot` in favour of new standardised backend functionality.
 - [#960](https://github.com/pybop-team/PyBOP/pull/960) - Remove `asv` benchmarking.
 - [#938](https://github.com/pybop-team/PyBOP/pull/938) - Make SALib an optional dependency and remove `sensitivity_analysis` in favour of using SALib directly.
