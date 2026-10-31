@@ -161,7 +161,7 @@ def get_ocv_function(parameter_values, OCP_type: str = None):
 
 
 def shift_ocv_to(voltage_points, parameter_values, naive_soc, OCP_type: str = None):
-    """Returns a new lithium-ion parameter set with shifted OCP functions and SOC points."""
+    """Returns a new parameter set with shifted OCPs, the SOC points and voltage offset."""
     OCP_type = "OCP" if OCP_type is None else OCP_type
 
     param = parameter_values.copy()
@@ -170,24 +170,37 @@ def shift_ocv_to(voltage_points, parameter_values, naive_soc, OCP_type: str = No
     def mean_absolute_error(values):
         shift, stretch, offset = values
         return np.mean(
-            np.abs(voltage_points - ocv_function(shift + stretch * naive_soc) - offset)
+            np.abs(voltage_points - ocv_function(shift + stretch * naive_soc) + offset)
         )
 
     x0 = [0, 1, 0]
-    scipy_result = minimize(mean_absolute_error, x0=x0)
+    scipy_result = minimize(mean_absolute_error, x0=x0, method="trust-constr")
     SOC_vec = scipy_result.x[0] + scipy_result.x[1] * naive_soc
+    if not scipy_result.success:
+        print("WARNING:", scipy_result.message)
 
     # Shift each of the OCP functions by half the offset to remove series resistance
     offset = scipy_result.x[2]
-    param["Positive electrode OCP [V]"] = Interpolant(
-        param[f"Positive electrode {OCP_type} [V]"].x,
-        param[f"Positive electrode {OCP_type} [V]"].y + offset / 2,
-        name="Positive OCP",
-    )
-    param["Negative electrode OCP [V]"] = Interpolant(
-        param[f"Negative electrode {OCP_type} [V]"].x,
-        param[f"Negative electrode {OCP_type} [V]"].y - offset / 2,
-        name="Negative OCP",
-    )
+    for electrode, sign in zip(
+        ["Positive electrode", "Negative electrode"], [1, -1], strict=False
+    ):
+        param[f"{electrode} {OCP_type} [V]"] = Interpolant(
+            param[f"{electrode} {OCP_type} [V]"].x,
+            param[f"{electrode} {OCP_type} [V]"].y - sign * offset / 2,
+            name=f"{electrode} {OCP_type}",
+        )
 
-    return param, SOC_vec
+    return param, SOC_vec, offset
+
+
+def downsample(x, y, tol_x=300, tol_y=1e-3):
+    """Iterate over the data and discard points that are too close to the previous point."""
+    new_x, new_y = [x[0]], [y[0]]
+    for xi, yi in zip(x[1:-1], y[1:-1], strict=False):
+        if np.abs(xi - new_x[-1]) < tol_x and np.abs(yi - new_y[-1]) < tol_y:
+            continue
+        new_x.append(xi)
+        new_y.append(yi)
+    new_x.append(x[-1])
+    new_y.append(y[-1])
+    return np.asarray(new_x), np.asarray(new_y)
