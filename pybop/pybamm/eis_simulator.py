@@ -202,11 +202,19 @@ class EISSimulator(BaseSimulator):
         """
         built_model = self.simulation.built_model
         M = built_model.mass_matrix.entries
-        self.simulation.solver.set_up(built_model, inputs=inputs)
 
-        # Convert inputs to casadi format if needed
+        # Sort so the compiled functions expect the same order that
+        # BaseSolver._set_up_model_inputs() will use if the time-domain simulation
+        # recompiles them in _solve_along_protocol(). _jacobian() stacks sorted to match.
+        self.simulation.solver.set_up(
+            built_model,
+            inputs={k: inputs[k] for k in sorted(inputs)} if inputs else inputs,
+        )
+
+        # Convert inputs to casadi format if needed, stacked in sorted order to match
+        # pybamm's BaseSolver._set_up_model_inputs() convention.
         casadi_inputs = (
-            casadi.vertcat(*inputs.values())
+            casadi.vertcat(*[inputs[name] for name in sorted(inputs)])
             if inputs is not None and built_model.convert_to_format == "casadi"
             else inputs or []
         )

@@ -1,5 +1,6 @@
 from copy import copy
 
+import numpy as np
 import pybamm
 import pytest
 
@@ -78,3 +79,58 @@ class TestPybammSimulator:
             ValueError, match="Not a variable is not a variable in the model."
         ):
             simulator.set_output_variables(["Not a variable"])
+
+
+class TestPybammEISSimulator:
+    """
+    A class to tet the pybamm.EISSimulator class.
+    """
+
+    pytestmark = pytest.mark.unit
+
+    @pytest.fixture
+    def model(self):
+        return pybamm.lithium_ion.SPM()
+
+    @pytest.fixture
+    def parameter_values(self):
+        parameter_values = pybamm.ParameterValues("Chen2020")
+        parameter_values.set_initial_state(0.9)
+        return parameter_values
+
+    def test_input_parameters_are_not_swapped(self, model, parameter_values):
+        """
+        Passing values as inputs must give the same spectrum as fixing them in the
+        parameter values, whatever the order of the inputs dictionary. The compiled
+        Jacobian takes a single stacked vector, so an order which disagrees with the
+        one used to compile it silently evaluates the model at the wrong point.
+        """
+        # Deliberately not in alphabetical order
+        inputs = {
+            "Positive particle diffusivity [m2.s-1]": 4e-15,
+            "Negative particle diffusivity [m2.s-1]": 3.0e-14,
+        }
+
+        fixed_param = parameter_values.copy()
+        fixed_param.update(inputs)
+        expected_data = self.get_data(model, fixed_param)
+
+        fitting_param = parameter_values.copy()
+        fitting_param.update(
+            {
+                name: pybop.Parameter(pybop.Uniform(value / 2, value * 2))
+                for name, value in inputs.items()
+            }
+        )
+        fitting_data = self.get_data(model, fitting_param, inputs=inputs)
+
+        np.testing.assert_allclose(
+            fitting_data["Impedance"].data, expected_data["Impedance"], rtol=1e-10
+        )
+
+    def get_data(self, model, parameter_values, inputs=None):
+        frequencies = np.logspace(-1, 3, 4)
+        solution = pybop.pybamm.EISSimulator(
+            model, parameter_values=parameter_values, f_eval=frequencies
+        ).solve(inputs=inputs)
+        return pybop.Dataset({"Impedance": solution["Impedance"].data})
