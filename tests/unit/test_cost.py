@@ -335,6 +335,20 @@ class TestCosts:
             model, parameter_values=parameter_values, protocol=noisy_dataset
         )
 
+    def test_weighted_cost_keeps_distinct_targets(self, noisy_problem):
+        # Check that each cost retains its original target
+        dataset, simulator = noisy_problem
+        cost1 = pybop.SumSquaredError(dataset, target=["Voltage [V]"])
+        cost2 = pybop.SumSquaredError(dataset, target=["Current [A]"])
+        weighted_cost = pybop.WeightedCost(cost1, cost2)
+        problem = pybop.Problem(simulator, weighted_cost)
+
+        assert cost1.target == ["Voltage [V]"]
+        assert cost2.target == ["Current [A]"]
+        assert problem.cost.costs[0].target == ["Voltage [V]"]
+        assert problem.cost.costs[1].target == ["Current [A]"]
+        assert problem.target == ["Voltage [V]", "Current [A]"]
+
     def test_weighted_fitting_cost(self, noisy_problem, parameters, dataset):
         dataset, simulator = noisy_problem
         cost1 = pybop.SumSquaredError(dataset)
