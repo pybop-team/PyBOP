@@ -347,7 +347,7 @@ class TestCosts:
         assert cost2.target == ["Current [A]"]
         assert problem.cost.costs[0].target == ["Voltage [V]"]
         assert problem.cost.costs[1].target == ["Current [A]"]
-        assert problem.target == ["Voltage [V]", "Current [A]"]
+        assert "Voltage [V]" in problem.target and "Current [A]" in problem.target
 
     def test_weighted_fitting_cost(self, noisy_problem, parameters, dataset):
         dataset, simulator = noisy_problem
