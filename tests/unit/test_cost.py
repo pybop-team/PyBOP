@@ -349,6 +349,12 @@ class TestCosts:
         assert problem.cost.costs[1].target == ["Current [A]"]
         assert "Voltage [V]" in problem.target and "Current [A]" in problem.target
 
+        # Check that setting a new target updates every target
+        problem.set_target("Voltage [V]")
+        assert problem.cost.costs[0].target == ["Voltage [V]"]
+        assert problem.cost.costs[1].target == ["Voltage [V]"]
+        assert problem.target == ["Voltage [V]"]
+
     def test_weighted_fitting_cost(self, noisy_problem, parameters, dataset):
         dataset, simulator = noisy_problem
         cost1 = pybop.SumSquaredError(dataset)
