@@ -136,7 +136,7 @@ for cell in get_cells():
     surface_thermal_mass = pybop.Parameter(initial_value=50, bounds=[0, 200])
     cell_heat_transfer = pybop.Parameter(initial_value=0.25, bounds=[0, 1])
     surface_heat_transfer = pybop.Parameter(initial_value=0.25, bounds=[0, 1])
-    noise_variance = pybop.Parameter(initial_value=9e-2, bounds=[6e-2, 12e-2])
+    noise_variance = pybop.Parameter(initial_value=9e-2, bounds=[3e-2, 12e-2])
 
     datasets = []
     problems = []
@@ -191,7 +191,7 @@ for cell in get_cells():
             },
         )
 
-        # Set the initial SoC
+        # Set the initial SoC and the protocol
         param_i["Initial SoC"] = SOC_vec[i]
         input_data = pybop.generate_consistent_current(dataset)
         input_data = pybop.downsample_constant_current(dataset)
@@ -199,11 +199,15 @@ for cell in get_cells():
         param_i["Current function [A]"] = pybop.Interpolant(
             input_data["Time [s]"], input_data["Current [A]"], name="Current function"
         )
-        dataset.control_functions = ["Voltage function [V]"]
+        param_i["Voltage function [V]"] = pybop.Interpolant(
+            dataset["Time [s]"], dataset["Voltage [V]"], name="Voltage function"
+        )
 
         # Set up an optimisation problem
         simulator = pybop.pybamm.Simulator(
-            model, parameter_values=param_i, protocol=dataset
+            model,
+            parameter_values=param_i,
+            protocol=(input_data["Time [s]"], dataset["Time [s]"]),
         )
         cost = pybop.GaussianLogLikelihood(
             dataset,
@@ -252,37 +256,37 @@ for cell in get_cells():
         ]
     elif cell_type == "LG M50 Synthetic":
         initial_values = [
-            5.07221910e00,
-            4.07944338e01,
-            1.56687823e-01,
-            5.93269911e-02,
-            -4.04693011e-04,
-            1.19999997e-01,
-            5.19878867e-04,
-            3.66850038e-04,
-            3.99739715e-04,
-            2.35419785e-04,
-            3.39030068e-04,
-            2.79801649e-04,
-            -1.79491896e-04,
-            -5.54414458e-06,
+            5.07188089e00,
+            4.07949072e01,
+            1.56556488e-01,
+            5.93242898e-02,
+            -4.04751633e-04,
+            1.19999087e-01,
+            5.19896327e-04,
+            3.67652039e-04,
+            4.00373608e-04,
+            2.36077551e-04,
+            3.39727570e-04,
+            2.80494186e-04,
+            -1.80232589e-04,
+            -6.01453524e-06,
         ]
     elif cell_type == "Enertech SPB655060 Synthetic":
         initial_values = [
-            1.80947723e-01,
-            4.21659345e01,
-            6.30496445e-01,
-            2.17994595e-01,
-            -5.24874801e-04,
-            6.00037766e-02,
-            -4.76336097e-04,
-            -3.72620475e-04,
-            -3.06295635e-04,
-            -2.55021359e-04,
-            -2.54506310e-04,
-            -2.09846799e-04,
-            -1.55028106e-04,
-            -9.53824722e-05,
+            4.02487923e-02,
+            4.22616038e01,
+            6.70578752e-01,
+            2.18039161e-01,
+            -5.28150497e-04,
+            3.00461298e-02,
+            -4.73122270e-04,
+            -3.73105240e-04,
+            -3.08568057e-04,
+            -2.51359780e-04,
+            -2.56819393e-04,
+            -2.21431954e-04,
+            -1.61524511e-04,
+            -8.42979972e-05,
         ]
     else:
         initial_values = None
