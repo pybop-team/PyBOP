@@ -64,6 +64,34 @@ class TestPybammSimulator:
 
     pytestmark = pytest.mark.unit
 
+    @pytest.fixture
+    def model(self):
+        return pybamm.lithium_ion.SPM()
+
+    @pytest.fixture
+    def experiment(self):
+        return pybamm.Experiment(["Discharge at 1C for 5 minutes"])
+
+    def test_simulator_solve(self, model, experiment):
+        # Test the different types of protocol
+        simulator = pybop.pybamm.Simulator(model, protocol=None)
+        simulator.debug_mode = True
+        with pytest.raises(pybamm.SolverError):
+            simulator.solve()
+
+        solution = pybop.pybamm.Simulator(model, protocol=experiment).solve()
+        assert isinstance(solution, pybamm.Solution)
+        dataset = pybop.import_pybamm_solution(solution)
+
+        for protocol in [
+            dataset,
+            dataset["Time [s]"],
+            (dataset["Time [s]"][[0, -1]], dataset["Time [s]"]),
+        ]:
+            solution = pybop.pybamm.Simulator(model, protocol=protocol).solve()
+            assert isinstance(solution, pybamm.Solution)
+            np.testing.assert_allclose(solution["Time [s]"].data, dataset["Time [s]"])
+
     def test_set_output_variables(self):
         model = pybamm.lithium_ion.SPM()
         parameter_values = model.default_parameter_values

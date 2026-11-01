@@ -37,7 +37,8 @@ class Simulator(BaseSimulator):
         Defaults to None, indicating that the existing initial state of charge (for an ECM)
         or initial concentrations (for an EChem model) will be used.
     protocol : pybamm.Experiment | Dataset | np.ndarray | None
-        The protocol as an experiment, a 1D array of values or dataset containing (time) domain data.
+        The protocol as a pybamm.Experiment, a dataset containing (time) domain data, a 1D array
+        of domain data, or a tuple containing domain data in the form (t_eval, t_interp).
     solver : pybamm.BaseSolver, optional
         The solver to use to solve the model. If None, uses `pybop.pybamm.RecommendedSolver`.
     output_variables : list, optional
@@ -188,11 +189,15 @@ class Simulator(BaseSimulator):
             for key in protocol.control_functions:
                 control = key.replace(" function", "")
                 self._parameter_values[key] = protocol.get_interpolant(control)
+        elif isinstance(protocol, tuple):
+            self._experiment = None
+            t_eval, t_interp = protocol
+            self._t_eval = np.intersect1d(t_eval, t_interp)
+            self._t_interp = t_interp
         else:
             self._experiment = None
-            time_data = protocol
-            self._t_eval = [time_data[0], time_data[-1]]  # ignores discontinuities
-            self._t_interp = time_data
+            self._t_eval = protocol
+            self._t_interp = protocol
         # else:
         #     raise ValueError(f"Expected an experiment or a dataset. Received {type(protocol)}")
 
