@@ -385,8 +385,7 @@ class Simulator(BaseSimulator):
                             print(f"Ignoring this sample due to: {e}")
                         solutions.append(
                             FailedSolution(
-                                self.output_variables
-                                or self._model.default_quick_plot_variables,
+                                self.output_variables or self.default_variables,
                                 self._input_parameter_names,
                             )
                         )
@@ -443,7 +442,7 @@ class Simulator(BaseSimulator):
         for solution in solutions:
             if hasattr(solution, "termination") and solution.termination == "failure":
                 failed_solution = FailedSolution(
-                    self.output_variables or self._model.default_quick_plot_variables,
+                    self.output_variables or self.default_variables,
                     self._input_parameter_names,
                 )
                 processed_solutions.append(failed_solution)
@@ -492,6 +491,16 @@ class Simulator(BaseSimulator):
         self._output_variables = value
         if self.experiment is None:
             self._set_up_solution_method(output_variables=value)
+
+    @property
+    def default_variables(self):
+        variables: list[str] = []
+        for s in self._model.default_quick_plot_variables:
+            if isinstance(s, str):
+                variables.append(s)
+            else:
+                variables.extend(list(s))
+        return variables
 
     @property
     def requires_model_rebuild(self):

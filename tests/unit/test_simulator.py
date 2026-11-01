@@ -94,19 +94,22 @@ class TestPybammSimulator:
 
     def test_set_output_variables(self):
         model = pybamm.lithium_ion.SPM()
-        parameter_values = model.default_parameter_values
-        experiment = pybamm.Experiment(
-            ["Discharge at 1C for 5 minutes (10 second period)"]
-        )
-
-        simulator = pybop.pybamm.Simulator(
-            model, parameter_values=parameter_values, protocol=experiment
-        )
+        simulator = pybop.pybamm.Simulator(model)
 
         with pytest.raises(
             ValueError, match="Not a variable is not a variable in the model."
         ):
             simulator.set_output_variables(["Not a variable"])
+
+        simulator.set_output_variables(value=None)
+        assert simulator.output_variables is None
+
+        # Check that a FailedSolution with no output variables contains the default variables
+        solution = simulator.solve()
+        assert isinstance(solution, pybop.FailedSolution)
+        assert isinstance(simulator.default_variables, list)
+        for var in simulator.default_variables:
+            assert var in solution.variable_names
 
     def test_remove_voltage_events(self, model):
         simulator = pybop.pybamm.Simulator(model, remove_voltage_events=False)
