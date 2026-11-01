@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#998](https://github.com/pybop-team/PyBOP/pull/998) - Add `remove_voltage_events` option, `default_variables` property and the option to pass both `t_eval` and `t_interp` to the PyBaMM simulators.
 - [#995](https://github.com/pybop-team/PyBOP/pull/995) - Updates the cell models, including adding the thermodynamic factor to the GroupedSPMe.
 - [#976](https://github.com/pybop-team/PyBOP/pull/976) - Updates experimental procedures and synthetic validation data.
 - [#991](https://github.com/pybop-team/PyBOP/pull/991) - Adds support for Python 3.15 (EP-BOLFI optimiser and PyProBE still restricted to Python 3.12 or below).
