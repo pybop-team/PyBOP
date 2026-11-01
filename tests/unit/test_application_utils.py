@@ -13,6 +13,7 @@ from pybamm.models.full_battery_models.lithium_ion.electrode_soh import (
 import pybop
 from pybop.applications.utils import (
     OpenCircuitVoltage,
+    downsample,
     filter_with_preceding_row,
     get_cells,
     get_ocp_functions,
@@ -77,12 +78,15 @@ class TestUtils:
 
     def test_shift_ocv_to(self, parameter_values):
         ocv_function = get_ocv_function(parameter_values, OCP_type="OCP")
-        soc = np.linspace(0, 1, 5)
-        voltage_points = ocv_function(soc) + 0.1
-        param, soc_points = shift_ocv_to(voltage_points, parameter_values, soc)
-        ocv_function = get_ocv_function(param)
-        assert np.all(ocv_function(soc) > 0.1)
-        np.testing.assert_allclose(soc, soc_points, atol=2.5e-4)
+        soc = np.linspace(0, 1, 11)
+        lower_voltages = ocv_function(soc) - 0.1
+        shifted_param, soc_points, offset = shift_ocv_to(
+            lower_voltages, parameter_values, soc
+        )
+        shifted_ocv = get_ocv_function(shifted_param)
+        np.testing.assert_allclose(offset, 0.1, atol=1e-3)
+        np.testing.assert_allclose(soc, soc_points, atol=1e-3)
+        np.testing.assert_allclose(shifted_ocv(soc), lower_voltages, atol=5e-4)
 
     def test_make_voltage_monotonic(self):
         # Test ascending
@@ -98,6 +102,14 @@ class TestUtils:
         data.lf = pl.LazyFrame({"Voltage [V]": copy(voltage)})
         data = make_voltage_monotonic(data)
         assert np.all(data.lf["Voltage [V]"].to_numpy() >= voltage)
+
+    def test_downsample(self):
+        tol_x, tol_y = 300, 1e-3
+        x = np.array([0, 1, 1, 1, 3]) * tol_x
+        y = np.array([1, 1, 3, 3, 4]) * tol_y
+        x_new, y_new = downsample(x, y, tol_x=tol_x, tol_y=tol_y)
+        assert (x_new == np.array([0, 1, 1, 3]) * tol_x).all()
+        assert (y_new == np.array([1, 1, 3, 4]) * tol_y).all()
 
     @pytest.mark.skipif(
         sys.version_info < (3, 11), reason="requires a python version >= 3.11"

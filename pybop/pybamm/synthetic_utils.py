@@ -285,22 +285,23 @@ def _build_eis_sweep_dataframe(
     event_number: int,
     frequencies: np.ndarray,
     impedance: np.ndarray,
-    initial_voltage: float | None,
+    initial_point: tuple,
 ) -> pl.LazyFrame:
     """Create a PyProBE-compatible dataframe for one EIS sweep."""
     row_count = len(frequencies)
+    initial_capacity, initial_voltage = initial_point
     return pl.LazyFrame(
         {
             "Time [s]": [None] * row_count,
             "Step": [step_number] * row_count,
             "Event": [event_number] * row_count,
-            "Initial voltage [V]": [initial_voltage] * row_count,
+            "Initial voltage [V]": [float(initial_voltage)] * row_count,
             "Frequency [Hz]": frequencies,
             "Impedance (real) [Ohm]": np.real(impedance),
             "Impedance (imag) [Ohm]": np.imag(impedance),
             "Current [A]": [None] * row_count,
             "Voltage [V]": [None] * row_count,
-            "Capacity [Ah]": [None] * row_count,
+            "Capacity [Ah]": [float(initial_capacity)] * row_count,
         }
     )
 
@@ -351,17 +352,20 @@ def _solve_eis_experiment(
                 eis_model, f_eval=frequencies, parameter_values=parameter_values
             )
             impedance = np.asarray(eis_simulator.solve()["Impedance"].data)
-            initial_voltage = (
-                None
+            initial_point = (
+                (None, None)
                 if latest_solution is None
-                else float(latest_solution["Terminal voltage [V]"].data[-1])
+                else (
+                    latest_solution["Discharge capacity [A.h]"].data[-1] * -1,
+                    latest_solution["Terminal voltage [V]"].data[-1],
+                )
             )
             sweep_frame = _build_eis_sweep_dataframe(
                 step_number=step,
                 event_number=step_offset + i,
                 frequencies=frequencies,
                 impedance=impedance,
-                initial_voltage=initial_voltage,
+                initial_point=initial_point,
             )
         sweep_frames.append(sweep_frame)
 

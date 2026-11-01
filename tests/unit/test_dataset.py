@@ -36,6 +36,9 @@ class TestDataset:
         assert dataset.data == data_dictionary
         assert np.all(dataset["Time [s]"] == solution["Time [s]"].data)
 
+        # Test time conversion
+        np.testing.assert_allclose(dataset["Time [h]"], solution["Time [h]"].data)
+
         # Test exception for non-dictionary inputs
         with pytest.raises(
             TypeError, match="The input to pybop.Dataset must be a dictionary."

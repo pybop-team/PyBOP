@@ -52,7 +52,9 @@ class TestExamples:
     )
     def test_pipeline_scripts(self, list_of_pipeline_scripts: list[Path], tmp_path):
         # The pipeline scripts must be run sequentially
+        sys.argv.append("--draft")
         for example in sorted(list_of_pipeline_scripts):
             new_example_path = tmp_path / example.name
             shutil.copy(example, new_example_path)
             runpy.run_path(new_example_path)
+        sys.argv.pop(-1)
