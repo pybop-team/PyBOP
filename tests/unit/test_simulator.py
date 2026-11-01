@@ -108,6 +108,13 @@ class TestPybammSimulator:
         ):
             simulator.set_output_variables(["Not a variable"])
 
+    def test_remove_voltage_events(self, model):
+        simulator = pybop.pybamm.Simulator(model, remove_voltage_events=False)
+        assert "Maximum voltage [V]" in [e.name for e in simulator.model.events]
+
+        simulator = pybop.pybamm.Simulator(model, remove_voltage_events=True)
+        assert "Maximum voltage [V]" not in [e.name for e in simulator.model.events]
+
 
 class TestPybammEISSimulator:
     """

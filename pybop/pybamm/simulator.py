@@ -60,6 +60,8 @@ class Simulator(BaseSimulator):
     build_every_time : bool, optional
         If True, the model will be rebuilt every evaluation. Otherwise, the need to rebuild will be
         determined automatically.
+    remove_voltage_events : bool, optional
+        If True, the minimum and maximum voltage events are removed (default: True).
     """
 
     def __init__(
@@ -77,6 +79,7 @@ class Simulator(BaseSimulator):
         discretisation_kwargs: dict | None = None,
         cache_esoh: bool = True,
         build_every_time: bool = False,
+        remove_voltage_events: bool = True,
     ):
         # Core
         self._model = model
@@ -100,6 +103,7 @@ class Simulator(BaseSimulator):
         self._t_eval = None
         self._t_interp = None
         self._set_protocol(protocol=protocol)
+        self._remove_voltage_events = remove_voltage_events
 
         # Solver set-up
         if solver is not None:
@@ -264,7 +268,10 @@ class Simulator(BaseSimulator):
             self._solver.output_variables = output_variables or []
 
             # Remove all voltage-based events when not using an experiment
-            self._model.events = [e for e in self._model.events if "[V]" not in e.name]
+            if self._remove_voltage_events:
+                self._model.events = [
+                    e for e in self._model.events if "[V]" not in e.name
+                ]
 
         # Build if only building once, otherwise build on evaluation
         if not self._requires_model_rebuild:
