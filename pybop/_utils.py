@@ -5,6 +5,7 @@ import re
 import numpy as np
 import pandas as pd
 from scipy.io import loadmat, savemat
+from scipy.sparse import csr_array
 
 
 class NumpyEncoder(json.JSONEncoder):
@@ -15,6 +16,8 @@ class NumpyEncoder(json.JSONEncoder):
     """
 
     def default(self, obj):
+        if isinstance(obj, csr_array):
+            obj = obj.toarray()
         if isinstance(obj, np.ndarray):
             return obj.tolist()
         # won't be called since we only need to convert numpy arrays
@@ -179,7 +182,7 @@ def load_data_dict(
         data_keys_1d = data_keys_1d or []
         for key in data_keys_0d:
             if key in data_dict.keys():
-                data_dict[key] = data_dict[key][0, 0]
+                data_dict[key] = data_dict[key].item()
         for key in data_keys_1d:
             if key in data_dict.keys():
                 data_dict[key] = data_dict[key].flatten()
