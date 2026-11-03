@@ -7,6 +7,7 @@ Outputs are written to:
 
 import json
 
+import numpy as np
 import pybamm
 
 import pybop
@@ -19,8 +20,10 @@ model_class = pybamm.lithium_ion.DFN
 full_cell_parameters = pybamm.ParameterValues("Chen2020")
 cell_type = "LG M50 Synthetic"
 cell_label = "C02"
+Qnom_neg, Vmin_neg, Vmax_neg = 6.0, 0.05, 1.5
+Qnom_pos, Vmin_pos, Vmax_pos = 7.0, 3.5, 4.4
 
-""" Generate time-domain data for the LG M50. """
+""" Determine the capacity of the full-cell. """
 cell_info = {
     "Cell type": cell_type,
     "Cell format": "full cell",
@@ -28,9 +31,22 @@ cell_info = {
 }
 model_options = {"thermal": "lumped", "contact resistance": "true"}
 full_cell_model = model_class(model_options)
-full_cell_parameters["Nominal cell capacity [A.h]"] = 5.0
+cell = pybop.pybamm.simulate_procedure(
+    info=cell_info,
+    model=full_cell_model,
+    parameter_values=full_cell_parameters,
+    spec_path=procedure_root / "Capacity determination.json",
+)
+throughput = (
+    cell.procedure["Capacity determination"]
+    .experiment("Capacity determination")
+    .get("Capacity [Ah]")
+)
+Q_meas = np.round((throughput[0] - throughput[-1]), decimals=3)
+
+""" Generate time-domain data for the full-cell. """
+full_cell_parameters["Nominal cell capacity [A.h]"] = Q_meas
 procedures = [
-    "Capacity determination.json",
     "pOCV.json",
     "Temperature experiment.json",
     "GITT.json",
@@ -46,7 +62,7 @@ cell = pybop.pybamm.simulate_procedure(
 )
 pybop.pybamm.archive_data(cell=cell, archive_root=archive_root)
 
-""" Generate EIS data for the LG M50. """
+""" Generate EIS data for the full-cell. """
 cell_info = {
     "Cell type": cell_type,
     "Cell format": "full cell",
@@ -62,7 +78,7 @@ cell = pybop.pybamm.simulate_procedure(
 )
 pybop.pybamm.archive_data(cell=cell, archive_root=archive_root)
 
-""" Generate time-domain data for the negative electrode of the LG M50. """
+""" Generate time-domain data for the negative electrode half-cell. """
 cell_info = {
     "Cell type": cell_type,
     "Cell format": "negative half cell",
@@ -75,7 +91,13 @@ negative_electrode_model = model_class(model_options)
 negative_electrode_parameters = pybop.pybamm.convert_to_half_cell_parameters(
     full_cell_parameters, "negative"
 )
-negative_electrode_parameters["Nominal cell capacity [A.h]"] = 3.75
+negative_electrode_parameters.update(
+    {
+        "Nominal cell capacity [A.h]": Qnom_neg,
+        "Lower voltage cut-off [V]": Vmin_neg,
+        "Upper voltage cut-off [V]": Vmax_neg,
+    }
+)
 cell = pybop.pybamm.simulate_procedure(
     info=cell_info,
     model=negative_electrode_model,
@@ -84,7 +106,7 @@ cell = pybop.pybamm.simulate_procedure(
 )
 pybop.pybamm.archive_data(cell=cell, archive_root=archive_root)
 
-""" Generate time-domain data for the positive electrode of the LG M50. """
+""" Generate time-domain data for the positive electrode half-cell. """
 cell_info = {
     "Cell type": cell_type,
     "Cell format": "positive half cell",
@@ -95,7 +117,13 @@ positive_electrode_model = model_class(model_options)
 positive_electrode_parameters = pybop.pybamm.convert_to_half_cell_parameters(
     full_cell_parameters, "positive"
 )
-positive_electrode_parameters["Nominal cell capacity [A.h]"] = 6.5
+positive_electrode_parameters.update(
+    {
+        "Nominal cell capacity [A.h]": Qnom_pos,
+        "Lower voltage cut-off [V]": Vmin_pos,
+        "Upper voltage cut-off [V]": Vmax_pos,
+    }
+)
 cell = pybop.pybamm.simulate_procedure(
     info=cell_info,
     model=positive_electrode_model,
@@ -104,22 +132,20 @@ cell = pybop.pybamm.simulate_procedure(
 )
 pybop.pybamm.archive_data(cell=cell, archive_root=archive_root)
 
-# Associate all the synthetic data with the full-cell data
+# Associate all the synthetic data with the full-cell
 archive = (
     archive_root / cell_info["Cell type"] / "Full cell" / cell_label / "metadata.json"
 )
+associated_data = {
+    "Negative electrode": "../../Half cell negative/neg_01",
+    "Positive electrode": "../../Half cell positive/pos_01",
+    "Full-cell EIS": "../EIS",
+}
+
 with open(archive) as file:
     metadata = json.load(file)
-    cell_label = metadata["info"]["Cell label"]
-    cell_format = metadata["info"].get("Cell format", "")
+metadata["info"]["Associated"] = associated_data
 
-    associated_data = {}
-    associated_data["Negative electrode"] = "../../Half cell negative/neg_01"
-    associated_data["Positive electrode"] = "../../Half cell positive/pos_01"
-    associated_data["Full-cell EIS"] = "../EIS"
-
-    metadata["info"]["Associated"] = associated_data
-
-    json_clean = json.dumps(metadata, indent=4)
-    with open(archive, "w") as file:
-        file.write(json_clean + "\n")
+json_clean = json.dumps(metadata, indent=4)
+with open(archive, "w") as file:
+    file.write(json_clean + "\n")

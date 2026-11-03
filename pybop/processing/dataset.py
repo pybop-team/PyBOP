@@ -62,6 +62,8 @@ class Dataset:
     def __getitem__(self, key):
         """Return the data corresponding to a particular key."""
         if key not in self.data.keys():
+            if key == "Time [h]":
+                return self["Time [s]"] / 3600
             raise ValueError(f"The key {key} does not exist in this dataset.")
 
         return self.data[key]

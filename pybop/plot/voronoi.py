@@ -433,8 +433,8 @@ def surface(
         fig,
         style={
             "horizontal": True,
-            "loc": "lower left",
-            "coords": (0, 1),
+            "loc": "lower center",
+            "coords": (0.5, 1),
         },
         axes=ax,
     )

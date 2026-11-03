@@ -36,9 +36,11 @@ class WeightedCost(BaseCost):
         self._domain = self.costs[0].domain
         for cost in self.costs:
             self.parameters.join(cost.parameters)
+
+        # Ensure that all costs point to the same dataset, but keep their own target
         target_dataset = self.costs[0]._dataset  # noqa: SLF001
         self.set_target(
-            [cost.target for cost in self.costs],
+            target=None,
             dataset=None
             if target_dataset is None
             else Dataset(target_dataset, domain=self.costs[0].domain),
@@ -121,8 +123,12 @@ class WeightedCost(BaseCost):
         dataset: Dataset | None = None,
     ):
         """Set the target variable for all costs. Expecting a list of list[str] the same length as self.costs."""
-        target = [target] if isinstance(target, str) else target or self._target
-        if isinstance(target[0], str):
+        if target is None:
+            # Keep the target of each cost, which may differ between them. Broadcasting
+            # self._target here would instead give every cost the union of the targets.
+            target = [cost.target for cost in self.costs]
+        else:
+            target = [target] if isinstance(target, str) else target
             target = [target] * len(self.costs)
 
         self._target = []
