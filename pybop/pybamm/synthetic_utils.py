@@ -172,13 +172,22 @@ def _get_experiment_sequences(
     return step_sequence, description_sequence
 
 
-def _flatten_sequence(sequences: list[tuple[str, ...]]) -> list[str]:
+def _flatten_sequence(
+    sequences: list[tuple[str, ...]], delete_indices: list[int] | None = None
+) -> list[str]:
     """Flatten a list of experiment tuples into a list of per-event descriptions."""
-    return [step for sequence in sequences for step in sequence]
+    delete_indices = (
+        [] if delete_indices is None else sorted(delete_indices, reverse=True)
+    )
+    flattened = [step for sequence in sequences for step in sequence]
+    for index in delete_indices:
+        if 0 <= index < len(flattened):
+            del flattened[index]
+    return flattened
 
 
 def _remap_cycle_info(
-    dataframe: pl.LazyFrame, step_sequence: list[tuple[int, ...]], event_offset: int
+    dataframe: pl.LazyFrame, flattened_step_sequence: list[int], event_offset: int
 ) -> pl.LazyFrame:
     """Map PyBaMM step and cycle numbers back to match the cycle information."""
     step_column = pl.col("Step").cast(pl.Int64)
@@ -202,7 +211,7 @@ def _remap_cycle_info(
         .flatten()
     )
     return dataframe.with_columns(
-        Step=pl.col("Event").replace(event_numbers, _flatten_sequence(step_sequence))
+        Step=pl.col("Event").replace(event_numbers, flattened_step_sequence)
     )
 
 
@@ -230,6 +239,14 @@ def _solution_to_dataframe(
     event_offset: int,
 ) -> pl.LazyFrame:
     """Convert a PyBaMM solution into the PyProBE-required dataframe layout."""
+    empty_steps = np.flatnonzero(
+        [
+            isinstance(step, pybamm.EmptySolution)
+            for cycle in solution.cycles
+            for step in cycle.steps
+        ]
+    )
+    empty_steps = empty_steps[empty_steps != 0]
     pybamm_data = solution.get_data_dict(
         [
             "Time [s]",
@@ -246,7 +263,11 @@ def _solution_to_dataframe(
         # Account for an error where the Step is one longer than the Solution
         pybamm_data["Step"] = pybamm_data["Step"][:-1]
         raw_dataframe = pl.LazyFrame(pybamm_data)
-    raw_dataframe = _remap_cycle_info(raw_dataframe, step_sequence, event_offset)
+    raw_dataframe = _remap_cycle_info(
+        raw_dataframe,
+        _flatten_sequence(step_sequence, delete_indices=empty_steps),
+        event_offset,
+    )
     return raw_dataframe.select(
         [
             pl.col("Time [s]"),
