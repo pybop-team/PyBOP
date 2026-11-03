@@ -2,6 +2,16 @@
 
 ## Features
 
+## Optimisations
+
+## Bug Fixes
+
+## Breaking Changes
+
+# [v26.10](https://github.com/pybop-team/PyBOP/tree/v26.3) - 2026-11-03
+
+## Features
+
 - [#996](https://github.com/pybop-team/PyBOP/pull/996) - Updates the DFN parameterisation pipeline, adds draft mode for testing.
 - [#998](https://github.com/pybop-team/PyBOP/pull/998) - Add `remove_voltage_events` option, `default_variables` property and the option to pass both `t_eval` and `t_interp` to the PyBaMM simulators.
 - [#995](https://github.com/pybop-team/PyBOP/pull/995) - Updates the cell models, including adding the thermodynamic factor to the GroupedSPMe.

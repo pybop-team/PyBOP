@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pybop"
-version = "26.3"
+version = "26.10"
 authors = [
   {name = "The PyBOP Team"},
 ]
