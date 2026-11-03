@@ -1,4 +1,3 @@
-import numpy as np
 import pybamm
 
 import pybop
@@ -38,8 +37,7 @@ for init_soc, experiment in zip(init_socs, experiments, strict=False):
         {
             "Time [s]": solution.t,
             "Current [A]": solution["Current [A]"].data,
-            "Voltage [V]": solution["Voltage [V]"].data
-            + np.random.normal(0, sigma, len(solution.t)),
+            "Voltage [V]": pybop.add_noise(solution["Voltage [V]"].data, sigma),
         }
     )
 

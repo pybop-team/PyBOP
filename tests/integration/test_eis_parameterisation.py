@@ -1,14 +1,13 @@
 import numpy as np
 import pybamm
 import pytest
-from scipy import stats
 
 import pybop
 
 
 class TestEISParameterisation:
     """
-    A class to test the eis parameterisation methods.
+    A class to test the EIS parameterisation methods.
     """
 
     pytestmark = pytest.mark.integration
@@ -17,9 +16,7 @@ class TestEISParameterisation:
     def setup(self):
         self.sigma = 5e-4
         self.ground_truth = np.clip(
-            np.asarray([0.55, 0.55]) + np.random.normal(loc=0.0, scale=0.05, size=2),
-            a_min=0.4,
-            a_max=0.75,
+            pybop.add_noise(np.asarray([0.55, 0.55]), 0.05), a_min=0.4, a_max=0.75
         )
 
     @pytest.fixture
@@ -42,40 +39,22 @@ class TestEISParameterisation:
     def parameters(self):
         return {
             "Negative electrode active material volume fraction": pybop.Parameter(
-                distribution=stats.uniform(loc=0.3, scale=0.9 - 0.3),
-                initial_value=stats.uniform(loc=0.4, scale=0.75 - 0.4).rvs(),
+                distribution=pybop.Uniform(0.3, 0.9)
             ),
             "Positive electrode active material volume fraction": pybop.Parameter(
-                distribution=stats.uniform(loc=0.3, scale=0.9 - 0.3),
-                initial_value=stats.uniform(loc=0.4, scale=0.75 - 0.4).rvs(),
+                distribution=pybop.Uniform(0.3, 0.9)
             ),
         }
-
-    @pytest.fixture(params=[0.5])
-    def init_soc(self, request):
-        return request.param
 
     @pytest.fixture(
         params=[
             pybop.GaussianLogLikelihood,
             pybop.SumSquaredError,
             pybop.MeanAbsoluteError,
-            pybop.MeanSquaredError,
-            pybop.Minkowski,
         ]
     )
     def cost_class(self, request):
         return request.param
-
-    def noisy(self, data, sigma):
-        # Generate real part noise
-        real_noise = np.random.normal(0, sigma, len(data))
-
-        # Generate imaginary part noise
-        imag_noise = np.random.normal(0, sigma, len(data))
-
-        # Combine them into a complex noise
-        return data + real_noise + 1j * imag_noise
 
     @pytest.fixture(
         params=[
@@ -89,12 +68,10 @@ class TestEISParameterisation:
         return request.param
 
     @pytest.fixture
-    def optim(
-        self, optimiser, model, parameter_values, parameters, cost_class, init_soc
-    ):
+    def optim(self, optimiser, model, parameter_values, parameters, cost_class):
         n_frequency = 15
         f_eval = np.logspace(-4, 5, n_frequency)
-        parameter_values.set_initial_state(init_soc)
+        parameter_values.set_initial_state(0.5)
         dataset = self.get_data(model, parameter_values, f_eval)
 
         # Define the problem
@@ -107,14 +84,10 @@ class TestEISParameterisation:
 
         # Construct the cost
         target = "Impedance"
-        if cost_class is pybop.GaussianLogLikelihoodKnownSigma:
-            cost = cost_class(dataset, target=target, sigma=self.sigma)
-        elif cost_class is pybop.GaussianLogLikelihood:
+        if cost_class is pybop.GaussianLogLikelihood:
             cost = cost_class(
                 dataset, target=target, sigma=self.sigma * 4
             )  # Initial sigma guess
-        elif cost_class in [pybop.SumOfPower, pybop.Minkowski]:
-            cost = cost_class(dataset, target=target, p=2)
         else:
             cost = cost_class(dataset, target=target)
         problem = pybop.Problem(simulator, cost)
@@ -163,14 +136,11 @@ class TestEISParameterisation:
         np.testing.assert_allclose(result.x, self.ground_truth, atol=1.5e-2)
 
     def get_data(self, model, parameter_values, f_eval):
+        x = self.ground_truth
         parameter_values.update(
             {
-                "Negative electrode active material volume fraction": self.ground_truth[
-                    0
-                ],
-                "Positive electrode active material volume fraction": self.ground_truth[
-                    1
-                ],
+                "Negative electrode active material volume fraction": x[0],
+                "Positive electrode active material volume fraction": x[1],
             }
         )
         solution = pybop.pybamm.EISSimulator(
@@ -180,7 +150,7 @@ class TestEISParameterisation:
             {
                 "Frequency [Hz]": f_eval,
                 "Current [A]": np.zeros_like(f_eval),
-                "Impedance": self.noisy(solution["Impedance"].data, self.sigma),
+                "Impedance": pybop.add_noise(solution["Impedance"].data, self.sigma),
             },
             domain="Frequency [Hz]",
         )

@@ -26,18 +26,10 @@ class TestClassification:
         self.ground_truth = request.param
         return {
             "R0 [Ohm]": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    0.05,
-                    0.01,
-                    truncated_at=[0.02, 0.08],
-                )
+                distribution=pybop.Gaussian(0.05, 0.01, truncated_at=[0.02, 0.08])
             ),
             "R1 [Ohm]": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    0.05,
-                    0.01,
-                    truncated_at=[0.02, 0.08],
-                )
+                distribution=pybop.Gaussian(0.05, 0.01, truncated_at=[0.02, 0.08])
             ),
         }
 
@@ -53,12 +45,11 @@ class TestClassification:
             {
                 "Open-circuit voltage [V]": model.default_parameter_values[
                     "Open-circuit voltage [V]"
-                ]
+                ],
+                "C1 [F]": 1000,
+                "R0 [Ohm]": self.ground_truth[0],
+                "R1 [Ohm]": self.ground_truth[1],
             }
-        )
-        parameter_values.update({"C1 [F]": 1000})
-        parameter_values.update(
-            {"R0 [Ohm]": self.ground_truth[0], "R1 [Ohm]": self.ground_truth[1]}
         )
         return parameter_values
 

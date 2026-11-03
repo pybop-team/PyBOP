@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from pybamm import Interpolant as PybammInterpolant
+from pybamm import Symbol
 from scipy import interpolate
 
 if TYPE_CHECKING:
@@ -29,6 +30,8 @@ class Interpolant:
         Output values corresponding to x.
     name : str, optional
         Name for the interpolant when used in PyBaMM.
+    kind: str, optional
+        Which kind of interpolator to use. Can be "linear" (default) or "cubic".
     bounds_error : bool, optional
         If True, raise error when interpolating outside bounds.
     fill_value : str or float, optional
@@ -42,13 +45,15 @@ class Interpolant:
         x: np.ndarray,
         y: np.ndarray,
         name: str | None = None,
+        kind: str | None = None,
         bounds_error: bool = False,
         fill_value: str | float = "extrapolate",
         axis: int = 0,
     ):
         self.x = np.asarray(x)
         self.y = np.asarray(y)
-        self.name = name
+        self.name = name if name is None else name.replace(" ", "_")
+        self.kind = kind or "linear"
         self._interp_func = self._create_interpolant(bounds_error, fill_value, axis)
 
     def _create_interpolant(
@@ -58,6 +63,7 @@ class Interpolant:
         return interpolate.interp1d(
             self.x,
             self.y,
+            kind=self.kind,
             bounds_error=bounds_error,
             fill_value=fill_value,
             axis=axis,
@@ -77,12 +83,15 @@ class Interpolant:
         float, array_like, or pybamm.Interpolant
             Interpolated values or PyBaMM interpolant object.
         """
-        try:
-            # Try numeric evaluation first
+        if isinstance(x, Symbol):  # symbolic evaluation
+            return PybammInterpolant(
+                self.x, self.y, x, name=self.name, interpolator=self.kind
+            )
+        else:  # numeric evaluation
             return self._interp_func(x)
-        except Exception:
-            # Fall back to PyBaMM interpolant for symbolic evaluation
-            return PybammInterpolant(self.x, self.y, x, name=self.name)
+
+    def __repr__(self):
+        return f"{self.name}, {self.kind} interpolant"
 
 
 class InverseOCV:
@@ -109,11 +118,13 @@ class InverseOCV:
         self.optimiser = optimiser or SciPyMinimize
         self.optimiser_options = optimiser_options or self.optimiser.default_options()
 
-        parameters = Parameters({"Root": Parameter(initial_value=0.5, bounds=[0, 1])})
+        self.parameters = Parameters(
+            {"Root": Parameter(initial_value=0.5, bounds=[0, 1])}
+        )
 
         # Set up a root-finding cost function
         class OCVRoot(BaseSimulator):
-            def __init__(self, ocv_value: float):
+            def __init__(self, parameters: Parameters, ocv_value: float):
                 super().__init__(parameters=parameters)
                 self.ocv_value = ocv_value
 
@@ -122,7 +133,7 @@ class InverseOCV:
                 for x in inputs:
                     diff = np.abs(ocv_function(x["Root"]) - self.ocv_value)
                     sol = Solution()
-                    sol.set_solution_variable("Difference", data=np.asarray([diff]))
+                    sol.set_solution_variable("Difference", data=np.atleast_1d(diff))
                     solutions.append(sol)
                 return solutions
 
@@ -146,7 +157,7 @@ class InverseOCV:
         float
             The stoichiometry corresponding to the open-circuit voltage value.
         """
-        problem = Problem(self.ocv_root(ocv_value), self.cost)
+        problem = Problem(self.ocv_root(self.parameters, ocv_value), self.cost)
         optim = self.optimiser(problem, options=self.optimiser_options)
         result = optim.run()
         return result.best_inputs["Root"]

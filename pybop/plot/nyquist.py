@@ -1,8 +1,18 @@
+import numpy as np
+
 from pybop.parameters.parameter import Inputs
-from pybop.plot.standard_plots import StandardPlot
+from pybop.plot.util import get_backend_from_figure
 
 
-def nyquist(problem, inputs: Inputs = None, show=True, **layout_kwargs):
+def nyquist(
+    problem,
+    inputs: Inputs = None,
+    show=True,
+    title="Nyquist Plot",
+    backend=None,
+    figures=None,
+    axes=None,
+):
     """
     Generates Nyquist plots for the given problem by evaluating the model's output and target values.
 
@@ -11,27 +21,32 @@ def nyquist(problem, inputs: Inputs = None, show=True, **layout_kwargs):
     problem : pybop.Problem
         An instance of a problem class that contains the parameters and methods
         for evaluation and target retrieval.
+    title: str, optional
+        The title of the figure
     inputs : Inputs, optional
         Input parameters for the problem. If not provided, the default parameters from the problem
         instance will be used. These parameters are verified before use (default is None).
     show : bool, optional
         If True, the plots will be displayed.
-    **layout_kwargs : dict, optional
-        Additional keyword arguments for customising the plot layout. These arguments are passed to
-        `fig.update_layout()`.
+    backend: str or pybop.plot.backends.PlotBackend, optional
+        The plotting backend to be used.
+    figures: figure object or list of figure objects, optional
+        Either a single figure or the same number of figures as axes.
+    axes: single axis or list of axes, optional
+        plotly: axes expected to be of the form tuple(row, col)
+        Number of axes must agree with number of targets for the problem.
 
     Returns
     -------
-    list
-        A list of plotly `Figure` objects, each representing a Nyquist plot for the model's output and target values.
-
+    fig or list of figs : plotly.graph_objs.Figure or matplotlib.figure.Figure
+        A single figure or a list of figures containing the Nyquist plots for each target in the
+        problem. If show is True, the figures will be displayed and None will be returned.
     Notes
     -----
     - The function extracts the real part of the impedance from the model's output and the real and imaginary parts
       of the impedance from the target output.
     - For each signal in the problem, a Nyquist plot is created with the model's impedance plotted as a scatter plot.
     - An additional trace for the reference (target output) is added to the plot.
-    - The plot layout can be customised using `layout_kwargs`.
 
     Example
     -------
@@ -39,6 +54,24 @@ def nyquist(problem, inputs: Inputs = None, show=True, **layout_kwargs):
     >>> nyquist_figures = nyquist(problem, show=True, title="Nyquist Plot", xaxis_title="Real(Z)", yaxis_title="Imag(Z)")
     >>> # The plots will be displayed and nyquist_figures will contain the list of figure objects.
     """
+    # Import plotting backend
+    backend = get_backend_from_figure(backend, figures)
+
+    # Process input figures
+    figures, axes, create_figure, _ = backend.parse_input_axes(
+        figures, axes, num_plots=len(problem.target), allow_single_axis=False
+    )
+
+    trace_style_model = dict(
+        linewidth=2,
+        color="#00CC96",
+        marker="o",
+        markerfacecolor="#00CC96",
+    )
+    trace_style_reference = dict(
+        linestyle="none", marker="o", fillstyle="none", markeredgecolor="#636EFA"
+    )
+
     if not isinstance(inputs, dict):
         inputs = problem.parameters.to_dict(inputs)
 
@@ -46,74 +79,44 @@ def nyquist(problem, inputs: Inputs = None, show=True, **layout_kwargs):
     domain_data = model_output["Impedance"].data.real
     target_output = problem.target_data
 
-    figure_list = []
-    for var in problem.target:
-        default_layout_options = dict(
-            title="Nyquist Plot",
-            font=dict(family="Arial", size=14),
-            plot_bgcolor="white",
-            paper_bgcolor="white",
-            xaxis=dict(
-                title=dict(text="Z<sub>re</sub> / Ω", font=dict(size=16), standoff=15),
-                showline=True,
-                linewidth=2,
-                linecolor="black",
-                mirror=True,
-                ticks="outside",
-                tickwidth=2,
-                tickcolor="black",
-                ticklen=5,
+    for i, var in enumerate(problem.target):
+        if create_figure:
+            fig = backend.create_figure(
+                style={"width": 600, "height": 600, "bg_color": "white"},
+            )
+            figures = np.append(figures, fig)
+            ax = None
+        else:
+            fig = figures[i]
+            ax = axes[i]
+
+        backend.update_axes_titles(fig, ax, r"$Z_{re} / \Omega$", r"$-Z_{im} / \Omega$")
+        backend.update_plot_titles(fig, ax, title)
+
+        backend.plot_trace(
+            backend.line(
+                x=domain_data,
+                y=-model_output[var].data.imag,
+                label="Model",
+                style=trace_style_model,
             ),
-            yaxis=dict(
-                title=dict(text="-Z<sub>im</sub> / Ω", font=dict(size=16), standoff=15),
-                showline=True,
-                linewidth=2,
-                linecolor="black",
-                mirror=True,
-                ticks="outside",
-                tickwidth=2,
-                tickcolor="black",
-                ticklen=5,
-                scaleanchor="x",
-                scaleratio=1,
+            fig,
+            ax=ax,
+        )
+
+        backend.plot_trace(
+            backend.line(
+                x=target_output[var].real,
+                y=-target_output[var].imag,
+                label="Reference",
+                style=trace_style_reference,
             ),
-            legend=dict(
-                orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
-            ),
-            width=600,
-            height=600,
+            fig,
+            ax=ax,
         )
+        backend.legend(fig, axes=ax)
 
-        plot_dict = StandardPlot(
-            x=domain_data,
-            y=-model_output[var].data.imag,
-            layout_options=default_layout_options,
-            trace_names="Model",
-        )
-
-        plot_dict.traces[0].update(
-            mode="lines+markers",
-            line=dict(color="#00CC96", width=2),
-            marker=dict(size=8, color="#00CC96", symbol="circle"),
-        )
-
-        target_trace = plot_dict.create_trace(
-            x=target_output[var].real,
-            y=-target_output[var].imag,
-            name="Reference",
-            mode="markers",
-            marker=dict(size=8, color="#636EFA", symbol="circle-open"),
-            showlegend=True,
-        )
-        plot_dict.traces.append(target_trace)
-
-        fig = plot_dict(show=False)
-
-        # Overwrite with user-kwargs
-        fig.update_layout(**layout_kwargs)
-        if show:
-            fig.show()
-
-        figure_list.append(fig)
-
-    return figure_list
+    if show:
+        backend.show_figure(figures)
+    else:
+        return figures[0] if len(figures) == 1 else figures

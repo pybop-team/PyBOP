@@ -1,0 +1,28 @@
+{
+  "pOCV": {
+    "Precondition": {
+      "Steps": [
+        0,
+        1
+      ],
+      "Step Descriptions": [
+        "Discharge at C/10 until {Vmin} V",
+        "Rest for 2 hours"
+      ]
+    },
+    "Pseudo OCV": {
+      "Steps": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "Step Descriptions": [
+        "Charge at C/30 until {Vmax} V",
+        "Rest for 2 hours",
+        "Discharge at C/30 until {Vmin} V",
+        "Rest for 2 hours"
+      ]
+    }
+  }
+}

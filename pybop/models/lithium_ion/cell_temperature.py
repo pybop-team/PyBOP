@@ -33,6 +33,9 @@ class CellTemperature(BaseGroupedModel):
     def __init__(self, name="Cell Temperature Model", **model_kwargs):
         super().__init__(name=name, **model_kwargs)
 
+        # Voltage is an input to this model, not a state
+        self.options["voltage as a state"] = "false"
+
         ######################
         # Variables
         ######################
@@ -41,6 +44,7 @@ class CellTemperature(BaseGroupedModel):
         Qt = Variable("Throughput capacity [A.h]")
 
         T_cell = Variable("Cell temperature [K]")
+        T_surf = Variable("Surface temperature [K]")
 
         ######################
         # Parameters
@@ -48,7 +52,7 @@ class CellTemperature(BaseGroupedModel):
         # Parameters are purely symbolic at this stage, and will be set by the
         # `ParameterValues` class when the model is processed.
 
-        Q_meas = Parameter("Measured cell capacity [A.s]")
+        Q_meas = Parameter("Measured cell capacity [A.h]") * 3600
 
         soc_init = Parameter("Initial SoC")
         x_0 = Parameter("Minimum negative stoichiometry")
@@ -62,8 +66,10 @@ class CellTemperature(BaseGroupedModel):
         S_n = Parameter("Negative electrode OCP entropic change [V.K-1]")
         S_p = Parameter("Positive electrode OCP entropic change [V.K-1]")
 
-        c_th = Parameter("Cell thermal mass [J/K]")
-        h = Parameter("Heat transfer coefficient [W/K]")
+        c_th_c = Parameter("Cell thermal mass [J/K]")
+        c_th_s = Parameter("Surface thermal mass [J/K]")
+        h_c = Parameter("Cell heat transfer coefficient [W/K]")
+        h_s = Parameter("Surface heat transfer coefficient [W/K]")
 
         ######################
         # Input current (positive on discharge)
@@ -113,8 +119,10 @@ class CellTemperature(BaseGroupedModel):
         )
 
         # Cell temperature
-        self.rhs[T_cell] = (Q_irr + Q_rev - h * (T_cell - T_amb)) / c_th
+        self.rhs[T_cell] = (Q_irr + Q_rev - h_c * (T_cell - T_surf)) / c_th_c
+        self.rhs[T_surf] = (h_c * (T_cell - T_surf) - h_s * (T_surf - T_amb)) / c_th_s
         self.initial_conditions[T_cell] = T_init
+        self.initial_conditions[T_surf] = T_init
 
         ######################
         # (Some) variables
@@ -132,25 +140,17 @@ class CellTemperature(BaseGroupedModel):
             "Open-circuit voltage [V]": U,
             "Ambient temperature [K]": T_amb,
             "Cell temperature [K]": T_cell,
+            "Surface temperature [K]": T_surf,
         }
 
     def U(self, sto, domain):
         """
-        Dimensional open-circuit potential [V], calculated as U(x) = U_ref(x).
+        Dimensional open-circuit potential [V].
         Credit: PyBaMM
         """
-        # bound stoichiometry between tol and 1-tol. Adding 1/sto + 1/(sto-1) later
-        # will ensure that ocp goes to +- infinity if sto goes into that region
-        # anyway
         Domain = domain.capitalize()
-        tol = pybamm.settings.tolerances["U__c_s"]
-        sto = pybamm.maximum(pybamm.minimum(sto, 1 - tol), tol)
         inputs = {f"{Domain} particle surface stoichiometry": sto}
-        u_ref = FunctionParameter(f"{Domain} electrode OCP [V]", inputs)
-
-        # add a term to ensure that the OCP goes to infinity at 0 and -infinity at 1
-        # this will not affect the OCP for most values of sto
-        out = u_ref + 1e-6 * (1 / sto + 1 / (sto - 1))
+        out = FunctionParameter(f"{Domain} electrode OCP [V]", inputs)
 
         if domain == "negative":
             out.print_name = r"U_\mathrm{n}(c^\mathrm{surf}_\mathrm{s,n})"
@@ -165,7 +165,9 @@ class CellTemperature(BaseGroupedModel):
             {
                 "Voltage function [V]": param.evaluate(self.param.ocv_init),
                 "Cell thermal mass [J/K]": 20,
-                "Heat transfer coefficient [W/K]": 0.05,
+                "Surface thermal mass [J/K]": 20,
+                "Cell heat transfer coefficient [W/K]": 0.05,
+                "Surface heat transfer coefficient [W/K]": 0.05,
             },
             check_already_exists=False,
         )
@@ -179,7 +181,11 @@ class CellTemperature(BaseGroupedModel):
             "Current [A]",
             "SoC",
             {"Open-circuit voltage [V]", "Voltage [V]"},
-            {"Ambient temperature [K]", "Cell temperature [K]"},
+            {
+                "Ambient temperature [K]",
+                "Cell temperature [K]",
+                "Surface temperature [K]",
+            },
         ]
 
     @property
@@ -226,7 +232,11 @@ class CellTemperature(BaseGroupedModel):
         L_n = param["Negative electrode thickness [m]"]
 
         # Compute the cell area
-        A = param["Electrode height [m]"] * param["Electrode width [m]"]
+        A = (
+            param["Electrode height [m]"]
+            * param["Electrode width [m]"]
+            * param["Number of electrodes connected in parallel to make a cell"]
+        )
 
         # Compute the stoichiometry limits and initial SOC
         x_0, x_100, y_100, y_0 = get_min_max_stoichiometries(param)
@@ -236,8 +246,8 @@ class CellTemperature(BaseGroupedModel):
         soc_init = (sto_p_init - y_0) / (y_100 - y_0)
 
         # Compute the capacity within the stoichiometry limits
-        Q_th_p = F * alpha_p * c_max_p * L_p * A
-        Q_th_n = F * alpha_n * c_max_n * L_n * A
+        Q_th_p = F * alpha_p * c_max_p * L_p * A / 3600
+        Q_th_n = F * alpha_n * c_max_n * L_n * A / 3600
         Q_meas_p = (y_0 - y_100) * Q_th_p
         Q_meas_n = (x_100 - x_0) * Q_th_n
         if abs(Q_meas_n / Q_meas_p - 1) > 1e-6:
@@ -264,7 +274,7 @@ class CellTemperature(BaseGroupedModel):
             "Upper voltage cut-off [V]": param["Upper voltage cut-off [V]"],
             "Positive electrode OCP [V]": param["Positive electrode OCP [V]"],
             "Negative electrode OCP [V]": param["Negative electrode OCP [V]"],
-            "Measured cell capacity [A.s]": Q_meas,
+            "Measured cell capacity [A.h]": Q_meas,
             "Negative electrode OCP entropic change [V.K-1]": param[
                 "Negative electrode OCP entropic change [V.K-1]"
             ],
@@ -272,7 +282,13 @@ class CellTemperature(BaseGroupedModel):
                 "Positive electrode OCP entropic change [V.K-1]"
             ],
             "Cell thermal mass [J/K]": param["Cell thermal mass [J/K]"],
-            "Heat transfer coefficient [W/K]": param["Heat transfer coefficient [W/K]"],
+            "Surface thermal mass [J/K]": param["Surface thermal mass [J/K]"],
+            "Cell heat transfer coefficient [W/K]": param[
+                "Cell heat transfer coefficient [W/K]"
+            ],
+            "Surface heat transfer coefficient [W/K]": param[
+                "Surface heat transfer coefficient [W/K]"
+            ],
         }
         parameter_values = ParameterValues(values=parameter_dictionary)
         parameter_values._set_initial_state = CellTemperature.set_initial_state  # noqa: SLF001

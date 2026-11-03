@@ -21,7 +21,7 @@ class Solution:
     """
 
     def __init__(self, inputs: Inputs = None):
-        self._dict = {}
+        self._variables = {}
         self.all_inputs = [inputs] if inputs is not None else []
 
     def set_solution_variable(
@@ -30,9 +30,9 @@ class Solution:
         data: np.ndarray,
         sensitivities: dict[str, np.ndarray] | None = None,
     ):
-        self._dict[variable_name] = SolutionVariable(
+        self._variables[variable_name] = SolutionVariable(
             data=data, sensitivities=sensitivities
         )
 
     def __getitem__(self, key):
-        return self._dict[key]
+        return self._variables[key]

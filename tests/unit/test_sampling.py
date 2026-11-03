@@ -309,7 +309,10 @@ class TestPintsSamplers:
         np.testing.assert_array_equal(result1._x0, result2._x0)
         np.testing.assert_array_equal(result1._best_cost, result2._best_cost)
         np.testing.assert_array_equal(result1._cost, result2._cost)
-        np.testing.assert_array_equal(result1._initial_cost, result2._initial_cost)
+        np.testing.assert_array_equal(
+            result1._cost_convergence, result2._cost_convergence
+        )
+        np.testing.assert_array_equal(result1.initial_cost, result2.initial_cost)
         np.testing.assert_array_equal(result1._n_iterations, result2._n_iterations)
         np.testing.assert_array_equal(
             result1._iteration_number, result2._iteration_number
@@ -348,14 +351,14 @@ class TestPintsSamplers:
             result.save_data(filename, to_format=to_format)
 
             # load result
-            result_load = SamplingResult.load_data(filename, file_format=to_format)
+            result_load = pybop.Result.load_data(filename, file_format=to_format)
             self.compare_result_data(result, result_load)
             assert sampler2.logger is None
 
         # test save whole result
         filename = f"{test_stub}.pickle"
         result.save(filename)
-        result_load = SamplingResult.load(filename)
+        result_load = pybop.Result.load(filename)
         self.compare_result_data(result, result_load)
         assert result.problem.parameters.names == result_load.problem.parameters.names
         np.testing.assert_array_equal(result.chains, result_load.chains)

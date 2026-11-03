@@ -22,31 +22,30 @@ experiment = pybamm.Experiment(
 parameter_values = pybamm.ParameterValues("Chen2020")
 model = pybamm.lithium_ion.SPM()
 solution = pybamm.Simulation(
-    model, parameter_values=parameter_values, experiment=experiment
+    model, parameter_values=parameter_values, experiment=experiment, cache_esoh=False
 ).solve(initial_soc=init_soc)
 
 # Add thermal parameters and the voltage data
 parameter_values.update(
     {
         "Cell thermal mass [J/K]": 20,
-        "Heat transfer coefficient [W/K]": 0.05,
+        "Surface thermal mass [J/K]": 20,
+        "Cell heat transfer coefficient [W/K]": 0.05,
+        "Surface heat transfer coefficient [W/K]": 0.05,
         "Current function [A]": pybamm.Interpolant(
             solution.t, solution["Current [A]"].data, pybamm.t
         ),
         "Voltage function [V]": pybamm.Interpolant(
             solution.t, solution["Voltage [V]"].data, pybamm.t
         ),
-    },
-    check_already_exists=False,
+    }
 )
 
 # Group the parameters and relate the entropic coefficients to the cell-level
 grouped_parameter_values = pybop.lithium_ion.CellTemperature.create_grouped_parameters(
     parameter_values
 )
-grouped_parameter_values.update(
-    {"OCV entropic change [V.K-1]": 2e-5}, check_already_exists=False
-)
+grouped_parameter_values.update({"OCV entropic change [V.K-1]": 2e-5})
 grouped_parameter_values.update(
     {
         "Negative electrode OCP entropic change [V.K-1]": (
@@ -61,6 +60,6 @@ grouped_parameter_values.update(
 # Run an example thermal simulation
 thermal_model = pybop.lithium_ion.CellTemperature()
 solution = pybamm.Simulation(
-    thermal_model, parameter_values=grouped_parameter_values
+    thermal_model, parameter_values=grouped_parameter_values, cache_esoh=False
 ).solve(initial_soc=init_soc, t_eval=solution.t)
-solution.plot(["Current [A]", "SoC", "Voltage [V]", "Cell temperature [K]"])
+solution.plot()

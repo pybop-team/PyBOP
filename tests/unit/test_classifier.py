@@ -1,7 +1,6 @@
 import numpy as np
 import pybamm
 import pytest
-from scipy import stats
 
 import pybop
 
@@ -29,11 +28,7 @@ class TestClassifier:
 
         parameter_values = model.default_parameter_values
         parameter_values.update(
-            {
-                "R0 [Ohm]": pybop.Parameter(
-                    distribution=stats.uniform(loc=0.001, scale=0.1 - 0.001)
-                )
-            }
+            {"R0 [Ohm]": pybop.Parameter(pybop.Uniform(lower=0.001, upper=0.1))}
         )
         simulator = pybop.pybamm.Simulator(
             model, parameter_values=parameter_values, protocol=dataset

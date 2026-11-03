@@ -1,33 +1,33 @@
-import copy
 import json
 import time
 from contextlib import redirect_stderr, redirect_stdout
+from copy import deepcopy
 from dataclasses import dataclass, field
 from sys import stderr, stdout
 
 import numpy as np
 from pybamm import citations
 
-import pybop
+from pybop import plot
 from pybop._logging import Logger
-from pybop.optimisers.base_optimiser import BaseOptimiser, OptimisationResult
-from pybop.parameters.multivariate_distributions import MultivariateGaussian
-from pybop.parameters.parameter import Parameters
-
-
-def ep_bolfi_problem_processing(y, problem):
-    if isinstance(y, dict):
-        evaluation = problem._cost(y[problem._simulator.output_variables[0]])  # noqa: SLF001
-    else:
-        evaluation = problem._cost(y)  # noqa: SLF001
-    if isinstance(evaluation, pybop.costs.evaluation.Evaluation):
-        return [evaluation.values]
-    else:
-        return [evaluation]
+from pybop.optimisers.base_optimiser import (
+    BaseOptimiser,
+    OptimisationResult,
+    OptimiserOptions,
+)
+from pybop.parameters.multivariate_distributions import (
+    MarginalDistribution,
+    MultivariateGaussian,
+    MultivariateLogNormal,
+)
+from pybop.parameters.parameter import Parameter, Parameters
+from pybop.problems.meta_problem import MetaProblem
+from pybop.problems.problem import Problem
+from pybop.processing.dataset import Dataset
 
 
 @dataclass
-class EPBOLFIOptions(pybop.OptimiserOptions):
+class EPBOLFIOptions(OptimiserOptions):
     """
     A class to hold EP-BOLFI options for the optimisation process.
 
@@ -186,17 +186,17 @@ class EP_BOLFI(BaseOptimiser):
     objects, but will be converted to an ep_bolfi.EP_BOLFI instance
     upon instantiation of this class. To change attributes, re-init.
 
-    Only compatible with MultivariateParameters with a
-    MultivariateGaussian distribution.
+    Only compatible with MultivariateParameters with a MultivariateGaussian
+    distribution, or a MultivariateLogNormal with a LogTransformation.
     """
 
     def __init__(
         self,
-        problem: pybop.Problem,
+        problem: Problem,
         options: EPBOLFIOptions | None = None,
     ):
-        if type(problem) is not pybop.MetaProblem:
-            problem = pybop.MetaProblem(problem)
+        if type(problem) is not MetaProblem:
+            problem = MetaProblem(problem)
         super().__init__(problem, options)
         # citations.register("""@article{
         #     Minka2013,
@@ -204,7 +204,8 @@ class EP_BOLFI(BaseOptimiser):
         #     author={Minka, T},
         #     journal={Proceedings of the Seventeenth Conference on Uncertainty in Artificial Intelligence (UAI2001)},
         #     pages={362-369},
-        #     year={2013}
+        #     year={2013},
+        #     doi={10.48550/arXiv.1301.2294}
         # }""")
         citations.register("""@article{
             Barthelme2014,
@@ -213,7 +214,8 @@ class EP_BOLFI(BaseOptimiser):
             journal={Journal of the American Statistical Association},
             volume={109},
             pages={315-333},
-            year={2014}
+            year={2014},
+            doi={10.1080/01621459.2013.864178}
         }""")
         citations.register("""@article{
             Gutmann2016,
@@ -222,7 +224,8 @@ class EP_BOLFI(BaseOptimiser):
             journal={Journal of Machine Learning Research},
             volume={17},
             pages={1-47},
-            year={2016}
+            year={2016},
+            doi={arXiv.1501.03291}
         }""")
         citations.register("""@article{
             Kuhn2022,
@@ -232,32 +235,33 @@ class EP_BOLFI(BaseOptimiser):
             volume={6},
             pages={e202200374},
             year={2023},
-            publisher={Chemistry Europe}
+            publisher={Chemistry Europe},
+            doi={10.1002/batt.202200374}
         }""")
 
     def _set_up_optimiser(self):
         import ep_bolfi
 
-        # Use the first output variable to pass to EP-BOLFI; define separate simulators
-        # for multiple output variables.
+        # Define separate simulators for multiple target variables.
         simulators = [
-            lambda inputs, sim=problem._simulator: (  # noqa: SLF001
-                sim.solve(inputs)[sim.output_variables[0]].data
-            )
+            lambda inputs, problem=problem: problem.simulate(inputs=inputs)
             for problem in self.problem.problems
         ]
         experimental_datasets = [
-            problem.target_data for problem in self.problem.problems
+            Dataset(problem.target_data, domain=problem.domain)
+            for problem in self.problem.problems
         ]
         feature_extractors = [
-            lambda y, prob=problem: ep_bolfi_problem_processing(y, prob)
+            lambda solution, problem=problem: [
+                problem.cost.evaluate(solution=solution).values
+            ]
             for problem in self.problem.problems
         ]
         self.optimiser = ep_bolfi.EP_BOLFI(
             simulators,
             experimental_datasets,
             feature_extractors,
-            fixed_parameters={},  # probably baked into self.problem.model
+            fixed_parameters={},  # probably baked into each problem.simulator
             free_parameters={
                 name: par.get_mean(transformed=True)
                 for name, par in self.problem.parameters.items()
@@ -277,11 +281,8 @@ class EP_BOLFI(BaseOptimiser):
             display_current_feature=None,  # ToDo: costs with names
             fixed_parameter_order=list(enumerate(self.problem.parameters.keys())),
         )
-        self._logger = Logger(
-            minimising=True,
-            verbose=self.verbose,
-            verbose_print_rate=self.verbose_print_rate,
-        )
+        assert self.problem.minimising is True
+        self._logger = Logger(minimising=self.problem.minimising, verbose=False)
 
     def _run(self) -> "BayesianOptimisationResult":
         verbose_log_target = stdout if self._options.verbose else None
@@ -300,43 +301,45 @@ class EP_BOLFI(BaseOptimiser):
                     + self._options.bolfi_optimally_acquired_samples
                 )
                 self.bolfi_posterior = self.optimiser.run(
-                    self._options.bolfi_initial_sobol_samples,
-                    total_samples,
-                    self._options.bolfi_posterior_effective_sample_size,
-                    self._options.ep_iterations,
-                    self._options.ep_stepwise_dampener,
-                    self._options.ep_total_dampening,
-                    -1,  # ep_dampener_reduction_steps; better re-init with another dampening factor
-                    self._options.posterior_gelman_rubin_threshold,
-                    self._options.posterior_ess_ratio_threshold_resampling,
-                    self._options.posterior_ess_ratio_threshold_evaluation_at_centre,
-                    self._options.posterior_ess_ratio_threshold_skip_feature,
-                    self._options.max_posterior_sampling_retries,
-                    self._options.posterior_actual_sample_size_increase,
-                    self._options.posterior_model_resample_size_increase,
-                    4,  # independent_mcmc_chains; 4 generally works well
-                    self._options.ep_randomise_feature_order,
-                    False,  # normalize_features; does not work when features assume 0, normalise within PyBOP
-                    False,  # show_trials; use the PyBOP visualization tools instead
-                    self._options.verbose,
-                    self._options.seed,
+                    bolfi_initial_evidence=self._options.bolfi_initial_sobol_samples,
+                    bolfi_total_evidence=total_samples,
+                    bolfi_posterior_samples=self._options.bolfi_posterior_effective_sample_size,
+                    ep_iterations=self._options.ep_iterations,
+                    ep_dampener=self._options.ep_stepwise_dampener,
+                    final_dampening=self._options.ep_total_dampening,
+                    ep_dampener_reduction_steps=-1,  # better re-init with another dampening factor
+                    gelman_rubin_threshold=self._options.posterior_gelman_rubin_threshold,
+                    ess_ratio_resample=self._options.posterior_ess_ratio_threshold_resampling,
+                    ess_ratio_sampling_from_zero=self._options.posterior_ess_ratio_threshold_evaluation_at_centre,
+                    ess_ratio_abort=self._options.posterior_ess_ratio_threshold_skip_feature,
+                    max_heuristic_steps=self._options.max_posterior_sampling_retries,
+                    posterior_sampling_increase=self._options.posterior_actual_sample_size_increase,
+                    model_resampling_increase=self._options.posterior_model_resample_size_increase,
+                    independent_mcmc_chains=4,  # 4 generally works well
+                    scramble_ep_feature_order=self._options.ep_randomise_feature_order,
+                    normalize_features=False,  # does not work when features assume 0, normalise within PyBOP
+                    show_trials=False,  # use the PyBOP visualization tools instead
+                    verbose=self._options.verbose,
+                    seed=self._options.seed,
                 )
                 end = time.time()
         ep_bolfi_result = json.loads(
             self.optimiser.result_to_json(seed=self._options.seed)
         )
+
+        # Get the optimiser log
         ep_bolfi_log = json.loads(self.optimiser.log_to_json())
         x_list = np.array(list(ep_bolfi_log["tried parameters"].values())).T
         # Collect all features into one cost. Note: they are logarithms,
         # so this is a multiplicative combination.
         feature_costs = np.array(list(ep_bolfi_log["discrepancies"].values()))
-        cost_list = copy.deepcopy(feature_costs[0])
+        cost_list = deepcopy(feature_costs[0])
         for i in range(1, len(feature_costs)):
             for j in range(len(cost_list)):
                 cost_list[j][0] += feature_costs[i][j][0]
         cost_list = np.array([np.exp(value[0]) for value in cost_list])
-        x_best_over_time = copy.deepcopy(x_list)
-        cost_best = copy.deepcopy(cost_list)
+        x_best_over_time = deepcopy(x_list)
+        cost_best = deepcopy(cost_list)
         for i in range(1, len(cost_list)):
             if cost_list[i] < cost_best[i - 1]:
                 x_best_over_time[i:, None] = x_list[i, None]
@@ -365,31 +368,7 @@ class EP_BOLFI(BaseOptimiser):
             for entry in x_best_over_time
         ]
         self._logger.x_search_best = x_search_best_over_time[-1]
-        self._logger.cost_best = cost_best[0]
-        model_mean_dict = {
-            key: value[0]
-            for key, value in ep_bolfi_result["inferred parameters"].items()
-        }
-        model_mean_array = np.array(list(model_mean_dict.values()))
-        search_mean_array = [
-            par.transformation.to_search(entry)[0]
-            for entry, par in zip(
-                model_mean_array,
-                self.problem.parameters.values(),
-                strict=False,
-            )
-        ]
-        lower_bounds = np.array(
-            [bounds[0][0] for bounds in ep_bolfi_result["error bounds"].values()]
-        )
-        upper_bounds = np.array(
-            [bounds[1][0] for bounds in ep_bolfi_result["error bounds"].values()]
-        )
-        # The re-use of `parameters` makes transformations easily usable.
-        posterior = copy.deepcopy(self.problem.parameters)
-        posterior.prior = MultivariateGaussian(
-            search_mean_array, np.array(ep_bolfi_result["covariance"])
-        )
+        self._logger.cost_best = cost_best[-1]
         self._logger.iteration = {
             "EP iterations": self._options.ep_iterations,
             "total feature iterations": self._options.ep_iterations
@@ -401,11 +380,46 @@ class EP_BOLFI(BaseOptimiser):
             ),
             # "surrogate evaluations" are not directly accessible
         }
+
+        # Get the mean and the 95% confidence error bounds
+        model_mean = np.array(
+            [val[0] for val in ep_bolfi_result["inferred parameters"].values()]
+        )
+        lower_bounds = np.array(
+            [bounds[0][0] for bounds in ep_bolfi_result["error bounds"].values()]
+        )
+        upper_bounds = np.array(
+            [bounds[1][0] for bounds in ep_bolfi_result["error bounds"].values()]
+        )
+
+        # Create the posterior distribution, using the existing parameter transformations
+        n = len(self.problem.parameters)
+        if isinstance(self.problem.parameters.distribution, MultivariateLogNormal):
+            covariance_log_x = np.array(ep_bolfi_result["covariance"])
+            mean_log_x = np.zeros(n)
+            for i in range(n):
+                mean_log_x[i] = np.log(model_mean[i]) - 0.5 * covariance_log_x[i, i]
+            posterior_distribution = MultivariateLogNormal(
+                mean_log_x=mean_log_x, covariance_log_x=covariance_log_x
+            )
+        else:
+            posterior_distribution = MultivariateGaussian(
+                mean=model_mean, covariance=np.array(ep_bolfi_result["covariance"])
+            )
+        posterior_parameters = {
+            key: Parameter(
+                distribution=MarginalDistribution(posterior_distribution, i),
+                initial_value=p.initial_value,
+                transformation=p.transformation,
+            )
+            for i, (key, p) in enumerate(self.problem.parameters.items())
+        }
+
         return BayesianOptimisationResult(
             optim=self,
             time=end - start,
             method_name="EP-BOLFI",
-            posterior=posterior,
+            posterior=Parameters(posterior_parameters),
             lower_bounds=lower_bounds,
             upper_bounds=upper_bounds,
         )
@@ -484,3 +498,9 @@ class BayesianOptimisationResult(OptimisationResult):
         self.maximum_a_posteriori = maximum_a_posteriori
         self.log_evidence_mean = log_evidence_mean
         self.log_evidence_variance = log_evidence_variance
+
+    def plot_predictive(self, **kwargs):
+        """
+        Plot the predictive posterior of a Bayesian parameterisation result.
+        """
+        return plot.predictive(result=self, **kwargs)

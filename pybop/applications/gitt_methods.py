@@ -36,7 +36,9 @@ class GITTPulseFit(BaseApplication):
     ):
         self.parameter_values = parameter_values.copy()
         self.parameters = {
-            "Particle diffusion time scale [s]": pybop.Parameter(bounds=[0, np.inf]),
+            "Positive particle diffusion time scale [s]": pybop.Parameter(
+                bounds=[0, np.inf]
+            ),
             "Series resistance [Ohm]": pybop.Parameter(bounds=[0, np.inf]),
         }
         self.cost = cost or pybop.RootMeanSquaredError
@@ -44,7 +46,7 @@ class GITTPulseFit(BaseApplication):
         self.optimiser_options = optimiser_options or self.optimiser.default_options()
 
         # Create model
-        self.model = pybop.lithium_ion.SPDiffusion()
+        self.model = pybop.li_half_cell.SPDiffusion()
         self.problem = None
 
     def __call__(
@@ -110,7 +112,9 @@ class GITTFit(BaseApplication):
         self.optimiser_options = optimiser_options or self.optimiser.default_options()
 
         # Set up OCV root-finding function
-        self.inverse_ocp = pybop.InverseOCV(parameter_values["Electrode OCP [V]"])
+        self.inverse_ocp = pybop.InverseOCV(
+            parameter_values["Positive electrode OCP [V]"]
+        )
 
         # Initialise single pulse fitter
         self.pulse_fit = GITTPulseFit(
@@ -148,7 +152,9 @@ class GITTFit(BaseApplication):
                 # Log the result
                 self.pulses.append(pulse_result)
                 diffusion_time.append(
-                    pulse_result.best_inputs["Particle diffusion time scale [s]"]
+                    pulse_result.best_inputs[
+                        "Positive particle diffusion time scale [s]"
+                    ]
                 )
                 series_resistance.append(
                     pulse_result.best_inputs["Series resistance [Ohm]"]
@@ -169,14 +175,16 @@ class GITTFit(BaseApplication):
         self.parameter_data = pybop.Dataset(
             {
                 "Stoichiometry": np.asarray(stoichiometry),
-                "Particle diffusion time scale [s]": np.asarray(diffusion_time),
+                "Positive particle diffusion time scale [s]": np.asarray(
+                    diffusion_time
+                ),
                 "Series resistance [Ohm]": np.asarray(series_resistance),
                 cost_name: np.asarray(best_cost),
             }
             if len(stoichiometry) > 1 and stoichiometry[-1] > stoichiometry[0]
             else {
                 "Stoichiometry": np.flipud(np.asarray(stoichiometry)),
-                "Particle diffusion time scale [s]": np.flipud(
+                "Positive particle diffusion time scale [s]": np.flipud(
                     np.asarray(diffusion_time)
                 ),
                 "Series resistance [Ohm]": np.flipud(np.asarray(series_resistance)),
@@ -187,8 +195,8 @@ class GITTFit(BaseApplication):
 
         # Compute mean values
         self.best_inputs = {
-            "Particle diffusion time scale [s]": np.mean(
-                self.parameter_data["Particle diffusion time scale [s]"]
+            "Positive particle diffusion time scale [s]": np.mean(
+                self.parameter_data["Positive particle diffusion time scale [s]"]
             ),
             "Series resistance [Ohm]": np.mean(
                 self.parameter_data["Series resistance [Ohm]"]

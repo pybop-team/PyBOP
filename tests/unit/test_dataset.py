@@ -36,6 +36,9 @@ class TestDataset:
         assert dataset.data == data_dictionary
         assert np.all(dataset["Time [s]"] == solution["Time [s]"].data)
 
+        # Test time conversion
+        np.testing.assert_allclose(dataset["Time [h]"], solution["Time [h]"].data)
+
         # Test exception for non-dictionary inputs
         with pytest.raises(
             TypeError, match="The input to pybop.Dataset must be a dictionary."
@@ -63,7 +66,7 @@ class TestDataset:
 
         # Test get subset
         dataset = dataset.get_subset(list(range(5)))
-        assert len(dataset[dataset.domain]) == 5
+        assert len(dataset) == 5
 
         # Form frequency dataset
         data_dictionary = {
@@ -97,10 +100,10 @@ class TestDataset:
         assert dataset_dictionary.data == dataset_pybamm.data
 
     @pytest.mark.skipif(
-        sys.version_info < (3, 11), reason="requires python3.11 or higher"
+        sys.version_info < (3, 11), reason="requires a python version >= 3.11"
     )
     @pytest.mark.skipif(
-        sys.version_info >= (3, 13), reason="requires python3.13 or lower"
+        sys.version_info >= (3, 13), reason="requires a python version < 3.13"
     )
     def test_pyprobe_import(self):
         """
@@ -259,7 +262,7 @@ class TestProcessing:
     def test_current_data_processing(self, dataset):
         # Test generation of a current consistent with the charge throughput data
         consistent_dataset = pybop.generate_consistent_current(dataset, tolerance=1e-2)
-        assert len(consistent_dataset["Time [s]"]) >= len(dataset["Time [s]"])
+        assert len(consistent_dataset) >= len(dataset)
 
         for var in ["Time [s]", "Current [A]", "Discharge capacity [A.h]"]:
             assert consistent_dataset[var][0] == dataset[var][0]
@@ -275,7 +278,7 @@ class TestProcessing:
 
         # Test downsampling of constant current sections
         downsampled_dataset = pybop.downsample_constant_current(dataset, tolerance=1e-4)
-        assert len(downsampled_dataset["Time [s]"]) < len(dataset["Time [s]"])
+        assert len(downsampled_dataset) < len(dataset)
 
         for var in ["Time [s]", "Current [A]", "Discharge capacity [A.h]"]:
             assert downsampled_dataset[var][0] == dataset[var][0]
@@ -302,7 +305,7 @@ class TestProcessing:
             }
         )
         ds_dataset = pybop.downsample_constant_current(dataset_wo_ct, tolerance=1e-4)
-        assert len(ds_dataset["Time [s]"]) < len(dataset["Time [s]"])
+        assert len(ds_dataset) < len(dataset)
 
         for var in ["Time [s]", "Current [A]"]:
             assert ds_dataset[var][0] == dataset_wo_ct[var][0]

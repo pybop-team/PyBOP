@@ -21,18 +21,22 @@ class TestTransformation:
         return pybop.Parameters(
             {
                 "Identity": pybop.Parameter(
+                    distribution=pybop.LogUniform(1e-4, 1),
                     transformation=pybop.IdentityTransformation(),
                 ),
                 "Scaled": pybop.Parameter(
+                    distribution=pybop.LogUniform(1e-4, 1),
                     transformation=pybop.ScaledTransformation(
                         coefficient=2.0, intercept=1
                     ),
                 ),
                 "Log": pybop.Parameter(
+                    distribution=pybop.LogUniform(1e-4, 1),
                     transformation=pybop.LogTransformation(),
                 ),
                 "UnitHyperCube": pybop.Parameter(
-                    transformation=pybop.UnitHyperCube(10, 100)
+                    distribution=pybop.LogUniform(1e-4, 1),
+                    transformation=pybop.UnitHyperCube(5e-5, 1),
                 ),
             }
         )
@@ -89,10 +93,10 @@ class TestTransformation:
 
     def test_hypercube_transformation(self, parameters):
         q = np.asarray([0.5])
-        coeff = 1 / (100 - 10)
+        coeff = 1 / (1 - 5e-5)
         transformation = parameters["UnitHyperCube"].transformation
         p = transformation.to_model(q)
-        assert np.allclose(p, (q / coeff) + 10)
+        assert np.allclose(p, (q / coeff) + 5e-5)
         assert transformation.n_parameters == 1
         assert transformation.is_elementwise()
 

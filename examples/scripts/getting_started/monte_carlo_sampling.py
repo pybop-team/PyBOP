@@ -1,4 +1,3 @@
-import numpy as np
 import pybamm
 
 import pybop
@@ -21,17 +20,11 @@ experiment = pybamm.Experiment(["Discharge at 0.5C for 3 minutes (5 second perio
 solution = pybamm.Simulation(
     model, parameter_values=parameter_values, experiment=experiment
 ).solve()
-
-
-def noisy(data, sigma):
-    return data + np.random.normal(0, sigma, len(data))
-
-
 dataset = pybop.Dataset(
     {
         "Time [s]": solution.t,
         "Current [A]": solution["Current [A]"].data,
-        "Voltage [V]": noisy(solution["Voltage [V]"].data, sigma),
+        "Voltage [V]": pybop.add_noise(solution["Voltage [V]"].data, sigma),
     }
 )
 
@@ -39,12 +32,10 @@ dataset = pybop.Dataset(
 parameter_values.update(
     {
         "Negative electrode active material volume fraction": pybop.Parameter(
-            distribution=pybop.Gaussian(0.68, 0.02),
-            transformation=pybop.LogTransformation(),
+            distribution=pybop.Gaussian(0.68, 0.02)
         ),
         "Positive electrode active material volume fraction": pybop.Parameter(
-            distribution=pybop.Gaussian(0.65, 0.02),
-            transformation=pybop.LogTransformation(),
+            distribution=pybop.Gaussian(0.65, 0.02)
         ),
     }
 )
@@ -78,3 +69,5 @@ result.plot_posterior()
 result.plot_chains()
 result.effective_sample_size()
 print(f"rhat: {result.rhat()}")
+
+result.plot_predictive()

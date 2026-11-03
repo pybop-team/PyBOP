@@ -45,8 +45,8 @@ class Result:
         self._x_model = [logger.x_model]
         self._x0 = [logger.x0]
         self._best_cost = [logger.cost_best]
-        self._cost = [logger.cost_convergence]
-        self._initial_cost = [logger.cost[0]]
+        self._cost_convergence = [logger.cost_convergence]
+        self._cost = [logger.cost]
         self._n_iterations = [logger.iteration]
         self._iteration_number = [logger.iteration_number]
         self._n_evaluations = [logger.evaluations]
@@ -83,11 +83,12 @@ class Result:
             for x in result._best_cost  # noqa: SLF001
         ]
         ret._cost = [x for result in results for x in result._cost]  # noqa: SLF001
-        ret._initial_cost = [  # noqa: SLF001
+        ret._cost_convergence = [  # noqa: SLF001
             x
             for result in results
-            for x in result._initial_cost  # noqa: SLF001
+            for x in result._cost_convergence  # noqa: SLF001
         ]
+
         ret._n_iterations = [  # noqa: SLF001
             x
             for result in results
@@ -209,9 +210,17 @@ class Result:
         return self._get_single_or_all("_cost")
 
     @property
+    def cost_convergence(self) -> np.ndarray:
+        """The log of the cost convergence values."""
+        return self._get_single_or_all("_cost_convergence")
+
+    @property
     def initial_cost(self) -> float:
         """The initial cost value(s)."""
-        return self._get_single_or_all("_initial_cost")
+        if len(self._cost) > 1:
+            return [c[0] for c in self._cost]
+        else:
+            return self._cost[0][0]
 
     @property
     def n_iterations(self) -> int:
@@ -338,6 +347,7 @@ class Result:
 
         return {
             "minimising": self._minimising,
+            "parameter_names": self.problem.parameters.names,
             "method_name": self.method_name,
             "n_runs": self.n_runs,
             "best_run": self._best_run,
@@ -346,7 +356,7 @@ class Result:
             "x0": self._x0,
             "best_cost": self._best_cost,
             "cost": self._cost,
-            "initial_cost": self._initial_cost,
+            "cost_convergence": self._cost_convergence,
             "n_iterations": self._n_iterations,
             "iteration_number": self._iteration_number,
             "n_evaluations": self._n_evaluations,
@@ -416,6 +426,7 @@ class Result:
             file_format=file_format,
             data_keys_0d=["_minimising", "n_runs", "best_run"],
             data_keys_1d=[
+                "parameter_names",
                 "method_name",
                 "best_cost",
                 "initial_cost",
@@ -430,6 +441,8 @@ class Result:
         # Create a dummy problem
         problem = types.SimpleNamespace()
         problem.minimising = data["minimising"]
+        problem.parameters = types.SimpleNamespace()
+        problem.parameters.names = data["parameter_names"]
 
         # Create one logging result for each run
         n_runs = data["n_runs"]
@@ -442,13 +455,13 @@ class Result:
                 ("x_model", "x_model"),
                 ("x0", "x0"),
                 ("cost_best", "best_cost"),
-                ("cost_convergence", "cost"),
+                ("cost_convergence", "cost_convergence"),
+                ("cost", "cost"),
                 ("iteration", "n_iterations"),
                 ("iteration_number", "iteration_number"),
                 ("evaluations", "n_evaluations"),
             ]:
                 setattr(logger, logger_key, data[result_key][i])
-            logger.cost = [data["initial_cost"][i]]
 
             list_of_results.append(
                 Result(

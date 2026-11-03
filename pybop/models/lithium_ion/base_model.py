@@ -2,6 +2,10 @@ import pybamm
 from pybamm import FunctionParameter, Parameter
 from pybamm import lithium_ion as pybamm_lithium_ion
 
+from pybop.models.alternative_functions import (
+    AsymmetricButlerVolmer,
+    MultiphaseButlerVolmer,
+)
 from pybop.models.lithium_ion.utils import InverseOCV
 
 
@@ -22,6 +26,10 @@ class BaseGroupedModel(pybamm_lithium_ion.BaseModel):
     """
 
     def __init__(self, name="Base Model", **model_kwargs):
+        if not isinstance(name, str):
+            raise TypeError(
+                "The first argument is the model name, use `options=options`."
+            )
         super().__init__(name=name, **model_kwargs)
 
     def build_model(self):
@@ -52,7 +60,7 @@ class BaseGroupedModel(pybamm_lithium_ion.BaseModel):
         ----------
         initial_value : float
             Target initial value.
-            If float, interpreted as SOC, must be between 0 and 1.
+            If float, interpreted as SoC, must be between 0 and 1.
             If string e.g. "4 V", interpreted as voltage, must be between V_min and V_max.
         parameter_values : :class:`pybamm.ParameterValues`
             Parameters and their corresponding values.
@@ -68,8 +76,7 @@ class BaseGroupedModel(pybamm_lithium_ion.BaseModel):
         inputs : dict, optional
             A dictionary of input parameters to pass to the model when solving.
         tol : float, optional
-            The tolerance for the solver used to compute the initial stoichiometries.
-            A lower value results in higher precision but may increase computation time.
+            The tolerance within which the voltage and SOC can be outside their limits.
             Default is 1e-6.
         """
         parameter_values = parameter_values if inplace else parameter_values.copy()
@@ -77,10 +84,10 @@ class BaseGroupedModel(pybamm_lithium_ion.BaseModel):
         if isinstance(initial_value, str) and initial_value.endswith("V"):
             V_init = float(initial_value[:-1])
             V_min = parameter_values.evaluate(
-                pybamm.Parameter("Lower voltage cut-off [V]"), inputs=inputs
+                Parameter("Lower voltage cut-off [V]"), inputs=inputs
             )
             V_max = parameter_values.evaluate(
-                pybamm.Parameter("Upper voltage cut-off [V]"), inputs=inputs
+                Parameter("Upper voltage cut-off [V]"), inputs=inputs
             )
 
             if not V_min - tol <= V_init <= V_max + tol:
@@ -104,8 +111,7 @@ class BaseGroupedModel(pybamm_lithium_ion.BaseModel):
                     "Negative electrode OCP [V]",
                     {"Negative particle stoichiometry": sto_n},
                 )
-
-                return parameter_values.evaluate(U_p - U_n, inputs=inputs)
+                return parameter_values.evaluate(U_p - U_n, inputs=inputs).squeeze()
 
             inverse_ocv = InverseOCV(ocv_function)
             soc = inverse_ocv(V_init)
@@ -116,9 +122,40 @@ class BaseGroupedModel(pybamm_lithium_ion.BaseModel):
         else:
             raise ValueError("Initial value must be a float or a string ending in 'V'.")
 
-        if not 0 <= soc <= 1:
-            raise ValueError("Initial SOC should be between 0 and 1.")
+        if not 0 - tol <= soc <= 1 + tol:
+            raise ValueError("Initial SoC should be between 0 and 1.")
 
         parameter_values["Initial SoC"] = soc
 
         return parameter_values
+
+    @staticmethod
+    def symmetric_butler_volmer(sto_surf, sto_e, eta_RT_F):
+        """
+        Dimensionless Butler-Volmer exchange rate.
+        """
+        j0 = (sto_surf * sto_e * (1 - sto_surf)) ** 0.5
+        return 2 * j0 * pybamm.sinh(0.5 * eta_RT_F)
+
+    @staticmethod
+    def get_asymmetric_butler_volmer(domain: str):
+        """
+        Get the asymmetric Butler-Volmer exchange rate function for the "positive" or
+        "negative" domain.
+        """
+        Domain = domain.capitalize()
+        alpha = pybamm.Parameter(f"{Domain} electrode charge transfer coefficient")
+
+        return AsymmetricButlerVolmer(alpha)
+
+    @staticmethod
+    def get_multiphase_butler_volmer(domain: str):
+        """
+        Get the multiphase Butler-Volmer exchange rate function for the "positive" or
+        "negative" domain.
+        """
+        Domain = domain.capitalize()
+        alpha = pybamm.Parameter(f"{Domain} electrode charge transfer coefficient")
+        omega = pybamm.Parameter(f"{Domain} electrode charge transfer ideality factor")
+
+        return MultiphaseButlerVolmer(alpha, omega)

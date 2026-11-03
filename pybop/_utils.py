@@ -5,6 +5,7 @@ import re
 import numpy as np
 import pandas as pd
 from scipy.io import loadmat, savemat
+from scipy.sparse import csr_array
 
 
 class NumpyEncoder(json.JSONEncoder):
@@ -15,6 +16,8 @@ class NumpyEncoder(json.JSONEncoder):
     """
 
     def default(self, obj):
+        if isinstance(obj, csr_array):
+            obj = obj.toarray()
         if isinstance(obj, np.ndarray):
             return obj.tolist()
         # won't be called since we only need to convert numpy arrays
@@ -28,6 +31,16 @@ def add_spaces(string):
     re_outer = re.compile(r"([^A-Z ])([A-Z])")
     re_inner = re.compile(r"(?<!^)([A-Z])([^A-Z])")
     return re_outer.sub(r"\1 \2", re_inner.sub(r" \1\2", string))
+
+
+def add_noise(y, sigma):
+    """
+    Add random Gaussian noise to an array.
+    """
+    if np.iscomplexobj(y):
+        # Add noise in the imaginary component as well as the real
+        y += 1j * np.random.normal(loc=0.0, scale=sigma, size=np.shape(y))
+    return y + np.random.normal(loc=0.0, scale=sigma, size=np.shape(y))
 
 
 def is_numeric(x):
@@ -107,11 +120,13 @@ def save_data_dict(
         df = pd.DataFrame(data_dict_copy)
         return df.to_csv(filename, index=False)
     elif to_format == "json":
+        # Format with indentation
+        json_clean = json.dumps(data_dict, cls=NumpyEncoder, indent=4) + "\n"
         if filename is None:
-            return json.dumps(data_dict, cls=NumpyEncoder)
+            return json_clean
         else:
             with open(filename, "w") as outfile:
-                json.dump(data_dict, outfile, cls=NumpyEncoder)
+                outfile.write(json_clean)
     else:
         raise ValueError(f"format '{to_format}' is not supported")
 
@@ -167,7 +182,7 @@ def load_data_dict(
         data_keys_1d = data_keys_1d or []
         for key in data_keys_0d:
             if key in data_dict.keys():
-                data_dict[key] = data_dict[key][0, 0]
+                data_dict[key] = data_dict[key].item()
         for key in data_keys_1d:
             if key in data_dict.keys():
                 data_dict[key] = data_dict[key].flatten()

@@ -5,6 +5,9 @@ from scipy.optimize import minimize
 
 from pybop.costs.base_cost import BaseCost
 from pybop.costs.evaluation import Evaluation
+from pybop.parameters.parameter import Inputs
+from pybop.processing.dataset import Dataset
+from pybop.simulators.solution import Solution
 
 
 def indices_of(values, target):
@@ -18,28 +21,44 @@ def indices_of(values, target):
 
 
 class FeatureDistance(BaseCost):
-    """Base for defining cost functions based on comparing fit functions."""
+    """
+    Base for defining cost functions based on comparing fit functions.
+
+    Parameters
+    ----------
+    dataset : pybop.Dataset
+        Dataset object containing the target data.
+    target : str, optional
+        The name of the target variable.
+    feature : str, optional
+        The name of the parameter to use for fitting, must be one of the supported features.
+    time_start : float, optional
+        Set the time (in seconds) from which onwards the data shall be
+        fitted, counted from the start of the data. Default is the start.
+    time_end : float, optional
+        Set the time (in seconds) until which the data shall be fitted,
+        counted from the start of the data. Default is the end.
+    """
 
     _supported_features = []
 
     def __init__(
         self,
-        domain_data: np.ndarray,
-        target_data: np.ndarray,
-        feature: str,
+        dataset: Dataset,
+        target: str = None,
+        feature: str = None,
         time_start: float = None,
         time_end: float = None,
     ):
         super().__init__()
         if feature not in self._supported_features:
             raise ValueError(
-                "Feature '"
-                + feature
-                + "' not supported. Options: "
+                f"Feature '{feature}' not supported. Options: "
                 + str(self._supported_features)
             )
-        self._domain_data = domain_data
-        self._target_data = target_data
+        self.set_target(target, dataset)
+        if len(self._target) != 1:
+            raise ValueError("Feature distances require exactly one target variable.")
         self.feature = feature
         self.time_start = time_start
         self.time_end = time_end
@@ -55,8 +74,17 @@ class FeatureDistance(BaseCost):
             warnings.simplefilter("ignore")
             self.data_fit = self._fit(
                 self.domain_data[self.start_index : self.end_index],
-                self.target_data[self.start_index : self.end_index],
+                self.target_data[self._target[0]][self.start_index : self.end_index],
             )
+
+    def evaluate(
+        self,
+        solution: Solution,
+        inputs: Inputs | None = None,
+        calculate_sensitivities: bool = False,
+    ) -> Evaluation:
+        """Evaluate the feature distance for the given solution."""
+        return Evaluation(self.__call__(y=solution[self.target[0]].data))
 
     def _inverse_fit_function(self, y, *args):
         return NotImplementedError
@@ -90,6 +118,13 @@ class FeatureDistance(BaseCost):
         with warnings.catch_warnings():
             # Suppress SciPy's UserWarning about delta_grad == 0.
             warnings.simplefilter("ignore")
+
+            # Handle FailedSolution states
+            if len(y[self.start_index : self.end_index]) == 0:
+                return self.failure(
+                    self.parameters.names, calculate_sensitivities=False
+                )
+
             error = np.abs(
                 np.asarray(
                     [
@@ -104,7 +139,7 @@ class FeatureDistance(BaseCost):
                     ]
                 )
             )
-        return Evaluation(error.item())
+        return error.item()
 
 
 class SquareRootFeatureDistance(FeatureDistance):
@@ -113,37 +148,24 @@ class SquareRootFeatureDistance(FeatureDistance):
 
     Fits a square-root fit function and compares either its offset or
     its slope between model predictions and target data.
+
+    Supported features:
+    - "offset": The value of the square-root fit at the start.
+    - "slope": The prefactor of the square-root over time.
+    - "inverse_slope": 1 over "slope"; may perform better.
     """
 
     _supported_features = ["offset", "slope", "inverse_slope"]
 
     def __init__(
         self,
-        domain_data: np.ndarray,
-        target_data: np.ndarray,
+        dataset: Dataset,
+        target: str = None,
         feature: str = "inverse_slope",
         time_start: float = None,
         time_end: float = None,
     ):
-        """
-        Parameters
-        ----------
-        domain_data : np.ndarray
-            The content of the "Time [s]" entry in the used `DataSet`.
-        feature : str, optional
-            Set the fit parameter from the square-root fit to use for
-            fitting. Possible values:
-             - "offset": The value of the square-root fit at the start.
-             - "slope": The prefactor of the square-root over time.
-             - "inverse_slope": 1 over "slope"; may perform better.
-        time_start : float, optional
-            Set the time (in seconds) from which onwards the data shall be
-            fitted, counted from the start of the data. Default is the start.
-        time_end : float, optional
-            Set the time (in seconds) until which the data shall be fitted,
-            counted from the start of the data. Default is the end.
-        """
-        super().__init__(domain_data, target_data, feature, time_start, time_end)
+        super().__init__(dataset, target, feature, time_start, time_end)
 
     def _inverse_fit_function(self, y, b, c):
         """Square function to transform data for a linear fit."""
@@ -167,38 +189,25 @@ class ExponentialFeatureDistance(FeatureDistance):
 
     Fits an exponential and compares either its asymptote, its magnitude,
     or its timescale between model predictions and target data.
+
+    Supported features:
+    - "asymptote": The exponential fit value at infinite time.
+    - "magnitude": The prefactor of the exponential term.
+    - "timescale": The denominator in the exponential argument.
+    - "inverse_timescale": 1 over "timescale"; may perform better.
     """
 
     _supported_features = ["asymptote", "magnitude", "timescale", "inverse_timescale"]
 
     def __init__(
         self,
-        domain_data: np.ndarray,
-        target_data: np.ndarray,
+        dataset: Dataset,
+        target: str = None,
         feature: str = "inverse_timescale",
         time_start: float = None,
         time_end: float = None,
     ):
-        """
-        Parameters
-        ----------
-        domain_data : np.ndarray
-            The content of the "Time [s]" entry in the used `DataSet`.
-        feature : str, optional
-            Set the fit parameter from the square-root fit to use for
-            fitting. Possible values:
-             - "asymptote": The exponential fit value at infinite time.
-             - "magnitude": The prefactor of the exponential term.
-             - "timescale": The denominator in the exponential argument.
-             - "inverse_timescale": 1 over "timescale"; may perform better.
-        time_start : float, optional
-            Set the time (in seconds) from which onwards the data shall be
-            fitted, counted from the start of the data. Default is the start.
-        time_end : float, optional
-            Set the time (in seconds) until which the data shall be fitted,
-            counted from the start of the data. Default is the end.
-        """
-        super().__init__(domain_data, target_data, feature, time_start, time_end)
+        super().__init__(dataset, target, feature, time_start, time_end)
 
     def _inverse_fit_function(self, y, b, c, d):
         """Logarithm function to transform data for a linear fit."""

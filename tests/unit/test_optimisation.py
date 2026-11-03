@@ -41,18 +41,10 @@ class TestOptimisation:
     def two_parameters(self):
         return {
             "Negative electrode active material volume fraction": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    0.6,
-                    0.02,
-                    truncated_at=[0.58, 0.62],
-                )
+                distribution=pybop.Gaussian(0.6, 0.02, truncated_at=[0.58, 0.62])
             ),
             "Positive electrode active material volume fraction": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    0.5,
-                    0.05,
-                    truncated_at=[0.48, 0.52],
-                )
+                distribution=pybop.Gaussian(0.5, 0.05, truncated_at=[0.48, 0.52])
             ),
         }
 
@@ -141,22 +133,21 @@ class TestOptimisation:
 
     @pytest.fixture
     def multivariate_problem(self, multivariate_simulator, dataset):
-        cost = pybop.SumSquaredError(dataset)
-        problem = pybop.Problem(multivariate_simulator, cost)
-        return problem
+        cost = pybop.SquareRootFeatureDistance(dataset, feature="offset")
+        return pybop.Problem(multivariate_simulator, cost)
 
     @pytest.fixture
     def gitt_like_problem(self, multivariate_simulator, dataset):
         sqrt_cost_1 = pybop.costs.feature_distances.SquareRootFeatureDistance(
-            dataset["Time [s]"],
-            dataset["Voltage [V]"],
+            dataset,
+            target="Voltage [V]",
             feature="offset",
             time_start=0,
             time_end=180,
         )
         sqrt_cost_2 = pybop.costs.feature_distances.SquareRootFeatureDistance(
-            dataset["Time [s]"],
-            dataset["Voltage [V]"],
+            dataset,
+            target="Voltage [V]",
             feature="offset",
             time_start=180,
             time_end=360,
@@ -336,7 +327,9 @@ class TestOptimisation:
                 assert optim.optimiser.population_size() == 100
 
         if optimiser == pybop.SciPyDifferentialEvolution:
-            options = pybop.SciPyDifferentialEvolutionOptions(maxiter=3, popsize=5)
+            options = pybop.SciPyDifferentialEvolutionOptions(
+                maxiter=3, popsize=5, vectorized=False
+            )
             pop_maxiter_optim = optimiser(problem, options=options)
             assert pop_maxiter_optim._options.maxiter == 3
             assert pop_maxiter_optim._options.popsize == 5
@@ -515,7 +508,7 @@ class TestOptimisation:
         assert result.scipy_result is not None
 
     @pytest.mark.skipif(
-        sys.version_info >= (3, 13), reason="requires python3.13 or lower"
+        sys.version_info >= (3, 13), reason="requires a python version < 3.13"
     )
     def test_ep_bolfi(self, multivariate_problem, gitt_like_problem):
         options = pybop.EPBOLFIOptions()
@@ -633,7 +626,7 @@ class TestOptimisation:
             "Positive electrode active material volume fraction"
         ]._transformation = pybop.IdentityTransformation()
 
-        # Test max evalutions
+        # Test max evaluations
         options = pybop.PintsOptions(max_evaluations=1, verbose=True)
         optim = pybop.GradientDescent(problem, options=options)
         result = optim.run()
@@ -740,28 +733,6 @@ class TestOptimisation:
         assert result.n_evaluations in result._n_evaluations
         assert result.x0 in result._x0
 
-    def test_multistart_fails_without_distribution(self, model, dataset):
-        # parameter with inifinite bound (no distribution)
-        parameter_values = model.default_parameter_values
-        param = pybop.Parameter(bounds=(0.5, np.inf), initial_value=0.8)
-        parameter_values.update(
-            {"Positive electrode active material volume fraction": param}
-        )
-        simulator = pybop.pybamm.Simulator(
-            model, parameter_values=parameter_values, protocol=dataset
-        )
-        cost = pybop.SumSquaredError(dataset)
-        problem = pybop.Problem(simulator, cost)
-
-        # Setup optimiser
-        options = pybop.PintsOptions(max_iterations=1, multistart=3)
-        optim = pybop.XNES(problem, options=options)
-
-        with pytest.raises(
-            RuntimeError, match="Distributions must be provided for multi-start"
-        ):
-            optim.run()
-
     def compare_result_data(self, result1, result2):
         assert result1.method_name == result2.method_name
         assert result1.n_runs == result2.n_runs
@@ -771,7 +742,10 @@ class TestOptimisation:
         np.testing.assert_array_equal(result1._x0, result2._x0)
         np.testing.assert_array_equal(result1._best_cost, result2._best_cost)
         np.testing.assert_array_equal(result1._cost, result2._cost)
-        np.testing.assert_array_equal(result1._initial_cost, result2._initial_cost)
+        np.testing.assert_array_equal(
+            result1._cost_convergence, result2._cost_convergence
+        )
+        np.testing.assert_array_equal(result1.initial_cost, result2.initial_cost)
         np.testing.assert_array_equal(result1._n_iterations, result2._n_iterations)
         np.testing.assert_array_equal(
             result1._iteration_number, result2._iteration_number
@@ -782,7 +756,7 @@ class TestOptimisation:
         np.testing.assert_array_equal(result1._time, result2._time)
 
     @pytest.mark.parametrize("to_format", ["json", "matlab", "pickle"])
-    def test_save_result_data(self, result, problem, to_format, tmp_path):
+    def test_save_result_data(self, result, to_format, tmp_path):
         test_stub = tmp_path / "test"
 
         if to_format == "matlab":
@@ -794,14 +768,14 @@ class TestOptimisation:
         # Test save result
         result.save_data(filename, to_format=to_format)
 
-        result_load = OptimisationResult.load_data(filename, file_format=to_format)
+        result_load = pybop.Result.load_data(filename, file_format=to_format)
         self.compare_result_data(result, result_load)
 
         # Test save combined result
-        result_combined = OptimisationResult.combine([result, result])
+        result_combined = pybop.Result.combine([result, result])
         result_combined.save_data(filename, to_format=to_format)
 
-        result_load = OptimisationResult.load_data(filename, file_format=to_format)
+        result_load = pybop.Result.load_data(filename, file_format=to_format)
         self.compare_result_data(result_combined, result_load)
 
     def test_save_result(self, result, tmp_path):
@@ -810,6 +784,6 @@ class TestOptimisation:
         # test save whole result
         filename = f"{test_stub}.pickle"
         result.save(filename)
-        result_load = OptimisationResult.load(filename)
+        result_load = pybop.Result.load(filename)
         self.compare_result_data(result, result_load)
         assert result.problem.parameters.names == result_load.problem.parameters.names

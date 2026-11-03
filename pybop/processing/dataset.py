@@ -62,9 +62,15 @@ class Dataset:
     def __getitem__(self, key):
         """Return the data corresponding to a particular key."""
         if key not in self.data.keys():
+            if key == "Time [h]":
+                return self["Time [s]"] / 3600
             raise ValueError(f"The key {key} does not exist in this dataset.")
 
         return self.data[key]
+
+    def __len__(self) -> int:
+        """Return the length of the data, based on the length of the domain data."""
+        return len(self.data[self.domain])
 
     def check(self, domain: str = None, signal: str | list[str] = None) -> bool:
         """
@@ -141,6 +147,21 @@ class Dataset:
         return Dataset(
             data, domain=self.domain, control_functions=self.control_functions
         )
+
+    def get_discontinuities(self, tol: float = 1e-6) -> np.ndarray:
+        """Returns the start, end and any discontinuous points in the domain data."""
+        discontinuities = [np.atleast_2d([0, len(self.data[self.domain]) - 1])]
+
+        # Check all control variables for discontinuities
+        for key in self.control_functions:
+            control_data = self.data[key.replace(" function", "")]
+            var_tol = np.max(np.abs(control_data)) * tol
+            d = np.asarray(np.where(np.abs(np.diff(control_data)) > var_tol))
+            discontinuities.append(d)
+            discontinuities.append(d + 1)
+
+        ind = np.unique(np.hstack(discontinuities))
+        return self.data[self.domain][ind]
 
     def get_interpolant(self, control: str = "Current [A]") -> Interpolant:
         """Returns a linear interpolant for the control as a function of the domain."""

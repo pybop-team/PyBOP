@@ -1,0 +1,178 @@
+import numpy as np
+import pybamm
+from pybamm import DummySolver, Parameter, ParameterValues
+from pybamm import t as pybamm_t
+
+from pybop.models.li_half_cell.base_model import BaseHalfCellModel
+
+
+class WeppnerHuggins(BaseHalfCellModel):
+    """
+    Represents the Weppner & Huggins model to fit diffusion coefficients to GITT data.
+
+    Note: the working electrode is the positive electrode.
+
+    Parameters
+    ----------
+    name : str, optional
+        The name of the model.
+    **model_kwargs : optional
+        Valid PyBaMM model option keys and their values, for example:
+        options : dict, optional
+            A dictionary of options to customise the behaviour of the PyBaMM model.
+        build : bool, optional
+            If True, the model is built upon creation (default: False).
+    """
+
+    def __init__(self, name="Weppner & Huggins model", **model_kwargs):
+        super().__init__(name=name, **model_kwargs)
+        self._summary_variables = []
+
+        pybamm.citations.register("""
+            @article{Weppner1977,
+            title={{Determination of the kinetic parameters
+            of mixed-conducting electrodes and application to the system Li3Sb}},
+            author={Weppner, W and Huggins, R A},
+            journal={Journal of The Electrochemical Society},
+            volume={124},
+            number={10},
+            pages={1569},
+            year={1977},
+            publisher={IOP Publishing}
+            }
+        """)
+
+        ######################
+        # Parameters
+        ######################
+        # Parameters are purely symbolic at this stage, and will be set by the
+        # `ParameterValues` class when the model is processed.
+
+        Q_th_p = Parameter("Theoretical electrode capacity [A.h]") * 3600
+
+        U = Parameter("Reference voltage [V]")
+        U_prime = Parameter("Derivative of the OCP wrt stoichiometry [V]")
+
+        tau_d_p = Parameter("Positive particle diffusion time scale [s]")
+
+        ######################
+        # Input current (positive on discharge)
+        ######################
+        I = self.param.current_with_time
+
+        ######################
+        # Governing equations
+        ######################
+        # Surface stoichiometry
+        sto_p_surf = 2 * I / (3 * Q_th_p) * (pybamm_t * tau_d_p / np.pi) ** 0.5
+        # Linearised voltage
+        V = U + U_prime * sto_p_surf
+
+        ######################
+        # (Some) variables
+        ######################
+        self.variables = {
+            "Voltage [V]": V,
+            "Voltage expression [V]": V,  # for compatibility with "voltage as a state"
+            "Time [s]": pybamm_t,
+            "Current [A]": I,
+            "Current variable [A]": I,  # for compatibility with pybamm.Experiment
+        }
+
+        # Set the built property on creation to prevent unnecessary model rebuilds
+        self._built = True
+
+    @property
+    def default_geometry(self):
+        return {}
+
+    @property
+    def default_parameter_values(self) -> ParameterValues:
+        param = ParameterValues("Xu2019")
+        return self.create_grouped_parameters(param)
+
+    @property
+    def default_quick_plot_variables(self):
+        return [
+            "Current [A]",
+            "Voltage [V]",
+        ]
+
+    @property
+    def default_submesh_types(self):
+        return {}
+
+    @property
+    def default_var_pts(self):
+        return {}
+
+    @property
+    def default_spatial_methods(self):
+        return {}
+
+    @property
+    def default_solver(self):
+        return DummySolver()
+
+    @staticmethod
+    def create_grouped_parameters(parameter_values: ParameterValues) -> ParameterValues:
+        """
+        Create a parameter set for the Weppner & Huggins model from a
+        PyBaMM lithium-ion ParameterValues object.
+
+        Note: the working electrode is the positive electrode.
+
+        Parameters
+        ----------
+        parameter_values : pybamm.ParameterValues
+            Parameters and their corresponding values.
+
+        Returns
+        -------
+        parameter_values : pybamm.ParameterValues
+            A new set of parameters and their values.
+        """
+        param = parameter_values
+
+        # Unpack physical parameters
+        F = pybamm.constants.F.value
+        alpha_p = param["Positive electrode active material volume fraction"]
+        c_max_p = param["Maximum concentration in positive electrode [mol.m-3]"]
+        L_p = param["Positive electrode thickness [m]"]
+        R_p = param["Positive particle radius [m]"]
+        D_p = param["Positive particle diffusivity [m2.s-1]"]
+
+        # Compute the cell area
+        A = (
+            param["Electrode height [m]"]
+            * param["Electrode width [m]"]
+            * param["Number of electrodes connected in parallel to make a cell"]
+        )
+
+        # Grouped parameters
+        Q_th_p = F * alpha_p * c_max_p * L_p * A / 3600
+        tau_d_p = R_p**2 / D_p
+
+        parameter_dictionary = {
+            "Current function [A]": param["Current function [A]"],
+            "Reference voltage [V]": 4,
+            "Derivative of the OCP wrt stoichiometry [V]": -1,
+            "Theoretical electrode capacity [A.h]": Q_th_p,
+            "Positive particle diffusion time scale [s]": tau_d_p,
+        }
+        parameter_values = ParameterValues(values=parameter_dictionary)
+        parameter_values._set_initial_state = WeppnerHuggins.set_initial_state  # noqa: SLF001
+        return parameter_values
+
+    @staticmethod
+    def set_initial_state(
+        initial_value,
+        parameter_values,
+        direction=None,
+        param=None,
+        inplace=True,
+        options=None,
+        inputs=None,
+        tol=1e-6,
+    ):
+        raise ValueError("The Weppner & Huggins model does not have an initial state.")

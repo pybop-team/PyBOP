@@ -330,11 +330,9 @@ pyproject.toml
 
 ### Continuous Integration using GitHub actions
 
-Each change pushed to the PyBOP GitHub repository will trigger the test and benchmark suites to be run, using [GitHub actions](https://github.com/features/actions).
+Each change pushed to the PyBOP GitHub repository will trigger tests to be run, using [GitHub actions](https://github.com/features/actions).
 
 Tests are run for different operating systems, and for all Python versions officially supported by PyBOP. If you opened a Pull Request, feedback is directly available on the corresponding page. If all tests pass, a green tick will be displayed next to the corresponding test run. If one or more test(s) fail, a red cross will be displayed instead.
-
-Similarly, the benchmark suite is automatically run for the most recently pushed commit. Benchmark results are compared to the results available for the latest commit on the `develop` branch. Should any significant performance regression be found, a red cross will be displayed next to the benchmark run.
 
 In all cases, more details can be obtained by clicking on a specific run.
 

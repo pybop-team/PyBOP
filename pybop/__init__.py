@@ -6,7 +6,7 @@
 # (see https://github.com/pints-team/pints)
 #
 import sys
-from os import path
+from pathlib import Path
 
 #
 # Version info
@@ -20,12 +20,12 @@ from pybop._version import __version__
 # loss of information
 FLOAT_FORMAT = "{: .17e}"
 # Absolute path to the pybop repo
-script_path = path.dirname(__file__)
+script_path = Path(__file__).parent
 
 #
 # Utilities
 #
-from ._utils import add_spaces, is_numeric, load_data_dict, save_data_dict
+from ._utils import add_spaces, add_noise, is_numeric, load_data_dict, save_data_dict
 
 #
 # Dataset class
@@ -49,13 +49,14 @@ from .transformation.transformations import (
 # Parameter classes
 #
 from .parameters.parameter import Parameter, Parameters
-from .parameters.distributions import Distribution, Gaussian, Uniform, Exponential, JointDistribution
+from .parameters.distributions import Distribution, Exponential, Gaussian, JointDistribution, LogNormal, LogUniform, Unbounded, Uniform
 from .parameters.multivariate_distributions import MultivariateNonparametric, MultivariateUniform, MultivariateGaussian, MultivariateLogNormal, MarginalDistribution
 
 #
 # Model classes
 #
 from .models import lithium_ion
+from .models import li_half_cell
 from .models._exponential_decay import ExponentialDecayModel
 from .models.lithium_ion.utils import Interpolant, InverseOCV
 

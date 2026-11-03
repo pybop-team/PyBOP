@@ -25,15 +25,12 @@ class TestApplications:
     def parameter_values(self):
         return pybamm.ParameterValues("Chen2020")
 
-    def noise(self, sigma, values):
-        return np.random.normal(0, sigma, values)
-
     @pytest.fixture
     def discharge_dataset(self, parameter_values):
         ocp_function = parameter_values["Positive electrode OCP [V]"]
 
         discharge_sto = np.linspace(0, 0.9, 91)
-        discharge_voltage = ocp_function(discharge_sto + 0.02) + self.noise(1e-3, 91)
+        discharge_voltage = pybop.add_noise(ocp_function(discharge_sto + 0.02), 1e-3)
 
         return pybop.Dataset(
             {"Stoichiometry": discharge_sto, "Voltage [V]": discharge_voltage}
@@ -44,20 +41,21 @@ class TestApplications:
         ocp_function = parameter_values["Positive electrode OCP [V]"]
 
         charge_sto = np.linspace(1, 0.1, 91)
-        charge_voltage = ocp_function(charge_sto - 0.02) + self.noise(1e-3, 91)
+        charge_voltage = pybop.add_noise(ocp_function(charge_sto - 0.02), 1e-3)
 
         return pybop.Dataset(
             {"Stoichiometry": charge_sto, "Voltage [V]": charge_voltage}
         )
 
     def test_interpolant(self, parameter_values, discharge_dataset):
-        parameter_values = pybop.lithium_ion.SPDiffusion.create_grouped_parameters(
+        parameter_values = pybop.li_half_cell.SPDiffusion.create_grouped_parameters(
             parameter_values
         )
-        parameter_values["Electrode OCP [V]"] = pybop.Interpolant(
+        parameter_values["Positive electrode OCP [V]"] = pybop.Interpolant(
             discharge_dataset["Stoichiometry"], discharge_dataset["Voltage [V]"]
         )
-        model = pybop.lithium_ion.SPDiffusion(build=True)
+        parameter_values.set_initial_state(0.9)
+        model = pybop.li_half_cell.SPDiffusion(build=True)
         t_eval = np.linspace(0, 10, 100)
         solution = pybamm.Simulation(model, parameter_values=parameter_values).solve(
             t_eval=t_eval, t_interp=t_eval
@@ -125,7 +123,7 @@ class TestApplications:
         nom_capacity = parameter_values["Nominal cell capacity [A.h]"]
 
         sto = np.linspace(0, 0.9, 91)
-        voltage = ocv_function(sto) + self.noise(2e-3, 91)
+        voltage = pybop.add_noise(ocv_function(sto), 2e-3)
 
         # Create the OCV dataset
         ocv_dataset = pybop.Dataset(
@@ -173,9 +171,7 @@ class TestApplications:
             parameter_values=half_cell_parameter_values,
             experiment=experiment,
         ).solve()
-        corrupt_values = solution["Voltage [V]"].data + np.random.normal(
-            0, sigma, len(solution.t)
-        )
+        corrupt_values = pybop.add_noise(solution["Voltage [V]"].data, sigma)
         start = np.where(solution["Time [s]"].data == 1)[0][0] - 1
         return pybop.Dataset(
             {
@@ -191,25 +187,25 @@ class TestApplications:
     def test_gitt_pulse_fit(
         self, half_cell_model, half_cell_parameter_values, pulse_data
     ):
-        parameter_values = pybop.lithium_ion.SPDiffusion.create_grouped_parameters(
+        parameter_values = pybop.li_half_cell.SPDiffusion.create_grouped_parameters(
             half_cell_parameter_values
         )
-        diffusion_time = parameter_values["Particle diffusion time scale [s]"]
+        diffusion_time = parameter_values["Positive particle diffusion time scale [s]"]
 
         gitt_fit = pybop.GITTPulseFit(parameter_values=parameter_values)
         gitt_result = gitt_fit(gitt_pulse=pulse_data)
 
         np.testing.assert_allclose(
-            gitt_result.best_inputs["Particle diffusion time scale [s]"],
+            gitt_result.best_inputs["Positive particle diffusion time scale [s]"],
             diffusion_time,
             rtol=5e-2,
         )
 
     def test_gitt_fit(self, half_cell_model, half_cell_parameter_values, pulse_data):
-        parameter_values = pybop.lithium_ion.SPDiffusion.create_grouped_parameters(
+        parameter_values = pybop.li_half_cell.SPDiffusion.create_grouped_parameters(
             half_cell_parameter_values
         )
-        diffusion_time = parameter_values["Particle diffusion time scale [s]"]
+        diffusion_time = parameter_values["Positive particle diffusion time scale [s]"]
 
         with pytest.raises(
             ValueError, match="The initial current in the pulse dataset must be zero."
@@ -229,7 +225,7 @@ class TestApplications:
         gitt_parameter_data = gitt_fit()
 
         np.testing.assert_allclose(
-            gitt_parameter_data["Particle diffusion time scale [s]"],
+            gitt_parameter_data["Positive particle diffusion time scale [s]"],
             np.asarray([diffusion_time]),
             rtol=5e-2,
         )

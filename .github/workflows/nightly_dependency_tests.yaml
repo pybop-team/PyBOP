@@ -28,9 +28,9 @@ jobs:
         dep-type: ["latest", "lowest"]
         # The following must remain in sync with our Python version support as defined in pyproject.toml
         include:
-          # Latest dependencies with Python 3.13 (our maximum supported Python version)
+          # Latest dependencies with Python 3.14 (our maximum supported Python version)
           - dep-type: latest
-            python-version: "3.13"
+            python-version: "3.14"
           # Lowest dependencies with Python 3.10 (our minimum supported Python version)
           - dep-type: lowest
             python-version: "3.10"
@@ -39,15 +39,25 @@ jobs:
       issues: write # for creating issues when tests fail
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b # v7.3.0
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
         with:
           python-version: ${{ matrix.python-version }}
           activate-environment: "true"
+
+      - name: Install pybammsolvers build toolchain
+        if: matrix.dep-type == 'latest'
+        run: |
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+              sudo apt-get update
+              sudo apt-get install -y libopenblas-dev gcc gfortran make g++ build-essential
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+              brew install libomp gcc
+          fi
 
       - name: Install dependencies (latest)
         if: matrix.dep-type == 'latest'
@@ -57,7 +67,10 @@ jobs:
           uv pip install -e .[all]
           uv pip install --group dev
           uv pip uninstall pybamm
-          uv pip install "pybamm[all] @ git+https://github.com/pybamm-team/PyBaMM@main"
+          # pybamm@main requires an unreleased pybammsolvers, so build both from the same monorepo
+          uv pip install --no-sources \
+            "pybammsolvers @ git+https://github.com/pybamm-team/PyBaMM@main#subdirectory=packages/pybammsolvers" \
+            "pybamm[all] @ git+https://github.com/pybamm-team/PyBaMM@main#subdirectory=packages/pybamm"
           uv pip install pytest-reportlog
 
       - name: Install dependencies (lowest)
@@ -84,7 +97,7 @@ jobs:
           fi
 
       - name: Create issues from pytest logs
-        uses: scientific-python/issue-from-pytest-log-action@8e905db353437cda1d6a773de245343fbfc940dd # v1.5.0
+        uses: scientific-python/issue-from-pytest-log-action@87351a8f864e969567cda22a25a2f214cbe2340f # v1.6.0
         if: |
           failure()
           && steps.pytest.outcome == 'failure'

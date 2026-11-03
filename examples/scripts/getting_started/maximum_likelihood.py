@@ -27,8 +27,7 @@ dataset = pybop.Dataset(
     {
         "Time [s]": t_eval,
         "Current [A]": solution["Current [A]"](t_eval),
-        "Voltage [V]": solution["Voltage [V]"](t_eval)
-        + np.random.normal(0, sigma, len(t_eval)),
+        "Voltage [V]": pybop.add_noise(solution["Voltage [V]"](t_eval), sigma),
     }
 )
 
@@ -36,11 +35,7 @@ dataset = pybop.Dataset(
 parameter_values.update(
     {
         "Negative electrode active material volume fraction": pybop.Parameter(
-            distribution=pybop.Gaussian(
-                0.6,
-                0.05,
-                truncated_at=[0.5, 0.8],
-            )
+            distribution=pybop.Gaussian(0.6, 0.05, truncated_at=[0.5, 0.8])
         ),
         "Positive electrode active material volume fraction": pybop.Parameter(
             distribution=pybop.Gaussian(0.48, 0.05),

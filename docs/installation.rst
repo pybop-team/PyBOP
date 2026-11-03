@@ -43,24 +43,42 @@ For those who prefer to install PyBOP from a local clone of the repository or wi
 In editable mode, changes you make to the source code will immediately affect the PyBOP installation without the need for reinstallation.
 
 Optional Dependencies
------------------
-``plotly`` - For plotting, PyBOP uses plotly. It can be installed with:
+---------------------
+``plotly`` - For plotting, PyBOP uses `matlplotlib <https://matplotlib.org/>`_ or `plotly <https://plotly.com/python/>`_. Plotly can be installed with:
 
 .. code-block:: console
 
-    pip install pybop[plot]
+    pip install pybop[plotly]
 
-``scikit-fem`` - This is a dependency for the multi-dimensional pybamm models, and can be installed using:
+``salib`` - To compute sensitivities, PyBOP can be paired with the `Sensitivity Analysis Library (SALib) <https://salib.readthedocs.io/en/latest/>`_:
+
+.. code-block:: console
+
+    pip install pybop[salib]
+
+``scikit-fem`` - This is a dependency for the multi-dimensional PyBaMM models, and can be installed using:
 
 .. code-block:: console
 
     pip install pybop[scifem]
 
-``bpx`` - To use the Faraday Institution's Battery Parameter eXchange (BPX) package install the optional requirement:
+``bpx`` - To use the Faraday Institution's `Battery Parameter eXchange (BPX) package <https://bpxstandard.com/>`_:
 
 .. code-block:: console
 
     pip install pybop[bpx]
+
+``ep-bolfi`` - To use Expectation Propagation with Bayesian Optimization for Likelihood-Free Inference (`EP-BOLFI <https://github.com/YannickNoelStephanKuhn/EP-BOLFI>`_):
+
+.. code-block:: console
+
+    pip install pybop[ep-bolfi]
+
+``pyprobe`` - To import data from battery cyclers, use `Python Processing for Battery Experiments (PyProBE) <https://pyprobe.readthedocs.io/en/latest/>`_:
+
+.. code-block:: console
+
+    pip install pybop[pyprobe]
 
 To install all the optional dependencies, the command ``pip install pybop[all]`` is available. For more information on the optional packages, users are directed towards the `pyproject.toml <https://github.com/pybop-team/PyBOP/blob/develop/pyproject.toml>`_.
 
