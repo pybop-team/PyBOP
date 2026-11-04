@@ -1,7 +1,6 @@
 name: GitHub Actions Version Updater
 
 on:
-  push:
   workflow_dispatch:
   schedule:
     - cron: "28 18 1-7 * 1" # first Monday of the month at 18:28 UTC
