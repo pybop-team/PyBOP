@@ -34,8 +34,6 @@ class TestExamples:
         v = sys.version_info
         if v >= (3, 13) and example.name == "bayesian_feature_fitting.py":
             pytest.skip("This example requires a python version < 3.13")
-        elif v < (3, 11) and example.name == "generate_synthetic_data.py":
-            pytest.skip("This example requires a python version >= 3.11")
         elif v >= (3, 13) and example.name == "generate_synthetic_data.py":
             pytest.skip("This example requires a python version < 3.13")
         else:
@@ -44,9 +42,6 @@ class TestExamples:
             shutil.copy(example, new_example_path)
             runpy.run_path(new_example_path)
 
-    @pytest.mark.skipif(
-        sys.version_info < (3, 11), reason="requires a python version >= 3.11"
-    )
     @pytest.mark.skipif(
         sys.version_info >= (3, 13), reason="requires a python version < 3.13"
     )

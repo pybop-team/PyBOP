@@ -112,9 +112,6 @@ class TestUtils:
         assert (y_new == np.array([1, 1, 3, 4]) * tol_y).all()
 
     @pytest.mark.skipif(
-        sys.version_info < (3, 11), reason="requires a python version >= 3.11"
-    )
-    @pytest.mark.skipif(
         sys.version_info >= (3, 13), reason="requires a python version < 3.13"
     )
     def test_get_cells_and_filter(self):
