@@ -22,4 +22,3 @@ jobs:
         with:
           token: ${{ secrets.UPDATER_TOKEN }}
           update_version_with: release-commit-sha
-          pull_request_labels: "CI"
