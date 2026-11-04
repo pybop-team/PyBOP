@@ -33,7 +33,7 @@ class TestPybammUtils:
             "pOCV.json",
             "GITT.json",
             "EIS charge.json",
-            "Validation cycling.json",
+            "Rate capability.json",
             "Validation different SOC.json",
             "Validation pulses.json",
         ]
