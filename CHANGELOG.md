@@ -10,6 +10,8 @@
 
 ## Breaking Changes
 
+- [#993](https://github.com/pybop-team/PyBOP/pull/993) - Drop support for Python 3.10.
+
 # [v26.10](https://github.com/pybop-team/PyBOP/tree/v26.3) - 2026-11-03
 
 ## Features
