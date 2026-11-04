@@ -6,6 +6,8 @@
 
 ## Optimisations
 
+- [#1010](https://github.com/pybop-team/PyBOP/pull/1010) - Restores the IDA default options to the `pybamm.RecommendedSolver`.
+
 ## Bug Fixes
 
 ## Breaking Changes
