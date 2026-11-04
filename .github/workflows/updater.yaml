@@ -1,0 +1,23 @@
+name: GitHub Actions Version Updater
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "28 18 * * 1#1" # first Monday of the month at 18:28 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          token: ${{ secrets.UPDATER_TOKEN }}
+
+      - name: Run GitHub Actions Version Updater
+        uses: saadmk11/github-actions-version-updater@764bee6cd2905c6c91624f35332f1472fa736c23 # v1.0.3
+        with:
+          token: ${{ secrets.UPDATER_TOKEN }}
+          update_version_with: release-commit-sha
