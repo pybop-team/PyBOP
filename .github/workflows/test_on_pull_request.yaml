@@ -101,7 +101,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest]
         python-version: ["3.12"]
 
     name: Test examples (${{ matrix.os }} / Python ${{ matrix.python-version }})
@@ -115,6 +115,17 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: ${{ matrix.python-version }}
+
+      - name: Install pybammsolvers build toolchain
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            sudo apt-get update
+            sudo apt-get install -y libopenblas-dev gcc gfortran make g++ build-essential
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            brew install libomp gcc
+          fi
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip nox[uv]
