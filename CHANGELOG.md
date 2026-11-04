@@ -2,6 +2,8 @@
 
 ## Features
 
+- [#1007](https://github.com/pybop-team/PyBOP/pull/1007) - Adds example script for discharge rate parameterisation.
+
 ## Optimisations
 
 ## Bug Fixes
