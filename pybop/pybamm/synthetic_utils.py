@@ -250,6 +250,7 @@ def _solution_to_dataframe(
         ]
     )
 
+    empty_steps = None
     if len(solution.cycles) > 0:
         empty_steps = np.flatnonzero(
             [
@@ -259,8 +260,7 @@ def _solution_to_dataframe(
             ]
         )
         empty_steps = empty_steps[empty_steps != 0]
-    else:
-        empty_steps = None
+
     pybamm_data["Time [s]"] += start_time
     try:
         raw_dataframe = pl.LazyFrame(pybamm_data)
