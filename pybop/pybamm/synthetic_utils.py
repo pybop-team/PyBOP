@@ -239,14 +239,7 @@ def _solution_to_dataframe(
     event_offset: int,
 ) -> pl.LazyFrame:
     """Convert a PyBaMM solution into the PyProBE-required dataframe layout."""
-    empty_steps = np.flatnonzero(
-        [
-            isinstance(step, pybamm.EmptySolution)
-            for cycle in solution.cycles
-            for step in cycle.steps
-        ]
-    )
-    empty_steps = empty_steps[empty_steps != 0]
+
     pybamm_data = solution.get_data_dict(
         [
             "Time [s]",
@@ -256,6 +249,18 @@ def _solution_to_dataframe(
             "Volume-averaged cell temperature [K]",
         ]
     )
+
+    if len(solution.cycles) > 0:
+        empty_steps = np.flatnonzero(
+            [
+                isinstance(step, pybamm.EmptySolution)
+                for cycle in solution.cycles
+                for step in cycle.steps
+            ]
+        )
+        empty_steps = empty_steps[empty_steps != 0]
+    else:
+        empty_steps = None
     pybamm_data["Time [s]"] += start_time
     try:
         raw_dataframe = pl.LazyFrame(pybamm_data)

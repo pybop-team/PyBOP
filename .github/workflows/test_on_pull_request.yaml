@@ -96,6 +96,8 @@ jobs:
   example_scripts:
     needs: style
     runs-on: ${{ matrix.os }}
+    env:
+      PYBAMM_SOURCE: "pybamm[all] @ git+https://github.com/NicolaCourtier/PyBaMM@step-cycle-numbers#subdirectory=packages/pybamm"
     strategy:
       fail-fast: false
       matrix:
