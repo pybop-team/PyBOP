@@ -40,13 +40,16 @@ dependencies = [
 plotly = ["plotly>=6"]
 scienceplots = ["SciencePlots>=2.2.2"]
 salib = ["SALib>=1.5"]
+scifem = [
+  "scikit-fem>=8.1.0" # scikit-fem is a dependency for the multi-dimensional pybamm models
+]
 ep-bolfi = [
     "ep-bolfi>=3.0.2; python_version < '3.14'"
 ]
 pyprobe = [
     "PyProBE-Data>=2.6.1; python_version < '3.13'"
 ]
-all = ["pybop[plotly,scienceplots,salib,pyprobe,ep-bolfi]", "pybamm[bpx,fem]"]
+all = ["pybop[plotly,scienceplots,salib,pyprobe,ep-bolfi]", "pybamm[bpx]"]
 
 [tool.uv]
 override-dependencies = [
