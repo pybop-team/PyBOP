@@ -54,6 +54,7 @@ all = ["pybop[plotly,scienceplots,salib,pyprobe,ep-bolfi]", "pybamm[bpx]"]
 [tool.uv]
 override-dependencies = [
     {package = {name = "ep-bolfi", version = "3.0.2"}, dependencies = ["numpy>=2.0", "GPy>=1.15"]},
+    {package = {name = "GPy", version = "1.15"}, dependencies = ["paramz>=0.10"]},
     {package = {name = "elfi"}, dependencies = ["matplotlib>=1.1"]},
 ]
 
