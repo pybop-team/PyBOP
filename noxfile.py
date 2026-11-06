@@ -10,6 +10,7 @@ nox.needs_version = ">=2024.4.15"
 # Environment variables to control CI behaviour for nox sessions
 PYBOP_SCHEDULED = int(os.environ.get("PYBOP_SCHEDULED", 0))
 PYBAMM_VERSION = os.environ.get("PYBAMM_VERSION", None)
+PYBAMM_SOURCE = os.environ.get("PYBAMM_SOURCE", None)
 PYPROJECT = nox.project.load_toml("pyproject.toml")
 
 
@@ -70,6 +71,8 @@ def examples(session):
     """Run the example scripts."""
     session.install("-e", ".[all]", "--upgrade", silent=False)
     session.install(*nox.project.dependency_groups(PYPROJECT, "dev"), silent=False)
+    if PYBAMM_SOURCE:
+        session.install(PYBAMM_SOURCE, silent=False)
     session.run("pytest", "--examples")
 
 
