@@ -111,8 +111,8 @@ for cell in get_cells():
 
     """
     Perform balancing by fitting electrode pOCP interpolants to the full-cell pOCV function.
-    Allow different shift values since pOCV is really a function of surface, not average
-    state of lithiation.
+    Allow different shift values since pOCV is really a function of the surface, not average,
+    electrode stoichiometry.
     """
 
     # Define parameters that are shared between charge and discharge branches
