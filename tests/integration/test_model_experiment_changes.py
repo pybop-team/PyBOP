@@ -52,12 +52,16 @@ class TestModelAndExperimentChanges:
         model = pybamm.lithium_ion.SPM()
 
         parameter_values.update(parameters)
+        submesh_types = model.default_submesh_types
+        submesh_types.update({"negative particle": pybamm.SymbolicUniform1DSubMesh})
+
         t_eval = np.arange(0, 3600, 2)  # Default 1C discharge to cut-off voltage
         simulator_1 = pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
             initial_state=initial_state,
             protocol=t_eval,
+            submesh_types=submesh_types,
         )
         solution_1 = simulator_1.solve(inputs)
         cost_1 = self.final_cost(simulator_1, solution_1)
@@ -68,6 +72,7 @@ class TestModelAndExperimentChanges:
             parameter_values=parameter_values,
             initial_state=initial_state,
             protocol=experiment,
+            submesh_types=submesh_types,
         )
         solution_2 = simulator_2.solve(inputs)
         cost_2 = self.final_cost(simulator_2, solution_2)
@@ -93,11 +98,14 @@ class TestModelAndExperimentChanges:
 
         model = pybamm.lithium_ion.SPM()
         parameter_values.update(parameters)
+        submesh_types = model.default_submesh_types
+        submesh_types.update({"negative particle": pybamm.SymbolicUniform1DSubMesh})
         simulator_1 = pybop.pybamm.Simulator(
             model,
             parameter_values=parameter_values,
             protocol=experiment,
             initial_state=initial_state,
+            submesh_types=submesh_types,
         )
         solution_1 = simulator_1.solve(inputs)
         cost_1 = self.final_cost(simulator_1, solution_1)
@@ -108,6 +116,7 @@ class TestModelAndExperimentChanges:
             parameter_values=parameter_values,
             protocol=experiment,
             initial_state=initial_state,
+            submesh_types=submesh_types,
         )
         solution_2 = simulator_2.solve(inputs)
         cost_2 = self.final_cost(simulator_2, solution_2)
@@ -150,8 +159,13 @@ class TestModelAndExperimentChanges:
                 )
             }
         )
+        submesh_types = model_1.default_submesh_types
+        submesh_types.update({"negative electrode": pybamm.SymbolicUniform1DSubMesh})
         simulator_1 = pybop.pybamm.Simulator(
-            model_1, parameter_values=parameter_values, protocol=dataset_1
+            model_1,
+            parameter_values=parameter_values,
+            protocol=dataset_1,
+            submesh_types=submesh_types,
         )
 
         parameter_values.update(
@@ -170,8 +184,19 @@ class TestModelAndExperimentChanges:
                 )
             }
         )
+        submesh_types = model_2.default_submesh_types
+        submesh_types.update(
+            {
+                "negative electrode": pybamm.SymbolicUniform1DSubMesh,
+                "separator": pybamm.SymbolicUniform1DSubMesh,
+                "positive electrode": pybamm.SymbolicUniform1DSubMesh,
+            }
+        )
         simulator_2 = pybop.pybamm.Simulator(
-            model_2, parameter_values=parameter_values, protocol=dataset_2
+            model_2,
+            parameter_values=parameter_values,
+            protocol=dataset_2,
+            submesh_types=submesh_types,
         )
 
         # Define a problem for each dataset and combine them into one
