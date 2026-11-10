@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 import pybamm
-from pybamm import SolverError
+from pybamm import GeometryError, SolverError
 
 if TYPE_CHECKING:
     from pybop.parameters.parameter import Inputs
@@ -217,7 +217,9 @@ class Simulator(BaseSimulator):
             self.create_simulation()
             self._simulation.build(initial_soc=self._initial_state, inputs=None)
             requires_model_rebuild = False
-        except (ValueError, TypeError, IndexError):
+        except GeometryError as e:
+            raise e
+        except (ValueError, TypeError, IndexError, AttributeError):
             requires_model_rebuild = True
 
         # Reset
