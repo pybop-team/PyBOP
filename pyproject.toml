@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pybop"
-version = "26.3"
+version = "26.10"
 authors = [
   {name = "The PyBOP Team"},
 ]
@@ -17,7 +17,6 @@ license = "BSD-3-Clause"
 license-files = ["LICENSE"]
 classifiers = [
   "Development Status :: 4 - Beta",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
@@ -28,10 +27,10 @@ classifiers = [
 ]
 # When updating the Python version ranges, please also bump the Python
 # versions in the tests in nightly_dependency_tests.yml as appropriate
-requires-python = ">=3.10, <3.16"
+requires-python = ">=3.11, <3.16"
 dependencies = [
     "pybamm[plot]>=26.3.0",
-    "numpy>=1.26",
+    "numpy>=2.0",
     "scipy>=1.12",
     "pints>=0.6.0",
     "polars>=1.18.0",
@@ -40,26 +39,23 @@ dependencies = [
 [project.optional-dependencies]
 plotly = ["plotly>=6"]
 scienceplots = ["SciencePlots>=2.2.2"]
-salib = ["SALib>=1.5"]
+salib = ["SALib>=1.5.2"]
 scifem = [
   "scikit-fem>=8.1.0" # scikit-fem is a dependency for the multi-dimensional pybamm models
 ]
-bpx = [
-    "bpx>=0.5, <0.6",
-]
 ep-bolfi = [
-    "ep-bolfi>=3.0.2; python_version < '3.13'"
+    "ep-bolfi>=3.0.2; python_version < '3.14'"
 ]
 pyprobe = [
-  "PyProBE-Data>=2.6.1; python_version >= '3.11' and python_version < '3.13'"
+    "PyProBE-Data>=2.6.1; python_version < '3.13'"
 ]
-all = ["pybop[plotly,scienceplots,salib,scifem,bpx,pyprobe,ep-bolfi]"]
+all = ["pybop[plotly,scienceplots,salib,scifem,pyprobe,ep-bolfi]", "pybamm[bpx]"]
 
 [tool.uv]
 override-dependencies = [
-    {package = {name = "ep-bolfi", version = "3.0.2"}, dependencies = ["numpy>=1.26.4", "GPy>=1.13.2, ==1.13.2; python_version < '3.11'"]},
+    {package = {name = "ep-bolfi", version = "3.0.2"}, dependencies = ["numpy>=2.0", "GPy>=1.15"]},
+    {package = {name = "GPy", version = "1.15"}, dependencies = ["paramz>=0.10"]},
     {package = {name = "elfi"}, dependencies = ["matplotlib>=1.1"]},
-    {package = {name = "pyarrow", version = "26.0.0"}, dependencies = ["numpy>=2.0"]},
 ]
 
 [dependency-groups]

@@ -559,6 +559,7 @@ class MatplotlibBackend(PlotBackend):
         return {
             "positional_args": [z],
             "plot_type": "imshow",
+            "aspect": "auto",
             "cmap": colorscale,
             "extent": (np.min(x), np.max(x), np.min(y), np.max(y)),
             "origin": "lower",

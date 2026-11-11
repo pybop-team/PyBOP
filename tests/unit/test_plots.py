@@ -302,8 +302,13 @@ class TestPlots:
                 )
             }
         )
+        submesh_types = model.default_submesh_types
+        submesh_types.update({"negative electrode": pybamm.SymbolicUniform1DSubMesh})
         simulator = pybop.pybamm.Simulator(
-            model, parameter_values=parameter_values, protocol=dataset
+            model,
+            parameter_values=parameter_values,
+            protocol=dataset,
+            submesh_types=submesh_types,
         )
         cost = pybop.SumSquaredError(dataset)
         fitting_problem = pybop.Problem(simulator, cost)
@@ -325,8 +330,18 @@ class TestPlots:
                 ),
             }
         )
+        # Update submesh types corresponding to geometric parameters
+        submesh_types.update(
+            {
+                "positive electrode": pybamm.SymbolicUniform1DSubMesh,
+                "positive particle": pybamm.SymbolicUniform1DSubMesh,
+            }
+        )
         simulator = pybop.pybamm.Simulator(
-            model, parameter_values=parameter_values, protocol=dataset
+            model,
+            parameter_values=parameter_values,
+            protocol=dataset,
+            submesh_types=submesh_types,
         )
         cost = pybop.SumSquaredError(dataset)
         fitting_problem = pybop.Problem(simulator, cost)
@@ -350,6 +365,10 @@ class TestPlots:
             }
         )
 
+        # Update submesh types corresponding to geometric parameters
+        submesh_types = model.default_submesh_types
+        submesh_types.update({"positive electrode": pybamm.SymbolicUniform1DSubMesh})
+
         # Form dataset
         dataset = pybop.Dataset(
             {
@@ -365,6 +384,7 @@ class TestPlots:
             model,
             parameter_values=parameter_values,
             f_eval=dataset["Frequency [Hz]"],
+            submesh_types=submesh_types,
         )
         cost = pybop.MeanAbsoluteError(dataset, target="Impedance")
         problem = pybop.Problem(simulator, cost)

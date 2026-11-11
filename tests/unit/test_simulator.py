@@ -64,21 +64,59 @@ class TestPybammSimulator:
 
     pytestmark = pytest.mark.unit
 
+    @pytest.fixture
+    def model(self):
+        return pybamm.lithium_ion.SPM()
+
+    @pytest.fixture
+    def experiment(self):
+        return pybamm.Experiment(["Discharge at 1C for 5 minutes"])
+
+    def test_simulator_solve(self, model, experiment):
+        # Test the different types of protocol
+        simulator = pybop.pybamm.Simulator(model, protocol=None)
+        simulator.debug_mode = True
+        with pytest.raises(pybamm.SolverError):
+            simulator.solve()
+
+        solution = pybop.pybamm.Simulator(model, protocol=experiment).solve()
+        assert isinstance(solution, pybamm.Solution)
+        dataset = pybop.import_pybamm_solution(solution)
+
+        for protocol in [
+            dataset,
+            dataset["Time [s]"],
+            (dataset["Time [s]"][[0, -1]], dataset["Time [s]"]),
+        ]:
+            solution = pybop.pybamm.Simulator(model, protocol=protocol).solve()
+            assert isinstance(solution, pybamm.Solution)
+            np.testing.assert_allclose(solution["Time [s]"].data, dataset["Time [s]"])
+
     def test_set_output_variables(self):
         model = pybamm.lithium_ion.SPM()
-        parameter_values = model.default_parameter_values
-        experiment = pybamm.Experiment(
-            ["Discharge at 1C for 5 minutes (10 second period)"]
-        )
-
-        simulator = pybop.pybamm.Simulator(
-            model, parameter_values=parameter_values, protocol=experiment
-        )
+        simulator = pybop.pybamm.Simulator(model)
 
         with pytest.raises(
             ValueError, match="Not a variable is not a variable in the model."
         ):
             simulator.set_output_variables(["Not a variable"])
+
+        simulator.set_output_variables(value=None)
+        assert simulator.output_variables is None
+
+        # Check that a FailedSolution with no output variables contains the default variables
+        solution = simulator.solve()
+        assert isinstance(solution, pybop.FailedSolution)
+        assert isinstance(simulator.default_variables, list)
+        for var in simulator.default_variables:
+            assert var in solution.variable_names
+
+    def test_remove_voltage_events(self, model):
+        simulator = pybop.pybamm.Simulator(model, remove_voltage_events=False)
+        assert "Maximum voltage [V]" in [e.name for e in simulator.model.events]
+
+        simulator = pybop.pybamm.Simulator(model, remove_voltage_events=True)
+        assert "Maximum voltage [V]" not in [e.name for e in simulator.model.events]
 
 
 class TestCoupledEISSimulator:

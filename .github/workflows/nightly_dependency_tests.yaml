@@ -31,20 +31,20 @@ jobs:
           # Latest dependencies with Python 3.14 (our maximum supported Python version)
           - dep-type: latest
             python-version: "3.14"
-          # Lowest dependencies with Python 3.10 (our minimum supported Python version)
+          # Lowest dependencies with Python 3.11 (our minimum supported Python version)
           - dep-type: lowest
-            python-version: "3.10"
+            python-version: "3.11"
     permissions:
       contents: read
       issues: write # for creating issues when tests fail
 
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
         with:
           python-version: ${{ matrix.python-version }}
           activate-environment: "true"
@@ -97,7 +97,7 @@ jobs:
           fi
 
       - name: Create issues from pytest logs
-        uses: scientific-python/issue-from-pytest-log-action@87351a8f864e969567cda22a25a2f214cbe2340f # v1.6.0
+        uses: scientific-python/issue-from-pytest-log-action@35b4e0a9e06f8e7e261778289cf4b968b722662d  # v1.6.2
         if: |
           failure()
           && steps.pytest.outcome == 'failure'

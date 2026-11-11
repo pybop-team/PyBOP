@@ -69,6 +69,8 @@ class EISSimulator(BaseSimulator):
     build_every_time : bool, optional
         If True, the model will be rebuilt every evaluation. Otherwise, the need to rebuild will be
         determined automatically.
+    remove_voltage_events : bool, optional
+        If True, the minimum and maximum voltage events are removed (default: True).
     """
 
     def __init__(
@@ -86,6 +88,7 @@ class EISSimulator(BaseSimulator):
         discretisation_kwargs: dict | None = None,
         cache_esoh: bool = True,
         build_every_time: bool = False,
+        remove_voltage_events: bool = True,
     ):
         # Set-up model for EIS
         self._f_eval = f_eval
@@ -115,6 +118,7 @@ class EISSimulator(BaseSimulator):
             discretisation_kwargs=discretisation_kwargs,
             cache_esoh=cache_esoh,
             build_every_time=build_every_time,
+            remove_voltage_events=remove_voltage_events,
         )
         self.debug_mode = False
 

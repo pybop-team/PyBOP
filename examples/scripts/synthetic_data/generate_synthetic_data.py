@@ -50,7 +50,7 @@ procedures = [
     "pOCV.json",
     "Temperature experiment.json",
     "GITT.json",
-    "Validation cycling.json",
+    "Rate capability.json",
     "Validation different SOC.json",
     "Validation pulses.json",
 ]

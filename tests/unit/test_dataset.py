@@ -36,6 +36,9 @@ class TestDataset:
         assert dataset.data == data_dictionary
         assert np.all(dataset["Time [s]"] == solution["Time [s]"].data)
 
+        # Test time conversion
+        np.testing.assert_allclose(dataset["Time [h]"], solution["Time [h]"].data)
+
         # Test exception for non-dictionary inputs
         with pytest.raises(
             TypeError, match="The input to pybop.Dataset must be a dictionary."
@@ -97,15 +100,11 @@ class TestDataset:
         assert dataset_dictionary.data == dataset_pybamm.data
 
     @pytest.mark.skipif(
-        sys.version_info < (3, 11), reason="requires a python version >= 3.11"
-    )
-    @pytest.mark.skipif(
         sys.version_info >= (3, 13), reason="requires a python version < 3.13"
     )
     def test_pyprobe_import(self):
         """
         Function to test import of PyProBE Result into a pybop.Dataset.
-        PyProBE requires Python 3.11 or higher.
         """
         import pyprobe
 

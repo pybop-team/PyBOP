@@ -10,9 +10,6 @@ PROCEDURE_DIR = Path("examples") / "scripts/synthetic_data/procedures"
 
 
 @pytest.mark.skipif(
-    sys.version_info < (3, 11), reason="requires a python version >= 3.11"
-)
-@pytest.mark.skipif(
     sys.version_info >= (3, 13), reason="requires a python version < 3.13"
 )
 class TestPybammUtils:
@@ -36,7 +33,7 @@ class TestPybammUtils:
             "pOCV.json",
             "GITT.json",
             "EIS charge.json",
-            "Validation cycling.json",
+            "Rate capability.json",
             "Validation different SOC.json",
             "Validation pulses.json",
         ]

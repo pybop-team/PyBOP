@@ -24,15 +24,26 @@ examples/data
 The EIS procedure differs for the full-cells (evenly spread SOC points) and half-cells
 (not evenly spaced but can be found from the measured charge throughput).
 
+The full-cell procedure is 9 cycles of the following steps:
+0. Charge at C/10 for 1 hour or until 4.2 V
+1. Rest for 4 hours
+2. Potentiostatic EIS with 0.0042 V amplitude
+
 For each full-cell, estimate the charge transfer and series resistance by fitting the EIS data.
 """
 
 parser = argparse.ArgumentParser()
+parser.add_argument("--draft", action="store_true", help="Draft mode")
 parser.add_argument("--show-plots", action="store_true", help="Show plots")
 args = parser.parse_args()
 
 plt.style.use("science")
-plt.rcParams.update({"text.usetex": False})  # users can remove this line
+
+if args.draft:
+    plt.rcParams.update({"text.usetex": False})
+    maxiter = 50
+else:
+    maxiter = 2500
 
 # Options
 OCP_type = "pOCP"
@@ -53,7 +64,7 @@ class R_CPE(pybop.BaseSimulator):
         a1 = param.evaluate(param["CPE exponent"])
 
         # Get the equivalent capacitance for the CPE
-        Q1 = C1**a1 / (R1 ** (1 - a1))
+        Q1 = C1**a1 / (R1 ** (1 - a1)) if R1 > 0 else np.inf
         return R0, R1, Q1, a1
 
     def solve_batch(self, inputs, calculate_sensitivities: bool = False):
@@ -104,29 +115,28 @@ for cell in get_cells():
     N_SOC = len(voltage_points)
 
     # Plot the given OCV
-    fig_v, ax_v = plt.subplots(1, 1, figsize=(5, 3))
+    fig_v, ax_v = plt.subplots(1, 1, figsize=(5, 3), dpi=300)
     ax_v.set_xlabel("State of charge")
     ax_v.set_ylabel("Voltage [V]")
     soc = np.linspace(0, 1, 501)
     ocv_function = get_ocv_function(param, OCP_type)
-    ax_v.plot(soc, ocv_function(soc), label="Pseudo OCV")
+    ax_v.plot(soc, ocv_function(soc), ls="--", label="Pseudo OCV")
 
     # Shift the OCV to match the voltage points
     naive_soc = 0.1 + 0.1 * np.arange(N_SOC)
-    shift_param, SOC_vec = shift_ocv_to(voltage_points, param, naive_soc, OCP_type)
-
-    """ Overwrite the OCV functions in the saved *charge* params. """
-    param = shift_param
+    shift_param, SOC_vec, offset = shift_ocv_to(
+        voltage_points, param, naive_soc, OCP_type
+    )
 
     # Validate the alignment by plotting
     ax_v.scatter(SOC_vec, voltage_points, marker="o", label="EIS points")
-    ocv_function = get_ocv_function(shift_param)
+    ocv_function = get_ocv_function(shift_param, OCP_type)
     ax_v.plot(soc, ocv_function(soc), label="OCV")
     ax_v.legend()
-    fig_v.savefig(cell_path / f"{cell_label}_EIS_points.svg")
+    fig_v.savefig(cell_path / f"{cell_label}_EIS_points.png")
 
     # Set up Nyquist plot
-    fig, ax = plt.subplots(1, 1, figsize=(5, 3))
+    fig, ax = plt.subplots(1, 1, figsize=(5, 3), dpi=300)
     ax.set_title(f"{cell_type}, Nyquist plot")
     ax.set_xlabel(r"Re(Z) [m$\Omega$]")
     ax.set_ylabel(r"-Im(Z) [m$\Omega$]")
@@ -143,7 +153,7 @@ for cell in get_cells():
     series_resistance = pybop.Parameter(
         initial_value=initial_series_resistance, bounds=[0, 0.1]
     )
-    dl_capacitance = pybop.Parameter(initial_value=0.1, bounds=[0, 1])
+    dl_capacitance = pybop.Parameter(initial_value=0.1, bounds=[0, 10])
 
     # Estimate charge transfer resistances over SOC for fixed R0
     problems = []
@@ -176,23 +186,34 @@ for cell in get_cells():
             color=colourmap(i / N_SOC),
             marker=".",
             s=4,
+            alpha=0.8,
+            label=f"_{label}",
+        )
+        ax.scatter(
+            Z[[idx_fmax, idx_fmin - 1]].real * 1e3,
+            -Z[[idx_fmax, idx_fmin - 1]].imag * 1e3,
+            color=colourmap(i / N_SOC),
+            marker="*",
+            s=8,
+            alpha=0.8,
+            edgecolors="red",
+            linewidth=0.5,
             label=f"_{label}",
         )
 
         # Select range for fitting
-        f_semicircle = frequencies[idx_fmax:idx_fmin]
-        Z_semicircle = Z[idx_fmax:idx_fmin]
-
         dataset = pybop.Dataset(
             {
-                "Frequency [Hz]": f_semicircle,
-                "Impedance": Z_semicircle,
+                "Frequency [Hz]": frequencies[idx_fmax:idx_fmin],
+                "Impedance": Z[idx_fmax:idx_fmin],
             },
             domain="Frequency [Hz]",
         )
 
         # Define optimisation parameters
-        initial_cpe_resistance = Z_semicircle[-1].real - initial_series_resistance
+        initial_cpe_resistance = (
+            dataset["Impedance"][-1].real - initial_series_resistance
+        )
         model_param = pybamm.ParameterValues(
             {
                 "Series resistance [Ohm]": series_resistance,
@@ -219,8 +240,8 @@ for cell in get_cells():
         problems.append(problem)
 
     meta_problem = pybop.MetaProblem(*problems)
-    options = pybop.SciPyDifferentialEvolutionOptions(maxiter=500)
-    optim = pybop.SciPyDifferentialEvolution(meta_problem, options=options)
+    options = pybop.SciPyMinimizeOptions(method="trust-constr", maxiter=maxiter)
+    optim = pybop.SciPyMinimize(meta_problem, options=options)
     result = optim.run()
     print(result)
     inputs = result.best_inputs
@@ -238,8 +259,8 @@ for cell in get_cells():
             solution["Impedance"].data.real * 1e3,
             -solution["Impedance"].data.imag * 1e3,
             color=colourmap(i / N_SOC),
-            ls="-",
-            linewidth=1.5,
+            alpha=0.8,
+            linewidth=1,
             label=label,
         )
 
@@ -252,20 +273,19 @@ for cell in get_cells():
     ax.axis("equal")
 
     # Update and save parameters
+    Rct_interpolant = pybop.Interpolant(SOC_vec, Rct, name="Charge transfer resistance")
     param.update(
         {
-            "Series resistance [Ohm]": inputs["Series resistance [Ohm]"],
-            "Charge transfer resistance [Ohm]": pybop.Interpolant(
-                SOC_vec, Rct, name="Charge transfer resistance"
-            ),
+            "Series resistance (ECM) [Ohm]": inputs["Series resistance [Ohm]"],
+            "Charge transfer resistance [Ohm]": Rct_interpolant,
             "Double-layer capacitance [F]": inputs["CPE capacitance [F]"],
-            "Mean EIS RMSE [mOhm]": np.mean(rmse_mOhm),
+            "Mean high-freq. EIS RMSE [mOhm]": np.mean(rmse_mOhm),
         }
     )
     with open(cell_path / f"params_{direction}.pickle", "wb") as file:
         pickle.dump(param, file)
 
-    fig.savefig(cell_path / f"{cell_label}_EIS_resistances.svg")
+    fig.savefig(cell_path / f"{cell_label}_EIS_resistances.png")
 
 if args.show_plots:
     plt.show()
