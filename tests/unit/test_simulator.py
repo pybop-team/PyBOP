@@ -163,7 +163,9 @@ class TestPybammEISSimulator:
         fitting_data = self.get_data(model, fitting_param, inputs=inputs)
 
         np.testing.assert_allclose(
-            fitting_data["Impedance"].data, expected_data["Impedance"], rtol=1e-10
+            np.asarray(fitting_data["Impedance"].data, dtype=np.complex128),
+            np.asarray(expected_data["Impedance"], dtype=np.complex128),
+            rtol=1e-10,
         )
 
     def get_data(self, model, parameter_values, inputs=None):
