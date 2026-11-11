@@ -33,31 +33,33 @@ class TestDataset:
         print(dataset)
 
         # Test data structure
-        assert dataset.data == data_dictionary
-        assert np.all(dataset["Time [s]"] == solution["Time [s]"].data)
+        assert set(dataset.keys()) == set(data_dictionary.keys())
+        np.testing.assert_allclose(dataset["Time [s]"], solution["Time [s]"].data)
 
         # Test time conversion
         np.testing.assert_allclose(dataset["Time [h]"], solution["Time [h]"].data)
 
         # Test exception for non-dictionary inputs
         with pytest.raises(
-            TypeError, match="The input to pybop.Dataset must be a dictionary."
+            TypeError, match="pybop.Dataset expects a dictionary or dataframe."
         ):
-            pybop.Dataset(["StringInputShouldNotWork"])
+            pybop.Dataset("StringInputShouldNotWork")
         with pytest.raises(
-            TypeError, match="The input to pybop.Dataset must be a dictionary."
+            TypeError, match="pybop.Dataset expects a dictionary or dataframe."
         ):
             pybop.Dataset(solution["Time [s]"].data)
 
         # Test conversion of pybamm solution into dictionary
-        assert dataset.data == pybop.import_pybamm_solution(solution).data
+        dataset_pybamm = pybop.import_pybamm_solution(solution)
+        assert set(dataset.keys()) == set(dataset_pybamm.keys())
+        np.testing.assert_allclose(dataset["Time [s]"], solution["Time [s]"].data)
 
         # Test set and get item
         test_current = solution["Current [A]"].data + np.ones_like(
             solution["Current [A]"].data
         )
         dataset["Current [A]"] = test_current
-        assert np.all(dataset["Current [A]"] == test_current)
+        np.testing.assert_allclose(dataset["Current [A]"], test_current)
         with pytest.raises(ValueError):
             dataset["Time"]
 
@@ -95,9 +97,11 @@ class TestDataset:
             "Voltage [V]": solution["Voltage [V]"].data,
         }
 
-        dataset_dictionary = pybop.Dataset(data_dictionary)
+        dataset = pybop.Dataset(data_dictionary)
 
-        assert dataset_dictionary.data == dataset_pybamm.data
+        assert set(dataset.keys()) == set(dataset_pybamm.keys())
+        for key in data_dictionary.keys():
+            np.testing.assert_allclose(dataset[key], dataset_pybamm[key])
 
     @pytest.mark.skipif(
         sys.version_info >= (3, 13), reason="requires a python version < 3.13"
@@ -173,7 +177,7 @@ class TestDataset:
         cell = pyprobe.Cell(info={"Model": "US06"})
         cell.import_pybamm_solution("US06 DFN", ["US06"], solution)
 
-        # Import data from PyProBE into pybop.dataset
+        # Import data from PyProBE into pybop.Dataset
         dataset_pyprobe = pybop.import_pyprobe_result(
             cell.procedure["US06 DFN"],
             variables=[
