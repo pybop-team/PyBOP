@@ -332,7 +332,7 @@ class EISSimulator(BaseSimulator):
                     simulations.append(self._solve(x))
                 except (ZeroDivisionError, RuntimeError, ValueError):
                     simulations.append(
-                        FailedSolution(self.solution_variables, x.keys())
+                        FailedSolution(self.default_variables, x.keys())
                     )
             return simulations
 
@@ -463,11 +463,16 @@ class EISSimulator(BaseSimulator):
         return self._simulator.input_parameter_names
 
     @property
-    def solution_variables(self) -> list[str]:
-        """The names of the variables set by a solve."""
+    def default_variables(self):
         if self._acquisition_indices is None:
             return ["Impedance [Ohm]"]
-        return ["Time [s]", "Voltage [V]", *self._impedance_variables]
+        variables: list[str] = self._impedance_variables
+        for s in self._model.default_quick_plot_variables:
+            if isinstance(s, str):
+                variables.append(s)
+            else:
+                variables.extend(list(s))
+        return variables
 
     @property
     def has_sensitivities(self):
