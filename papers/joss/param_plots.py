@@ -983,14 +983,14 @@ if create_plot["eis"]:
         {
             "Frequency [Hz]": f_eval,
             "Current function [A]": np.zeros(len(f_eval)),
-            "Impedance": solution["Impedance"].data
-            + noise(sigma0, len(solution["Impedance"].data)),
+            "Impedance [Ohm]": solution["Impedance [Ohm]"].data
+            + noise(sigma0, len(solution["Impedance [Ohm]"].data)),
         },
         domain="Frequency [Hz]",
     )
 
     # Build the problem
-    cost = pybop.RootMeanSquaredError(dataset, target=["Impedance"])
+    cost = pybop.RootMeanSquaredError(dataset, target=["Impedance [Ohm]"])
     problem = pybop.Problem(simulator, cost)
 
     # Set up and run the optimiser

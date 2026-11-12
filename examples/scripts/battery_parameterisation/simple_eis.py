@@ -32,7 +32,7 @@ dataset = pybop.Dataset(
     {
         "Frequency [Hz]": f_eval,
         "Current [A]": np.zeros_like(f_eval),
-        "Impedance": pybop.add_noise(solution["Impedance"].data, sigma),
+        "Impedance [Ohm]": pybop.add_noise(solution["Impedance [Ohm]"].data, sigma),
     },
     domain="Frequency [Hz]",
 )
@@ -62,7 +62,9 @@ parameter_values.update(
 simulator = pybop.pybamm.EISSimulator(
     model, parameter_values=parameter_values, f_eval=dataset["Frequency [Hz]"]
 )
-cost = pybop.GaussianLogLikelihoodKnownSigma(dataset, target="Impedance", sigma=sigma)
+cost = pybop.GaussianLogLikelihoodKnownSigma(
+    dataset, target="Impedance [Ohm]", sigma=sigma
+)
 problem = pybop.Problem(simulator, cost)
 
 # Set up the optimiser

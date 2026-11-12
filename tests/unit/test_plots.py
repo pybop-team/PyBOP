@@ -374,7 +374,7 @@ class TestPlots:
             {
                 "Frequency [Hz]": np.logspace(-4, 5, 10),
                 "Current [A]": np.ones(10) * 0.0,
-                "Impedance": np.ones(10) * 0.0,
+                "Impedance [Ohm]": np.ones(10) * 0.0,
             },
             domain="Frequency [Hz]",
         )
@@ -386,7 +386,7 @@ class TestPlots:
             f_eval=dataset["Frequency [Hz]"],
             submesh_types=submesh_types,
         )
-        cost = pybop.MeanAbsoluteError(dataset, target="Impedance")
+        cost = pybop.MeanAbsoluteError(dataset, target="Impedance [Ohm]")
         problem = pybop.Problem(simulator, cost)
 
         # Plot the nyquist

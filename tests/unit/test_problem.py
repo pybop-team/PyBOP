@@ -134,7 +134,7 @@ class TestProblem:
             {
                 "Frequency [Hz]": np.logspace(-4, 5, 30),
                 "Current [A]": np.ones(30) * 0.0,
-                "Impedance": np.ones(30) * 0.0,
+                "Impedance [Ohm]": np.ones(30) * 0.0,
             },
             domain="Frequency [Hz]",
         )
@@ -149,7 +149,7 @@ class TestProblem:
             f_eval=dataset["Frequency [Hz]"],
             submesh_types=submesh_types,
         )
-        cost = pybop.MeanAbsoluteError(dataset, target=["Impedance"])
+        cost = pybop.MeanAbsoluteError(dataset, target=["Impedance [Ohm]"])
         problem = pybop.Problem(simulator, cost)
         assert problem.domain == "Frequency [Hz]"
 
@@ -157,7 +157,7 @@ class TestProblem:
         problem.verbose = True
         inputs = problem.parameters.to_dict([0.0, 0.0])
         out = problem.simulate(inputs)
-        assert not np.isfinite(out["Impedance"].data)
+        assert not np.isfinite(out["Impedance [Ohm]"].data)
 
     def test_multi_fitting_problem(self, model, parameters, dataset, submesh_types):
         parameter_values = model.default_parameter_values

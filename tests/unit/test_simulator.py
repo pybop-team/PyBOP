@@ -173,7 +173,7 @@ class TestCoupledEISSimulator:
             data = solution[name].data
             assert len(data) == n_time
             # Non-zero only at the times of acquisition
-            if "Impedance" in name:
+            if "Impedance [Ohm]" in name:
                 np.testing.assert_array_equal(np.flatnonzero(data), acquisitions)
 
     def test_matches_stationary_at_initial_state(
@@ -197,7 +197,9 @@ class TestCoupledEISSimulator:
                 for frequency in frequencies
             ]
         )
-        np.testing.assert_allclose(impedance, stationary["Impedance"].data, rtol=1e-10)
+        np.testing.assert_allclose(
+            impedance, stationary["Impedance [Ohm]"].data, rtol=1e-10
+        )
 
     @pytest.mark.parametrize("coupled", [False, True])
     def test_input_parameters_are_not_swapped(
@@ -247,7 +249,9 @@ class TestCoupledEISSimulator:
                 )
         else:
             np.testing.assert_allclose(
-                solution["Impedance"].data, expected["Impedance"].data, rtol=1e-10
+                solution["Impedance [Ohm]"].data,
+                expected["Impedance [Ohm]"].data,
+                rtol=1e-10,
             )
 
     def test_geometric_parameter_rebuilds(

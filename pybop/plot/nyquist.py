@@ -76,7 +76,7 @@ def nyquist(
         inputs = problem.parameters.to_dict(inputs)
 
     model_output = problem.simulate(inputs)
-    domain_data = model_output["Impedance"].data.real
+    domain_data = model_output["Impedance [Ohm]"].data.real
     target_output = problem.target_data
 
     for i, var in enumerate(problem.target):

@@ -78,7 +78,7 @@ class R_CPE(pybop.BaseSimulator):
 
             sol = pybop.Solution()
             sol.set_solution_variable(
-                "Impedance", data=np.asarray(Z, dtype=np.complex128)
+                "Impedance [Ohm]", data=np.asarray(Z, dtype=np.complex128)
             )
             solutions.append(sol)
         return solutions
@@ -205,14 +205,14 @@ for cell in get_cells():
         dataset = pybop.Dataset(
             {
                 "Frequency [Hz]": frequencies[idx_fmax:idx_fmin],
-                "Impedance": Z[idx_fmax:idx_fmin],
+                "Impedance [Ohm]": Z[idx_fmax:idx_fmin],
             },
             domain="Frequency [Hz]",
         )
 
         # Define optimisation parameters
         initial_cpe_resistance = (
-            dataset["Impedance"][-1].real - initial_series_resistance
+            dataset["Impedance [Ohm]"][-1].real - initial_series_resistance
         )
         model_param = pybamm.ParameterValues(
             {
@@ -232,7 +232,7 @@ for cell in get_cells():
 
         # Set up an optimisation problem
         simulator = R_CPE(parameter_values=model_param, dataset=dataset)
-        cost = pybop.RootMeanSquaredError(dataset, target="Impedance")
+        cost = pybop.RootMeanSquaredError(dataset, target="Impedance [Ohm]")
         problem = pybop.Problem(
             simulator=simulator,
             cost=pybop.WeightedCost(cost, weights=[1e3]),  # convert Ohm to mOhm
@@ -256,8 +256,8 @@ for cell in get_cells():
         # Add simluation to plot
         label = rf"{(100 * SOC_vec[i]):.0f} \%"
         ax.plot(
-            solution["Impedance"].data.real * 1e3,
-            -solution["Impedance"].data.imag * 1e3,
+            solution["Impedance [Ohm]"].data.real * 1e3,
+            -solution["Impedance [Ohm]"].data.imag * 1e3,
             color=colourmap(i / N_SOC),
             alpha=0.8,
             linewidth=1,

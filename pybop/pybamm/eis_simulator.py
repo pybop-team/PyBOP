@@ -368,7 +368,7 @@ class EISSimulator(BaseSimulator):
             )
             solution = Solution()
             solution.set_solution_variable(
-                "Impedance",
+                "Impedance [Ohm]",
                 data=self._calculate_spectrum(self._jacobian(0, y0, inputs)),
             )
             return solution
@@ -466,7 +466,7 @@ class EISSimulator(BaseSimulator):
     def solution_variables(self) -> list[str]:
         """The names of the variables set by a solve."""
         if self._acquisition_indices is None:
-            return ["Impedance"]
+            return ["Impedance [Ohm]"]
         return ["Time [s]", "Voltage [V]", *self._impedance_variables]
 
     @property

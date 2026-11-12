@@ -77,12 +77,12 @@ class TestDataset:
         data_dictionary = {
             "Frequency [Hz]": np.linspace(-10, 0, 10),
             "Current [A]": np.zeros(10),
-            "Impedance": np.zeros(10),
+            "Impedance [Ohm]": np.zeros(10),
         }
         frequency_dataset = pybop.Dataset(data_dictionary)
 
         with pytest.raises(ValueError, match="Frequencies cannot be negative."):
-            frequency_dataset.check(domain="Frequency [Hz]", signal="Impedance")
+            frequency_dataset.check(domain="Frequency [Hz]", signal="Impedance [Ohm]")
 
     def test_pybamm_import(self):
         model = pybamm.lithium_ion.SPM()
