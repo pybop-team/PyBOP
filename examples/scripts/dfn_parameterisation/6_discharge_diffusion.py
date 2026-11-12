@@ -117,7 +117,6 @@ for cell in get_cells():
             )
         )
         initial_capacity = dataset["Discharge capacity [A.h]"][0]
-        dataset["Discharge capacity [A.h]"] -= initial_capacity
         x_data = dataset[x_variable] - dataset[x_variable][0]
         x, y = downsample(x_data, dataset["Voltage [V]"], tol_x=np.max(x_data) / 200)
         ax.scatter(x, y, marker=".", s=4, label=rate)
@@ -125,9 +124,8 @@ for cell in get_cells():
         # Define protocol
         model_param.set_initial_state(f"{dataset['Voltage [V]'][-1]} V")  # final state
         model_param["Initial SoC"] += (
-            dataset["Discharge capacity [A.h]"][-1]
-            / model_param["Measured cell capacity [A.h]"]
-        )
+            dataset["Discharge capacity [A.h]"][-1] - initial_capacity
+        ) / model_param["Measured cell capacity [A.h]"]
         input_data = pybop.generate_consistent_current(dataset)
         input_data = pybop.downsample_constant_current(
             input_data, tolerance=model_param["Nominal cell capacity [A.h]"] / 100
