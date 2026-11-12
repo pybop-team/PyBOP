@@ -199,7 +199,7 @@ def _remap_cycle_info(
         dataframe.select(event_column.unique(maintain_order=True))
         .collect()
         .to_numpy()
-        .flatten()
+        .ravel()
     )
     return dataframe.with_columns(
         Step=pl.col("Event").replace(event_numbers, _flatten_sequence(step_sequence))

@@ -13,6 +13,7 @@
 
 ## Breaking Changes
 
+- [#1027](https://github.com/pybop-team/PyBOP/pull/1027) - Changes the `Dataset` backend to a `polars.LazyFrame`.
 - [#1016](https://github.com/pybop-team/PyBOP/pull/1016) - Raises the lowest supported dependencies, including `numpy>=2`.
 - [#993](https://github.com/pybop-team/PyBOP/pull/993) - Drop support for Python 3.10.
 
