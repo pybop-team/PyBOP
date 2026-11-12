@@ -85,16 +85,10 @@ def problem(
 
     # Impedance variables are plotted as a Nyquist plot per acquisition, not as a series
     # over the domain, so separate them from the remaining targets
-    frequencies, real_variables, imaginary_variables = parse_impedance_variables(
-        problem.target
-    )
-    targets = [
-        var
-        for var in problem.target
-        if var not in set(real_variables) | set(imaginary_variables)
-    ]
+    frequencies, variable_names = parse_impedance_variables(problem.target)
+    targets = [var for var in problem.target if var not in set(variable_names)]
     acquisitions = (
-        _acquisition_indices(target_output, real_variables, imaginary_variables)
+        _acquisition_indices(target_output, variable_names)
         if len(frequencies) > 0
         else []
     )
@@ -220,8 +214,8 @@ def problem(
             for output, label, style in impedance_styles:
                 backend.plot_trace(
                     backend.line(
-                        x=[output[name].data[row] for name in real_variables],
-                        y=[-output[name].data[row] for name in imaginary_variables],
+                        x=[output[name].data[row].real for name in variable_names],
+                        y=[-output[name].data[row].imag for name in variable_names],
                         label=label,
                         style=style,
                     ),
@@ -241,11 +235,7 @@ def problem(
         return figures[0] if len(figures) == 1 else figures
 
 
-def _acquisition_indices(
-    target_output, real_variables: list[str], imaginary_variables: list[str]
-) -> np.ndarray:
+def _acquisition_indices(target_output, variable_names: list[str]) -> np.ndarray:
     """Return the indices of the domain points at which a spectrum was acquired."""
-    measured = np.asarray(
-        [target_output[name].data for name in (*real_variables, *imaginary_variables)]
-    )
+    measured = np.asarray([target_output[name].data for name in variable_names])
     return np.flatnonzero(np.any(measured != 0.0, axis=0))

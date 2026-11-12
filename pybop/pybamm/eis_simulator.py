@@ -360,8 +360,8 @@ class EISSimulator(BaseSimulator):
         Returns
         -------
         Solution
-            Complex impedance results, or the voltage and the real and imaginary
-            impedance components over the time domain when coupled to a protocol.
+            Complex impedance results, and also the time-domain variables when coupled
+            to a protocol.
         """
         if self._acquisition_indices is None:
             # Rebuild the model only if necessary, then set up the constant matrices
@@ -404,19 +404,21 @@ class EISSimulator(BaseSimulator):
         )
 
         # Zero away from the times of acquisition, matching the dataset convention
-        impedance = {name: np.zeros(len(t)) for name in self._impedance_variables}
+        impedance = {
+            name: np.zeros_like(t, dtype=np.complex128)
+            for name in self._impedance_variables
+        }
         for i in self._acquisition_indices:
             y_i = np.asarray(y[:, i]).reshape(-1, 1)
             if np.abs(y_i[-1]) > 1e-10:
                 warnings.warn(
                     f"The current is not zero at the acquisition time t={t[i]} s, "
-                    "so the impedance is linearised about a non-zero operating point.",
+                    "meaning the impedance is linearised about a non-zero operating point.",
                     stacklevel=2,
                 )
             zs = self._calculate_spectrum(self._jacobian(t[i], y_i, inputs))
-            for j, z in enumerate(zs):
-                impedance[self._impedance_variables[2 * j]][i] = z.real
-                impedance[self._impedance_variables[2 * j + 1]][i] = z.imag
+            for var, z in zip(self._impedance_variables, zs, strict=False):
+                impedance[var][i] = z
 
         for name, data in impedance.items():
             solution.set_solution_variable(name, data=data)

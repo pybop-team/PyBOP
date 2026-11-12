@@ -200,11 +200,7 @@ class Dataset:
 
 def get_impedance_variables(frequencies: np.ndarray | list[float]) -> list[str]:
     """
-    Return the names of the dataset variables which hold an impedance spectrum, being
-    two real-valued variables, the real and the imaginary component, per frequency.
-
-    Complex data is split into real components because the error measures square the
-    residual, and `r**2` is not `abs(r)**2` for a complex array.
+    Return the names of the dataset variables which hold complex-valued impedance.
 
     Parameters
     ----------
@@ -214,13 +210,9 @@ def get_impedance_variables(frequencies: np.ndarray | list[float]) -> list[str]:
     Returns
     -------
     list[str]
-        Variable names, ordered (real, imaginary) for each frequency in turn.
+        Variable names for each frequency.
     """
-    return [
-        f"Impedance {component} [Ohm] ({frequency:.6g} Hz)"
-        for frequency in frequencies
-        for component in ("real", "imaginary")
-    ]
+    return [f"Impedance [Ohm] ({frequency:.6g} Hz)" for frequency in frequencies]
 
 
 def parse_impedance_variables(
@@ -237,26 +229,23 @@ def parse_impedance_variables(
 
     Returns
     -------
-    tuple[np.ndarray, list[str], list[str]]
-        The frequencies in increasing order, and the corresponding real and imaginary
-        variable names. All three are empty if no impedance variables are present.
+    tuple[np.ndarray, list[str]]
+        The frequencies in increasing order, and the corresponding impedance
+        variable names. Both are empty if no impedance variables are present.
     """
-    pattern = re.compile(r"^Impedance (real|imaginary) \[Ohm\] \((\S+) Hz\)$")
+    pattern = re.compile(r"^Impedance \[Ohm\] \((\S+) Hz\)$")
 
-    frequencies = {}
+    frequencies = []
+    variable_names = []
     for variable in variables:
         match = pattern.match(variable)
         if match:
-            component, frequency = match.group(1), float(match.group(2))
-            frequencies.setdefault(frequency, {})[component] = variable
+            frequencies.append(float(match.group(1)))
+            variable_names.append(variable)
 
-    # Ignore any frequency which is missing one of its two components
-    ordered = sorted(f for f, components in frequencies.items() if len(components) == 2)
-    return (
-        np.asarray(ordered),
-        [frequencies[f]["real"] for f in ordered],
-        [frequencies[f]["imaginary"] for f in ordered],
-    )
+    frequencies = np.asarray(frequencies)
+    indices = np.argsort(frequencies)
+    return (frequencies[indices], [variable_names[i] for i in indices])
 
 
 def import_pybamm_solution(

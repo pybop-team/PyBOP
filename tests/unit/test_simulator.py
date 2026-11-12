@@ -193,9 +193,7 @@ class TestCoupledEISSimulator:
 
         impedance = np.asarray(
             [
-                coupled[f"Impedance real [Ohm] ({frequency:.6g} Hz)"].data[0]
-                + 1j
-                * coupled[f"Impedance imaginary [Ohm] ({frequency:.6g} Hz)"].data[0]
+                coupled[f"Impedance [Ohm] ({frequency:.6g} Hz)"].data[0]
                 for frequency in frequencies
             ]
         )
@@ -348,16 +346,15 @@ class TestCoupledEISSimulator:
         impedance_variables = pybop.get_impedance_variables(frequencies)
 
         # Variables may reach the parser in any order, e.g. via a set
-        parsed, real, imaginary = pybop.parse_impedance_variables(
+        parsed, variable_names = pybop.parse_impedance_variables(
             ["Voltage [V]", *reversed(impedance_variables)]
         )
         # The names carry six significant figures, which bounds the round trip
         np.testing.assert_allclose(parsed, frequencies, rtol=1e-5)
-        assert real == impedance_variables[::2]
-        assert imaginary == impedance_variables[1::2]
+        assert variable_names == impedance_variables
 
         # No impedance variables present
-        parsed, real, imaginary = pybop.parse_impedance_variables(
+        parsed, variable_names = pybop.parse_impedance_variables(
             ["Voltage [V]", "Current [A]"]
         )
-        assert len(parsed) == 0 and real == [] and imaginary == []
+        assert len(parsed) == 0 and variable_names == []
