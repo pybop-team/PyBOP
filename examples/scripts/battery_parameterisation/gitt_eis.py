@@ -1,4 +1,5 @@
 import numpy as np
+import polars as pl
 import pybamm
 
 import pybop
@@ -39,75 +40,60 @@ def positive_exchange_current_density(c_e, c_s_surf, c_s_max, T):
 
 
 parameter_values.update(
-    {"Positive electrode reference exchange-current density [A.m-2]": 3.42e-6},
-    check_already_exists=False,
-)
-parameter_values["Positive electrode exchange-current density [A.m-2]"] = (
-    positive_exchange_current_density
+    {
+        "Positive electrode reference exchange-current density [A.m-2]": 3.42e-6,
+        "Positive electrode exchange-current density [A.m-2]": positive_exchange_current_density,
+    }
 )
 parameter_values.set_initial_state(0.9)
 
 # Simulate a GITT experiment: repeated pulses at 1C, each followed by a rest
 n_pulses = 5
-pulse_duration = 300  # s
-rest_duration = 2400  # s
-period = 1.0  # s
+period = 5  # s
 experiment = pybamm.Experiment(
     [
-        (
-            f"Discharge at 1C for {pulse_duration} seconds",
-            f"Rest for {rest_duration} seconds",
-        )
+        "Discharge at 1C for 200 seconds",
+        "Rest for 2400 seconds",
     ]
     * n_pulses,
     period=f"{period} seconds",
 )
-gitt = pybamm.Simulation(
+gitt_solution = pybamm.Simulation(
     model, parameter_values=parameter_values, experiment=experiment
 ).solve()
-
-# Resample onto a uniform grid, avoiding the repeated times at each step change
-time = np.arange(0, gitt.t[-1], period)
-current = gitt["Current [A]"](time)
-voltage = gitt["Voltage [V]"](time)
+dataset = pybop.import_pybamm_solution(gitt_solution)
 
 # Acquire a spectrum at the end of each pulse, meaning at the end of each rest where the
 # cell has relaxed and the current is zero
-f_eval = np.logspace(-3, 4, 30)
-impedance_variables = pybop.get_impedance_variables(f_eval)
-eis_times = [
-    (i + 1) * (pulse_duration + rest_duration) - period for i in range(n_pulses)
-]
-eis_rows = [int(np.argmin(np.abs(time - t))) for t in eis_times]
-
-# Assemble the dataset. The impedance variables start as a marker of which times were
-# acquired, which is how the simulator learns where to compute a spectrum; the measured
-# values replace the markers once they have been simulated below.
-acquired = np.isin(np.arange(len(time)), eis_rows)
-dataset = pybop.Dataset(
-    {
-        "Time [s]": time,
-        "Current [A]": current,
-        "Voltage [V]": voltage,
-        **{name: acquired.astype(float) for name in impedance_variables},
-    },
-    domain="Time [s]",
+future_time = dataset["Time [s]"][-1] + 2 * period
+eis_indices = (
+    dataset.lf.with_row_index()
+    .filter(pl.col("Current [A]") == 0)
+    .filter(pl.col("Time [s]").shift(-1, fill_value=future_time).diff() > period)
+    .select("index")
+    .collect()
+    .to_numpy()
+    .ravel()
 )
 
 # Simulate the impedance about the state reached at the end of each pulse. This solves
 # the protocol above once and linearises the model at each of the acquisition times
-sigma_v = 1e-3  # V
-sigma_z = 1e-4  # Ohm
+f_eval = np.logspace(-3, 4, 30)
 solution = pybop.pybamm.EISSimulator(
-    model, parameter_values=parameter_values, protocol=dataset, f_eval=f_eval
+    model,
+    parameter_values=parameter_values,
+    protocol=dataset,
+    eis_indices=eis_indices,
+    f_eval=f_eval,
 ).solve()
 
 # Complete the synthetic dataset with the simulated spectra, adding noise to both data
 # types. Only the acquired spectra carry noise; the remaining entries stay at zero
-dataset["Voltage [V]"] = pybop.add_noise(voltage, sigma_v)
+dataset["Voltage [V]"] = pybop.add_noise(dataset["Voltage [V]"], 1e-3)
+impedance_variables = pybop.get_impedance_variables(f_eval)
 for name in impedance_variables:
     dataset[name] = np.where(
-        acquired, pybop.add_noise(solution[name].data, sigma_z), 0.0
+        solution[name].data != 0, pybop.add_noise(solution[name].data, 1e-4), 0.0
     )
 
 # Save the true values
@@ -123,7 +109,8 @@ true_values = [
 parameter_values.update(
     {
         "Positive particle diffusivity [m2.s-1]": pybop.Parameter(
-            pybop.Uniform(1e-16, 1e-13)
+            pybop.LogUniform(1e-16, 1e-13),
+            transformation=pybop.LogTransformation(),
         ),
         "Positive electrode reference exchange-current density [A.m-2]": pybop.Parameter(
             pybop.Uniform(1e-6, 1e-5)
@@ -136,7 +123,11 @@ parameter_values.update(
 # measures are used because the impedance variables are zero at most times, which would
 # otherwise dilute the impedance term.
 simulator = pybop.pybamm.EISSimulator(
-    model, parameter_values=parameter_values, protocol=dataset, f_eval=f_eval
+    model,
+    parameter_values=parameter_values,
+    protocol=dataset,
+    eis_indices=eis_indices,
+    f_eval=f_eval,
 )
 voltage_cost = pybop.SumSquaredError(dataset, target=["Voltage [V]"])
 impedance_cost = pybop.SumSquaredError(dataset, target=impedance_variables)
@@ -154,7 +145,6 @@ print(result)
 # Compare identified to true parameter values
 print("True parameters:", true_values)
 print("Identified parameters:", result.x)
-
 
 # Plot the optimisation result
 pybop.plot.problem(problem, inputs=result.best_inputs, title="Optimised Comparison")

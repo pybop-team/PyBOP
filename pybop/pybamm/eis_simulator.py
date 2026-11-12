@@ -79,6 +79,7 @@ class EISSimulator(BaseSimulator):
         f_eval: np.ndarray | list[float],
         parameter_values: pybamm.ParameterValues | None = None,
         protocol: Dataset | None = None,
+        eis_indices: np.ndarray | list[float] | None = None,
         initial_state: float | str | None = None,
         solver: pybamm.BaseSolver | None = None,
         geometry: pybamm.Geometry | None = None,
@@ -100,7 +101,7 @@ class EISSimulator(BaseSimulator):
 
         # Locate the times at which to compute a spectrum, if any
         self._impedance_variables = get_impedance_variables(f_eval)
-        self._acquisition_indices = self._locate_acquisition_times(protocol)
+        self._acquisition_indices = eis_indices
 
         # Set up a simulation. When a protocol is given, the Simulator installs the
         # control interpolant and sets t_interp to the domain data, so the entries of
@@ -129,31 +130,6 @@ class EISSimulator(BaseSimulator):
         v_scale = getattr(model.variables["Voltage [V]"], "scale", 1)
         i_scale = getattr(model.variables["Current [A]"], "scale", 1)
         self.z_scale = self.parameter_values.evaluate(v_scale / i_scale)
-
-    def _locate_acquisition_times(self, protocol: Dataset | None) -> np.ndarray | None:
-        """
-        Return the indices of the rows at which a spectrum was measured, or None for a
-        stationary simulation.
-        """
-        if protocol is None:
-            return None
-
-        missing = set(self._impedance_variables) - set(protocol.keys())
-        if missing:
-            raise ValueError(
-                "The protocol dataset is missing impedance variables, e.g. "
-                f"'{sorted(missing)[0]}'. Name them with pybop.get_impedance_variables(f_eval), "
-                "using zeros at the times where no spectrum was measured."
-            )
-
-        measured = np.asarray([protocol[name] for name in self._impedance_variables])
-        indices = np.flatnonzero(np.any(measured != 0.0, axis=0))
-        if indices.size == 0:
-            raise ValueError(
-                "The impedance variables are zero everywhere, so there is nothing to fit. "
-                "Set them to the measured spectra at the times of acquisition."
-            )
-        return indices
 
     def set_output_variables(self, target: list[str]):
         """
