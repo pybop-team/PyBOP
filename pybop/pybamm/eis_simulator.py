@@ -234,16 +234,6 @@ class EISSimulator(BaseSimulator):
                     f"Model must contain variable '{var}' for EIS simulation"
                 )
 
-        # Without a differential surface form the model has no double-layer capacitance,
-        # so the impedance contains no charge-transfer arc, only the diffusion response
-        if model.options.get("surface form") != "differential":
-            warnings.warn(
-                "The model does not use a differential surface form, so the impedance "
-                'will not contain a charge-transfer arc. Pass options={"surface form": '
-                '"differential"} to include the double layer.',
-                stacklevel=2,
-            )
-
         # Work on a copy, so that the model given by the user is left untouched
         model = model.new_copy()
 
