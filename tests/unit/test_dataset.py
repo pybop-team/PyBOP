@@ -63,6 +63,9 @@ class TestDataset:
         with pytest.raises(ValueError):
             dataset["Time"]
 
+        # Test setting a new item
+        dataset["Time [h]"] = dataset["Time [s]"] / 3600
+
         # Test conversion of single signal to list
         assert dataset.check()
 
