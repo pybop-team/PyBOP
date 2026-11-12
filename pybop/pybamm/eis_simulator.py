@@ -195,7 +195,7 @@ class EISSimulator(BaseSimulator):
         Returns
         -------
         pybamm.BaseModel
-            A modified copy of the model, ready for EIS simulations.
+            The modified model ready for EIS simulations.
 
         Raises
         ------
@@ -209,9 +209,6 @@ class EISSimulator(BaseSimulator):
                 raise ValueError(
                     f"Model must contain variable '{var}' for EIS simulation"
                 )
-
-        # Work on a copy, so that the model given by the user is left untouched
-        model = model.new_copy()
 
         V_cell = pybamm.Variable("Voltage variable [V]")
         model.variables["Voltage variable [V]"] = V_cell

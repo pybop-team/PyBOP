@@ -328,20 +328,6 @@ class TestCoupledEISSimulator:
         assert calls["create"] == 0  # built during construction
         assert calls["set_up"] == 1
 
-    def test_model_is_not_modified(
-        self, model, parameter_values, dataset, acquisitions, frequencies
-    ):
-        """Setting up for EIS must copy the model, not modify the caller's."""
-        n_algebraic = len(model.algebraic)
-        pybop.pybamm.EISSimulator(
-            model,
-            parameter_values=parameter_values,
-            protocol=dataset,
-            eis_indices=acquisitions,
-            f_eval=frequencies,
-        )
-        assert len(model.algebraic) == n_algebraic
-
     def test_impedance_variables_round_trip(self, frequencies):
         impedance_variables = pybop.get_impedance_variables(frequencies)
 
