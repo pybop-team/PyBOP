@@ -400,6 +400,31 @@ class TestPlots:
         fig = pybop.plot.nyquist(problem, title="Optimised Comparison", show=False)
         assert fig is not None
 
+        """ Test an EIS simulator with a protocol."""
+        coupled_simulator = pybop.pybamm.EISSimulator(
+            model,
+            parameter_values=parameter_values,
+            protocol=pybop.Dataset(
+                {"Time [s]": np.asarray([0]), "Current [A]": np.asarray([0])}
+            ),
+            acquisition_indices=[0],
+            f_eval=dataset["Frequency [Hz]"],
+            submesh_types=submesh_types,
+        )
+        cost = pybop.SumSquaredError(dataset, target="Impedance [Ohm]")
+        problem = pybop.Problem(simulator, cost)
+
+        # Plot the nyquist
+        fig, ax = figure_input
+        inputs = problem.parameters.to_dict([60e-6])
+        pybop.plot.nyquist(
+            problem, inputs=inputs, title="Optimised Comparison", figures=fig, axes=[ax]
+        )
+
+        # Without inputs
+        fig = pybop.plot.nyquist(problem, title="Optimised Comparison", show=False)
+        assert fig is not None
+
     def test_util(self, backend, figure_input):
         # Test the utility functions
         pybop.plot.use_backend(backend)

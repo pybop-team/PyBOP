@@ -156,6 +156,20 @@ class TestCoupledEISSimulator:
             }
         )
 
+    def test_simulator_solve(self, model, dataset, acquisitions, frequencies):
+        simulator = pybop.pybamm.EISSimulator(
+            model,
+            protocol=dataset,
+            acquisition_indices=acquisitions,
+            f_eval=frequencies,
+        )
+        assert "Impedance [Ohm]" in simulator.default_variables
+
+        simulator.debug_mode = True
+        solution = simulator.solve()
+        assert isinstance(solution, pybop.Solution | pybop.FailedSolution)
+        assert "Impedance [Ohm]" in solution.variable_names
+
     def test_output_shape_and_zero_padding(
         self, model, parameter_values, dataset, acquisitions, frequencies
     ):
