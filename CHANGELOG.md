@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#978](https://github.com/pybop-team/PyBOP/pull/978) - Adds FoKL GPy functionality for parameter estimation.
 - [#1007](https://github.com/pybop-team/PyBOP/pull/1007) - Adds example script for discharge rate parameterisation.
 
 ## Optimisations
