@@ -371,7 +371,7 @@ class FoKLGP:
         self,
         name: str,
         mtx: np.ndarray,
-        betas_function: list[pybamm.InputParameter],
+        beta_parameters: list[pybamm.Parameter],
         input_names: list[str],
         arguments: list[str] | None = None,
         division_arguments: list[list[str]] | None = None,
@@ -399,7 +399,7 @@ class FoKLGP:
                 low, high = norm_bounds[arg_name]
                 xs.append([(args[x] - low) / (high - low)])
 
-            res = self.evaluate_func(betas_function, mtx, xs)
+            res = self.evaluate_func(beta_parameters, mtx, xs)
             return pybamm.exp(res) if exp else res
 
         if self.verbose:
@@ -425,38 +425,38 @@ class FoKLGP:
 
         Returns
         -------
-        betas_symbolic : list[pybamm.InputParameter]
-            List of PyBaMM InputParameters added.
-        beta_parameters : dict[str, Parameter]
+        beta_parameters : list[pybamm.Parameter]
+            List of PyBaMM Parameters added.
+        beta_inputs : dict[str, Parameter]
             Dictionary containing Beta Parameters as Gaussian distributions.
         """
-        betas_symbolic = []
-        beta_parameters = {}
+        beta_parameters = []
+        beta_inputs = {}
         for i in range(len_mtx):
             key_str = f"{GP['Name']} Beta {i}"
-            betas_symbolic.append(pybamm.InputParameter(key_str))
+            beta_parameters.append(pybamm.Parameter(key_str))
             if i == 0:
-                beta_parameters[key_str] = Parameter(
+                beta_inputs[key_str] = Parameter(
                     Gaussian(GP["Constant mean"], GP["Constant standard deviation"]),
                 )
             else:
-                beta_parameters[key_str] = Parameter(
+                beta_inputs[key_str] = Parameter(
                     Gaussian(GP["Bi mean"], GP["Bi standard deviation"]),
                 )
 
-        self.beta_parameters = beta_parameters
-        return betas_symbolic, beta_parameters
+        self.beta_inputs = beta_inputs
+        return beta_parameters, beta_inputs
 
     def add_to_params(self, GP: dict[str, Any], damtxs: np.ndarray):
         """
         Updates parameter dictionary with function and input terms.
         """
-        betas_function, beta_parameters = self.create_beta_inputs(len(damtxs) + 1, GP)
-        self.parameter_values.update(beta_parameters)
+        beta_parameters, beta_inputs = self.create_beta_inputs(len(damtxs) + 1, GP)
+        self.parameter_values.update(beta_inputs)
         pybamm_function = self.add_function(
             GP["Name"],
             damtxs,
-            betas_function,
+            beta_parameters,
             GP["Input names"],
             arguments=GP["Arguments"],
             division_arguments=GP["Division Arguments"],
