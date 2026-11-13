@@ -153,6 +153,9 @@ print("True parameters:", true_values)
 print("Identified parameters:", result.x)
 
 # Plot the optimisation result
+problem.set_target("Voltage [V]")
 pybop.plot.problem(problem, inputs=result.best_inputs, title="Optimised Comparison")
+problem.set_target("Impedance [Ohm]")
+pybop.plot.nyquist(problem, inputs=result.best_inputs, title="Optimised Comparison")
 result.plot_convergence()
 result.plot_parameters()

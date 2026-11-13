@@ -80,20 +80,16 @@ def problem(
     # Import plotting backend
     backend = get_backend_from_figure(backend, figures)
 
-    # Impedance variables are plotted as a Nyquist plot per acquisition, not as a series
-    # over the domain, so separate them from the remaining targets
-    targets = [var for var in problem.target if var != "Impedance [Ohm]"]
-
     # Process input
     figures, axes, create_figure, _ = backend.parse_input_axes(
         figures,
         axes,
-        num_plots=len(targets),
+        num_plots=len(problem.target),
         allow_single_axis=False,
     )
 
     # Create a plot for each output
-    for i, var in enumerate(targets):
+    for i, var in enumerate(problem.target):
         ax = axes[i % len(axes)]
         if create_figure:
             fig = backend.create_figure(
@@ -153,79 +149,6 @@ def problem(
         # Generate the figure and update the layout
         if show:
             backend.show_figure(fig)
-
-    # Collect any EIS spectra into a single figure of Nyquist subplots
-    n_spectra = 0
-    if "Impedance [Ohm]" in problem.target:
-        acquisitions = problem.simulator.acquisition_indices
-        n_spectra = len(acquisitions) if acquisitions is not None else 0
-
-    if n_spectra > 0:
-        num_cols = int(np.ceil(np.sqrt(n_spectra)))
-        num_rows = int(np.ceil(n_spectra / num_cols))
-        impedance_figure, impedance_axes = backend.make_subplots(
-            num_rows=num_rows,
-            num_cols=num_cols,
-            num_plots=n_spectra,
-            title=title,
-            style={
-                "bg_color": "white",
-                "width": 400 * num_cols,
-                "height": 400 * num_rows,
-            },
-        )
-        backend.update_axes_titles(
-            impedance_figure,
-            impedance_axes,
-            r"$Z_{re} / \Omega$",
-            r"$-Z_{im} / \Omega$",
-        )
-        backend.update_plot_titles(
-            impedance_figure,
-            impedance_axes,
-            [
-                f"{remove_brackets(domain)} = {target_domain[row]:g}"
-                for row in acquisitions
-            ],
-        )
-
-        # Fixed styles, matching plot.nyquist, so that the colours mean the same thing
-        # in every subplot rather than following the shared colour cycle
-        impedance_styles = (
-            (
-                target_output,
-                "Reference",
-                {
-                    "linestyle": "none",
-                    "marker": "o",
-                    "fillstyle": "none",
-                    "markeredgecolor": "#636EFA",
-                    "color": "#636EFA",
-                },
-            ),
-            (model_output, "Model", {"linestyle": "solid", "color": "#00CC96"}),
-        )
-
-        for ax, row in zip(impedance_axes, acquisitions, strict=True):
-            for output, label, style in impedance_styles:
-                backend.plot_trace(
-                    backend.line(
-                        x=output["Impedance [Ohm]"].data[row].real,
-                        y=-output["Impedance [Ohm]"].data[row].imag,
-                        label=label,
-                        style=style,
-                    ),
-                    impedance_figure,
-                    ax=ax,
-                )
-
-            # A Nyquist plot is only readable with an equal aspect ratio
-            backend.equal_aspect(impedance_figure, ax=ax)
-            backend.legend(impedance_figure, axes=ax)
-
-        figures = np.append(figures, impedance_figure)
-        if show:
-            backend.show_figure(impedance_figure)
 
     if not show:
         return figures[0] if len(figures) == 1 else figures

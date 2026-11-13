@@ -1,7 +1,7 @@
 import numpy as np
 
 from pybop.parameters.parameter import Inputs
-from pybop.plot.util import get_backend_from_figure
+from pybop.plot.util import get_backend_from_figure, remove_brackets
 
 
 def nyquist(
@@ -62,6 +62,8 @@ def nyquist(
         figures, axes, num_plots=len(problem.target), allow_single_axis=False
     )
 
+    # Fixed styles, so that the colours mean the same thing in every subplot
+    # rather than following the shared colour cycle
     trace_style_model = dict(
         linewidth=2,
         color="#00CC96",
@@ -76,44 +78,68 @@ def nyquist(
         inputs = problem.parameters.to_dict(inputs)
 
     model_output = problem.simulate(inputs)
-    domain_data = model_output["Impedance [Ohm]"].data.real
-    target_output = problem.target_data
+    model_impedance = model_output["Impedance [Ohm]"].data
+    target_impedance = problem.target_data["Impedance [Ohm]"]
 
-    for i, var in enumerate(problem.target):
-        if create_figure:
-            fig = backend.create_figure(
-                style={"width": 600, "height": 600, "bg_color": "white"},
-            )
-            figures = np.append(figures, fig)
-            ax = None
-        else:
-            fig = figures[i]
-            ax = axes[i]
+    # Collect all EIS spectra into a single figure of Nyquist subplots
+    acquisition_indices = problem.simulator.acquisition_indices
+    if acquisition_indices is None:
+        model_impedance = np.asarray([model_impedance])
+        target_impedance = np.asarray([target_impedance])
+        acquisition_indices = [0]
+    n_spectra = len(acquisition_indices)
 
-        backend.update_axes_titles(fig, ax, r"$Z_{re} / \Omega$", r"$-Z_{im} / \Omega$")
-        backend.update_plot_titles(fig, ax, title)
-
-        backend.plot_trace(
-            backend.line(
-                x=domain_data,
-                y=-model_output[var].data.imag,
-                label="Model",
-                style=trace_style_model,
-            ),
-            fig,
-            ax=ax,
+    if create_figure:
+        num_cols = int(np.ceil(np.sqrt(n_spectra)))
+        num_rows = int(np.ceil(n_spectra / num_cols))
+        fig, axes = backend.make_subplots(
+            num_rows=num_rows,
+            num_cols=num_cols,
+            num_plots=n_spectra,
+            title=title,
+            style={
+                "bg_color": "white",
+                "width": 600 if n_spectra == 1 else 400 * num_cols,
+                "height": 600 if n_spectra == 1 else 400 * num_rows,
+            },
         )
+        figures = np.append(figures, fig)
+    else:
+        fig = figures[0]
+
+    for ax, row in zip(axes, acquisition_indices, strict=True):
+        backend.update_axes_titles(fig, ax, r"$Z_{re} / \Omega$", r"$-Z_{im} / \Omega$")
+        if n_spectra > 1:
+            # Add the acquisition times as a title for each subplot
+            subtitle = (
+                f"{remove_brackets(problem.domain)} = {problem.domain_data[row]:g}"
+            )
+            backend.update_plot_titles(fig, ax, subtitle)
 
         backend.plot_trace(
             backend.line(
-                x=target_output[var].real,
-                y=-target_output[var].imag,
+                x=target_impedance[row].real,
+                y=-target_impedance[row].imag,
                 label="Reference",
                 style=trace_style_reference,
             ),
             fig,
             ax=ax,
         )
+
+        backend.plot_trace(
+            backend.line(
+                x=model_impedance[row].real,
+                y=-model_impedance[row].imag,
+                label="model",
+                style=trace_style_model,
+            ),
+            fig,
+            ax=ax,
+        )
+
+        # A Nyquist plot requires an equal aspect ratio
+        backend.equal_aspect(fig, ax=ax)
         backend.legend(fig, axes=ax)
 
     if show:
