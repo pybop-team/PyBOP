@@ -2,7 +2,7 @@
 
 ## Features
 
-- [#975](https://github.com/pybop-team/PyBOP/pull/975) - Adds coupled GITT-EIS parameterisation: `pybop.pybamm.EISSimulator` accepts a `protocol` and computes an impedance spectrum about the state reached at each acquisition time. Adds the example script `gitt_eis.py`, updates `pybop.plot.problem` for Nyquist subplots, and adds `equal_aspect` to the plotting backends.
+- [#975](https://github.com/pybop-team/PyBOP/pull/975) - Adds coupled GITT-EIS parameterisation: `pybop.pybamm.EISSimulator` accepts a `protocol` and computes an impedance spectrum about the state reached at each acquisition time. Adds the example script `gitt_eis.py`, updates `pybop.plot.nyquist` for subplots, and adds `equal_aspect` to the plotting backends.
 - [#1007](https://github.com/pybop-team/PyBOP/pull/1007) - Adds example script for discharge rate parameterisation.
 
 ## Optimisations
