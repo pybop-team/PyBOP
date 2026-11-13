@@ -9,49 +9,53 @@ In this example, we demonstrate the use of FoKL decomposed Gaussian Processes
 for state-dependent estimation of electrolyte diffusivity.
 """
 
-# 1. Define model, base parameters, and experiments
+# Define model and parameter values
 model = pybamm.lithium_ion.DFN()
 parameter_values = pybamm.ParameterValues("Chen2020")
 
-experiment_train = pybamm.Experiment(["Discharge at 2C until 2.5 V"])
-experiment_validate = pybamm.Experiment(["Discharge at 3C until 2.7 V"])
-
-# 2. Generate synthetic training and validation datasets
-sim_train = pybamm.Simulation(
-    model, experiment=experiment_train, parameter_values=parameter_values
-)
-sim_validate = pybamm.Simulation(
-    model, experiment=experiment_validate, parameter_values=parameter_values
-)
-
-solution_train = sim_train.solve()
-solution_validate = sim_validate.solve()
-
-t_train = solution_train["Time [s]"].entries
-t_validate = solution_validate["Time [s]"].entries
+# Generate synthetic training and validation datasets and add some white noise
+experiments = [
+    pybamm.Experiment(["Discharge at 2C until 2.5 V"]),
+    pybamm.Experiment(["Discharge at 3C until 2.7 V"]),
+]
 
 sigma = 5e-3
-V_train_noisy = pybop.add_noise(solution_train["Voltage [V]"].entries, sigma)
-V_validate_noisy = pybop.add_noise(solution_validate["Voltage [V]"].entries, sigma)
+datasets = []
+figures = []
+for experiment, title in zip(
+    experiments,
+    ["Training experiment (2C discharge)", "Validation experiment (3C discharge)"],
+    strict=True,
+):
+    solution = pybamm.Simulation(
+        model, experiment=experiment, parameter_values=parameter_values
+    ).solve()
 
-dataset_train = pybop.Dataset(
-    {
-        "Time [s]": t_train,
-        "Current [A]": solution_train["Current [A]"].entries,
-        "Voltage [V]": V_train_noisy,
-    }
-)
+    dataset = pybop.import_pybamm_solution(solution)
+    dataset["Voltage [V]"] = pybop.add_noise(dataset["Voltage [V]"], sigma)
+    datasets.append(dataset)
 
-dataset_validate = pybop.Dataset(
-    {
-        "Time [s]": t_validate,
-        "Current [A]": solution_validate["Current [A]"].entries,
-        "Voltage [V]": V_validate_noisy,
-    }
-)
+    # Set up figures
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=dataset["Time [s]"],
+            y=dataset["Voltage [V]"],
+            mode="markers",
+            name="Data",
+            marker=dict(size=4),
+        )
+    )
+    fig.update_layout(
+        xaxis_title="Time [s]",
+        yaxis_title="Voltage [V]",
+        title=title,
+        legend=dict(x=0.01, y=0.01),
+    )
+    figures.append(fig)
 
-# 3. Configure FoKL GP parameter representation
-# Using exp=True guarantees D_e(c_e) > 0 during optimization
+# Configure FoKL GP parameter representation, using exp=True guarantees that
+# D_e(c_e) > 0 during optimisation
 GP_options = {
     "Number of terms": 3,
     "Arguments": ["Electrolyte concentration [mol.m-3]"],
@@ -73,7 +77,7 @@ GP_param = pybop.FoKLGP(
 )
 parameters_gp = GP_param.get_parameter_values()
 
-# 4. Configure constant scalar parameter representation for comparison
+# Configure constant scalar parameter representation for comparison
 parameters_constant = parameter_values.copy()
 parameters_constant.update(
     {
@@ -83,131 +87,52 @@ parameters_constant.update(
     }
 )
 
-# 5. Build PyBOP Simulators, Cost, and Problems
-target = ["Voltage [V]"]
-cost = pybop.GaussianLogLikelihoodKnownSigma(dataset_train, sigma=sigma, target=target)
+# Build shared cost and optimiser options
+training_data = datasets[0]
+cost = pybop.GaussianLogLikelihoodKnownSigma(training_data, sigma=sigma)
+options = pybop.PintsOptions(max_iterations=250, max_unchanged_iterations=50)
 
-simulator_gp = pybop.pybamm.Simulator(model, parameters_gp, protocol=dataset_train)
-problem_gp = pybop.Problem(simulator_gp, cost)
-
-simulator_constant = pybop.pybamm.Simulator(
-    model, parameters_constant, protocol=dataset_train
-)
-problem_constant = pybop.Problem(simulator_constant, cost)
-
-# 6. Run XNES Optimization
-options = pybop.PintsOptions(
-    max_iterations=250,
-    max_unchanged_iterations=50,
-    verbose=True,
-)
-
-optim_gp = pybop.XNES(problem_gp, options=options)
-result_gp = optim_gp.run()
-
-optim_constant = pybop.XNES(problem_constant, options=options)
-result_constant = optim_constant.run()
-
-# 7. Evaluate optimized parameters on Training (2C) and Validation (3C) experiments
-# Use fresh ParameterValues copies so PyBaMM simulations run cleanly
-eval_params_gp = GP_param.get_parameter_values().copy()
-eval_params_constant = parameter_values.copy()
-eval_params_constant.update(result_constant.best_inputs)
-
-sim_final_train_gp = pybamm.Simulation(
-    model, experiment=experiment_train, parameter_values=eval_params_gp
-)
-sim_final_test_gp = pybamm.Simulation(
-    model, experiment=experiment_validate, parameter_values=eval_params_gp
-)
-
-sim_final_train_const = pybamm.Simulation(
-    model, experiment=experiment_train, parameter_values=eval_params_constant
-)
-sim_final_test_const = pybamm.Simulation(
-    model, experiment=experiment_validate, parameter_values=eval_params_constant
-)
-
-sol_train_gp = sim_final_train_gp.solve(inputs=result_gp.best_inputs)
-sol_test_gp = sim_final_test_gp.solve(inputs=result_gp.best_inputs)
-
-sol_train_const = sim_final_train_const.solve()
-sol_test_const = sim_final_test_const.solve()
-
-# 8. Plot Validation (3C discharge) comparison
-fig_val = go.Figure()
-fig_val.add_trace(
-    go.Scatter(
-        x=t_validate,
-        y=V_validate_noisy,
-        mode="markers",
-        name="Data",
-        marker=dict(size=4),
+for name, param, colour in zip(
+    ["FoKL GP", "PyBOP Constant"],
+    [parameters_gp, parameters_constant],
+    ["green", "purple"],
+    strict=True,
+):
+    # Build simulator and problem
+    simulator = pybop.pybamm.Simulator(
+        model, parameter_values=param, protocol=training_data
     )
-)
-fig_val.add_trace(
-    go.Scatter(
-        x=sol_test_gp["Time [s]"].entries,
-        y=sol_test_gp["Voltage [V]"].entries,
-        mode="lines",
-        name="FoKL GP",
-        line=dict(color="green"),
-    )
-)
-fig_val.add_trace(
-    go.Scatter(
-        x=sol_test_const["Time [s]"].entries,
-        y=sol_test_const["Voltage [V]"].entries,
-        mode="lines",
-        name="PyBOP Constant",
-        line=dict(color="red"),
-    )
-)
-fig_val.update_layout(
-    xaxis_title="Time [s]",
-    yaxis_title="Voltage [V]",
-    title="Validation experiment (3C discharge)",
-    legend=dict(x=0.01, y=0.01),
-)
-fig_val.show()
+    problem = pybop.Problem(simulator, cost)
 
-# 9. Plot Training (2C discharge) comparison
-fig_train = go.Figure()
-fig_train.add_trace(
-    go.Scatter(
-        x=t_train,
-        y=V_train_noisy,
-        mode="markers",
-        name="Data",
-        marker=dict(size=4),
-    )
-)
-fig_train.add_trace(
-    go.Scatter(
-        x=sol_train_gp["Time [s]"].entries,
-        y=sol_train_gp["Voltage [V]"].entries,
-        mode="lines",
-        name="FoKL GP",
-        line=dict(color="green"),
-    )
-)
-fig_train.add_trace(
-    go.Scatter(
-        x=sol_train_const["Time [s]"].entries,
-        y=sol_train_const["Voltage [V]"].entries,
-        mode="lines",
-        name="PyBOP Constant",
-        line=dict(color="red"),
-    )
-)
-fig_train.update_layout(
-    xaxis_title="Time [s]",
-    yaxis_title="Voltage [V]",
-    title="Training experiment (2C discharge)",
-    legend=dict(x=0.01, y=0.01),
-)
-fig_train.show()
+    # Run optimisation
+    optim = pybop.XNES(problem, options=options)
+    result = optim.run()
+    print(name, result)
 
-# Plot optimisation diagnostics
-result_gp.plot_convergence()
-result_gp.plot_parameters()
+    # Plot optimisation diagnostics
+    if name == "FoKL GP":
+        result.plot_convergence()
+        result.plot_parameters()
+
+    # Update the parameter values
+    param.update(result.best_inputs)
+
+    # Evaluate optimised parameters on Training (2C) and Validation (3C) experiments
+    for experiment, fig in zip(experiments, figures, strict=True):
+        solution = pybamm.Simulation(
+            model, experiment=experiment, parameter_values=param
+        ).solve()
+
+        # Plot for comparison
+        fig.add_trace(
+            go.Scatter(
+                x=solution["Time [s]"].entries,
+                y=solution["Voltage [V]"].entries,
+                mode="lines",
+                name=name,
+                line=dict(color=colour),
+            )
+        )
+
+for fig in figures:
+    fig.show()
