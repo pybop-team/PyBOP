@@ -111,7 +111,11 @@ class EISSimulator(BaseSimulator):
         # Set-up model for EIS
         self._f_eval = f_eval
         model = self.set_up_for_eis(model)
-        parameter_values = parameter_values or model.default_parameter_values
+        parameter_values = (
+            parameter_values.copy()
+            if parameter_values is not None
+            else model.default_parameter_values
+        )
         parameter_values["Current function [A]"] = 0
 
         super().__init__(parameters=parameter_values)
