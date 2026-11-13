@@ -8,12 +8,11 @@ import pybop
 Example demonstrating coupled GITT-EIS parameterisation: a GITT experiment in which an
 EIS spectrum is also acquired at the end of each pulse.
 
-A synthetic dataset is built in two stages: a GITT experiment is simulated to give the
-time-domain voltage, then an impedance spectrum is computed about the state reached at
-the end of each pulse. Both data types are stored in a single dataset on the time
-domain: the voltage is recorded at every time, and the impedance variables hold the real
-and imaginary components of each spectrum at the times of acquisition and zero
-everywhere else.
+A synthetic dataset is built in two stages: a GITT experiment is simulated to obtain the
+current as a function of time, then an impedance spectrum is computed about the state
+reached at the end of each pulse. Both data types are stored in a single dataset on the
+time domain: the voltage is recorded at every time, and the impedance takes a complex
+value at each acquisition time and zero everywhere else.
 
 Diffusivity and the exchange-current density are fitted together, which is the pairing
 the two measurements are meant to separate: the relaxation after each pulse constrains
@@ -51,11 +50,7 @@ parameter_values.set_initial_state(0.9)
 n_pulses = 5
 period = 5  # s
 experiment = pybamm.Experiment(
-    [
-        "Discharge at 1C for 200 seconds",
-        "Rest for 2400 seconds",
-    ]
-    * n_pulses,
+    ["Discharge at 1C for 200 seconds", "Rest for 2400 seconds"] * n_pulses,
     period=f"{period} seconds",
 )
 gitt_solution = pybamm.Simulation(
@@ -87,8 +82,8 @@ solution = pybop.pybamm.EISSimulator(
     f_eval=f_eval,
 ).solve()
 
-# Create the synthetic dataset with the simulated spectra, adding noise to both data
-# types. Only the acquired spectra carry noise; the remaining entries stay at zero
+# Create the synthetic dataset with the simulated spectra, adding noise to both impedance
+# and voltage. Only the acquired spectra carry noise; the remaining entries stay at zero
 dataset = pybop.Dataset(
     {
         "Time [s]": solution["Time [s]"].data,
@@ -111,7 +106,7 @@ true_values = [
     ]
 ]
 
-# Fitting parameters, each searched over an order of magnitude around the true value
+# Fitting parameters
 parameter_values.update(
     {
         "Positive particle diffusivity [m2.s-1]": pybop.Parameter(
@@ -126,7 +121,7 @@ parameter_values.update(
 
 # Build the problem. The two error measures share the dataset and the time domain, so
 # they can be combined with a weight setting their relative importance. Sum-based
-# measures are used because the impedance variables are zero at most times, which would
+# measures are used because the impedance variable is zero at most times, which would
 # otherwise dilute the impedance term.
 simulator = pybop.pybamm.EISSimulator(
     model,

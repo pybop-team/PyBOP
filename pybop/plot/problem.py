@@ -82,10 +82,7 @@ def problem(
 
     # Process input
     figures, axes, create_figure, _ = backend.parse_input_axes(
-        figures,
-        axes,
-        num_plots=len(problem.target),
-        allow_single_axis=False,
+        figures, axes, num_plots=len(problem.target), allow_single_axis=False
     )
 
     # Create a plot for each output

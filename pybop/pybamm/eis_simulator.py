@@ -89,7 +89,7 @@ class EISSimulator(BaseSimulator):
         build_every_time: bool = False,
         remove_voltage_events: bool = True,
     ):
-        # Locate the times at which to compute a spectrum, if any
+        # Locate the times at which to compute a spectrum
         if protocol is None and acquisition_indices is not None:
             raise ValueError(
                 "A protocol is required when a list of acquisition_indices is passed."
@@ -116,8 +116,8 @@ class EISSimulator(BaseSimulator):
 
         super().__init__(parameters=parameter_values)
 
-        # Set up a simulation. When a protocol is given, the Simulator installs the
-        # control interpolant and sets t_interp to the domain data, so the entries of
+        # Set up a simulation. When a protocol is given, the Simulator overwrites the
+        # "Current function [A]" and sets t_interp to the domain data, so the entries of
         # the solution align with the rows of the dataset.
         self._simulator = Simulator(
             model,
@@ -150,7 +150,7 @@ class EISSimulator(BaseSimulator):
         else:
             self._solve = self._simulate_with_protocol
 
-    def set_output_variables(self, target: list[str]):
+    def set_output_variables(self, target: list[str]) -> None:
         """
         Deliberately a no-op. Restricting the solver to a list of output variables stops
         PyBaMM from returning the state vector, which is required to linearise the model
@@ -160,9 +160,8 @@ class EISSimulator(BaseSimulator):
 
     def _set_up_matrices(self, inputs: "Inputs") -> None:
         """
-        Set up the solver and the parts of the linear system which do not depend on the
-        operating point: the mass matrix and the forcing vector. Called once, unless the
-        model has to be rebuilt.
+        Set up the solver and the parts of the linear system that do not depend on the
+        operating point. Called once, unless the model has to be rebuilt.
         """
         built_model = self.simulation.built_model
         # Sort so the compiled functions expect the same order that
@@ -364,8 +363,7 @@ class EISSimulator(BaseSimulator):
         Returns
         -------
         Solution
-            Complex impedance results, and also the time-domain variables when coupled
-            to a protocol.
+            Complex impedance results.
         """
         # Rebuild the model only if necessary, then set up the constant matrices
         self._model_rebuild(inputs)
@@ -437,6 +435,9 @@ class EISSimulator(BaseSimulator):
     def _calculate_impedance(self, jac: csc_matrix) -> np.ndarray:
         """
         Calculate the impedance at every frequency for a given Jacobian.
+
+        This method computes the system matrix, solves the linear system, and calculates
+        the impedance based on the solution.
 
         Parameters
         ----------
