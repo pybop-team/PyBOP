@@ -328,3 +328,29 @@ class TestCoupledEISSimulator:
 
         assert calls["create"] == 0  # built during construction
         assert calls["set_up"] == 1
+
+    def test_input_validation(self, model, dataset, acquisitions, frequencies):
+        with pytest.raises(
+            ValueError,
+            match="A protocol is required when a list of acquisition_indices is passed.",
+        ):
+            pybop.pybamm.EISSimulator(
+                model, acquisition_indices=acquisitions, f_eval=frequencies
+            )
+
+        with pytest.warns(
+            UserWarning,
+            match="A protocol was not provided so acquisition_indices will not be used.",
+        ):
+            pybop.pybamm.EISSimulator(model, protocol=dataset, f_eval=frequencies)
+
+        with pytest.raises(
+            ValueError,
+            match="One or more acquisition_indices is greater than the length of protocol.",
+        ):
+            pybop.pybamm.EISSimulator(
+                model,
+                protocol=dataset,
+                acquisition_indices=[len(dataset)],
+                f_eval=frequencies,
+            )
