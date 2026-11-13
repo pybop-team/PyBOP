@@ -10,7 +10,7 @@ from scipy.sparse.linalg import spsolve
 
 if TYPE_CHECKING:
     from pybop.parameters.parameter import Inputs
-from pybop.processing.dataset import Dataset, get_impedance_variables
+from pybop.processing.dataset import Dataset
 from pybop.pybamm.simulator import Simulator
 from pybop.pybamm.utils import SymbolReplacer
 from pybop.simulators.base_simulator import BaseSimulator, Solution
@@ -40,12 +40,10 @@ class EISSimulator(BaseSimulator):
     parameter_values : pybamm.ParameterValues, optional
         The parameter values to be used in the model.
     protocol : pybop.Dataset, optional
-        A dataset defining a time-domain protocol, containing the domain data, a control
-        variable (e.g. "Current [A]") and the impedance variables given
-        by `pybop.get_impedance_variables(f_eval)`. These are non-zero at the times at
-        which a spectrum was measured, and zero elsewhere; the simulator computes a
-        spectrum at exactly those times, coupling the time-domain simulation to the
-        EIS. If None, a single spectrum is computed about the initial state.
+        A dataset defining a time-domain protocol. If None, stationary EIS is computed about the
+        initial state.
+    acquisition_indices : array-like, optional
+        The indices at which to compute a spectrum, required when a Dataset is passed as the protocol.
     initial_state : dict, optional
         A valid initial state, e.g. `"Initial open-circuit voltage [V]"` or ``"Initial SoC"`.
         Defaults to None, indicating that the existing initial state of charge (for an ECM)
@@ -79,7 +77,7 @@ class EISSimulator(BaseSimulator):
         f_eval: np.ndarray | list[float],
         parameter_values: pybamm.ParameterValues | None = None,
         protocol: Dataset | None = None,
-        eis_indices: np.ndarray | list[float] | None = None,
+        acquisition_indices: np.ndarray | list[float] | None = None,
         initial_state: float | str | None = None,
         solver: pybamm.BaseSolver | None = None,
         geometry: pybamm.Geometry | None = None,
@@ -91,6 +89,25 @@ class EISSimulator(BaseSimulator):
         build_every_time: bool = False,
         remove_voltage_events: bool = True,
     ):
+        # Locate the times at which to compute a spectrum, if any
+        if protocol is None and acquisition_indices is not None:
+            raise ValueError(
+                "A protocol is required when a list of acquisition_indices is passed."
+            )
+        elif protocol is not None and acquisition_indices is None:
+            warnings.warn(
+                "A protocol was not provided so acquisition_indices will not be used.",
+                stacklevel=2,
+            )
+            acquisition_indices = None
+        elif acquisition_indices is not None and np.max(acquisition_indices) >= len(
+            protocol
+        ):
+            raise ValueError(
+                "One or more acquisition_indices is greater than the length of protocol."
+            )
+        self._acquisition_indices = acquisition_indices
+
         # Set-up model for EIS
         self._f_eval = f_eval
         model = self.set_up_for_eis(model)
@@ -98,10 +115,6 @@ class EISSimulator(BaseSimulator):
         parameter_values["Current function [A]"] = 0
 
         super().__init__(parameters=parameter_values)
-
-        # Locate the times at which to compute a spectrum, if any
-        self._impedance_variables = get_impedance_variables(f_eval)
-        self._acquisition_indices = eis_indices
 
         # Set up a simulation. When a protocol is given, the Simulator installs the
         # control interpolant and sets t_interp to the domain data, so the entries of
@@ -129,7 +142,13 @@ class EISSimulator(BaseSimulator):
 
         v_scale = getattr(model.variables["Voltage [V]"], "scale", 1)
         i_scale = getattr(model.variables["Current [A]"], "scale", 1)
-        self.z_scale = self.parameter_values.evaluate(v_scale / i_scale)
+        self._z_scale = self.parameter_values.evaluate(v_scale / i_scale)
+
+        # Set up solution method
+        if self._acquisition_indices is None:
+            self._solve = self._simulate_stationary
+        else:
+            self._solve = self._simulate_with_protocol
 
     def set_output_variables(self, target: list[str]):
         """
@@ -148,7 +167,7 @@ class EISSimulator(BaseSimulator):
         built_model = self.simulation.built_model
         # Sort so the compiled functions expect the same order that
         # BaseSolver._set_up_model_inputs() will use if the time-domain simulation
-        # recompiles them in _solve_along_protocol(). _jacobian() stacks sorted to match.
+        # recompiles them in _simulate_with_protocol(). _jacobian() stacks sorted to match.
         self.simulation.solver.set_up(
             built_model,
             inputs={k: inputs[k] for k in sorted(inputs)} if inputs else inputs,
@@ -173,13 +192,6 @@ class EISSimulator(BaseSimulator):
         )
         jac = built_model.jac_rhs_algebraic_eval(t, y, casadi_inputs).sparse()
         return csc_matrix(jac)
-
-    def _calculate_spectrum(self, jac: csc_matrix) -> np.ndarray:
-        """Compute the impedance at every frequency for a given Jacobian."""
-        return (
-            np.asarray([self.calculate_impedance(f, jac) for f in self._f_eval])
-            * self.z_scale
-        )
 
     def set_up_for_eis(self, model: pybamm.BaseModel) -> pybamm.BaseModel:
         """
@@ -331,9 +343,7 @@ class EISSimulator(BaseSimulator):
                 try:
                     simulations.append(self._solve(x))
                 except (ZeroDivisionError, RuntimeError, ValueError):
-                    simulations.append(
-                        FailedSolution(self.default_variables, x.keys())
-                    )
+                    simulations.append(FailedSolution(self.default_variables, x.keys()))
             return simulations
 
         simulations = []
@@ -341,13 +351,10 @@ class EISSimulator(BaseSimulator):
             simulations.append(self._solve(x))
         return simulations
 
-    def _solve(self, inputs: "Inputs") -> Solution:
+    def _simulate_stationary(self, inputs: "Inputs") -> Solution:
         """
         Run the EIS simulation to calculate impedance at all specified frequencies.
-
         For a stationary simulation, one spectrum is computed about the initial state.
-        When coupled to a protocol, the time-domain trajectory is solved once and each
-        spectrum is computed by linearising about the state at the requested time.
 
         Parameters
         ----------
@@ -360,95 +367,99 @@ class EISSimulator(BaseSimulator):
             Complex impedance results, and also the time-domain variables when coupled
             to a protocol.
         """
-        if self._acquisition_indices is None:
-            # Rebuild the model only if necessary, then set up the constant matrices
-            self._model_rebuild(inputs)
-            y0 = self.simulation.built_model.concatenated_initial_conditions.evaluate(
-                0, inputs=inputs
-            )
-            solution = Solution()
-            solution.set_solution_variable(
-                "Impedance [Ohm]",
-                data=self._calculate_spectrum(self._jacobian(0, y0, inputs)),
-            )
-            return solution
-
-        return self._solve_along_protocol(inputs)
-
-    def _solve_along_protocol(self, inputs: "Inputs") -> Solution:
-        """
-        Solve the time-domain protocol once, then compute a spectrum about the state at
-        each of the requested times.
-        """
-        sim_solution = self._simulator.solve(inputs)
-        if isinstance(sim_solution, FailedSolution):
-            raise ValueError("The time-domain simulation failed.")
-
-        # Set up the constant matrices only after the time-domain solve, which discards
-        # the simulation when the model has to be rebuilt for every set of inputs
+        # Rebuild the model only if necessary, then set up the constant matrices
         self._model_rebuild(inputs)
 
-        t, y = sim_solution.t, sim_solution.y
+        y0 = self.simulation.built_model.concatenated_initial_conditions.evaluate(
+            0, inputs=inputs
+        )
+        zs = self._calculate_impedance(self._jacobian(0, y0, inputs))
+
+        solution = Solution(inputs)
+        solution.set_solution_variable("Impedance [Ohm]", data=zs)
+        return solution
+
+    def _simulate_with_protocol(self, inputs: "Inputs") -> Solution:
+        """
+        Run the EIS simulation to calculate impedance at all specified frequencies.
+        When coupled to a protocol, the time-domain trajectory is solved once and then
+        a spectrum is computed by linearising about the state at each acquisition time.
+
+        Parameters
+        ----------
+        inputs : Inputs
+            Input parameters.
+
+        Returns
+        -------
+        Solution
+            Complex impedance results, and also the time-domain variables when coupled
+            to a protocol.
+        """
+        protocol_solution = self._simulator.solve(inputs)
+        if isinstance(protocol_solution, FailedSolution):
+            raise ValueError("The time-domain simulation failed.")
+
+        t, y = protocol_solution.t, protocol_solution.y
         if self._acquisition_indices[-1] >= len(t):
             raise ValueError(
                 "The time-domain simulation terminated before the last EIS time."
             )
 
-        solution = Solution()
-        solution.set_solution_variable("Time [s]", data=t)
-        solution.set_solution_variable(
-            "Voltage [V]", data=sim_solution["Voltage [V]"].data
-        )
+        # Rebuild the model only if necessary, then set up the constant matrices
+        # Note that this must be after any time-domain solve, which discards the
+        # simulation when the model has to be rebuilt for every set of inputs
+        self._model_rebuild(inputs)
 
-        # Zero away from the times of acquisition, matching the dataset convention
-        impedance = {
-            name: np.zeros_like(t, dtype=np.complex128)
-            for name in self._impedance_variables
-        }
+        # Evaluate the impedance at the acquisition times only
+        zs = np.zeros((len(t), len(self._f_eval)), dtype=np.complex128)
         for i in self._acquisition_indices:
             y_i = np.asarray(y[:, i]).reshape(-1, 1)
             if np.abs(y_i[-1]) > 1e-10:
                 warnings.warn(
-                    f"The current is not zero at the acquisition time t={t[i]} s, "
-                    "meaning the impedance is linearised about a non-zero operating point.",
+                    f"The current is not zero at time t={t[i]} s, meaning the "
+                    "impedance is linearised about a non-stationary operating point.",
                     stacklevel=2,
                 )
-            zs = self._calculate_spectrum(self._jacobian(t[i], y_i, inputs))
-            for var, z in zip(self._impedance_variables, zs, strict=False):
-                impedance[var][i] = z
+            zs[i, :] = self._calculate_impedance(self._jacobian(t[i], y_i, inputs))
 
-        for name, data in impedance.items():
-            solution.set_solution_variable(name, data=data)
+        solution = Solution(inputs)
+        solution.set_solution_variable("Time [s]", data=t)
+        solution.set_solution_variable(
+            "Current [A]", data=protocol_solution["Current [A]"].data
+        )
+        solution.set_solution_variable(
+            "Voltage [V]", data=protocol_solution["Voltage [V]"].data
+        )
+        solution.set_solution_variable("Impedance [Ohm]", data=zs)
         return solution
 
-    def calculate_impedance(self, frequency: float, jac: csc_matrix) -> complex:
+    def _calculate_impedance(self, jac: csc_matrix) -> np.ndarray:
         """
-        Calculate the impedance for a given frequency.
-
-        This method computes the system matrix, solves the linear system, and calculates
-        the impedance based on the solution.
+        Calculate the impedance at every frequency for a given Jacobian.
 
         Parameters
         ----------
-        frequency : float
-            The frequency at which to calculate the impedance in Hz.
         jac : csc_matrix
             The Jacobian of the built model about the operating point.
 
         Returns
         -------
-        complex
-            The calculated impedance.
+        np.ndarray
+            An array of complex impedance values.
         """
+        zs = np.zeros_like(self._f_eval, dtype=np.complex128)
+        for i, frequency in enumerate(self._f_eval):
+            # Compute the system matrix
+            A = 1.0j * 2 * np.pi * frequency * self.M - jac
 
-        # Compute the system matrix
-        A = 1.0j * 2 * np.pi * frequency * self.M - jac
+            # Solve the system
+            x = spsolve(A, self.b)
 
-        # Solve the system
-        x = spsolve(A, self.b)
+            # Calculate the impedance (voltage / current)
+            zs[i] = -x[-2] / x[-1]
 
-        # Calculate the impedance (voltage / current)
-        return -x[-2] / x[-1]
+        return zs * self._z_scale
 
     @property
     def simulation(self):
@@ -464,15 +475,14 @@ class EISSimulator(BaseSimulator):
 
     @property
     def default_variables(self):
-        if self._acquisition_indices is None:
-            return ["Impedance [Ohm]"]
-        variables: list[str] = self._impedance_variables
-        for s in self._model.default_quick_plot_variables:
-            if isinstance(s, str):
-                variables.append(s)
-            else:
-                variables.extend(list(s))
+        variables = ["Impedance [Ohm]"]
+        if self._acquisition_indices is not None:
+            variables.extend(self._simulator.default_variables)
         return variables
+
+    @property
+    def acquisition_indices(self):
+        return self._acquisition_indices
 
     @property
     def has_sensitivities(self):

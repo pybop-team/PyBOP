@@ -1,4 +1,3 @@
-import re
 import warnings
 from collections.abc import Iterator
 from typing import Protocol
@@ -73,7 +72,7 @@ class Dataset:
                 return self["Time [s]"] / 3600
             raise ValueError(f"The key {key} does not exist in this dataset.")
 
-        return self.lf.select(key).collect().to_numpy().ravel()
+        return np.stack(self.lf.select(key).collect().to_numpy().ravel())
 
     @property
     def columns(self) -> list[str]:
@@ -196,56 +195,6 @@ class Dataset:
                 )
 
         return Interpolant(self["Time [s]"], self[control], pybamm_t)
-
-
-def get_impedance_variables(frequencies: np.ndarray | list[float]) -> list[str]:
-    """
-    Return the names of the dataset variables which hold complex-valued impedance.
-
-    Parameters
-    ----------
-    frequencies : np.ndarray or list[float]
-        The frequencies at which the impedance is evaluated.
-
-    Returns
-    -------
-    list[str]
-        Variable names for each frequency.
-    """
-    return [f"Impedance [Ohm] ({frequency:.6g} Hz)" for frequency in frequencies]
-
-
-def parse_impedance_variables(
-    variables: list[str],
-) -> tuple[np.ndarray, list[str], list[str]]:
-    """
-    Pick out the impedance variables from a list of variable names, inverting
-    :func:`get_impedance_variables`.
-
-    Parameters
-    ----------
-    variables : list[str]
-        Variable names, which may or may not include impedance variables.
-
-    Returns
-    -------
-    tuple[np.ndarray, list[str]]
-        The frequencies in increasing order, and the corresponding impedance
-        variable names. Both are empty if no impedance variables are present.
-    """
-    pattern = re.compile(r"^Impedance \[Ohm\] \((\S+) Hz\)$")
-
-    frequencies = []
-    variable_names = []
-    for variable in variables:
-        match = pattern.match(variable)
-        if match:
-            frequencies.append(float(match.group(1)))
-            variable_names.append(variable)
-
-    frequencies = np.asarray(frequencies)
-    indices = np.argsort(frequencies)
-    return (frequencies[indices], [variable_names[i] for i in indices])
 
 
 def import_pybamm_solution(

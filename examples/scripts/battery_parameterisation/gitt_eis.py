@@ -66,7 +66,7 @@ dataset = pybop.import_pybamm_solution(gitt_solution)
 # Acquire a spectrum at the end of each pulse, meaning at the end of each rest where the
 # cell has relaxed and the current is zero
 future_time = dataset["Time [s]"][-1] + 2 * period
-eis_indices = (
+acquisition_indices = (
     dataset.lf.with_row_index()
     .filter(pl.col("Current [A]") == 0)
     .filter(pl.col("Time [s]").shift(-1, fill_value=future_time).diff() > period)
@@ -83,18 +83,24 @@ solution = pybop.pybamm.EISSimulator(
     model,
     parameter_values=parameter_values,
     protocol=dataset,
-    eis_indices=eis_indices,
+    acquisition_indices=acquisition_indices,
     f_eval=f_eval,
 ).solve()
 
-# Complete the synthetic dataset with the simulated spectra, adding noise to both data
+# Create the synthetic dataset with the simulated spectra, adding noise to both data
 # types. Only the acquired spectra carry noise; the remaining entries stay at zero
-dataset["Voltage [V]"] = pybop.add_noise(dataset["Voltage [V]"], 1e-3)
-impedance_variables = pybop.get_impedance_variables(f_eval)
-for name in impedance_variables:
-    dataset[name] = np.where(
-        solution[name].data != 0, pybop.add_noise(solution[name].data, 1e-4), 0.0
-    )
+dataset = pybop.Dataset(
+    {
+        "Time [s]": solution["Time [s]"].data,
+        "Current [A]": solution["Current [A]"].data,
+        "Voltage [V]": pybop.add_noise(solution["Voltage [V]"].data, 1e-3),
+        "Impedance [Ohm]": np.where(
+            solution["Impedance [Ohm]"].data != 0,
+            pybop.add_noise(solution["Impedance [Ohm]"].data, 1e-4),
+            0.0,
+        ),
+    }
+)
 
 # Save the true values
 true_values = [
@@ -126,11 +132,11 @@ simulator = pybop.pybamm.EISSimulator(
     model,
     parameter_values=parameter_values,
     protocol=dataset,
-    eis_indices=eis_indices,
+    acquisition_indices=acquisition_indices,
     f_eval=f_eval,
 )
 voltage_cost = pybop.SumSquaredError(dataset, target=["Voltage [V]"])
-impedance_cost = pybop.SumSquaredError(dataset, target=impedance_variables)
+impedance_cost = pybop.SumSquaredError(dataset, target=["Impedance [Ohm]"])
 cost = pybop.WeightedCost(voltage_cost, impedance_cost, weights=[1.0, 1e3])
 problem = pybop.Problem(simulator, cost)
 

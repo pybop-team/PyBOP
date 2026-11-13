@@ -163,7 +163,7 @@ class TestCoupledEISSimulator:
             model,
             parameter_values=parameter_values,
             protocol=dataset,
-            eis_indices=acquisitions,
+            acquisition_indices=acquisitions,
             f_eval=frequencies,
         )
         solution = simulator.solve()
@@ -172,9 +172,10 @@ class TestCoupledEISSimulator:
         for name in solution.variable_names:
             data = solution[name].data
             assert len(data) == n_time
-            # Non-zero only at the times of acquisition
-            if "Impedance [Ohm]" in name:
-                np.testing.assert_array_equal(np.flatnonzero(data), acquisitions)
+            # Check impedance is non-zero only at the acquisition indices
+            if name == "Impedance [Ohm]":
+                summed_data = np.sum(data, axis=1)
+                np.testing.assert_array_equal(np.flatnonzero(summed_data), acquisitions)
 
     def test_matches_stationary_at_initial_state(
         self, model, parameter_values, dataset, acquisitions, frequencies
@@ -184,21 +185,17 @@ class TestCoupledEISSimulator:
             model,
             parameter_values=parameter_values,
             protocol=dataset,
-            eis_indices=acquisitions,
+            acquisition_indices=acquisitions,
             f_eval=frequencies,
         ).solve()
         stationary = pybop.pybamm.EISSimulator(
             model, parameter_values=parameter_values, f_eval=frequencies
         ).solve()
 
-        impedance = np.asarray(
-            [
-                coupled[f"Impedance [Ohm] ({frequency:.6g} Hz)"].data[0]
-                for frequency in frequencies
-            ]
-        )
         np.testing.assert_allclose(
-            impedance, stationary["Impedance [Ohm]"].data, rtol=1e-10
+            coupled["Impedance [Ohm]"].data[0],
+            stationary["Impedance [Ohm]"].data,
+            rtol=1e-10,
         )
 
     @pytest.mark.parametrize("coupled", [False, True])
@@ -219,12 +216,12 @@ class TestCoupledEISSimulator:
 
         def solve(values, **kwargs):
             protocol = dataset if coupled else None
-            eis_indices = acquisitions if coupled else None
+            acquisition_indices = acquisitions if coupled else None
             simulator = pybop.pybamm.EISSimulator(
                 model,
                 parameter_values=values,
                 protocol=protocol,
-                eis_indices=eis_indices,
+                acquisition_indices=acquisition_indices,
                 f_eval=frequencies,
             )
             return simulator.solve(**kwargs)
@@ -269,7 +266,7 @@ class TestCoupledEISSimulator:
             model,
             parameter_values=fixed,
             protocol=dataset,
-            eis_indices=acquisitions,
+            acquisition_indices=acquisitions,
             f_eval=frequencies,
         ).solve()
 
@@ -284,7 +281,7 @@ class TestCoupledEISSimulator:
             model,
             parameter_values=fitted,
             protocol=dataset,
-            eis_indices=acquisitions,
+            acquisition_indices=acquisitions,
             f_eval=frequencies,
         )
         assert simulator._simulator.requires_model_rebuild  # noqa: SLF001
@@ -306,7 +303,7 @@ class TestCoupledEISSimulator:
             model,
             parameter_values=parameter_values,
             protocol=dataset,
-            eis_indices=acquisitions,
+            acquisition_indices=acquisitions,
             f_eval=frequencies,
         )
 
@@ -331,20 +328,3 @@ class TestCoupledEISSimulator:
 
         assert calls["create"] == 0  # built during construction
         assert calls["set_up"] == 1
-
-    def test_impedance_variables_round_trip(self, frequencies):
-        impedance_variables = pybop.get_impedance_variables(frequencies)
-
-        # Variables may reach the parser in any order, e.g. via a set
-        parsed, variable_names = pybop.parse_impedance_variables(
-            ["Voltage [V]", *reversed(impedance_variables)]
-        )
-        # The names carry six significant figures, which bounds the round trip
-        np.testing.assert_allclose(parsed, frequencies, rtol=1e-5)
-        assert variable_names == impedance_variables
-
-        # No impedance variables present
-        parsed, variable_names = pybop.parse_impedance_variables(
-            ["Voltage [V]", "Current [A]"]
-        )
-        assert len(parsed) == 0 and variable_names == []
