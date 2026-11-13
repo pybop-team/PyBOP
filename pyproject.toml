@@ -49,7 +49,7 @@ ep-bolfi = [
 pyprobe = [
     "PyProBE-Data>=2.6.1; python_version < '3.13'"
 ]
-all = ["pybop[plotly,scienceplots,salib,scifem,pyprobe,ep-bolfi]", "pybamm[bpx]"]
+all = ["pybop[plotly,scienceplots,salib,scifem,pyprobe,ep-bolfi]", "pybamm[bpx]", "polars[calamine]"]
 
 [tool.uv]
 override-dependencies = [
