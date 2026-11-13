@@ -51,14 +51,20 @@ class FoKLGP:
                 "The `FoKL` package is required to use FoKLGP objects. "
                 "Please install it using: pip install FoKL"
             )
-        if model is None:
+        if not isinstance(model, pybamm.BaseModel):
             raise ValueError(
                 "A PyBaMM `model` must be provided to inspect parameter inputs."
             )
-        if parameter_values is None:
-            raise ValueError("`parameter_values` must be provided.")
+        if not isinstance(parameter_values, ParameterValues):
+            raise ValueError("PyBaMM `parameter_values` must be provided.")
 
         self.model = model
+        self.parameter_values = None
+        self.verbose = None
+        self.phis = None
+        self.beta_inputs = None
+        self.pybamm_function = None
+
         GP_dict_list = self._process_options(name, options, parameter_values)
         self.evaluate_func = self._evaluate_parameter(kernel)
         self.damtx = self._create_interaction_matrix(
@@ -222,7 +228,7 @@ class FoKLGP:
 
         damtx = np.array(damtx, dtype=int)
         if self.verbose:
-            print(damtx)
+            print("Interaction matrix:\n", damtx)
         return damtx
 
     def _set_kernel(self, kernel: str = "Bernoulli Polynomial"):

@@ -47,8 +47,8 @@ for experiment, title in zip(
         )
     )
     fig.update_layout(
-        xaxis_title="Time [s]",
-        yaxis_title="Voltage [V]",
+        xaxis_title="Time / s",
+        yaxis_title="Voltage / V",
         title=title,
         legend=dict(x=0.01, y=0.01),
     )

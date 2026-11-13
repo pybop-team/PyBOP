@@ -8,7 +8,11 @@ from pybop.parameters.gp_parameter import FOKL_AVAILABLE, FoKLGP
 
 @pytest.mark.skipif(not FOKL_AVAILABLE, reason="FoKL package is not installed")
 class TestFoKLGP:
-    """Unit tests for the FoKLGP class covering all branches for Codecov."""
+    """
+    Unit tests for the FoKLGP class.
+    """
+
+    pytestmark = pytest.mark.unit
 
     @pytest.fixture
     def model_and_params(self):
@@ -16,7 +20,6 @@ class TestFoKLGP:
         params = pybamm.ParameterValues("Chen2020")
         return model, params
 
-    @pytest.mark.unit
     def test_missing_fokl_dependency(self, model_and_params):
         """Cover the ModuleNotFoundError branch when FoKL is unavailable."""
         model, params = model_and_params
@@ -30,7 +33,6 @@ class TestFoKLGP:
                     model=model,
                 )
 
-    @pytest.mark.unit
     @pytest.mark.parametrize("kernel", ["Bernoulli Polynomial", "Cubic Splines"])
     @pytest.mark.parametrize("exp_flag", [True, False])
     def test_single_input_kernels_and_evaluation(
@@ -70,7 +72,6 @@ class TestFoKLGP:
         expr = gp(c_e, T)
         assert isinstance(expr, pybamm.Symbol)
 
-    @pytest.mark.unit
     @pytest.mark.parametrize("twoway", [True, False])
     def test_multi_input_and_division_arguments(self, model_and_params, twoway):
         """Cover multi-input _create_interaction_matrix and Division Arguments."""
@@ -104,7 +105,6 @@ class TestFoKLGP:
         expr = gp(pybamm.Scalar(1000.0), pybamm.Scalar(298.15))
         assert isinstance(expr, pybamm.Symbol)
 
-    @pytest.mark.unit
     def test_error_branches(self, model_and_params):
         """Cover all ValueError and NotImplementedError branches."""
         model, params = model_and_params
