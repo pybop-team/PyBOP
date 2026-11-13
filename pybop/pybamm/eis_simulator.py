@@ -414,7 +414,8 @@ class EISSimulator(BaseSimulator):
         self._model_rebuild(inputs)
 
         # Evaluate the impedance at the acquisition times only
-        zs = np.zeros((len(t), len(self._f_eval)), dtype=np.complex128)
+        zs = np.empty((len(t), len(self._f_eval)), dtype=np.complex128)
+        zs[:] = np.nan
         for i in self._acquisition_indices:
             y_i = np.asarray(y[:, i]).reshape(-1, 1)
             if np.abs(y_i[-1]) > 1e-10:

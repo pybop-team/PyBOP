@@ -186,10 +186,11 @@ class TestCoupledEISSimulator:
         for name in solution.variable_names:
             data = solution[name].data
             assert len(data) == n_time
-            # Check impedance is non-zero only at the acquisition indices
+            # Check the number of non-NaN values in the impedance array
             if name == "Impedance [Ohm]":
-                summed_data = np.sum(data, axis=1)
-                np.testing.assert_array_equal(np.flatnonzero(summed_data), acquisitions)
+                assert np.count_nonzero(~np.isnan(data)) == len(acquisitions) * len(
+                    frequencies
+                )
 
     def test_matches_stationary_at_initial_state(
         self, model, parameter_values, dataset, acquisitions, frequencies

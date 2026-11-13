@@ -12,7 +12,7 @@ A synthetic dataset is built in two stages: a GITT experiment is simulated to ob
 current as a function of time, then an impedance spectrum is computed about the state
 reached at the end of each pulse. Both data types are stored in a single dataset on the
 time domain: the voltage is recorded at every time, and the impedance takes a complex
-value at each acquisition time and zero everywhere else.
+value at each acquisition time and is NaN everywhere else.
 
 Diffusivity and the exchange-current density are fitted together, which is the pairing
 the two measurements are meant to separate: the relaxation after each pulse constrains
@@ -83,16 +83,16 @@ solution = pybop.pybamm.EISSimulator(
 ).solve()
 
 # Create the synthetic dataset with the simulated spectra, adding noise to both impedance
-# and voltage. Only the acquired spectra carry noise; the remaining entries stay at zero
+# and voltage. Only the acquired spectra carry noise; the remaining entries stay at NaN
 dataset = pybop.Dataset(
     {
         "Time [s]": solution["Time [s]"].data,
         "Current [A]": solution["Current [A]"].data,
         "Voltage [V]": pybop.add_noise(solution["Voltage [V]"].data, 1e-3),
         "Impedance [Ohm]": np.where(
-            solution["Impedance [Ohm]"].data != 0,
+            ~np.isnan(solution["Impedance [Ohm]"].data),
             pybop.add_noise(solution["Impedance [Ohm]"].data, 1e-4),
-            0.0,
+            np.nan,
         ),
     }
 )
@@ -120,9 +120,7 @@ parameter_values.update(
 )
 
 # Build the problem. The two error measures share the dataset and the time domain, so
-# they can be combined with a weight setting their relative importance. Sum-based
-# measures are used because the impedance variable is zero at most times, which would
-# otherwise dilute the impedance term.
+# they can be combined with a weight setting their relative importance.
 simulator = pybop.pybamm.EISSimulator(
     model,
     parameter_values=parameter_values,
