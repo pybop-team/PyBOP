@@ -119,16 +119,16 @@ class TestPybammSimulator:
         assert "Maximum voltage [V]" not in [e.name for e in simulator.model.events]
 
 
-class TestPybammEISSimulator:
+class TestCoupledEISSimulator:
     """
-    A class to tet the pybamm.EISSimulator class.
+    A class to test the pybamm.EISSimulator class when coupled to a protocol.
     """
 
     pytestmark = pytest.mark.unit
 
     @pytest.fixture
     def model(self):
-        return pybamm.lithium_ion.SPM()
+        return pybamm.lithium_ion.SPM(options={"surface form": "differential"})
 
     @pytest.fixture
     def parameter_values(self):
@@ -136,7 +136,87 @@ class TestPybammEISSimulator:
         parameter_values.set_initial_state(0.9)
         return parameter_values
 
-    def test_input_parameters_are_not_swapped(self, model, parameter_values):
+    @pytest.fixture
+    def frequencies(self):
+        return np.logspace(-1, 3, 4)
+
+    @pytest.fixture
+    def acquisitions(self):
+        """The rows at which a spectrum is acquired: one at the start, one at rest."""
+        return [0, 40]
+
+    @pytest.fixture
+    def dataset(self):
+        time = np.arange(0, 601, 10.0)
+        return pybop.Dataset(
+            {
+                "Time [s]": time,
+                "Current [A]": np.zeros_like(time),
+                "Voltage [V]": np.zeros_like(time),
+            }
+        )
+
+    def test_simulator_solve(self, model, dataset, acquisitions, frequencies):
+        simulator = pybop.pybamm.EISSimulator(
+            model,
+            protocol=dataset,
+            acquisition_indices=acquisitions,
+            f_eval=frequencies,
+        )
+        assert "Impedance [Ohm]" in simulator.default_variables
+
+        simulator.debug_mode = True
+        solution = simulator.solve()
+        assert isinstance(solution, pybop.Solution | pybop.FailedSolution)
+        assert "Impedance [Ohm]" in solution.variable_names
+
+    def test_output_shape_and_zero_padding(
+        self, model, parameter_values, dataset, acquisitions, frequencies
+    ):
+        simulator = pybop.pybamm.EISSimulator(
+            model,
+            parameter_values=parameter_values,
+            protocol=dataset,
+            acquisition_indices=acquisitions,
+            f_eval=frequencies,
+        )
+        solution = simulator.solve()
+
+        n_time = len(dataset["Time [s]"])
+        for name in solution.variable_names:
+            data = solution[name].data
+            assert len(data) == n_time
+            # Check the number of non-NaN values in the impedance array
+            if name == "Impedance [Ohm]":
+                assert np.count_nonzero(~np.isnan(data)) == len(acquisitions) * len(
+                    frequencies
+                )
+
+    def test_matches_stationary_at_initial_state(
+        self, model, parameter_values, dataset, acquisitions, frequencies
+    ):
+        """The spectrum at t=0 must match a stationary simulation of the same state."""
+        coupled = pybop.pybamm.EISSimulator(
+            model,
+            parameter_values=parameter_values,
+            protocol=dataset,
+            acquisition_indices=acquisitions,
+            f_eval=frequencies,
+        ).solve()
+        stationary = pybop.pybamm.EISSimulator(
+            model, parameter_values=parameter_values, f_eval=frequencies
+        ).solve()
+
+        np.testing.assert_allclose(
+            coupled["Impedance [Ohm]"].data[0],
+            stationary["Impedance [Ohm]"].data,
+            rtol=1e-10,
+        )
+
+    @pytest.mark.parametrize("coupled", [False, True])
+    def test_input_parameters_are_not_swapped(
+        self, model, parameter_values, dataset, acquisitions, frequencies, coupled
+    ):
         """
         Passing values as inputs must give the same spectrum as fixing them in the
         parameter values, whatever the order of the inputs dictionary. The compiled
@@ -149,28 +229,143 @@ class TestPybammEISSimulator:
             "Negative particle diffusivity [m2.s-1]": 3.0e-14,
         }
 
-        fixed_param = parameter_values.copy()
-        fixed_param.update(inputs)
-        expected_data = self.get_data(model, fixed_param)
+        def solve(values, **kwargs):
+            protocol = dataset if coupled else None
+            acquisition_indices = acquisitions if coupled else None
+            simulator = pybop.pybamm.EISSimulator(
+                model,
+                parameter_values=values,
+                protocol=protocol,
+                acquisition_indices=acquisition_indices,
+                f_eval=frequencies,
+            )
+            return simulator.solve(**kwargs)
 
-        fitting_param = parameter_values.copy()
-        fitting_param.update(
+        fixed = copy(parameter_values)
+        fixed.update(inputs)
+        expected = solve(fixed)
+
+        fitted = copy(parameter_values)
+        fitted.update(
             {
                 name: pybop.Parameter(pybop.Uniform(value / 2, value * 2))
                 for name, value in inputs.items()
             }
         )
-        fitting_data = self.get_data(model, fitting_param, inputs=inputs)
+        solution = solve(fitted, inputs=inputs)
 
-        np.testing.assert_allclose(
-            np.asarray(fitting_data["Impedance"].data, dtype=np.complex128),
-            np.asarray(expected_data["Impedance"], dtype=np.complex128),
-            rtol=1e-10,
+        if coupled:
+            for name in solution.variable_names:
+                np.testing.assert_allclose(
+                    solution[name].data, expected[name].data, rtol=1e-10
+                )
+        else:
+            np.testing.assert_allclose(
+                solution["Impedance [Ohm]"].data,
+                expected["Impedance [Ohm]"].data,
+                rtol=1e-10,
+            )
+
+    def test_geometric_parameter_rebuilds(
+        self, model, parameter_values, dataset, acquisitions, frequencies
+    ):
+        """
+        A geometric parameter forces a rebuild on every evaluation, which discards the
+        simulation, so the constant matrices must be set up after the time-domain solve.
+        """
+        inputs = {"Negative electrode thickness [m]": 8.0e-05}
+
+        fixed = copy(parameter_values)
+        fixed.update(inputs)
+        expected = pybop.pybamm.EISSimulator(
+            model,
+            parameter_values=fixed,
+            protocol=dataset,
+            acquisition_indices=acquisitions,
+            f_eval=frequencies,
+        ).solve()
+
+        fitted = copy(parameter_values)
+        fitted.update(
+            {
+                name: pybop.Parameter(pybop.Uniform(value / 2, value * 2))
+                for name, value in inputs.items()
+            }
+        )
+        simulator = pybop.pybamm.EISSimulator(
+            model,
+            parameter_values=fitted,
+            protocol=dataset,
+            acquisition_indices=acquisitions,
+            f_eval=frequencies,
+        )
+        assert simulator._simulator.requires_model_rebuild  # noqa: SLF001
+        solution = simulator.solve(inputs)
+
+        for name in solution.variable_names:
+            np.testing.assert_allclose(
+                solution[name].data, expected[name].data, rtol=1e-10
+            )
+
+    def test_builds_once(
+        self, model, parameter_values, dataset, acquisitions, frequencies
+    ):
+        """The model and the constant matrices are set up once, not per evaluation."""
+        parameter_values["Negative electrode active material volume fraction"] = (
+            pybop.Parameter(pybop.Uniform(0.4, 0.75))
+        )
+        simulator = pybop.pybamm.EISSimulator(
+            model,
+            parameter_values=parameter_values,
+            protocol=dataset,
+            acquisition_indices=acquisitions,
+            f_eval=frequencies,
         )
 
-    def get_data(self, model, parameter_values, inputs=None):
-        frequencies = np.logspace(-1, 3, 4)
-        solution = pybop.pybamm.EISSimulator(
-            model, parameter_values=parameter_values, f_eval=frequencies
-        ).solve(inputs=inputs)
-        return pybop.Dataset({"Impedance": solution["Impedance"].data})
+        calls = {"create": 0, "set_up": 0}
+        original_create = simulator._simulator.create_simulation
+        original_set_up = simulator._set_up_matrices
+
+        def counted_create(*args, **kwargs):
+            calls["create"] += 1
+            return original_create(*args, **kwargs)
+
+        def counted_set_up(*args, **kwargs):
+            calls["set_up"] += 1
+            return original_set_up(*args, **kwargs)
+
+        simulator._simulator.create_simulation = counted_create
+        simulator._set_up_matrices = counted_set_up
+
+        inputs = {"Negative electrode active material volume fraction": 0.6}
+        for _ in range(3):
+            simulator.solve(inputs)
+
+        assert calls["create"] == 0  # built during construction
+        assert calls["set_up"] == 1
+
+    def test_input_validation(self, model, dataset, acquisitions, frequencies):
+        with pytest.raises(
+            ValueError,
+            match="A protocol is required when a list of acquisition_indices is passed.",
+        ):
+            pybop.pybamm.EISSimulator(
+                model, acquisition_indices=acquisitions, f_eval=frequencies
+            )
+
+        with pytest.warns(
+            UserWarning,
+            match="A protocol was not provided so acquisition_indices will not be used.",
+        ):
+            pybop.pybamm.EISSimulator(model, protocol=dataset, f_eval=frequencies)
+
+        with pytest.raises(
+            ValueError,
+            match="One or more acquisition_indices is greater than the length of protocol.",
+        ):
+            pybop.pybamm.EISSimulator(
+                model,
+                protocol=dataset,
+                acquisition_indices=[len(dataset)],
+                f_eval=frequencies,
+            )

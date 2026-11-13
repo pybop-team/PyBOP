@@ -36,3 +36,7 @@ class Solution:
 
     def __getitem__(self, key):
         return self._variables[key]
+
+    @property
+    def variable_names(self) -> list[str]:
+        return list(self._variables.keys())

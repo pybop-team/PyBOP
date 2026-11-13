@@ -72,7 +72,7 @@ class Dataset:
                 return self["Time [s]"] / 3600
             raise ValueError(f"The key {key} does not exist in this dataset.")
 
-        return self.lf.select(key).collect().to_numpy().ravel()
+        return np.stack(self.lf.select(key).collect().to_numpy().ravel())
 
     @property
     def columns(self) -> list[str]:
