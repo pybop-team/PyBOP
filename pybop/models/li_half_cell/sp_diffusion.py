@@ -95,7 +95,8 @@ class SPDiffusion(BaseHalfCellModel):
         ######################
         # The div and grad operators will be converted to the appropriate matrix
         # multiplication at the discretisation stage
-        self.rhs[sto_p] = pybamm.div(pybamm.grad(sto_p) / self.tau_d(sto_p))
+        N_s_p = -pybamm.grad(sto_p) / self.tau_d(sto_p)
+        self.rhs[sto_p] = -pybamm.div(N_s_p)
 
         # Boundary conditions must be provided for equations with spatial derivatives
         j_p = -I / (3 * Q_th_p)
@@ -235,7 +236,11 @@ class SPDiffusion(BaseHalfCellModel):
         )
 
         # Compute the cell area
-        A = param["Electrode height [m]"] * param["Electrode width [m]"]
+        A = (
+            param["Electrode height [m]"]
+            * param["Electrode width [m]"]
+            * param["Number of electrodes connected in parallel to make a cell"]
+        )
 
         # Compute the initial stoichiometry
         sto_p_init = (

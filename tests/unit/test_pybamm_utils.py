@@ -10,9 +10,6 @@ PROCEDURE_DIR = Path("examples") / "scripts/synthetic_data/procedures"
 
 
 @pytest.mark.skipif(
-    sys.version_info < (3, 11), reason="requires a python version >= 3.11"
-)
-@pytest.mark.skipif(
     sys.version_info >= (3, 13), reason="requires a python version < 3.13"
 )
 class TestPybammUtils:
@@ -36,7 +33,7 @@ class TestPybammUtils:
             "pOCV.json",
             "GITT.json",
             "EIS charge.json",
-            "Validation cycling.json",
+            "Rate capability.json",
             "Validation different SOC.json",
             "Validation pulses.json",
         ]
@@ -60,9 +57,14 @@ class TestPybammUtils:
         half_cell_model = pybamm.lithium_ion.SPM(model_options)
         full_cell_parameters = pybamm.ParameterValues("Chen2020")
 
-        for electrode in ["negative", "positive"]:
+        for electrode, Vmin, Vmax in zip(
+            ["negative", "positive"], [0.05, 3.5], [1.5, 4.4], strict=False
+        ):
             half_cell_parameters = pybop.pybamm.convert_to_half_cell_parameters(
                 full_cell_parameters, electrode
+            )
+            half_cell_parameters.update(
+                {"Lower voltage cut-off [V]": Vmin, "Upper voltage cut-off [V]": Vmax}
             )
             cell_info = {
                 "Cell type": "LG M50 Synthetic",

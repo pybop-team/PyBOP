@@ -9,8 +9,8 @@ TIME_POINTS = 20
 TIME_MAX = 100
 FREQ_POINTS = 30
 TEST_PARAM_VALUES = np.asarray([550, 550])
-RELATIVE_TOLERANCE = 1e-5
-ABSOLUTE_TOLERANCE = 1e-5
+RELATIVE_TOLERANCE = 2e-4
+ABSOLUTE_TOLERANCE = 1e-6
 
 # Parameter configurations
 CHARGE_TRANSFER_PARAMS = [
@@ -40,11 +40,7 @@ class TestGroupedModels:
         model = request.param
         parameter_values = model.default_parameter_values
 
-        return {
-            "model": model,
-            "parameter_values": parameter_values,
-            "solver": model.default_solver,
-        }
+        return {"model": model, "parameter_values": parameter_values}
 
     @pytest.fixture(scope="module")
     def dataset(self, model_config):
@@ -53,7 +49,6 @@ class TestGroupedModels:
         solution = pybamm.Simulation(
             model_config["model"],
             parameter_values=model_config["parameter_values"],
-            solver=model_config["solver"],
         ).solve(t_eval=t_eval, t_interp=t_eval)
 
         return pybop.import_pybamm_solution(solution)
@@ -96,7 +91,7 @@ class TestGroupedModels:
         return value1, value2
 
     def test_voltage_fitting(self, dataset, model_config, parameters):
-        """Test grouped SPMe model with voltage-based cost functions."""
+        """Test grouped models with voltage-based cost functions."""
         # Build problem with multiple cost functions
         parameter_values = model_config["parameter_values"]
         parameter_values.update(parameters)

@@ -68,8 +68,8 @@ pybop.plot.dataset(gitt_parameter_data, signal=["Series resistance [Ohm]"])
 # Run the identified model
 identified_model = pybop.li_half_cell.SPDiffusion(build=True)
 grouped_parameter_values.update(gitt_fit.best_inputs)
-grouped_parameter_values["Current function [A]"] = pybamm.Interpolant(
-    dataset["Time [s]"], dataset["Current [A]"], pybamm.t
+grouped_parameter_values["Current function [A]"] = pybop.Interpolant(
+    dataset["Time [s]"], dataset["Current [A]"], name="Current function [A]"
 )
 fitted_values = pybamm.Simulation(
     identified_model, parameter_values=grouped_parameter_values

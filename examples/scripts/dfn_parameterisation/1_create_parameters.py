@@ -1,3 +1,4 @@
+import argparse
 import pickle
 from pathlib import Path
 
@@ -15,6 +16,10 @@ examples/data
 For each full-cell, locate the corresponding half-cell data and create a parameters
 dictionary for charge and discharge.
 """
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--draft", action="store_true", help="Draft mode")
+args = parser.parse_args()
 
 for cell in get_cells():
     cell_label = cell.info["Cell label"]
@@ -61,6 +66,16 @@ for cell in get_cells():
                 "Upper voltage cut-off [V]": 4.2,
                 "Positive electrode relative thickness": 75.6 / three_layer_thickness,
                 "Negative electrode relative thickness": 85.2 / three_layer_thickness,
+            }
+        )
+    elif cell_type == "Enertech SPB655060 Synthetic":
+        three_layer_thickness = 68 + 25 + 76.5
+        param.update(
+            {
+                "Lower voltage cut-off [V]": 3.0,
+                "Upper voltage cut-off [V]": 4.2,
+                "Positive electrode relative thickness": 68 / three_layer_thickness,
+                "Negative electrode relative thickness": 76.5 / three_layer_thickness,
             }
         )
     else:

@@ -26,6 +26,10 @@ class BaseGroupedModel(pybamm_lithium_ion.BaseModel):
     """
 
     def __init__(self, name="Base Model", **model_kwargs):
+        if not isinstance(name, str):
+            raise TypeError(
+                "The first argument is the model name, use `options=options`."
+            )
         super().__init__(name=name, **model_kwargs)
 
     def build_model(self):
@@ -72,8 +76,7 @@ class BaseGroupedModel(pybamm_lithium_ion.BaseModel):
         inputs : dict, optional
             A dictionary of input parameters to pass to the model when solving.
         tol : float, optional
-            The tolerance for the solver used to compute the initial stoichiometries.
-            A lower value results in higher precision but may increase computation time.
+            The tolerance within which the voltage and SOC can be outside their limits.
             Default is 1e-6.
         """
         parameter_values = parameter_values if inplace else parameter_values.copy()
@@ -119,7 +122,7 @@ class BaseGroupedModel(pybamm_lithium_ion.BaseModel):
         else:
             raise ValueError("Initial value must be a float or a string ending in 'V'.")
 
-        if not 0 <= soc <= 1:
+        if not 0 - tol <= soc <= 1 + tol:
             raise ValueError("Initial SoC should be between 0 and 1.")
 
         parameter_values["Initial SoC"] = soc

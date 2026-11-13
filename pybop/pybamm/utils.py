@@ -7,14 +7,29 @@ import pybamm
 class RecommendedSolver(pybamm.IDAKLUSolver):
     """A shortcut for creating the PyBaMM solver recommended for optimisation."""
 
-    def __init__(self, output_variables: list[str] | None = None):
-        solver_options = {"suppress_algebraic_error": True}
+    def __init__(
+        self, output_variables: list[str] | None = None, options: dict | None = None
+    ):
+        solver_options = {
+            "suppress_algebraic_error": True,  # for discontinuous variables
+            "dt_max": 300,  # five minutes
+            "max_num_steps": 500,  # restore IDA default
+            "max_nonlinear_iterations": 4,  # restore IDA default
+            "max_convergence_failures": 10,  # restore IDA default
+            "max_num_steps_ic": 5,  # restore IDA default
+            "max_num_jacobians_ic": 4,  # restore IDA default
+            "max_num_iterations_ic": 10,  # restore IDA default
+        }
 
         if platform.system() != "Windows":
             solver_options["num_threads"] = max(1, mp.cpu_count())
 
+        if options is not None:
+            solver_options.update(options)
+
         super().__init__(
             on_failure="ignore",
+            on_extrapolation="ignore",
             atol=1e-6,
             rtol=1e-6,
             options=solver_options,

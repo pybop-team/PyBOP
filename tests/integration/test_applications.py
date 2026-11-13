@@ -229,4 +229,4 @@ class TestApplications:
             np.asarray([diffusion_time]),
             rtol=5e-2,
         )
-        assert gitt_parameter_data["Root Mean Squared Error [V]"][0] < 2e-3
+        assert gitt_parameter_data["Root Mean Squared Error [V]"] < 2e-3
