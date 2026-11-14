@@ -88,39 +88,41 @@ if __name__ == "__main__":
         [0] * long_term_start + [1] * (len_data - long_term_start),
     )
 
-    unknowns = pybop.MultivariateParameters(
-        {
-            "Terminal voltage of observed relaxation [V]": pybop.Parameter(
-                initial_value=0.1,
-                bounds=[0.01, 0.2],
-                transformation=pybop.LogTransformation(),
-            ),
-            "Logarithmic slope of observed mechanical relaxation [V]": pybop.Parameter(
-                initial_value=0.01,
-                bounds=[0.001, 0.2],
-                transformation=pybop.LogTransformation(),
-            ),
-            "Exponential timescale for decay of observed mechanical relaxation [s]": pybop.Parameter(
-                initial_value=1e5,
-                bounds=[1e3, 1e7],
-                transformation=pybop.LogTransformation(),
-            ),
-        },
-        distribution=pybop.MultivariateUniform(
-            np.asarray([[0.01, 0.2], [0.001, 0.2], [1e3, 1e7]])
-        ),
-    )
+    # Define model and parameter values
     model = SiliconRelaxation()
-    simulator = pybop.pybamm.simulator.Simulator(model, model.default_parameter_values)
+    parameter_values = model.default_parameter_values
 
-    # Override the forced univariate Parameters
-    simulator.parameters = unknowns
+    # Set multivariate parameters (defined in model space)
+    distribution = pybop.MultivariateUniform(
+        bounds=np.asarray([[0.01, 0.2], [0.001, 0.2], [1e3, 1e7]])
+    )
+    parameter_values["Terminal voltage of observed relaxation [V]"] = pybop.Parameter(
+        initial_value=0.1,
+        distribution=pybop.MarginalDistribution(distribution, 0),
+        # transformation=pybop.LogTransformation(),
+    )
+    parameter_values["Logarithmic slope of observed mechanical relaxation [V]"] = (
+        pybop.Parameter(
+            initial_value=0.01,
+            distribution=pybop.MarginalDistribution(distribution, 1),
+            # transformation=pybop.LogTransformation(),
+        )
+    )
+    parameter_values[
+        "Exponential timescale for decay of observed mechanical relaxation [s]"
+    ] = pybop.Parameter(
+        initial_value=1e5,
+        distribution=pybop.MarginalDistribution(distribution, 2),
+        # transformation=pybop.LogTransformation(),
+    )
+
+    # Build the problem
+    simulator = pybop.pybamm.Simulator(model, parameter_values=parameter_values)
     problem = pybop.MetaProblem(
         pybop.Problem(simulator, mid_term), pybop.Problem(simulator, long_term)
     )
 
-    # Copy the MultivariateParameters to the meta-problem
-    problem.parameters = simulator.parameters
+    # Set up the optimiser
     options = SOBER_BASQ_EPLFI_Options(
         model_initial_samples=128,
         seed=seed,
@@ -135,7 +137,10 @@ if __name__ == "__main__":
         batched_input=True,
     )
     optim = SOBER_BASQ_EPLFI(problem, options=options)
+
+    # Run the optimisation
     result = optim.run()
+    print(result)
 
     # Calculate the correlation matrix in addition to the full plot.
     raw_taken_samples = result.posterior.distribution.distribution.dataset

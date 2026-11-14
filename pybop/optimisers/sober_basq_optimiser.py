@@ -7,15 +7,25 @@ from os import cpu_count
 from sys import stderr, stdout
 
 import numpy as np
-import torch
 from pybamm import citations
-from torch import tensor
 
 import pybop
-from pybop import BaseOptimiser
 from pybop._logging import Logger
-from pybop.optimisers.base_optimiser import OptimisationResult
+from pybop.optimisers.base_optimiser import BaseOptimiser, OptimisationResult
 from pybop.optimisers.ep_bolfi_optimiser import BayesianOptimisationResult
+from pybop.parameters.multivariate_distributions import (
+    MarginalDistribution,
+)
+from pybop.parameters.parameter import Parameter, Parameters
+
+
+try:
+    import torch
+    from torch import tensor
+
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
 
 
 @dataclass
@@ -64,6 +74,11 @@ class SOBER_BASQ(BaseOptimiser):
     """
 
     def __init__(self, *args, **kwargs):
+        if not TORCH_AVAILABLE:
+            raise ModuleNotFoundError(
+                "The `torch` package is required to use SOBER_BASQ objects. "
+                "Please install it using: pip install torch"
+            )
         super().__init__(*args, **kwargs)
         citations.register("""@article{
             Adachi2024,
@@ -213,12 +228,18 @@ class SOBER_BASQ(BaseOptimiser):
         ]
         self._logger.x_search_best = x_search_best_over_time[-1]
         self._logger.cost_best = cost_best[-1]
-        posterior = pybop.MultivariateParameters(
-            self.problem.parameters,
-            distribution=pybop.MultivariateNonparametric(
-                self.optimiser.denormalize_input(raw_taken_samples).T
-            ),
+
+        posterior_distribution = pybop.MultivariateNonparametric(
+            self.optimiser.denormalize_input(raw_taken_samples).T
         )
+        posterior_parameters = {
+            key: Parameter(
+                distribution=MarginalDistribution(posterior_distribution, i),
+                initial_value=p.initial_value,
+                transformation=p.transformation,
+            )
+            for i, (key, p) in enumerate(self.problem.parameters.items())
+        }
 
         self._logger.iteration = {"SOBER iterations": self._options.sober_iterations}
         self._logger.evaluations = {
@@ -237,7 +258,7 @@ class SOBER_BASQ(BaseOptimiser):
             method_name="SOBER + BASQ",
             lower_bounds=None if self.bounds is None else self.bounds[:, 0],
             upper_bounds=None if self.bounds is None else self.bounds[:, 1],
-            posterior=posterior,
+            posterior=Parameters(posterior_parameters),
             maximum_a_posteriori=MAP,
             log_evidence_mean=log_expected_marginal_likelihood,
             log_evidence_variance=log_approx_variance_marginal_likelihood,

@@ -99,44 +99,40 @@ if __name__ == "__main__":
         ),
         strict=False,
     ):
-        initial_values = np.exp(0.5 * (np.log(bounds.T[0]) + np.log(bounds.T[1])))
-        pybop_prior = pybop.MultivariateParameters(
-            {
-                n: pybop.Parameter(
-                    initial_value=i, bounds=b, transformation=pybop.LogTransformation()
-                )
-                for n, i, b in zip(names, initial_values, bounds, strict=False)
-            },
-            distribution=pybop.MultivariateGaussian(mean=mean, bounds=bounds),
-        )
-        simulator = KneepointModel(pybop_prior, tensor(t), n_kneepoints)
-        # Override the forced univariate Parameters
-        simulator.parameters = pybop_prior
+        # initial_values = np.exp(0.5 * (np.log(bounds.T[0]) + np.log(bounds.T[1])))
+        # distribution = pybop.MultivariateGaussian(mean=mean, covariance=covariance)
+        distribution = pybop.MultivariateUniform(bounds=bounds)
+        parameters = {
+            n: pybop.Parameter(
+                initial_value=x,
+                distribution=pybop.MarginalDistribution(distribution, i),
+                # transformation=pybop.LogTransformation()
+            )
+            for i, n, x in enumerate(zip(names, mean, strict=False))
+        }
+
+        simulator = KneepointModel(parameters, tensor(t), n_kneepoints)
         cost = pybop.MeanSquaredError(dataset, "Capacity fade")
         cost.target_data = np.asarray([0])
-        pybop_problem = pybop.Problem(simulator, cost)
-        # Copy the MultivariateParameters to the meta-problem
-        pybop_problem.parameters = simulator.parameters
-        pybop_options = SOBER_BASQ_Options(
+        problem = pybop.Problem(simulator, cost)
+        options = SOBER_BASQ_Options(
             model_initial_samples=256,
             sober_iterations=12,
             model_samples_per_iteration=64,
             integration_nodes=256,
             batched_input=True,
         )
-        sober_basq_wrapper = SOBER_BASQ(pybop_problem, pybop_options)
-        pybop_result = sober_basq_wrapper.run()
+        sober_basq_wrapper = SOBER_BASQ(problem, options)
+        result = sober_basq_wrapper.run()
         kneepoint_pdf_x_eval = np.linspace(np.log(t[1]), np.log(t[-1]), 201)
         kneepoint_pdf_y = np.zeros_like(kneepoint_pdf_x_eval)
         for i in range(n_kneepoints):
-            kneepoint_pdf_y += (
-                pybop_result.posterior.distribution.distribution.marginal(
-                    1 + 2 * i
-                ).pdf(kneepoint_pdf_x_eval)
-            )
+            kneepoint_pdf_y += result.posterior.distribution.distribution.marginal(
+                1 + 2 * i
+            ).pdf(kneepoint_pdf_x_eval)
         kneepoint_pdf_x_plot = np.exp(kneepoint_pdf_x_eval)
         fig = predictive(
-            pybop_result,
+            result,
             simulator=lambda p, sim=simulator: (
                 sim(tensor(p.T)).T.detach().cpu().numpy()
             ),

@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pybamm
 from matplotlib.ticker import PercentFormatter
-from pybamm import print_citations
 from sober import setting_parameters
 
 # Imports the SOBER interface and ensures that calculations are on CPU.
@@ -65,7 +64,7 @@ def capacity_loss_cutoff(variables):
     )
 
 
-def set_up_simulator(reference_lifetime=-1):
+def set_up_simulator(parameter_values, reference_lifetime=-1):
     """
     We need to set up the model twice. First we get the reference lifetime,
     then we use it to set up the target relative to that reference.
@@ -78,14 +77,14 @@ def set_up_simulator(reference_lifetime=-1):
     sei_model.variables["Capacity lost to SEI [C]"] = (
         (
             sei_model.variables["Negative SEI thickness [m]"]
-            - battery_parameters["Initial SEI thickness [m]"]
+            - pybamm.Parameter("Initial SEI thickness [m]")
         )
-        * battery_parameters["Negative electrode surface area to volume ratio [m-1]"]
-        * battery_parameters["Electrode width [m]"]
-        * battery_parameters["Electrode height [m]"]
-        * battery_parameters["Negative electrode thickness [m]"]
-        / battery_parameters["SEI partial molar volume [m3.mol-1]"]
-        * F
+        * pybamm.Parameter("Negative electrode surface area to volume ratio [m-1]")
+        * pybamm.Parameter("Electrode width [m]")
+        * pybamm.Parameter("Electrode height [m]")
+        * pybamm.Parameter("Negative electrode thickness [m]")
+        / pybamm.Parameter("SEI partial molar volume [m3.mol-1]")
+        * pybamm.constants.F.value
     )
     capacity_loss_termination = pybamm.step.CustomTermination(
         name="Capacity loss cut-off", event_function=capacity_loss_cutoff
@@ -94,7 +93,7 @@ def set_up_simulator(reference_lifetime=-1):
         sei_model.variables["Lifetime gained per oversize factor [d]"] = (
             sei_model.variables["Time [d]"] - reference_lifetime
         ) / (sei_model.parameters["Oversize factor"] - 1)
-    protocol = pybamm.Experiment(
+    experiment = pybamm.Experiment(
         [
             "Charge at 0.28 C for 6 hours",
             "Rest for 2 hours",
@@ -107,23 +106,22 @@ def set_up_simulator(reference_lifetime=-1):
     )
     solar_battery_model = pybop.pybamm.Simulator(
         sei_model,
-        battery_parameters,
-        protocol=protocol,
+        parameter_values=parameter_values,
+        protocol=experiment,
         output_variables=["Voltage [V]"],
     )
     return solar_battery_model
 
 
 if __name__ == "__main__":
-    battery_parameters = pybamm.ParameterValues("Marquis2019")
+    parameter_values = pybamm.ParameterValues("Marquis2019")
 
-    F = 96485.33212
     # We append parameters from a cell we know the SEI parameters for.
-    battery_parameters.update(
+    parameter_values.update(
         {
             "Negative electrode surface area to volume ratio [m-1]": 3
-            * (1 - battery_parameters["Negative electrode porosity"])
-            / battery_parameters["Negative particle radius [m]"],
+            * (1 - parameter_values["Negative electrode porosity"])
+            / parameter_values["Negative particle radius [m]"],
             "Electrolyte diffusivity [m2.s-1]": 2.8e-10,
             "Electrode width [m]": (1 / 24) ** 0.5,
             "Nominal cell capacity [A.h]": 0.05,
@@ -131,13 +129,13 @@ if __name__ == "__main__":
             "SEI lithium ion conductivity [S.m-1]": 1e-8,
             "Initial concentration in negative electrode [mol.m-3]": (
                 0.11
-                * battery_parameters[
+                * parameter_values[
                     "Maximum concentration in negative electrode [mol.m-3]"
                 ]
             ),
             "Initial concentration in positive electrode [mol.m-3]": (
                 0.83
-                * battery_parameters[
+                * parameter_values[
                     "Maximum concentration in positive electrode [mol.m-3]"
                 ]
             ),
@@ -147,7 +145,7 @@ if __name__ == "__main__":
             "SEI partial molar volume [m3.mol-1]": 1.078e-5,
             "SEI lithium interstitial diffusivity [m2.s-1]": 1e-15,
             # "SEI relative permittivity": 131,  # not required for growth
-            "SEI open-circuit potential [V]": 17400 / F,
+            "SEI open-circuit potential [V]": 17400 / pybamm.constants.F.value,
             # "Anion transference number in SEI": 1 - 0.063,  # t_plus is 0.063, not required for growth
             "SEI porosity": 0.1,
             # "SEI Bruggeman coefficient": 4.54,  # not required for growth
@@ -157,15 +155,8 @@ if __name__ == "__main__":
             * pybamm.Parameter("Oversize factor"),
             "Oversize factor": "[input]",
         },
-        check_already_exists=False,
     )
 
-    pybop_prior = pybop.MultivariateParameters(
-        {"Adjustment factor": pybop.Parameter(initial_value=1.1, bounds=[1.0, 1.2])},
-        distribution=pybop.MultivariateUniform(
-            np.asarray([[1.0, 1.2 - 1.0]])
-        ),  # bug work-around; change to actual [1.0, 1.2] bounds when PR862 is merged
-    )
     # In this simple example, we first plot the whole target function.
     # A note, as this is a common point of confusion: this plot solves
     # the optimization already, as we can see the optimum point.
@@ -174,12 +165,20 @@ if __name__ == "__main__":
     # variables are to be optimised at once, say 5 or more, or the
     # landscape of the target function becomes much more complex,
     # we use to optimiser to get away with much sparser evaluations.
-    reference_lifetime = set_up_simulator().solve()["Time [d]"].entries[-1]
-    simulator = set_up_simulator(reference_lifetime)
+    reference_lifetime = (
+        set_up_simulator(parameter_values).solve()["Time [d]"].entries[-1]
+    )
+
+    distribution = pybop.MultivariateUniform(bounds=np.asarray([[1.0, 1.2]]))
+    parameter_values["Adjustment factor"] = pybop.Parameter(
+        initial_value=1.1,
+        distribution=pybop.MarginalDistribution(distribution, 0),
+    )
+
     cost = pybop.DesignCost(target="Time [d]")
     oversize_factors = np.asarray([1 + 0.002 * i for i in range(1, 101)])
     eol_days = [reference_lifetime]
-    solar_battery_model = set_up_simulator(reference_lifetime)
+    solar_battery_model = set_up_simulator(parameter_values, reference_lifetime)
     for oversize_factor in oversize_factors:
         eol_days.append(
             cost.evaluate(
@@ -275,17 +274,16 @@ if __name__ == "__main__":
 
     cost = pybop.DesignCost("EOL [d]")
     cost.target_data = np.asarray([0])
-    pybop_problem = pybop.Problem(solar_battery_model, cost)
-    pybop_problem.parameters = pybop_prior
-    pybop_options = SOBER_BASQ_Options(
+    problem = pybop.Problem(solar_battery_model, cost)
+    options = SOBER_BASQ_Options(
         model_initial_samples=16,
         maximise=True,
         sober_iterations=7,
         model_samples_per_iteration=16,
         integration_nodes=128,
     )
-    sober_basq_wrapper = SOBER_BASQ(pybop_problem, pybop_options)
-    pybop_result = sober_basq_wrapper.run()
+    sober_basq_wrapper = SOBER_BASQ(problem, options)
+    result = sober_basq_wrapper.run()
 
     # sober_wrapper = sober_basq_wrapper.optim
 
@@ -298,7 +296,7 @@ if __name__ == "__main__":
     # for plotting a so-called Kernel Density Estimate (KDE). If you are
     # not familiar with this, think of it as a spruced up histogram.
     eval_kde = np.linspace(1.0, 1.2, 101)
-    post_approx = pybop_result.posterior.pdf(eval_kde)
+    post_approx = result.posterior.pdf(eval_kde)
     post_norm = sum(post_approx) * (1.2 - 1.0)
     post_approx /= post_norm
     kde_plot = ax_kde.plot(
@@ -319,6 +317,6 @@ if __name__ == "__main__":
         # columnspacing=0.5,
     )
 
-    print_citations()
+    pybamm.print_citations()
 
     plt.show()

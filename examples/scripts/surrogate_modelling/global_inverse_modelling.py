@@ -71,7 +71,7 @@ class GITTSimulator(pybop.BaseSimulator):
         ]
         relaxation_U += noise_generator.rvs(size=len(relaxation_U))
 
-        solution["Time [s]"]._entries_raw -= pulse_length  # noqa: SL001
+        solution["Time [s]"]._entries_raw -= pulse_length  # noqa: SLF001
 
         return relaxation_t, relaxation_U, solution
 
@@ -86,41 +86,47 @@ class GITTSimulator(pybop.BaseSimulator):
         return self.gitt_simulator(parameters)
 
 
+def parallel_simulator(parameters):
+    return simulator(parameters)[1]
+
+
+def training_simulator(parameters):
+    parameters = parameters.detach().cpu().numpy()
+    with Pool() as p:
+        results = p.map(parallel_simulator, parameters)
+    return torch.tensor(results).to(dtype=torch.float32)
+
+
 if __name__ == "__main__":
     distribution = pybop.MultivariateUniform(np.asarray([[0.02, 1.0], [10.0, 600.0]]))
-    pybop_prior = pybop.MultivariateParameters(
+    parameters = (
         {
             "Pulse strength [C]": pybop.Parameter(
                 initial_value=0.2,
-                bounds=[0.02, 1.0],
-                transformation=pybop.LogTransformation(),
+                distribution=pybop.MarginalDistribution(distribution, 0),
+                # transformation=pybop.LogTransformation(),
             ),
             "Pulse length [s]": pybop.Parameter(
                 initial_value=90.0,
-                bounds=[10.0, 600.0],
-                transformation=pybop.LogTransformation(),
+                distribution=pybop.MarginalDistribution(distribution, 1),
+                # transformation=pybop.LogTransformation(),
             ),
         },
-        distribution=distribution,
     )
-    # Overwrite the forced JointDistribution
-    pybop_prior._distribution = distribution  # noqa: SL001
-    simulator = GITTSimulator(pybop_prior)
-    # Override the forced univariate Parameters
-    simulator.parameters = pybop_prior
+    simulator = GITTSimulator(parameters)
+
     # Use the "cost" functions as gain functions by setting the dataset to 0.
+    dataset = pybop.Dataset({"Time [s]": np.arange(900), "Voltage [V]": np.zeros(900)})
     GITT_cost_offset = pybop.SquareRootFeatureDistance(
-        np.arange(900), np.zeros(900), feature="offset", time_start=0, time_end=30
+        dataset, target="Voltage [V]", feature="offset", time_start=0, time_end=30
     )
     GITT_cost_log_square_root = pybop.SquareRootFeatureDistance(
-        np.arange(900), np.zeros(900), feature="log_slope", time_start=0, time_end=30
+        dataset, target="Voltage [V]", feature="log_slope", time_start=0, time_end=30
     )
     problem = pybop.MetaProblem(
         pybop.Problem(simulator, GITT_cost_offset),
         pybop.Problem(simulator, GITT_cost_log_square_root),
     )
-    # Copy the MultivariateParameters to the meta-problem
-    problem._parameters = simulator.parameters  # noqa: SL001
 
     options = pybop.SOBER_BASQ_GIS_Options(
         model_initial_samples=128,
