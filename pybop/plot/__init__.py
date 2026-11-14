@@ -18,6 +18,7 @@ from .trajectories import trajectories
 from .contour import contour
 from .dataset import dataset
 from .convergence import convergence
+from .correlation import correlation
 from .parameters import parameters
 from .problem import problem
 from .nyquist import nyquist
