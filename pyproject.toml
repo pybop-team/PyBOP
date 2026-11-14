@@ -47,7 +47,6 @@ ep-bolfi = [
     "ep-bolfi>=3.0.2; python_version < '3.14'"
 ]
 sober = [  # *** temporarily include all of these dependencies to test the examples ***
-    "pybop[ep-bolfi]",
     "sober-bo@git+https://github.com/ma921/SOBER.git@3cd4449a249294e0a8b9261bb32afde23ed8341c",  # 10/12/25
     "pybammeis",
     "seaborn",
