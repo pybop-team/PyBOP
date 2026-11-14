@@ -18,7 +18,6 @@ from pybop.parameters.multivariate_distributions import (
 )
 from pybop.parameters.parameter import Parameter, Parameters
 
-
 try:
     import torch
     from torch import tensor
