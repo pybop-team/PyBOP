@@ -51,14 +51,11 @@ t_eval = np.arange(0, 900, 3)
 solution = pybamm.Simulation(model, parameter_values=parameter_values).solve(
     t_eval=t_eval
 )
-corrupt_values = solution["Voltage [V]"](t_eval) + np.random.normal(
-    0, sigma, len(t_eval)
-)
 dataset = pybop.Dataset(
     {
         "Time [s]": t_eval,
         "Current [A]": solution["Current [A]"](t_eval),
-        "Voltage [V]": corrupt_values,
+        "Voltage [V]": pybop.add_noise(solution["Voltage [V]"](t_eval), sigma),
     }
 )
 

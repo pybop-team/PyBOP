@@ -3,8 +3,9 @@ import pickle
 import re
 
 import numpy as np
-import pandas as pd
+import polars as pl
 from scipy.io import loadmat, savemat
+from scipy.sparse import csr_array
 
 
 class NumpyEncoder(json.JSONEncoder):
@@ -15,6 +16,8 @@ class NumpyEncoder(json.JSONEncoder):
     """
 
     def default(self, obj):
+        if isinstance(obj, csr_array):
+            obj = obj.toarray()
         if isinstance(obj, np.ndarray):
             return obj.tolist()
         # won't be called since we only need to convert numpy arrays
@@ -28,6 +31,16 @@ def add_spaces(string):
     re_outer = re.compile(r"([^A-Z ])([A-Z])")
     re_inner = re.compile(r"(?<!^)([A-Z])([^A-Z])")
     return re_outer.sub(r"\1 \2", re_inner.sub(r" \1\2", string))
+
+
+def add_noise(y, sigma):
+    """
+    Add random Gaussian noise to an array.
+    """
+    if np.iscomplexobj(y):
+        # Add noise in the imaginary component as well as the real
+        y += 1j * np.random.normal(loc=0.0, scale=sigma, size=np.shape(y))
+    return y + np.random.normal(loc=0.0, scale=sigma, size=np.shape(y))
 
 
 def is_numeric(x):
@@ -97,21 +110,20 @@ def save_data_dict(
         # use copy to avoid modifying input
         data_dict_copy = data_dict.copy()
         for name, var in data_dict.items():
-            var = np.asarray(var)
-            if var.ndim == 0:
-                data_dict_copy[name] = [var]
-            elif var.ndim >= 2:
+            if np.asarray(var).ndim >= 2:
                 raise ValueError(
                     f"only 0D variables can be saved to csv, but '{name}' is {var.ndim - 1}D"
                 )
-        df = pd.DataFrame(data_dict_copy)
-        return df.to_csv(filename, index=False)
+        df = pl.DataFrame(data_dict_copy)
+        return df.write_csv(filename)
     elif to_format == "json":
+        # Format with indentation
+        json_clean = json.dumps(data_dict, cls=NumpyEncoder, indent=4) + "\n"
         if filename is None:
-            return json.dumps(data_dict, cls=NumpyEncoder)
+            return json_clean
         else:
             with open(filename, "w") as outfile:
-                json.dump(data_dict, outfile, cls=NumpyEncoder)
+                outfile.write(json_clean)
     else:
         raise ValueError(f"format '{to_format}' is not supported")
 
@@ -167,7 +179,7 @@ def load_data_dict(
         data_keys_1d = data_keys_1d or []
         for key in data_keys_0d:
             if key in data_dict.keys():
-                data_dict[key] = data_dict[key][0, 0]
+                data_dict[key] = data_dict[key].item()
         for key in data_keys_1d:
             if key in data_dict.keys():
                 data_dict[key] = data_dict[key].flatten()
@@ -177,7 +189,7 @@ def load_data_dict(
             data_dict = json.load(f)
 
     elif file_format == "csv":
-        data_dict = pd.read_csv(filename).to_dict(orient="list")
+        data_dict = pl.read_csv(filename).to_dict(as_series=False)
 
         # fix dimensions for 0-d data
         data_keys_0d = data_keys_0d or []

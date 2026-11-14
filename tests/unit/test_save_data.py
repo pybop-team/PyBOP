@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from scipy.sparse import csr_array
 
 import pybop
 
@@ -19,7 +20,17 @@ class TestSaveData:
             "list": [1.5, 5.6, 7.8],
             "numpy_array": np.linspace(0.5, 2.5, 10),
             "two_d_array": np.linspace([0.5, 1.0], [2.5, 4.0], 10),
+            "csr_array": csr_array(np.array([[0.5, 3.0]])),
         }
+
+    def flatten(self, array_like):
+        """Convert csr and higher-dimensional numpy arrays to 1D numpy arrays"""
+        try:
+            array = array_like.toarray()
+        except AttributeError:
+            array = array_like
+
+        return np.asarray(array).flatten()
 
     @pytest.mark.parametrize("file_format", ["pickle", "json", "csv", "matlab"])
     def test_save_and_load_data(self, data_dict, file_format, tmp_path):
@@ -50,7 +61,7 @@ class TestSaveData:
         # compare original data with loaded data
         for key, data in data_dict.items():
             np.testing.assert_array_equal(
-                np.asarray(data_load[key]).flatten(), np.asarray(data).flatten()
+                self.flatten(data_load[key]), self.flatten(data)
             )
 
         # check if string is the same as file for json and csv

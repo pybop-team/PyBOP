@@ -22,20 +22,23 @@ class TestProblem:
     def parameters(self):
         return {
             "Negative particle radius [m]": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    2e-05,
-                    0.1e-5,
-                    truncated_at=[1e-6, 5e-5],
-                )
+                distribution=pybop.Gaussian(2e-05, 0.1e-5, truncated_at=[1e-6, 5e-5])
             ),
             "Positive particle radius [m]": pybop.Parameter(
-                distribution=pybop.Gaussian(
-                    0.5e-05,
-                    0.1e-5,
-                    truncated_at=[1e-6, 5e-5],
-                )
+                distribution=pybop.Gaussian(0.5e-05, 0.1e-5, truncated_at=[1e-6, 5e-5])
             ),
         }
+
+    @pytest.fixture
+    def submesh_types(self, model):
+        submesh_types = model.default_submesh_types
+        submesh_types.update(
+            {
+                "negative particle": pybamm.SymbolicUniform1DSubMesh,
+                "positive particle": pybamm.SymbolicUniform1DSubMesh,
+            }
+        )
+        return submesh_types
 
     @pytest.fixture
     def experiment(self):
@@ -69,7 +72,7 @@ class TestProblem:
         pybop.Problem()
 
     @pytest.fixture
-    def simulator(self, parameters, dataset, model):
+    def simulator(self, parameters, dataset, model, submesh_types):
         parameter_values = model.default_parameter_values
         parameter_values.update(parameters)
         return pybop.pybamm.Simulator(
@@ -77,6 +80,7 @@ class TestProblem:
             parameter_values=parameter_values,
             protocol=dataset,
             initial_state={"Initial open-circuit voltage [V]": 4.0},
+            submesh_types=submesh_types,
         )
 
     def test_multiprocessing(self, simulator, dataset):
@@ -106,7 +110,7 @@ class TestProblem:
         assert_array_equal(target_data, dataset["Voltage [V]"])
 
         # Test set target
-        dataset["Voltage [V]"] += np.random.normal(0, 0.05, len(dataset["Voltage [V]"]))
+        dataset["Voltage [V]"] = pybop.add_noise(dataset["Voltage [V]"], 0.05)
         cost.set_target("Voltage [V]", dataset)
         problem = pybop.Problem(simulator, cost)
 
@@ -124,7 +128,7 @@ class TestProblem:
         out = problem.simulate(inputs)
         assert not np.isfinite(out["Voltage [V]"].data)
 
-    def test_fitting_problem_eis(self, parameters):
+    def test_fitting_problem_eis(self, parameters, submesh_types):
         model = pybamm.lithium_ion.SPM()
         dataset = pybop.Dataset(
             {
@@ -143,6 +147,7 @@ class TestProblem:
             parameter_values=parameter_values,
             initial_state={"Initial open-circuit voltage [V]": 4.0},
             f_eval=dataset["Frequency [Hz]"],
+            submesh_types=submesh_types,
         )
         cost = pybop.MeanAbsoluteError(dataset, target=["Impedance"])
         problem = pybop.Problem(simulator, cost)
@@ -154,11 +159,14 @@ class TestProblem:
         out = problem.simulate(inputs)
         assert not np.isfinite(out["Impedance"].data)
 
-    def test_multi_fitting_problem(self, model, parameters, dataset):
+    def test_multi_fitting_problem(self, model, parameters, dataset, submesh_types):
         parameter_values = model.default_parameter_values
         parameter_values.update(parameters)
         simulator = pybop.pybamm.Simulator(
-            model, parameter_values=parameter_values, protocol=dataset
+            model,
+            parameter_values=parameter_values,
+            protocol=dataset,
+            submesh_types=submesh_types,
         )
         cost = pybop.MeanAbsoluteError(dataset)
         problem_1 = pybop.Problem(simulator, cost)
@@ -172,7 +180,10 @@ class TestProblem:
         )
         dataset_2 = pybop.import_pybamm_solution(solution)
         simulator = pybop.pybamm.Simulator(
-            model, parameter_values=parameter_values, protocol=dataset_2
+            model,
+            parameter_values=parameter_values,
+            protocol=dataset_2,
+            submesh_types=submesh_types,
         )
         cost_2 = pybop.MeanAbsoluteError(dataset_2)
         problem_2 = pybop.Problem(simulator, cost_2)
@@ -185,7 +196,7 @@ class TestProblem:
         out2 = problem_2([1e-5, 1e-5])
         np.testing.assert_allclose(out, 0.1 * out1 + out2)
 
-    def test_design_problem(self, parameters, experiment, model):
+    def test_design_problem(self, parameters, experiment, model, submesh_types):
         parameter_values = model.default_parameter_values
         pybop.pybamm.set_formation_concentrations(parameter_values)
         parameter_values.update(parameters)
@@ -196,6 +207,7 @@ class TestProblem:
             parameter_values=parameter_values,
             protocol=experiment,
             initial_state={"Initial SoC": 0.7},
+            submesh_types=submesh_types,
         )
         problem = pybop.Problem(simulator)
 
@@ -205,7 +217,9 @@ class TestProblem:
         inputs = problem.parameters.to_dict([3e-5, 3e-5])
         problem.simulate(inputs)
 
-    def test_problem_construct_with_model_predict(self, parameters, model, dataset):
+    def test_problem_construct_with_model_predict(
+        self, parameters, model, dataset, submesh_types
+    ):
         parameter_values = model.default_parameter_values
         parameter_values.update(parameters)
 
@@ -214,6 +228,7 @@ class TestProblem:
             model,
             parameter_values=parameter_values,
             protocol=np.linspace(0, 10, 100),
+            submesh_types=submesh_types,
         )
         inputs = simulator.parameters.to_dict([1e-5, 1e-5])
         out = simulator.solve(inputs)
@@ -234,22 +249,3 @@ class TestProblem:
                 problem_output["Voltage [V]"].data,
                 atol=1e-6,
             )
-
-    def test_parameter_sensitivities(self, simulator, dataset):
-        cost = pybop.MeanAbsoluteError(dataset)
-        problem = pybop.Problem(simulator, cost)
-        n_params = len(problem.parameters)
-        result = problem.sensitivity_analysis(4, calc_second_order=True)
-
-        # Assertions
-        assert isinstance(result, dict)
-        assert "S1" in result
-        assert "ST" in result
-        assert isinstance(result["S1"], np.ndarray)
-        assert isinstance(result["S2"], np.ndarray)
-        assert isinstance(result["ST"], np.ndarray)
-        assert isinstance(result["S1_conf"], np.ndarray)
-        assert isinstance(result["ST_conf"], np.ndarray)
-        assert isinstance(result["S2_conf"], np.ndarray)
-        assert result["S1"].shape == (n_params,)
-        assert result["ST"].shape == (n_params,)

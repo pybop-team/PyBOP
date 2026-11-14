@@ -32,11 +32,7 @@ class BaseSciPyOptimiser(BaseOptimiser):
         Valid SciPy option keys and their values.
     """
 
-    def __init__(
-        self,
-        problem: Problem,
-        options: OptimiserOptions | None,
-    ):
+    def __init__(self, problem: Problem, options: OptimiserOptions | None):
         super().__init__(problem, options=options)
 
     def scipy_bounds(self) -> Bounds:
@@ -156,11 +152,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
     documentation for method-specific options and constraints.
     """
 
-    def __init__(
-        self,
-        problem: Problem,
-        options: SciPyMinimizeOptions | None = None,
-    ):
+    def __init__(self, problem: Problem, options: SciPyMinimizeOptions | None = None):
         options = options or self.default_options()
         super().__init__(problem=problem, options=options)
 
@@ -279,13 +271,16 @@ class SciPyDifferentialEvolutionOptions(OptimiserOptions):
         Default is 'best1bin'.
     maxiter : int, optional
         Maximum number of generations (default: 1000).
+    vectorized : bool, optional
+        If vectorized is True, the PopulationEvaluator is used to evaluate an array
+        of parameter values, otherwise the ScalarEvaluator is used (default: True).
     popsize : int, optional
         Multiplier for setting the total population size. The population has
         popsize * len(x) individuals (default: 15).
     tol : float, optional
         Relative tolerance for convergence (default: 0.01).
     mutation : float or tuple(float, float), optional
-        The mutation constant. If specified as a float, should be in [0, 2].
+        The mutation constant. If specified as a float, should be in [0, 2).
         If specified as a tuple (min, max), dithering is used (default: (0.5, 1.0)).
     recombination : float, optional
         The recombination constant, should be in [0, 1] (default: 0.7).
@@ -298,24 +293,19 @@ class SciPyDifferentialEvolutionOptions(OptimiserOptions):
     polish : bool, optional
         If True, performs a local optimisation on the solution (default: True).
     init : str or array-like, optional
-        Specify initial population. Can be 'latinhypercube', 'random',
-        or an array of shape (M, len(x)).
+        Initial population, can be 'latinhypercube', 'sobol', 'halton', 'random',
+        or an array of shape (popsize, len(x)) (default: 'latinhypercube').
     atol : float, optional
         Absolute tolerance for convergence (default: 0).
-    updating : {'immediate', 'deferred'}, optional
-        If 'immediate', best solution vector is continuously updated within
-        a single generation (default: 'immediate').
-    workers : int or map-like Callable, optional
-        If workers is an int the population is subdivided into workers
-        sections and evaluated in parallel (default: 1).
     constraints : {NonlinearConstraint, LinearConstraint, Bounds}, optional
-        Constraints on the solver.
+        Constraints on the solver, over and above those applied by the bounds.
     """
 
     strategy: str = "best1bin"
     maxiter: int = 1000
-    tol: float = 0.01
+    vectorized: bool = True
     popsize: int | None = None
+    tol: float | None = None
     mutation: float | tuple | None = None
     recombination: float | None = None
     seed: int | None = None
@@ -324,16 +314,19 @@ class SciPyDifferentialEvolutionOptions(OptimiserOptions):
     polish: bool | None = None
     init: str | np.ndarray | None = None
     atol: float | None = None
+    constraints: list | None = None
 
     def to_dict(self) -> dict:
         """Convert the options to a dictionary format."""
         ret = {
             "strategy": self.strategy,
             "maxiter": self.maxiter,
-            "tol": self.tol,
+            "vectorized": self.vectorized,
+            "workers": 1 if self.vectorized else -1,
         }
         optional_keys = [
             "popsize",
+            "tol",
             "mutation",
             "recombination",
             "seed",
@@ -342,6 +335,7 @@ class SciPyDifferentialEvolutionOptions(OptimiserOptions):
             "polish",
             "init",
             "atol",
+            "constraints",
         ]
         for key in optional_keys:
             if getattr(self, key) is not None:
@@ -376,9 +370,7 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
     """
 
     def __init__(
-        self,
-        problem: Problem,
-        options: SciPyDifferentialEvolutionOptions | None = None,
+        self, problem: Problem, options: SciPyDifferentialEvolutionOptions | None = None
     ):
         options = options or self.default_options()
         super().__init__(problem=problem, options=options)
@@ -394,6 +386,9 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
         """
         self._options_dict = self._options.to_dict()
         self._needs_sensitivities = False
+
+        self._x0 = self.problem.parameters.get_initial_values(transformed=True)
+        self._options_dict["x0"] = self._x0
 
         # Check bounds
         bounds = self.scipy_bounds()
@@ -418,21 +413,26 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
         )
         self._set_callback()
 
-        # Enable vectorisation. Differential evolution proposes candidates as an
-        # array of size (N, S) amd expects to receive a set of costs of size (S,)
-        self._options_dict["updating"] = "deferred"
-        pop_evaluator = PopulationEvaluator(
-            problem=self._problem,
-            minimise=True,
-            with_sensitivities=self._needs_sensitivities,
-            logger=self._logger,
-        )
+        if self._options_dict["vectorized"]:
+            # Enable vectorisation. Differential evolution proposes candidates as an
+            # array of size (N, S) amd expects to receive a set of costs of size (S,)
+            # so use the PopulationEvaluator instead of the ScalarEvaluator
+            pop_evaluator = PopulationEvaluator(
+                problem=self._problem,
+                minimise=True,
+                with_sensitivities=self._needs_sensitivities,
+                logger=self._logger,
+            )
+            self._func = lambda positions: pop_evaluator.evaluate(
+                np.atleast_2d(positions.T)
+            )
+            self._options_dict["updating"] = "deferred"
+        else:
+            self._func = self._evaluator.evaluate
 
-        def map_function(func, positions):
-            # Use the PopulationEvaluator instead of the ScalarEvaluator for multiprocessing
-            return pop_evaluator.evaluate(positions)
-
-        self._options_dict["workers"] = map_function
+        if self._options_dict["workers"] != 1:
+            # If not vectorized, use multiprocessing to parallelise the evaluation
+            self._options_dict["updating"] = "deferred"
 
     def _run(self):
         """
@@ -448,10 +448,7 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
         # Set counters
         self._logger.iteration = 1
 
-        result = differential_evolution(
-            func=self._evaluator.evaluate, **self._options_dict
-        )
-        self._logger.iteration -= 1  # undo the final callback
+        result = differential_evolution(func=self._func, **self._options_dict)
 
         total_time = time() - start_time
 

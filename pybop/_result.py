@@ -347,6 +347,7 @@ class Result:
 
         return {
             "minimising": self._minimising,
+            "parameter_names": self.problem.parameters.names,
             "method_name": self.method_name,
             "n_runs": self.n_runs,
             "best_run": self._best_run,
@@ -425,6 +426,7 @@ class Result:
             file_format=file_format,
             data_keys_0d=["_minimising", "n_runs", "best_run"],
             data_keys_1d=[
+                "parameter_names",
                 "method_name",
                 "best_cost",
                 "initial_cost",
@@ -439,6 +441,8 @@ class Result:
         # Create a dummy problem
         problem = types.SimpleNamespace()
         problem.minimising = data["minimising"]
+        problem.parameters = types.SimpleNamespace()
+        problem.parameters.names = data["parameter_names"]
 
         # Create one logging result for each run
         n_runs = data["n_runs"]

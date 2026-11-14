@@ -136,8 +136,7 @@ class TestArbitraryModels:
         dataset = pybop.Dataset(
             {
                 "Time [s]": t,
-                "u at x_0.5": np.exp(-0.05 * np.pi**2 * t)
-                + np.random.normal(loc=0.0, scale=0.01, size=t.shape),
+                "u at x_0.5": pybop.add_noise(np.exp(-0.05 * np.pi**2 * t), 0.01),
             }
         )
 
@@ -166,9 +165,8 @@ class TestArbitraryModels:
         dataset = pybop.Dataset(
             {
                 "Time [s]": t,
-                "u": np.exp(-t) + np.random.normal(loc=0.0, scale=0.01, size=t.shape),
-                "v": np.exp(-2 * t)
-                + np.random.normal(loc=0.0, scale=0.01, size=t.shape),
+                "u": pybop.add_noise(np.exp(-t), 0.01),
+                "v": pybop.add_noise(np.exp(-2 * t), 0.01),
             }
         )
 
@@ -200,10 +198,8 @@ class TestArbitraryModels:
         dataset = pybop.Dataset(
             {
                 "Time [s]": t,
-                "u": np.sin(2 * t)
-                + np.random.normal(loc=0.0, scale=0.01, size=t.shape),
-                "v": np.cos(2 * t)
-                + np.random.normal(loc=0.0, scale=0.01, size=t.shape),
+                "u": pybop.add_noise(np.sin(2 * t), 0.01),
+                "v": pybop.add_noise(np.cos(2 * t), 0.01),
             }
         )
 

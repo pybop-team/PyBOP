@@ -2,6 +2,7 @@ import numpy as np
 import pybamm
 
 import pybop
+from pybop.models.li_half_cell import SPDiffusion, WeppnerHuggins
 
 # Define model and parameter values
 model_options = {"working electrode": "positive"}
@@ -21,25 +22,22 @@ experiment = pybamm.Experiment(
 solution = pybamm.Simulation(
     model, parameter_values=parameter_values, experiment=experiment
 ).solve()
-corrupt_values = solution["Voltage [V]"].data + np.random.normal(
-    0, sigma, len(solution.t)
-)
 dataset = pybop.Dataset(
     {
         "Time [s]": solution.t,
         "Current [A]": solution["Current [A]"].data,
         "Discharge capacity [A.h]": solution["Discharge capacity [A.h]"].data,
-        "Voltage [V]": corrupt_values,
+        "Voltage [V]": pybop.add_noise(solution["Voltage [V]"].data, sigma),
     }
 )
 
-for model in [pybop.lithium_ion.WeppnerHuggins(), pybop.lithium_ion.SPDiffusion()]:
+for model in [WeppnerHuggins(), SPDiffusion()]:
     # GITT target parameter
     diffusion_parameter = pybop.Parameter(pybop.Gaussian(5000, 1000))
-    if isinstance(model, pybop.lithium_ion.WeppnerHuggins):
+    if isinstance(model, WeppnerHuggins):
         # Group parameter values
-        grouped_parameter_values = (
-            pybop.lithium_ion.WeppnerHuggins.create_grouped_parameters(parameter_values)
+        grouped_parameter_values = WeppnerHuggins.create_grouped_parameters(
+            parameter_values
         )
 
         # We can fit only the duration of the pulse
@@ -52,7 +50,7 @@ for model in [pybop.lithium_ion.WeppnerHuggins(), pybop.lithium_ion.SPDiffusion(
                 dataset["Discharge capacity [A.h]"][-1]
                 - dataset["Discharge capacity [A.h]"][0]
             )
-            * (grouped_parameter_values["Theoretical electrode capacity [A.s]"] / 3600)
+            * grouped_parameter_values["Theoretical electrode capacity [A.h]"]
         )
         grouped_parameter_values.update(
             {
@@ -64,7 +62,7 @@ for model in [pybop.lithium_ion.WeppnerHuggins(), pybop.lithium_ion.SPDiffusion(
         # Fitting parameters
         grouped_parameter_values.update(
             {
-                "Particle diffusion time scale [s]": diffusion_parameter,
+                "Positive particle diffusion time scale [s]": diffusion_parameter,
                 "Reference voltage [V]": pybop.Parameter(
                     initial_value=grouped_parameter_values["Reference voltage [V]"],
                 ),
@@ -73,14 +71,14 @@ for model in [pybop.lithium_ion.WeppnerHuggins(), pybop.lithium_ion.SPDiffusion(
 
     else:
         # Group parameter values
-        grouped_parameter_values = (
-            pybop.lithium_ion.SPDiffusion.create_grouped_parameters(parameter_values)
+        grouped_parameter_values = SPDiffusion.create_grouped_parameters(
+            parameter_values
         )
 
         # Fitting parameters
         grouped_parameter_values.update(
             {
-                "Particle diffusion time scale [s]": diffusion_parameter,
+                "Positive particle diffusion time scale [s]": diffusion_parameter,
                 "Series resistance [Ohm]": pybop.Parameter(
                     initial_value=grouped_parameter_values["Series resistance [Ohm]"],
                 ),
@@ -90,7 +88,7 @@ for model in [pybop.lithium_ion.WeppnerHuggins(), pybop.lithium_ion.SPDiffusion(
     # Build the problem
     gitt_dataset = (
         dataset.get_subset(pulse_index)
-        if isinstance(model, pybop.lithium_ion.WeppnerHuggins)
+        if isinstance(model, WeppnerHuggins)
         else dataset
     )
     simulator = pybop.pybamm.Simulator(
@@ -100,13 +98,15 @@ for model in [pybop.lithium_ion.WeppnerHuggins(), pybop.lithium_ion.SPDiffusion(
     problem = pybop.Problem(simulator, cost)
 
     # Build the optimisation problem
-    optim = pybop.SciPyMinimize(problem)
+    options = pybop.SciPyMinimizeOptions(method="Nelder-Mead")
+    optim = pybop.SciPyMinimize(problem, options)
 
     # Run the optimisation problem
     result = optim.run()
     print(result)
     print(
-        "Diffusion time [s]:", result.best_inputs["Particle diffusion time scale [s]"]
+        "Diffusion time [s]:",
+        result.best_inputs["Positive particle diffusion time scale [s]"],
     )
 
     # Plot the timeseries output

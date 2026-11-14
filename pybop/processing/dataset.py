@@ -1,7 +1,10 @@
 import warnings
+from collections.abc import Iterator
 from typing import Protocol
 
 import numpy as np
+import polars as pl
+from polars._typing import FrameInitTypes
 from pybamm import Interpolant, Solution
 from pybamm import t as pybamm_t
 from scipy.integrate import cumulative_trapezoid
@@ -30,7 +33,7 @@ class Dataset:
 
     Parameters
     ----------
-    data_dictionary : dict
+    data : dict or dataframe
         The experimental data to store within the dataset.
     domain : str, optional
         The domain of the dataset. Defaults to "Time [s]".
@@ -40,31 +43,49 @@ class Dataset:
 
     def __init__(
         self,
-        data_dictionary: dict,
+        data: dict | FrameInitTypes,
         domain: str | None = None,
         control_functions: list[str] | None = None,
     ):
         """Initialise a Dataset instance with data and a set of names."""
-        if not isinstance(data_dictionary, dict):
-            raise TypeError("The input to pybop.Dataset must be a dictionary.")
-        self.data = data_dictionary
+        self.lf = data if isinstance(data, pl.LazyFrame) else pl.LazyFrame(data)
+        if "column_0" in self.columns:  # missing column name(s)
+            raise TypeError("pybop.Dataset expects a dictionary or dataframe.")
         self.domain = domain or "Time [s]"
         self.control_functions = control_functions or ["Current function [A]"]
 
     def __repr__(self):
         """Return a string representation of the Dataset instance."""
-        return f"Dataset: {type(self.data)} \n Contains: {self.data.keys()}"
+        return f"Dataset: {type(self.lf)} \n Contains: {self.columns}"
 
     def __setitem__(self, key, value):
         """Set the data corresponding to a particular key."""
-        self.data[key] = value
+        if key in self.columns:
+            self.lf = self.lf.update(pl.LazyFrame({key: value}))
+        else:
+            self.lf = pl.concat((self.lf, pl.LazyFrame({key: value})), how="horizontal")
 
     def __getitem__(self, key):
         """Return the data corresponding to a particular key."""
-        if key not in self.data.keys():
+        if key not in self.columns:
+            if key == "Time [h]":
+                return self["Time [s]"] / 3600
             raise ValueError(f"The key {key} does not exist in this dataset.")
 
-        return self.data[key]
+        return self.lf.select(key).collect().to_numpy().ravel()
+
+    @property
+    def columns(self) -> list[str]:
+        """Return the variable names as a list."""
+        return self.lf.collect_schema().names()
+
+    def keys(self) -> Iterator[str]:
+        """Return the variable names."""
+        return iter(self.columns)
+
+    def __len__(self) -> int:
+        """Return the length of the data, based on the length of the domain data."""
+        return self.lf.select(pl.len()).collect().item()
 
     def check(self, domain: str = None, signal: str | list[str] = None) -> bool:
         """
@@ -91,13 +112,13 @@ class Dataset:
         signals = [signal] if isinstance(signal, str) else (signal or ["Voltage [V]"])
 
         # Check that the dataset contains domain and chosen signals
-        missing_attributes = set([self.domain, *signals]) - set(self.data.keys())
+        missing_attributes = set([self.domain, *signals]) - set(self.keys())
         if missing_attributes:
             raise ValueError(
                 f"Expected {', '.join(missing_attributes)} in list of dataset"
             )
 
-        domain_data = self.data[self.domain]
+        domain_data = self[self.domain]
 
         # Check domain-specific constraints
         if self.domain == "Time [s]":
@@ -127,7 +148,7 @@ class Dataset:
     ) -> None:
         n_domain_data = len(domain_data)
         for s in signals:
-            if len(self.data[s]) != n_domain_data:
+            if len(self[s]) != n_domain_data:
                 raise ValueError(
                     f"{self.domain} data and {s} data must be the same length."
                 )
@@ -135,30 +156,45 @@ class Dataset:
     def get_subset(self, index: list | np.ndarray):
         """Reduce the dataset to a subset defined by the list of indices."""
         data = {}
-        for key in self.data.keys():
+        for key in self.keys():
             data[key] = self[key][index]
 
         return Dataset(
             data, domain=self.domain, control_functions=self.control_functions
         )
 
+    def get_discontinuities(self, tol: float = 1e-6) -> np.ndarray:
+        """Returns the start, end and any discontinuous points in the domain data."""
+        discontinuities = [np.atleast_2d([0, len(self) - 1])]
+
+        # Check all control variables for discontinuities
+        for key in self.control_functions:
+            control_data = self[key.replace(" function", "")]
+            var_tol = np.max(np.abs(control_data)) * tol
+            d = np.asarray(np.where(np.abs(np.diff(control_data)) > var_tol))
+            discontinuities.append(d)
+            discontinuities.append(d + 1)
+
+        ind = np.unique(np.hstack(discontinuities))
+        return self[self.domain][ind]
+
     def get_interpolant(self, control: str = "Current [A]") -> Interpolant:
         """Returns a linear interpolant for the control as a function of the domain."""
 
         # Check if a linearly interpolated current will match the charge throughput
-        if control == "Current [A]" and "Discharge capacity [A.h]" in self.data.keys():
+        if control == "Current [A]" and "Discharge capacity [A.h]" in self.columns:
             charge_throughput = cumulative_trapezoid(
-                y=self.data[control], x=self.data["Time [s]"]
+                y=self[control], x=self["Time [s]"]
             )
             if not np.allclose(
-                self.data["Discharge capacity [A.h]"][1:] * 3600, charge_throughput
+                self["Discharge capacity [A.h]"][1:] * 3600, charge_throughput
             ):
                 warnings.warn(
                     "A linear interpolation of the current data does not reproduce the discharge capacity.",
                     stacklevel=2,
                 )
 
-        return Interpolant(self.data["Time [s]"], self.data[control], pybamm_t)
+        return Interpolant(self["Time [s]"], self[control], pybamm_t)
 
 
 def import_pybamm_solution(

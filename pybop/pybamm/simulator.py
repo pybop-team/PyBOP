@@ -37,7 +37,8 @@ class Simulator(BaseSimulator):
         Defaults to None, indicating that the existing initial state of charge (for an ECM)
         or initial concentrations (for an EChem model) will be used.
     protocol : pybamm.Experiment | Dataset | np.ndarray | None
-        The protocol as an experiment, a 1D array of values or dataset containing (time) domain data.
+        The protocol as a pybamm.Experiment, a dataset containing (time) domain data, a 1D array
+        of domain data, or a tuple containing domain data in the form (t_eval, t_interp).
     solver : pybamm.BaseSolver, optional
         The solver to use to solve the model. If None, uses `pybop.pybamm.RecommendedSolver`.
     output_variables : list, optional
@@ -53,9 +54,14 @@ class Simulator(BaseSimulator):
     discretisation_kwargs : dict, optional
         Any keyword arguments to pass to the Discretisation class.
         See :class:`pybamm.Discretisation` for details.
+    cache_esoh : bool, optional
+        If True, the electrode SOH computation is cached for repeated calls to `pybamm.Simulation.solve`
+        (default: True).
     build_every_time : bool, optional
         If True, the model will be rebuilt every evaluation. Otherwise, the need to rebuild will be
         determined automatically.
+    remove_voltage_events : bool, optional
+        If True, the minimum and maximum voltage events are removed (default: True).
     """
 
     def __init__(
@@ -71,7 +77,9 @@ class Simulator(BaseSimulator):
         var_pts: dict | None = None,
         spatial_methods: dict | None = None,
         discretisation_kwargs: dict | None = None,
+        cache_esoh: bool = True,
         build_every_time: bool = False,
+        remove_voltage_events: bool = True,
     ):
         # Core
         self._model = model
@@ -95,6 +103,7 @@ class Simulator(BaseSimulator):
         self._t_eval = None
         self._t_interp = None
         self._set_protocol(protocol=protocol)
+        self._remove_voltage_events = remove_voltage_events
 
         # Solver set-up
         if solver is not None:
@@ -114,6 +123,7 @@ class Simulator(BaseSimulator):
         self._var_pts = var_pts or model.default_var_pts
         self._spatial_methods = spatial_methods or model.default_spatial_methods
         self._discretisation_kwargs = discretisation_kwargs or {"check_model": True}
+        self._cache_esoh = cache_esoh
 
         # State
         self._simulation = None
@@ -178,17 +188,20 @@ class Simulator(BaseSimulator):
             self._t_interp = None
         elif isinstance(protocol, Dataset):
             self._experiment = None
-            time_data = protocol[protocol.domain]
-            self._t_eval = [time_data[0], time_data[-1]]
-            self._t_interp = time_data
+            self._t_eval = protocol.get_discontinuities()
+            self._t_interp = protocol[protocol.domain]
             for key in protocol.control_functions:
                 control = key.replace(" function", "")
                 self._parameter_values[key] = protocol.get_interpolant(control)
+        elif isinstance(protocol, tuple):
+            self._experiment = None
+            t_eval, t_interp = protocol
+            self._t_eval = np.intersect1d(t_eval, t_interp)
+            self._t_interp = t_interp
         else:
             self._experiment = None
-            time_data = protocol
-            self._t_eval = [time_data[0], time_data[-1]]
-            self._t_interp = time_data
+            self._t_eval = protocol
+            self._t_interp = protocol
         # else:
         #     raise ValueError(f"Expected an experiment or a dataset. Received {type(protocol)}")
 
@@ -255,7 +268,10 @@ class Simulator(BaseSimulator):
             self._solver.output_variables = output_variables or []
 
             # Remove all voltage-based events when not using an experiment
-            self._model.events = [e for e in self._model.events if "[V]" not in e.name]
+            if self._remove_voltage_events:
+                self._model.events = [
+                    e for e in self._model.events if "[V]" not in e.name
+                ]
 
         # Build if only building once, otherwise build on evaluation
         if not self._requires_model_rebuild:
@@ -369,7 +385,8 @@ class Simulator(BaseSimulator):
                             print(f"Ignoring this sample due to: {e}")
                         solutions.append(
                             FailedSolution(
-                                self.output_variables, self._input_parameter_names
+                                self.output_variables or self.default_variables,
+                                self._input_parameter_names,
                             )
                         )
                 return solutions
@@ -388,6 +405,7 @@ class Simulator(BaseSimulator):
             var_pts=self._var_pts,
             spatial_methods=self._spatial_methods,
             discretisation_kwargs=self._discretisation_kwargs,
+            cache_esoh=self._cache_esoh,
         )
 
     def _simulate_without_rebuild(
@@ -424,7 +442,8 @@ class Simulator(BaseSimulator):
         for solution in solutions:
             if hasattr(solution, "termination") and solution.termination == "failure":
                 failed_solution = FailedSolution(
-                    self.output_variables, self._input_parameter_names
+                    self.output_variables or self.default_variables,
+                    self._input_parameter_names,
                 )
                 processed_solutions.append(failed_solution)
             else:
@@ -472,6 +491,16 @@ class Simulator(BaseSimulator):
         self._output_variables = value
         if self.experiment is None:
             self._set_up_solution_method(output_variables=value)
+
+    @property
+    def default_variables(self):
+        variables: list[str] = []
+        for s in self._model.default_quick_plot_variables:
+            if isinstance(s, str):
+                variables.append(s)
+            else:
+                variables.extend(list(s))
+        return variables
 
     @property
     def requires_model_rebuild(self):

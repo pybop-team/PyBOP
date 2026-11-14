@@ -1,0 +1,48 @@
+{
+  "GITT": {
+    "Precondition": {
+      "Steps": [
+        0,
+        1
+      ],
+      "Step Descriptions": [
+        "Discharge at C/10 until {Vmin} V",
+        "Rest for 2 hours"
+      ]
+    },
+    "GITT charge": {
+      "Steps": [
+        2,
+        3
+      ],
+      "Step Descriptions": [
+        "Charge at C/10 for 10 minutes or until {Vmax} V",
+        "Rest for 3 hours"
+      ],
+      "Cycles": [
+        [
+          2,
+          3,
+          61
+        ]
+      ]
+    },
+    "GITT discharge": {
+      "Steps": [
+        4,
+        5
+      ],
+      "Step Descriptions": [
+        "Discharge at C/10 for 10 minutes or until {Vmin} V",
+        "Rest for 3 hours"
+      ],
+      "Cycles": [
+        [
+          4,
+          5,
+          61
+        ]
+      ]
+    }
+  }
+}

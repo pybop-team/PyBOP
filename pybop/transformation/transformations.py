@@ -3,62 +3,6 @@ import numpy as np
 from pybop import Transformation
 
 
-class IdentityTransformation(Transformation):
-    """
-    This class implements a trivial transformation where the model parameter space
-    and the search space are identical. It extends the base Transformation class.
-
-    The transformation is defined as:
-    - to_search: y = x
-    - to_model: x = y
-
-    Key properties:
-    1. Jacobian: Identity matrix
-    2. Log determinant of Jacobian: Always 0
-    3. Elementwise: True (each output dimension depends only on the corresponding input dimension)
-
-    Use cases:
-    1. When no transformation is needed between spaces
-    2. As a placeholder in composite transformations
-    3. For testing and benchmarking other transformations
-
-    Note: While this transformation doesn't change the parameters, it still provides
-    all the methods required by the Transformation interface, making it useful in
-    scenarios where a transformation object is expected but no actual transformation
-    is needed.
-
-    Initially based on pints.IdentityTransformation method.
-    """
-
-    def __init__(self, n_parameters: int = 1):
-        self._n_parameters = n_parameters
-
-    def is_elementwise(self) -> bool:
-        """See :meth:`Transformation.is_elementwise()`."""
-        return True
-
-    def jacobian(self, q: np.ndarray) -> np.ndarray:
-        """See :meth:`Transformation.jacobian()`."""
-        return np.eye(self._n_parameters)
-
-    def jacobian_S1(self, q: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        """See :meth:`Transformation.jacobian_S1()`."""
-        n = self._n_parameters
-        return self.jacobian(q), np.zeros((n, n, n))
-
-    def log_jacobian_det(self, q: np.ndarray) -> float:
-        """See :meth:`Transformation.log_jacobian_det()`."""
-        return 0.0
-
-    def log_jacobian_det_S1(self, q: np.ndarray) -> tuple[float, np.ndarray]:
-        """See :meth:`Transformation.log_jacobian_det_S1()`."""
-        return self.log_jacobian_det(q), np.zeros(self._n_parameters)
-
-    def _transform(self, x: np.ndarray, method: str) -> np.ndarray:
-        """See :meth:`Transformation._transform`."""
-        return self.verify_input(x)
-
-
 class ScaledTransformation(Transformation):
     """
     This class implements a linear transformation between the model parameter space
@@ -66,19 +10,24 @@ class ScaledTransformation(Transformation):
     It extends the base Transformation class.
 
     The transformation is defined as:
-    - to_search: y = coefficient * (x + intercept)
-    - to_model: x = y / coefficient - intercept
+    - to_search: q = coefficient * (x + intercept)
+    - to_model: x = q / coefficient - intercept
 
-    Where:
+    where:
     - x is in the model parameter space
-    - y is in the search space
-    - coefficient is the scaling factor
-    - intercept is the offset
+    - q is in the search space
 
     This transformation is useful for scaling and shifting parameters to a more
     suitable range for optimisation algorithms.
 
     Based on pints.ScaledTransformation class.
+
+    Attributes
+    ----------
+    coefficient : np.ndarray
+        The scaling coefficient for each parameter.
+    intercept : np.ndarray
+        The intercept to shift the input parameters.
     """
 
     def __init__(
@@ -124,6 +73,45 @@ class ScaledTransformation(Transformation):
             raise ValueError(f"Unknown method: {method}")
 
 
+class IdentityTransformation(ScaledTransformation):
+    """
+    This class implements a trivial transformation where the model parameter space
+    and the search space are identical. It extends the base Transformation class.
+
+    Key properties:
+    1. Jacobian: Identity matrix
+    2. Log determinant of Jacobian: Always 0
+    3. Elementwise: True (each output dimension depends only on the corresponding input dimension)
+
+    Use cases:
+    1. When no transformation is needed between spaces
+    2. As a placeholder in composite transformations
+    3. For testing and benchmarking other transformations
+
+    Note: While this transformation doesn't change the parameters, it still provides
+    all the methods required by the Transformation interface, making it useful in
+    scenarios where a transformation object is expected but no actual transformation
+    is needed.
+
+    Initially based on pints.IdentityTransformation method.
+    """
+
+    def __init__(self, n_parameters: int = 1):
+        super().__init__(
+            coefficient=np.ones(n_parameters),
+            intercept=np.zeros(n_parameters),
+            n_parameters=n_parameters,
+        )
+
+    def log_jacobian_det(self, q: np.ndarray) -> float:
+        """See :meth:`Transformation.log_jacobian_det()`."""
+        return 0.0
+
+    def _transform(self, x: np.ndarray, method: str) -> np.ndarray:
+        """See :meth:`Transformation._transform`."""
+        return self.verify_input(x)
+
+
 class UnitHyperCube(ScaledTransformation):
     """
     A class that implements a linear transformation between the model parameter space
@@ -136,41 +124,27 @@ class UnitHyperCube(ScaledTransformation):
 
     Parameters
     ----------
-    lower : float or array-like of shape (n,)
+    lower : numeric or array-like of shape (n,)
         The lower bound(s) of the model parameter space.
-    upper : float or array-like of shape (n,)
+    upper : numeric or array-like of shape (n,)
         The upper bound(s) of the model parameter space.
-
-    Attributes
-    ----------
-    lower : np.ndarray
-        The lower bound of the input space for each parameter.
-    upper : np.ndarray
-        The upper bound of the input space for each parameter.
-    coeff : np.ndarray
-        The scaling coefficient (1 / (upper - lower)) for each parameter.
-    inter : np.ndarray
-        The intercept (-lower) to shift the input parameters.
     """
 
     def __init__(
         self,
-        lower: float | list | np.ndarray,
-        upper: float | list | np.ndarray,
+        lower: int | float | list | np.ndarray,
+        upper: int | float | list | np.ndarray,
     ):
-        self.lower = lower
-        self.upper = upper
-
         # Validate that upper > lower for all elements
-        if np.any(self.upper <= self.lower):
+        if np.any(upper <= lower):
             raise ValueError(
                 "All elements of upper bounds must be greater than lower bounds."
             )
-
-        # Compute the scaling coefficient (1 / (upper - lower)) and intercept (-lower)
-        self.coeff = 1 / (self.upper - self.lower)
-        self.inter = -self.lower
-        super().__init__(coefficient=self.coeff, intercept=self.inter)
+        super().__init__(
+            coefficient=1 / (upper - lower),
+            intercept=-lower,
+            n_parameters=1 if isinstance(lower, int | float) else len(lower),
+        )
 
 
 class LogTransformation(Transformation):
@@ -179,12 +153,12 @@ class LogTransformation(Transformation):
     and a search space. It extends the base Transformation class.
 
     The transformation is defined as:
-    - to_search: y = log(x)
-    - to_model: x = exp(y)
+    - to_search: q = log(x)
+    - to_model: x = exp(q)
 
     Where:
     - x is in the model parameter space (strictly positive)
-    - y is in the search space (can be any real number)
+    - q is in the search space (can be any real number)
 
     This transformation is particularly useful for:
     1. Parameters that are strictly positive and may span several orders of magnitude.

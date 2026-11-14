@@ -62,18 +62,10 @@ parameter_values.update(
 parameter_values.update(
     {
         "Positive electrode thickness [m]": pybop.Parameter(
-            distribution=pybop.Gaussian(
-                7.56e-05,
-                0.1e-05,
-                truncated_at=[65e-06, 10e-05],
-            ),
+            distribution=pybop.Gaussian(75.6e-6, 1e-6, truncated_at=[65e-6, 100e-6]),
         ),
         "Positive electrode active material volume fraction": pybop.Parameter(
-            distribution=pybop.Gaussian(
-                0.6,
-                0.15,
-                truncated_at=[0.1, 0.9],
-            ),
+            distribution=pybop.Gaussian(0.6, 0.15, truncated_at=[0.1, 0.9]),
         ),
     }
 )

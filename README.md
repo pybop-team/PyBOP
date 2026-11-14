@@ -12,7 +12,6 @@
   [![License](https://img.shields.io/github/license/pybop-team/PyBOP?color=blue)](https://github.com/pybop-team/PyBOP/blob/develop/LICENSE)
   [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/pybop-team/PyBOP/blob/develop/)
   [![nbviewer](https://raw.githubusercontent.com/jupyter/design/master/logos/Badges/nbviewer_badge.svg)](https://nbviewer.org/github/pybop-team/PyBOP/tree/develop/examples/notebooks/)
-  [![Static Badge](https://img.shields.io/badge/https%3A%2F%2Fpybop-team.github.io%2Fpybop-bench%2F?label=Benchmarks)](https://pybop-team.github.io/pybop-bench/)
   [![Releases](https://img.shields.io/github/v/release/pybop-team/PyBOP?color=gold)](https://github.com/pybop-team/PyBOP/releases)
   [![DOI](https://joss.theoj.org/papers/10.21105/joss.07874/status.svg)](https://doi.org/10.21105/joss.07874)
 
@@ -55,7 +54,7 @@ To install a previous version of PyBOP, use the following template and replace t
 pip install pybop==v24.3
 ```
 
-To check that PyBOP is installed correctly, run one of the examples in the following section. For a development installation, see the [Contribution Guide](https://github.com/pybop-team/PyBOP/blob/develop/CONTRIBUTING.md#Installation). More installation information is available in our [documentation](https://pybop-docs.readthedocs.io/en/latest/installation.html) and the [extended installation instructions](https://docs.pybamm.org/en/latest/source/user_guide/installation/gnu-linux-mac.html) for PyBaMM.
+To check that PyBOP is installed correctly, run one of the examples in the following section. For a development installation, see the [Contribution Guide](https://github.com/pybop-team/PyBOP/blob/develop/CONTRIBUTING.md#Installation). More installation information is available in our [documentation](https://pybop-docs.readthedocs.io/en/latest/installation.html) and [PyBaMM's installation guide](https://docs.pybamm.org/en/latest/source/user_guide/installation/index.html).
 
 ## 📖 Citing PyBOP
 

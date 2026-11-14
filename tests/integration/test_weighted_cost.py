@@ -2,7 +2,6 @@ import numpy as np
 import pybamm
 import pytest
 from pybamm import Parameter
-from scipy import stats
 
 import pybop
 
@@ -18,9 +17,7 @@ class TestWeightedCost:
     def setup(self):
         self.sigma = 0.002
         self.ground_truth = np.clip(
-            np.asarray([0.55, 0.55]) + np.random.normal(loc=0.0, scale=0.05, size=2),
-            a_min=0.4,
-            a_max=0.75,
+            pybop.add_noise(np.asarray([0.55, 0.55]), 0.05), a_min=0.4, a_max=0.75
         )
 
     @pytest.fixture
@@ -35,6 +32,7 @@ class TestWeightedCost:
     @pytest.fixture
     def parameter_values(self):
         parameter_values = pybamm.ParameterValues("Chen2020")
+        x = self.ground_truth
         parameter_values.update(
             {
                 "Electrolyte density [kg.m-3]": Parameter("Separator density [kg.m-3]"),
@@ -52,11 +50,6 @@ class TestWeightedCost:
                 ),
                 "Cell mass [kg]": pybop.pybamm.cell_mass(),
                 "Cell volume [m3]": pybop.pybamm.cell_volume(),
-            }
-        )
-        x = self.ground_truth
-        parameter_values.update(
-            {
                 "Negative electrode active material volume fraction": x[0],
                 "Positive electrode active material volume fraction": x[1],
             }
@@ -67,11 +60,10 @@ class TestWeightedCost:
     def parameters(self):
         return {
             "Negative electrode active material volume fraction": pybop.Parameter(
-                stats.uniform(0.4, 0.75 - 0.4),
+                distribution=pybop.Uniform(0.4, 0.75)
             ),
             "Positive electrode active material volume fraction": pybop.Parameter(
-                stats.uniform(0.4, 0.75 - 0.4),
-                # no bounds
+                distribution=pybop.Uniform(0.4, 0.75)  # no bounds
             ),
         }
 
@@ -86,9 +78,6 @@ class TestWeightedCost:
     )
     def cost_class(self, request):
         return request.param
-
-    def noisy(self, data, sigma):
-        return data + np.random.normal(0, sigma, len(data))
 
     @pytest.fixture
     def weighted_fitting_problem(self, model, parameter_values, parameters, cost_class):
@@ -144,16 +133,12 @@ class TestWeightedCost:
             {
                 "Positive electrode thickness [m]": pybop.Parameter(
                     distribution=pybop.Gaussian(
-                        5e-05,
-                        5e-06,
-                        truncated_at=[2e-06, 10e-05],
+                        5e-05, 5e-06, truncated_at=[2e-06, 10e-05]
                     )
                 ),
                 "Negative electrode thickness [m]": pybop.Parameter(
                     distribution=pybop.Gaussian(
-                        5e-05,
-                        5e-06,
-                        truncated_at=[2e-06, 10e-05],
+                        5e-05, 5e-06, truncated_at=[2e-06, 10e-05]
                     )
                 ),
             }
@@ -198,6 +183,8 @@ class TestWeightedCost:
             {
                 "Time [s]": solution["Time [s]"].data,
                 "Current [A]": solution["Current [A]"].data,
-                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma),
+                "Voltage [V]": pybop.add_noise(
+                    solution["Voltage [V]"].data, self.sigma
+                ),
             }
         )
