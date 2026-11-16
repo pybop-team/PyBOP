@@ -49,7 +49,7 @@ class BaseCost:
             # Check that the dataset contains necessary variables
             dataset.check(domain=dataset.domain, signal=self._target)
             self._domain = dataset.domain
-            self._dataset = dataset.data
+            self._dataset = dataset
 
         if self._dataset is not None:
             # Unpack the domain and target data

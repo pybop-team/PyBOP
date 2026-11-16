@@ -254,8 +254,8 @@
             },
             "cycle_info": []
         },
-        "Validation cycling": {
-            "lf": "Validation cycling.parquet",
+        "Rate capability": {
+            "lf": "Rate capability.parquet",
             "info": {
                 "Name": "LG M50 Synthetic C02",
                 "Cell type": "LG M50 Synthetic",
@@ -351,7 +351,7 @@
                     ],
                     "Cycles": []
                 },
-                "Validation cycling": {
+                "Rate capability": {
                     "Steps": [
                         3,
                         4,

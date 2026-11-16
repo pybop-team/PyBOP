@@ -3,7 +3,7 @@ import pickle
 import re
 
 import numpy as np
-import pandas as pd
+import polars as pl
 from scipy.io import loadmat, savemat
 from scipy.sparse import csr_array
 
@@ -110,15 +110,12 @@ def save_data_dict(
         # use copy to avoid modifying input
         data_dict_copy = data_dict.copy()
         for name, var in data_dict.items():
-            var = np.asarray(var)
-            if var.ndim == 0:
-                data_dict_copy[name] = [var]
-            elif var.ndim >= 2:
+            if np.asarray(var).ndim >= 2:
                 raise ValueError(
                     f"only 0D variables can be saved to csv, but '{name}' is {var.ndim - 1}D"
                 )
-        df = pd.DataFrame(data_dict_copy)
-        return df.to_csv(filename, index=False)
+        df = pl.DataFrame(data_dict_copy)
+        return df.write_csv(filename)
     elif to_format == "json":
         # Format with indentation
         json_clean = json.dumps(data_dict, cls=NumpyEncoder, indent=4) + "\n"
@@ -192,7 +189,7 @@ def load_data_dict(
             data_dict = json.load(f)
 
     elif file_format == "csv":
-        data_dict = pd.read_csv(filename).to_dict(orient="list")
+        data_dict = pl.read_csv(filename).to_dict(as_series=False)
 
         # fix dimensions for 0-d data
         data_keys_0d = data_keys_0d or []

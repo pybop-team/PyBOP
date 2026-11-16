@@ -38,13 +38,7 @@ class WeightedCost(BaseCost):
             self.parameters.join(cost.parameters)
 
         # Ensure that all costs point to the same dataset, but keep their own target
-        target_dataset = self.costs[0]._dataset  # noqa: SLF001
-        self.set_target(
-            target=None,
-            dataset=None
-            if target_dataset is None
-            else Dataset(target_dataset, domain=self.costs[0].domain),
-        )
+        self.set_target(target=None, dataset=self.costs[0]._dataset)  # noqa: SLF001
 
         # Check if weights are provided
         if weights is not None:

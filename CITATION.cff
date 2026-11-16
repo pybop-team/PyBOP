@@ -23,7 +23,7 @@ contact:
   given-names: David A.
   orcid: "https://orcid.org/0000-0002-0620-3955"
 doi: 10.5281/zenodo.17711656
-version: "26.3" # Update this alongside new releases
+version: "26.10" # Update this alongside new releases
 repository-code: "https://www.github.com/pybop-team/PyBOP"
 message: If you use this software, please cite our article in the
   Journal of Open Source Software.

@@ -1,5 +1,5 @@
 {
-  "Validation cycling": {
+  "Rate capability": {
     "Precondition": {
       "Steps": [
         0,
@@ -12,7 +12,7 @@
         "Rest for 2 hours"
       ]
     },
-    "Validation cycling": {
+    "Rate capability": {
       "Steps": [
         3,
         4,

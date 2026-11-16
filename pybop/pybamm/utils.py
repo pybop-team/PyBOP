@@ -10,7 +10,16 @@ class RecommendedSolver(pybamm.IDAKLUSolver):
     def __init__(
         self, output_variables: list[str] | None = None, options: dict | None = None
     ):
-        solver_options = {"suppress_algebraic_error": True, "dt_max": 300}
+        solver_options = {
+            "suppress_algebraic_error": True,  # for discontinuous variables
+            "dt_max": 300,  # five minutes
+            "max_num_steps": 500,  # restore IDA default
+            "max_nonlinear_iterations": 4,  # restore IDA default
+            "max_convergence_failures": 10,  # restore IDA default
+            "max_num_steps_ic": 5,  # restore IDA default
+            "max_num_jacobians_ic": 4,  # restore IDA default
+            "max_num_iterations_ic": 10,  # restore IDA default
+        }
 
         if platform.system() != "Windows":
             solver_options["num_threads"] = max(1, mp.cpu_count())

@@ -2,6 +2,24 @@
 
 ## Features
 
+- [#1007](https://github.com/pybop-team/PyBOP/pull/1007) - Adds example script for discharge rate parameterisation.
+
+## Optimisations
+
+- [#1010](https://github.com/pybop-team/PyBOP/pull/1010) - Restores the IDA default options to the `pybamm.RecommendedSolver`.
+
+## Bug Fixes
+
+## Breaking Changes
+
+- [#1027](https://github.com/pybop-team/PyBOP/pull/1027) - Changes the `Dataset` backend to a `polars.LazyFrame`.
+- [#1016](https://github.com/pybop-team/PyBOP/pull/1016) - Raises the lowest supported dependencies, including `numpy>=2`.
+- [#993](https://github.com/pybop-team/PyBOP/pull/993) - Drop support for Python 3.10.
+
+# [v26.10](https://github.com/pybop-team/PyBOP/tree/v26.3) - 2026-11-03
+
+## Features
+
 - [#996](https://github.com/pybop-team/PyBOP/pull/996) - Updates the DFN parameterisation pipeline, adds draft mode for testing.
 - [#998](https://github.com/pybop-team/PyBOP/pull/998) - Add `remove_voltage_events` option, `default_variables` property and the option to pass both `t_eval` and `t_interp` to the PyBaMM simulators.
 - [#995](https://github.com/pybop-team/PyBOP/pull/995) - Updates the cell models, including adding the thermodynamic factor to the GroupedSPMe.

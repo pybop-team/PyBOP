@@ -9,7 +9,7 @@
 
 # To update the matrix, the variables below can be modified as needed.
 
-python_version=("3.10" "3.11" "3.12" "3.13" "3.14" "3.15")
+python_version=("3.11" "3.12" "3.13" "3.14" "3.15")
 os=("ubuntu-latest" "windows-latest" "macos-15-intel" "macos-latest")
 # This command fetches the last PyBaMM version excluding release candidates from PyPI
 pybamm_version=($(curl -s https://pypi.org/pypi/pybamm/json | jq -r '.releases | keys[]' | grep -v rc | sort -V | tail -n 1 | paste -sd " " -))

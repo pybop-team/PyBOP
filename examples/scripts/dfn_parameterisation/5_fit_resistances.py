@@ -107,10 +107,10 @@ for cell in get_cells():
     voltage_points = (
         experiment.lf.select("Initial voltage [V]")
         .drop_nulls()
-        .unique(maintain_order=True)
+        .unique(keep="first", maintain_order=True)
         .collect()
         .to_numpy()
-        .flatten()
+        .ravel()
     )
     N_SOC = len(voltage_points)
 
