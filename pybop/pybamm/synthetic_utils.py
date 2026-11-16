@@ -303,7 +303,9 @@ def _solve_time_domain_experiment(
     simulator_kwargs["parameter_values"] = parameter_values
     simulator_kwargs["protocol"] = experiment
 
-    return pybop.pybamm.Simulator(model, **simulator_kwargs).solve()
+    simulator = pybop.pybamm.Simulator(model, **simulator_kwargs)
+    simulator.debug_mode = True  # return simulation errors to the user
+    return simulator.solve()
 
 
 def _build_eis_sweep_dataframe(
@@ -377,6 +379,7 @@ def _solve_eis_experiment(
             eis_simulator = pybop.pybamm.EISSimulator(
                 eis_model, f_eval=frequencies, parameter_values=parameter_values
             )
+            eis_simulator.debug_mode = True  # return simulation errors to the user
             impedance = np.asarray(eis_simulator.solve()["Impedance"].data)
             initial_point = (
                 (None, None)
