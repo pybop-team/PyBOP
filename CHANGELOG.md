@@ -10,6 +10,8 @@
 
 ## Bug Fixes
 
+- [#1003](https://github.com/pybop-team/PyBOP/pull/1003) - Fix synthetic data generation to cope with empty steps.
+
 ## Breaking Changes
 
 - [#1027](https://github.com/pybop-team/PyBOP/pull/1027) - Changes the `Dataset` backend to a `polars.LazyFrame`.
