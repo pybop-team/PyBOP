@@ -249,24 +249,22 @@ def _solution_to_dataframe(
         ]
     )
     pybamm_data["Time [s]"] += start_time
-    try:
-        raw_dataframe = pl.LazyFrame(pybamm_data)
-    except pl.exceptions.ShapeError:
-        # Recreate the step and cycle numbers following PyBaMM PR 5724
-        cycle_numbers, step_numbers, previous_last_t = [], [], None
-        for i, cycle in enumerate(solution.cycles):
-            for j, step in enumerate(cycle.steps):
-                # a step's first point is dropped when it repeats the previous
-                # step's last point, so don't number it twice
-                repeated = previous_last_t is not None and step.t[0] == previous_last_t
-                previous_last_t = step.t[-1]
-                length = len(step.t) - repeated
-                cycle_numbers.append(np.full(length, i, dtype=float))
-                step_numbers.append(np.full(length, j, dtype=float))
-        pybamm_data["Cycle"] = np.concatenate(cycle_numbers)
-        pybamm_data["Step"] = np.concatenate(step_numbers)
 
-        raw_dataframe = pl.LazyFrame(pybamm_data)
+    # Recreate the step and cycle numbers in line with PyBaMM PR 5724
+    cycle_numbers, step_numbers, previous_last_t = [], [], None
+    for i, cycle in enumerate(solution.cycles):
+        for j, step in enumerate(cycle.steps):
+            # a step's first point is dropped when it repeats the previous
+            # step's last point, so don't number it twice
+            repeated = previous_last_t is not None and step.t[0] == previous_last_t
+            previous_last_t = step.t[-1]
+            length = len(step.t) - repeated
+            cycle_numbers.append(np.full(length, i, dtype=float))
+            step_numbers.append(np.full(length, j, dtype=float))
+    pybamm_data["Cycle"] = np.concatenate(cycle_numbers)
+    pybamm_data["Step"] = np.concatenate(step_numbers)
+
+    raw_dataframe = pl.LazyFrame(pybamm_data)
 
     sub_solutions = [step for cycle in solution.cycles for step in cycle.steps]
     empty_steps = np.argwhere(
