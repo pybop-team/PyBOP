@@ -96,7 +96,7 @@ class SPDiffusion(BaseHalfCellModel):
         # The div and grad operators will be converted to the appropriate matrix
         # multiplication at the discretisation stage
         N_s_p = -pybamm.grad(sto_p) / self.tau_d(sto_p)
-        self.rhs[sto_p] = -pybamm.div(N_s_p)
+        self.rhs[sto_p] = -pybamm.div(N_s_p, no_simplification=True)
 
         # Boundary conditions must be provided for equations with spatial derivatives
         j_p = -I / (3 * Q_th_p)

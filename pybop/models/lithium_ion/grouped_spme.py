@@ -244,8 +244,8 @@ class GroupedSPMe(BaseGroupedModel):
         # multiplication at the discretisation stage
         N_s_n = -pybamm.grad(sto_n) / self.tau_d(sto_n, T, "negative")
         N_s_p = -pybamm.grad(sto_p) / self.tau_d(sto_p, T, "positive")
-        self.rhs[sto_n] = -pybamm.div(N_s_n)
-        self.rhs[sto_p] = -pybamm.div(N_s_p)
+        self.rhs[sto_n] = -pybamm.div(N_s_n, no_simplification=True)
+        self.rhs[sto_p] = -pybamm.div(N_s_p, no_simplification=True)
 
         # Boundary conditions must be provided for equations with spatial derivatives
         self.boundary_conditions[sto_n] = {
@@ -292,7 +292,7 @@ class GroupedSPMe(BaseGroupedModel):
         )
 
         # The concatenated stoichiometry (sto_e) and flux (N_e) are continuous across interfaces
-        self.rhs[sto_e] = (-pybamm.div(N_e) + j_e) / zeta
+        self.rhs[sto_e] = (-pybamm.div(N_e, no_simplification=True) + j_e) / zeta
 
         self.boundary_conditions[sto_e] = {
             "left": (Scalar(0), ("Flux", N_e)),
