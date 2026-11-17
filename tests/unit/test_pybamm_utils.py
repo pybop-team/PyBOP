@@ -103,3 +103,27 @@ class TestPybammUtils:
             pybop.pybamm.convert_to_half_cell_parameters(
                 full_cell_parameters, "negative"
             )
+
+    def test_flatten_sequence(self):
+        sequence = [
+            ("step 1",),
+            ("step 2a", "step 2b"),
+            ("step 3a", "step 3b"),
+        ]
+        flat_sequence = pybop.pybamm.synthetic_utils._flatten_sequence(
+            sequence, delete_indices=[1]
+        )
+        assert flat_sequence == [
+            "step 1",
+            "step 2b",
+            "step 3a",
+            "step 3b",
+        ]
+        flat_sequence = pybop.pybamm.synthetic_utils._flatten_sequence(sequence)
+        assert flat_sequence == [
+            "step 1",
+            "step 2a",
+            "step 2b",
+            "step 3a",
+            "step 3b",
+        ]
