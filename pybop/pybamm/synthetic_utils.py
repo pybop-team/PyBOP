@@ -239,7 +239,6 @@ def _solution_to_dataframe(
     event_offset: int,
 ) -> pl.LazyFrame:
     """Convert a PyBaMM solution into the PyProBE-required dataframe layout."""
-
     pybamm_data = solution.get_data_dict(
         [
             "Time [s]",
@@ -249,7 +248,6 @@ def _solution_to_dataframe(
             "Volume-averaged cell temperature [K]",
         ]
     )
-
     pybamm_data["Time [s]"] += start_time
     try:
         raw_dataframe = pl.LazyFrame(pybamm_data)
