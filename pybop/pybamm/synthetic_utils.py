@@ -211,7 +211,7 @@ def _remap_cycle_info(
         .ravel()
     )
     return dataframe.with_columns(
-        Step=pl.col("Event").replace(event_numbers, flattened_step_sequence)
+        Step=pl.col("Event").replace_strict(event_numbers, flattened_step_sequence)
     )
 
 
@@ -250,24 +250,33 @@ def _solution_to_dataframe(
         ]
     )
 
-    empty_steps = None
-    if len(solution.cycles) > 0:
-        empty_steps = np.flatnonzero(
-            [
-                isinstance(step, pybamm.EmptySolution)
-                for cycle in solution.cycles
-                for step in cycle.steps
-            ]
-        )
-        empty_steps = empty_steps[empty_steps != 0]
-
     pybamm_data["Time [s]"] += start_time
     try:
         raw_dataframe = pl.LazyFrame(pybamm_data)
     except pl.exceptions.ShapeError:
-        # Account for an error where the Step is one longer than the Solution
-        pybamm_data["Step"] = pybamm_data["Step"][:-1]
+        # Recreate the step and cycle numbers following PyBaMM PR 5724
+        cycle_numbers, step_numbers, previous_last_t = [], [], None
+        for i, cycle in enumerate(solution.cycles):
+            for j, step in enumerate(cycle.steps):
+                # a step's first point is dropped when it repeats the previous
+                # step's last point, so don't number it twice
+                repeated = previous_last_t is not None and step.t[0] == previous_last_t
+                previous_last_t = step.t[-1]
+                length = len(step.t) - repeated
+                cycle_numbers.append(np.full(length, i, dtype=float))
+                step_numbers.append(np.full(length, j, dtype=float))
+        pybamm_data["Cycle"] = np.concatenate(cycle_numbers)
+        pybamm_data["Step"] = np.concatenate(step_numbers)
+
         raw_dataframe = pl.LazyFrame(pybamm_data)
+
+    sub_solutions = [step for cycle in solution.cycles for step in cycle.steps]
+    empty_steps = np.argwhere(
+        [
+            1 if i > 0 and isinstance(step, pybamm.EmptySolution) else 0
+            for i, step in enumerate(sub_solutions)
+        ]
+    ).ravel()
     raw_dataframe = _remap_cycle_info(
         raw_dataframe,
         _flatten_sequence(step_sequence, delete_indices=empty_steps),
