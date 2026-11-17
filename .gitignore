@@ -315,13 +315,14 @@ $RECYCLE.BIN/
 .vscode/*
 
 # Output files
-examples/**/*.json
+examples/parameters/*.json
 !examples/scripts/synthetic_data/procedures/*.json
 !examples/parameters/example_BPX.json
 !examples/parameters/initial_ecm_parameters.json
-examples/**/*.svg
-examples/**/*.pkl
+examples/**/*.csv
 examples/**/*.pickle
+examples/**/*.pkl
+examples/**/*.png
 
 # Pycharm
 *.idea/

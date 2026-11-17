@@ -159,6 +159,7 @@ class GroupedSPMe(BaseGroupedModel):
         l_n = Parameter("Negative electrode relative thickness")
 
         t_plus = Parameter("Cation transference number")
+        chiRT_F = 2 * RT_F * (1 - t_plus) * Parameter("Thermodynamic factor")
 
         R0 = Parameter("Series resistance [Ohm]")
 
@@ -195,7 +196,7 @@ class GroupedSPMe(BaseGroupedModel):
         U_n_init = self.U(sto_n_init, "negative")
         U_p_init = self.U(sto_p_init, "positive")
 
-        eta_e = (2 * RT_F * (1 - t_plus)) * (
+        eta_e = chiRT_F * (
             pybamm.x_average(pybamm.log(sto_e_p))
             - pybamm.x_average(pybamm.log(sto_e_n))
         )
@@ -207,10 +208,10 @@ class GroupedSPMe(BaseGroupedModel):
         # into a vector of the right shape, for multiplying with other vectors
 
         # Overpotentials
-        eta_n = (v_s_n - U_n) + (2 * RT_F * (1 - t_plus)) * (
+        eta_n = (v_s_n - U_n) + chiRT_F * (
             pybamm.x_average(pybamm.log(sto_e_n)) - pybamm.log(sto_e_n)
         )
-        eta_p = (v_s_p - U_p) + (2 * RT_F * (1 - t_plus)) * (
+        eta_p = (v_s_p - U_p) + chiRT_F * (
             pybamm.x_average(pybamm.log(sto_e_p)) - pybamm.log(sto_e_p)
         )
 
@@ -584,8 +585,8 @@ class GroupedSPMe(BaseGroupedModel):
         D_n = param["Negative particle diffusivity [m2.s-1]"]
         b_p = param["Positive electrode Bruggeman coefficient (electrolyte)"]
         b_n = param["Negative electrode Bruggeman coefficient (electrolyte)"]
-        Cdl_p = param["Positive electrode double-layer capacity [F.m-2]"]
-        Cdl_n = param["Negative electrode double-layer capacity [F.m-2]"]
+        Cdl_p = param.get("Positive electrode double-layer capacity [F.m-2]", 0.0)
+        Cdl_n = param.get("Negative electrode double-layer capacity [F.m-2]", 0.0)
         sigma_p = (
             param["Positive electrode conductivity [S.m-1]"]
             * alpha_p ** param["Positive electrode Bruggeman coefficient (electrode)"]
@@ -601,7 +602,6 @@ class GroupedSPMe(BaseGroupedModel):
         L_s = param["Separator thickness [m]"]
         epsilon_sep = param["Separator porosity"]
         b_sep = param["Separator Bruggeman coefficient (electrolyte)"]
-        t_plus = param["Cation transference number"]
         kappa_e = param["Electrolyte conductivity [S.m-1]"]  # (ce0, T)
 
         # Get reference exchange current density [A.m-2]
@@ -617,7 +617,11 @@ class GroupedSPMe(BaseGroupedModel):
         )
 
         # Compute the cell area and thickness
-        A = param["Electrode height [m]"] * param["Electrode width [m]"]
+        A = (
+            param["Electrode height [m]"]
+            * param["Electrode width [m]"]
+            * param["Number of electrodes connected in parallel to make a cell"]
+        )
         L = L_p + L_n + L_s
 
         # Compute the series resistance
@@ -656,12 +660,18 @@ class GroupedSPMe(BaseGroupedModel):
         try:
             tau_d_p = R_p**2 / D_p
         except TypeError:
-            tau_d_p = FunctionalDiffusionTime(R_p**2, D_p, c_max_p)
+            tau_d_p = FunctionalDiffusionTime(R_p**2, D_p)
 
         try:
             tau_d_n = R_n**2 / D_n
         except TypeError:
-            tau_d_n = FunctionalDiffusionTime(R_n**2, D_n, c_max_n)
+            tau_d_n = FunctionalDiffusionTime(R_n**2, D_n)
+
+        try:
+            tau_e = epsilon_sep * L**2 / (epsilon_sep**b_sep * De)
+        except TypeError:
+            De_prefactor = epsilon_sep * L**2 / epsilon_sep**b_sep
+            tau_e = FunctionalDiffusionTime(De_prefactor, De, ce0)
 
         try:
             tau_e = epsilon_sep * L**2 / (epsilon_sep**b_sep * De)
@@ -710,7 +720,8 @@ class GroupedSPMe(BaseGroupedModel):
             "Negative electrode charge transfer time scale [s]": tau_ct_n,
             "Positive electrode capacitance [F]": C_p,
             "Negative electrode capacitance [F]": C_n,
-            "Cation transference number": t_plus,
+            "Cation transference number": param["Cation transference number"],
+            "Thermodynamic factor": param["Thermodynamic factor"],
             "Positive electrode relative thickness": l_p,
             "Negative electrode relative thickness": l_n,
             "Series resistance [Ohm]": R0,

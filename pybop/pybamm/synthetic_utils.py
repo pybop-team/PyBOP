@@ -1,6 +1,7 @@
 """Utilities for synthetic data generation."""
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -93,25 +94,6 @@ def convert_to_half_cell_parameters(
                 ) from error
             updated_parameter_values.update({parameter_name: source_value})
 
-        updated_parameter_values.update(
-            {
-                "Lower voltage cut-off [V]": 0.005,
-                "Upper voltage cut-off [V]": 1.5,
-                "Open-circuit voltage at 0% SOC [V]": 0.005,
-                "Open-circuit voltage at 100% SOC [V]": 1.5,
-            }
-        )
-
-    else:
-        updated_parameter_values.update(
-            {
-                "Lower voltage cut-off [V]": 3.5,
-                "Upper voltage cut-off [V]": 4.2,
-                "Open-circuit voltage at 0% SOC [V]": 3.5,
-                "Open-circuit voltage at 100% SOC [V]": 4.2,
-            }
-        )
-
     updated_parameter_values.update(
         {
             "Negative electrode OCP [V]": 0.0,
@@ -123,6 +105,12 @@ def convert_to_half_cell_parameters(
             ),
             "Negative electrode charge transfer coefficient": 0.5,
             "Negative electrode double-layer capacity [F.m-2]": 0.2,
+            "Open-circuit voltage at 0% SOC [V]": updated_parameter_values[
+                "Lower voltage cut-off [V]"
+            ],
+            "Open-circuit voltage at 100% SOC [V]": updated_parameter_values[
+                "Upper voltage cut-off [V]"
+            ],
         }
     )
     return updated_parameter_values
@@ -184,13 +172,22 @@ def _get_experiment_sequences(
     return step_sequence, description_sequence
 
 
-def _flatten_sequence(sequences: list[tuple[str, ...]]) -> list[str]:
+def _flatten_sequence(
+    sequences: list[tuple[str, ...]], delete_indices: list[int] | None = None
+) -> list[str]:
     """Flatten a list of experiment tuples into a list of per-event descriptions."""
-    return [step for sequence in sequences for step in sequence]
+    delete_indices = (
+        [] if delete_indices is None else sorted(delete_indices, reverse=True)
+    )
+    flattened = [step for sequence in sequences for step in sequence]
+    for index in delete_indices:
+        if 0 <= index < len(flattened):
+            del flattened[index]
+    return flattened
 
 
 def _remap_cycle_info(
-    dataframe: pl.LazyFrame, step_sequence: list[tuple[int, ...]], event_offset: int
+    dataframe: pl.LazyFrame, flattened_step_sequence: list[int], event_offset: int
 ) -> pl.LazyFrame:
     """Map PyBaMM step and cycle numbers back to match the cycle information."""
     step_column = pl.col("Step").cast(pl.Int64)
@@ -211,10 +208,10 @@ def _remap_cycle_info(
         dataframe.select(event_column.unique(maintain_order=True))
         .collect()
         .to_numpy()
-        .flatten()
+        .ravel()
     )
     return dataframe.with_columns(
-        Step=pl.col("Event").replace(event_numbers, _flatten_sequence(step_sequence))
+        Step=pl.col("Event").replace_strict(event_numbers, flattened_step_sequence)
     )
 
 
@@ -252,13 +249,35 @@ def _solution_to_dataframe(
         ]
     )
     pybamm_data["Time [s]"] += start_time
-    try:
-        raw_dataframe = pl.LazyFrame(pybamm_data)
-    except pl.exceptions.ShapeError:
-        # Account for an error where the Step is one longer than the Solution
-        pybamm_data["Step"] = pybamm_data["Step"][:-1]
-        raw_dataframe = pl.LazyFrame(pybamm_data)
-    raw_dataframe = _remap_cycle_info(raw_dataframe, step_sequence, event_offset)
+
+    # Recreate the step and cycle numbers in line with PyBaMM PR 5724
+    cycle_numbers, step_numbers, previous_last_t = [], [], None
+    for i, cycle in enumerate(solution.cycles):
+        for j, step in enumerate(cycle.steps):
+            # a step's first point is dropped when it repeats the previous
+            # step's last point, so don't number it twice
+            repeated = previous_last_t is not None and step.t[0] == previous_last_t
+            previous_last_t = step.t[-1]
+            length = len(step.t) - repeated
+            cycle_numbers.append(np.full(length, i, dtype=float))
+            step_numbers.append(np.full(length, j, dtype=float))
+    pybamm_data["Cycle"] = np.concatenate(cycle_numbers)
+    pybamm_data["Step"] = np.concatenate(step_numbers)
+
+    raw_dataframe = pl.LazyFrame(pybamm_data)
+
+    sub_solutions = [step for cycle in solution.cycles for step in cycle.steps]
+    empty_steps = np.argwhere(
+        [
+            1 if i > 0 and isinstance(step, pybamm.EmptySolution) else 0
+            for i, step in enumerate(sub_solutions)
+        ]
+    ).ravel()
+    raw_dataframe = _remap_cycle_info(
+        raw_dataframe,
+        _flatten_sequence(step_sequence, delete_indices=empty_steps),
+        event_offset,
+    )
     return raw_dataframe.select(
         [
             pl.col("Time [s]"),
@@ -279,18 +298,19 @@ def _solve_time_domain_experiment(
     model: pybamm.BaseModel,
     parameter_values: pybamm.ParameterValues,
     previous_solution: pybamm.Solution | None,
-    solve_kwargs: dict[str, float] | None,
+    simulator_kwargs: dict[str, float] | None,
 ) -> pybamm.Solution:
     """Solve a standard time-domain experiment."""
     if previous_solution is not None:
         model.set_initial_conditions_from(previous_solution)
 
-    sim = pybamm.Simulation(
-        model, experiment=experiment, parameter_values=parameter_values
-    )
+    simulator_kwargs = {} if simulator_kwargs is None else simulator_kwargs
+    simulator_kwargs["parameter_values"] = parameter_values
+    simulator_kwargs["protocol"] = experiment
 
-    solve_kwargs = {} if solve_kwargs is None else solve_kwargs
-    return sim.solve(**solve_kwargs)
+    simulator = pybop.pybamm.Simulator(model, **simulator_kwargs)
+    simulator.debug_mode = True  # return simulation errors to the user
+    return simulator.solve()
 
 
 def _build_eis_sweep_dataframe(
@@ -298,22 +318,23 @@ def _build_eis_sweep_dataframe(
     event_number: int,
     frequencies: np.ndarray,
     impedance: np.ndarray,
-    initial_voltage: float | None,
+    initial_point: tuple,
 ) -> pl.LazyFrame:
     """Create a PyProBE-compatible dataframe for one EIS sweep."""
     row_count = len(frequencies)
+    initial_capacity, initial_voltage = initial_point
     return pl.LazyFrame(
         {
             "Time [s]": [None] * row_count,
             "Step": [step_number] * row_count,
             "Event": [event_number] * row_count,
-            "Initial voltage [V]": [initial_voltage] * row_count,
+            "Initial voltage [V]": [float(initial_voltage)] * row_count,
             "Frequency [Hz]": frequencies,
             "Impedance (real) [Ohm]": np.real(impedance),
             "Impedance (imag) [Ohm]": np.imag(impedance),
             "Current [A]": [None] * row_count,
             "Voltage [V]": [None] * row_count,
-            "Capacity [Ah]": [None] * row_count,
+            "Capacity [Ah]": [float(initial_capacity)] * row_count,
         }
     )
 
@@ -324,7 +345,7 @@ def _solve_eis_experiment(
     parameter_values: pybamm.ParameterValues,
     previous_solution: pybamm.Solution | None,
     step_offset: int,
-    solve_kwargs: dict[str, float] | None,
+    simulator_kwargs: dict[str, float] | None,
 ) -> tuple[pl.LazyFrame, dict[str, Any], pybamm.Solution | None, int, int]:
     """Solve an EIS experiment and return a PyProBE-compatible dataframe."""
     frequencies = _build_frequency_grid(experiment_info["Frequencies [Hz]"])
@@ -344,7 +365,7 @@ def _solve_eis_experiment(
                 model=model,
                 parameter_values=parameter_values,
                 previous_solution=latest_solution,
-                solve_kwargs=solve_kwargs,
+                simulator_kwargs=simulator_kwargs,
             )
             sweep_frame = _solution_to_dataframe(
                 solution=solution,
@@ -363,18 +384,22 @@ def _solve_eis_experiment(
             eis_simulator = pybop.pybamm.EISSimulator(
                 eis_model, f_eval=frequencies, parameter_values=parameter_values
             )
+            eis_simulator.debug_mode = True  # return simulation errors to the user
             impedance = np.asarray(eis_simulator.solve()["Impedance"].data)
-            initial_voltage = (
-                None
+            initial_point = (
+                (None, None)
                 if latest_solution is None
-                else float(latest_solution["Terminal voltage [V]"].data[-1])
+                else (
+                    latest_solution["Discharge capacity [A.h]"].data[-1] * -1,
+                    latest_solution["Terminal voltage [V]"].data[-1],
+                )
             )
             sweep_frame = _build_eis_sweep_dataframe(
                 step_number=step,
                 event_number=step_offset + i,
                 frequencies=frequencies,
                 impedance=impedance,
-                initial_voltage=initial_voltage,
+                initial_point=initial_point,
             )
         sweep_frames.append(sweep_frame)
 
@@ -386,7 +411,7 @@ def simulate_procedure(
     model: pybamm.BaseModel,
     parameter_values: pybamm.ParameterValues,
     spec_path: Path,
-    solve_kwargs: dict[str, float] | None = None,
+    simulator_kwargs: dict[str, float] | None = None,
 ) -> None:
     from pyprobe import Cell
     from pyprobe.filters import Procedure
@@ -395,9 +420,9 @@ def simulate_procedure(
     if isinstance(spec_path, list):
         procedures = {}
         for sp in spec_path:
-            procedures.update(_validate_spec(sp))
+            procedures.update(_validate_spec(sp, parameter_values))
     else:
-        procedures = _validate_spec(spec_path)
+        procedures = _validate_spec(spec_path, parameter_values)
 
     cell_type = info.get("Cell type", "Unknown type")
     cell_format = _canonical_cell_format(info.get("Cell format", "Full cell"))
@@ -460,7 +485,7 @@ def simulate_procedure(
                     parameter_values=parameter_values,
                     previous_solution=latest_solution,
                     step_offset=next_step_offset,
-                    solve_kwargs=solve_kwargs,
+                    simulator_kwargs=simulator_kwargs,
                 )
                 next_step_offset += step_count
             else:
@@ -473,7 +498,7 @@ def simulate_procedure(
                     model=model,
                     parameter_values=parameter_values,
                     previous_solution=latest_solution,
-                    solve_kwargs=solve_kwargs,
+                    simulator_kwargs=simulator_kwargs,
                 )
                 procedure_frame = _solution_to_dataframe(
                     solution=solution,
@@ -515,12 +540,11 @@ def simulate_procedure(
             column_definitions=column_definitions,
         )
 
-        if latest_solution is not None:
-            print(
-                f"  Simulation completed: {latest_solution['Time [h]'].data[-1]:.2f} hours"
-            )
+        sim_time = lf.select("Time [s]").last().collect().item()
+        if sim_time is not None:
+            print(f"  Procedure complete: {(sim_time / 3600):.2f} hours")
         else:
-            print("  Simulation completed: EIS-only procedure")
+            print("  Procedure complete: EIS")
 
     return cell
 
@@ -547,7 +571,11 @@ def archive_data(cell, archive_root: Path):
     print(f"\nArchived cell to: {archive_dir}")
 
 
-def _validate_steps(experiment_name: str, experiment_info: dict[str, Any]) -> None:
+def _validate_steps(
+    experiment_name: str,
+    experiment_info: dict[str, Any],
+    parameter_values: pybamm.ParameterValues,
+) -> None:
     steps = experiment_info.get("Steps")
     step_descriptions = experiment_info.get("Step Descriptions")
     if not isinstance(steps, list) or not steps:
@@ -558,6 +586,31 @@ def _validate_steps(experiment_name: str, experiment_info: dict[str, Any]) -> No
         raise ValueError(
             f"Experiment '{experiment_name}' must define 'Step Descriptions' with the same length as 'Steps'"
         )
+
+    # Replace expressions containing "Vmin" and "Vmax" with values provided
+    Vmin = parameter_values["Lower voltage cut-off [V]"]
+    Vmax = parameter_values["Upper voltage cut-off [V]"]
+
+    for i, instruction in enumerate(step_descriptions):
+        # The (?) groups are lookahead/lookbehind so they need {/} to match, but don't include them in result
+        match = re.search("(?<={).+(?=})", instruction)
+        if match:
+            expression = (
+                match.group(0).replace("Vmin", str(Vmin)).replace("Vmax", str(Vmax))
+            )
+
+            # Evaluate sums manually (Python's base eval() is not safe to use)
+            if "+" in expression:
+                first, second = expression.split("+")
+                replacement = float(first) + float(second)
+            elif "-" in expression:
+                first, second = expression.split("-")
+                replacement = float(first) - float(second)
+            else:
+                replacement = float(expression)
+
+            # Here we want to replace the {/}, so we drop the lookahead/lookbehind
+            step_descriptions[i] = re.sub("{.+}", f"{replacement:g}", instruction)
 
 
 def _validate_frequency_spec(experiment_name: str, frequency_spec: Any) -> None:
@@ -582,11 +635,13 @@ def _validate_frequency_spec(experiment_name: str, frequency_spec: Any) -> None:
         )
 
 
-def _validate_experiment(experiment_name: str, experiment_info: Any) -> None:
+def _validate_experiment(
+    experiment_name: str, experiment_info: Any, parameter_values: pybamm.ParameterValues
+) -> None:
     if not isinstance(experiment_info, dict):
         raise ValueError(f"Experiment '{experiment_name}' must be an object")
 
-    _validate_steps(experiment_name, experiment_info)
+    _validate_steps(experiment_name, experiment_info, parameter_values)
 
     experiment_type = str(experiment_info.get("Type", "Time domain")).strip().lower()
     if experiment_type != "eis":
@@ -601,15 +656,17 @@ def _load_spec(path: Path) -> dict[str, Any]:
         return json.load(f)
 
 
-def _validate_spec(spec_path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
+def _validate_spec(
+    spec_path: Path, parameter_values: pybamm.ParameterValues
+) -> tuple[str, dict[str, Any]]:
     procedures = _load_spec(spec_path)
 
     for procedure_name, procedure_info in procedures.items():
         if not isinstance(procedure_info, dict):
-            raise ValueError(
-                f"Procedure '{procedure_name}' in {spec_path} must be an object"
+            raise TypeError(
+                f"Procedure '{procedure_name}' in {spec_path} must be a dictionary."
             )
         for experiment_name, experiment_info in procedure_info.items():
-            _validate_experiment(experiment_name, experiment_info)
+            _validate_experiment(experiment_name, experiment_info, parameter_values)
 
     return procedures

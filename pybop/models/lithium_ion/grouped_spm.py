@@ -475,8 +475,8 @@ class GroupedSPM(BaseGroupedModel):
         D_n = param["Negative particle diffusivity [m2.s-1]"]
         b_p = param["Positive electrode Bruggeman coefficient (electrolyte)"]
         b_n = param["Negative electrode Bruggeman coefficient (electrolyte)"]
-        Cdl_p = param["Positive electrode double-layer capacity [F.m-2]"]
-        Cdl_n = param["Negative electrode double-layer capacity [F.m-2]"]
+        Cdl_p = param.get("Positive electrode double-layer capacity [F.m-2]", 0.0)
+        Cdl_n = param.get("Negative electrode double-layer capacity [F.m-2]", 0.0)
         sigma_p = (
             param["Positive electrode conductivity [S.m-1]"]
             * alpha_p ** param["Positive electrode Bruggeman coefficient (electrode)"]
@@ -506,7 +506,11 @@ class GroupedSPM(BaseGroupedModel):
         )
 
         # Compute the cell area and thickness
-        A = param["Electrode height [m]"] * param["Electrode width [m]"]
+        A = (
+            param["Electrode height [m]"]
+            * param["Electrode width [m]"]
+            * param["Number of electrodes connected in parallel to make a cell"]
+        )
         L = L_p + L_n + L_s
 
         # Compute the series resistance
@@ -541,12 +545,12 @@ class GroupedSPM(BaseGroupedModel):
         try:
             tau_d_p = R_p**2 / D_p
         except TypeError:
-            tau_d_p = FunctionalDiffusionTime(R_p**2, D_p, c_max_p)
+            tau_d_p = FunctionalDiffusionTime(R_p**2, D_p)
 
         try:
             tau_d_n = R_n**2 / D_n
         except TypeError:
-            tau_d_n = FunctionalDiffusionTime(R_n**2, D_n, c_max_n)
+            tau_d_n = FunctionalDiffusionTime(R_n**2, D_n)
 
         tau_ct_p = c_max_p * F * R_p / (2 * j0_p)
         tau_ct_n = c_max_n * F * R_n / (2 * j0_n)

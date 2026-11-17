@@ -3,6 +3,31 @@
 ## Features
 
 - [#977](https://github.com/pybop-team/PyBOP/pull/977) - Updates the `lithium_ion` models to use flux boundary conditions and adds the `GroupedDFN` model.
+- [#1007](https://github.com/pybop-team/PyBOP/pull/1007) - Adds example script for discharge rate parameterisation.
+
+## Optimisations
+
+- [#1010](https://github.com/pybop-team/PyBOP/pull/1010) - Restores the IDA default options to the `pybamm.RecommendedSolver`.
+
+## Bug Fixes
+
+- [#1003](https://github.com/pybop-team/PyBOP/pull/1003) - Fix synthetic data generation to cope with empty steps.
+
+## Breaking Changes
+
+- [#1027](https://github.com/pybop-team/PyBOP/pull/1027) - Changes the `Dataset` backend to a `polars.LazyFrame`.
+- [#1016](https://github.com/pybop-team/PyBOP/pull/1016) - Raises the lowest supported dependencies, including `numpy>=2`.
+- [#993](https://github.com/pybop-team/PyBOP/pull/993) - Drop support for Python 3.10.
+
+# [v26.10](https://github.com/pybop-team/PyBOP/tree/v26.3) - 2026-11-03
+
+## Features
+
+- [#996](https://github.com/pybop-team/PyBOP/pull/996) - Updates the DFN parameterisation pipeline, adds draft mode for testing.
+- [#998](https://github.com/pybop-team/PyBOP/pull/998) - Add `remove_voltage_events` option, `default_variables` property and the option to pass both `t_eval` and `t_interp` to the PyBaMM simulators.
+- [#995](https://github.com/pybop-team/PyBOP/pull/995) - Updates the cell models, including adding the thermodynamic factor to the GroupedSPMe.
+- [#976](https://github.com/pybop-team/PyBOP/pull/976) - Updates experimental procedures and synthetic validation data.
+- [#991](https://github.com/pybop-team/PyBOP/pull/991) - Adds support for Python 3.15 (EP-BOLFI optimiser and PyProBE still restricted to Python 3.12 or below).
 - [#973](https://github.com/pybop-team/PyBOP/pull/973) - Adds example scripts for EIS parameterisation.
 - [#974](https://github.com/pybop-team/PyBOP/pull/974) - Adds voltage components to each grouped model as well as asymmetric and multiphase Butler-Volmer kinetics.
 - [#969](https://github.com/pybop-team/PyBOP/pull/969) - Updates synthetic data and adds example script for thermal parameterisation.
@@ -21,6 +46,7 @@
 
 ## Bug Fixes
 
+- [#997](https://github.com/pybop-team/PyBOP/pull/997) - Fixes the order of inputs for the `EISSimulator` and ensures that each cost within a `WeightedCost` keeps its own target.
 - [#915](https://github.com/pybop-team/PyBOP/pull/915) - Fixes axis labels for non-standard domain names, adds `Dataset` length property and adds `kind` property to `Interpolant`.
 - [#911](https://github.com/pybop-team/PyBOP/pull/911) - Fixes the passing of the cost log to the Voronoi surface plot.
 - [#905](https://github.com/pybop-team/PyBOP/pull/905) - Remove restriction on numpy.

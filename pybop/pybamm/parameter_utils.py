@@ -104,7 +104,11 @@ def electrode_area() -> Symbol:
     """
     An expression for the cross-sectional area of the electrode.
     """
-    return Parameter("Electrode height [m]") * Parameter("Electrode width [m]")
+    return (
+        Parameter("Electrode height [m]")
+        * Parameter("Electrode width [m]")
+        * Parameter("Number of electrodes connected in parallel to make a cell")
+    )
 
 
 def cell_volume() -> Symbol:

@@ -7,8 +7,8 @@
         2
       ],
       "Step Descriptions": [
-        "Discharge at C/10 until 3.5 V",
-        "Hold at 3.5 V until C/50",
+        "Discharge at C/10 until {Vmin} V",
+        "Hold at {Vmin} V until C/50",
         "Rest for 2 hours"
       ]
     },
@@ -20,9 +20,9 @@
         6
       ],
       "Step Descriptions": [
-        "Charge at C/30 until 4.4 V",
+        "Charge at C/30 until {Vmax} V",
         "Rest for 2 hours",
-        "Discharge at C/30 until 3.5 V",
+        "Discharge at C/30 until {Vmin} V",
         "Rest for 2 hours"
       ],
       "Cycles": [

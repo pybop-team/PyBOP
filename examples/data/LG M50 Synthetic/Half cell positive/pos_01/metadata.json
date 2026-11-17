@@ -5,7 +5,7 @@
         "Cell format": "Half cell positive",
         "Cell label": "pos_01",
         "Synthetic": true,
-        "Nominal cell capacity [A.h]": 6.5
+        "Nominal cell capacity [A.h]": 7.0
     },
     "procedure": {
         "pOCP": {
@@ -16,7 +16,7 @@
                 "Cell format": "Half cell positive",
                 "Cell label": "pos_01",
                 "Synthetic": true,
-                "Nominal cell capacity [A.h]": 6.5
+                "Nominal cell capacity [A.h]": 7.0
             },
             "column_definitions": {
                 "Time": "The time passed from the start of the procedure.",
@@ -88,5 +88,5 @@
             "cycle_info": []
         }
     },
-    "PyProBE Version": "2.6.0"
+    "PyProBE Version": "2.6.1"
 }

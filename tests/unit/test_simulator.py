@@ -1,5 +1,6 @@
 from copy import copy
 
+import numpy as np
 import pybamm
 import pytest
 
@@ -63,18 +64,113 @@ class TestPybammSimulator:
 
     pytestmark = pytest.mark.unit
 
+    @pytest.fixture
+    def model(self):
+        return pybamm.lithium_ion.SPM()
+
+    @pytest.fixture
+    def experiment(self):
+        return pybamm.Experiment(["Discharge at 1C for 5 minutes"])
+
+    def test_simulator_solve(self, model, experiment):
+        # Test the different types of protocol
+        simulator = pybop.pybamm.Simulator(model, protocol=None)
+        simulator.debug_mode = True
+        with pytest.raises(pybamm.SolverError):
+            simulator.solve()
+
+        solution = pybop.pybamm.Simulator(model, protocol=experiment).solve()
+        assert isinstance(solution, pybamm.Solution)
+        dataset = pybop.import_pybamm_solution(solution)
+
+        for protocol in [
+            dataset,
+            dataset["Time [s]"],
+            (dataset["Time [s]"][[0, -1]], dataset["Time [s]"]),
+        ]:
+            solution = pybop.pybamm.Simulator(model, protocol=protocol).solve()
+            assert isinstance(solution, pybamm.Solution)
+            np.testing.assert_allclose(solution["Time [s]"].data, dataset["Time [s]"])
+
     def test_set_output_variables(self):
         model = pybamm.lithium_ion.SPM()
-        parameter_values = model.default_parameter_values
-        experiment = pybamm.Experiment(
-            ["Discharge at 1C for 5 minutes (10 second period)"]
-        )
-
-        simulator = pybop.pybamm.Simulator(
-            model, parameter_values=parameter_values, protocol=experiment
-        )
+        simulator = pybop.pybamm.Simulator(model)
 
         with pytest.raises(
             ValueError, match="Not a variable is not a variable in the model."
         ):
             simulator.set_output_variables(["Not a variable"])
+
+        simulator.set_output_variables(value=None)
+        assert simulator.output_variables is None
+
+        # Check that a FailedSolution with no output variables contains the default variables
+        solution = simulator.solve()
+        assert isinstance(solution, pybop.FailedSolution)
+        assert isinstance(simulator.default_variables, list)
+        for var in simulator.default_variables:
+            assert var in solution.variable_names
+
+    def test_remove_voltage_events(self, model):
+        simulator = pybop.pybamm.Simulator(model, remove_voltage_events=False)
+        assert "Maximum voltage [V]" in [e.name for e in simulator.model.events]
+
+        simulator = pybop.pybamm.Simulator(model, remove_voltage_events=True)
+        assert "Maximum voltage [V]" not in [e.name for e in simulator.model.events]
+
+
+class TestPybammEISSimulator:
+    """
+    A class to tet the pybamm.EISSimulator class.
+    """
+
+    pytestmark = pytest.mark.unit
+
+    @pytest.fixture
+    def model(self):
+        return pybamm.lithium_ion.SPM()
+
+    @pytest.fixture
+    def parameter_values(self):
+        parameter_values = pybamm.ParameterValues("Chen2020")
+        parameter_values.set_initial_state(0.9)
+        return parameter_values
+
+    def test_input_parameters_are_not_swapped(self, model, parameter_values):
+        """
+        Passing values as inputs must give the same spectrum as fixing them in the
+        parameter values, whatever the order of the inputs dictionary. The compiled
+        Jacobian takes a single stacked vector, so an order which disagrees with the
+        one used to compile it silently evaluates the model at the wrong point.
+        """
+        # Deliberately not in alphabetical order
+        inputs = {
+            "Positive particle diffusivity [m2.s-1]": 4e-15,
+            "Negative particle diffusivity [m2.s-1]": 3.0e-14,
+        }
+
+        fixed_param = parameter_values.copy()
+        fixed_param.update(inputs)
+        expected_data = self.get_data(model, fixed_param)
+
+        fitting_param = parameter_values.copy()
+        fitting_param.update(
+            {
+                name: pybop.Parameter(pybop.Uniform(value / 2, value * 2))
+                for name, value in inputs.items()
+            }
+        )
+        fitting_data = self.get_data(model, fitting_param, inputs=inputs)
+
+        np.testing.assert_allclose(
+            np.asarray(fitting_data["Impedance"].data, dtype=np.complex128),
+            np.asarray(expected_data["Impedance"], dtype=np.complex128),
+            rtol=1e-10,
+        )
+
+    def get_data(self, model, parameter_values, inputs=None):
+        frequencies = np.logspace(-1, 3, 4)
+        solution = pybop.pybamm.EISSimulator(
+            model, parameter_values=parameter_values, f_eval=frequencies
+        ).solve(inputs=inputs)
+        return pybop.Dataset({"Impedance": solution["Impedance"].data})

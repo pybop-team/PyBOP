@@ -32,11 +32,11 @@ parameter_values.update(
         "Surface thermal mass [J/K]": 20,
         "Cell heat transfer coefficient [W/K]": 0.05,
         "Surface heat transfer coefficient [W/K]": 0.05,
-        "Current function [A]": pybamm.Interpolant(
-            solution.t, solution["Current [A]"].data, pybamm.t
+        "Current function [A]": pybop.Interpolant(
+            solution.t, solution["Current [A]"].data, name="Current function"
         ),
-        "Voltage function [V]": pybamm.Interpolant(
-            solution.t, solution["Voltage [V]"].data, pybamm.t
+        "Voltage function [V]": pybop.Interpolant(
+            solution.t, solution["Voltage [V]"].data, name="Voltage function"
         ),
     }
 )

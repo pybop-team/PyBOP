@@ -143,7 +143,11 @@ class WeppnerHuggins(BaseHalfCellModel):
         D_p = param["Positive particle diffusivity [m2.s-1]"]
 
         # Compute the cell area
-        A = param["Electrode height [m]"] * param["Electrode width [m]"]
+        A = (
+            param["Electrode height [m]"]
+            * param["Electrode width [m]"]
+            * param["Number of electrodes connected in parallel to make a cell"]
+        )
 
         # Grouped parameters
         Q_th_p = F * alpha_p * c_max_p * L_p * A / 3600

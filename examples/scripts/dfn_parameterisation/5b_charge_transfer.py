@@ -24,11 +24,17 @@ For each full-cell, fit the Butler-Volmer relation to the charge transfer resist
 """
 
 parser = argparse.ArgumentParser()
+parser.add_argument("--draft", action="store_true", help="Draft mode")
 parser.add_argument("--show-plots", action="store_true", help="Show plots")
 args = parser.parse_args()
 
 plt.style.use("science")
-plt.rcParams.update({"text.usetex": False})  # users can remove this line
+
+if args.draft:
+    plt.rcParams.update({"text.usetex": False})
+    maxiter = 50
+else:
+    maxiter = 2500
 
 
 class ChargeTransferResistance(pybop.BaseSimulator):
@@ -59,13 +65,13 @@ class ChargeTransferResistance(pybop.BaseSimulator):
                 * (1 - sto) ** ((1 - alpha) * omega)
                 * sto_e ** (1 - alpha)
             )
-            Rct = Rct_typ / (2 * j0)
+            Rct = np.divide(
+                Rct_typ, 2 * j0, out=np.full_like(j0, np.inf), where=j0 != 0
+            )
 
             sol = pybop.Solution()
             sol.set_solution_variable("Dimensionless exchange rate", data=j0)
-            sol.set_solution_variable(
-                "Charge transfer resistance [Ohm]", data=np.nan_to_num(Rct, nan=1e6)
-            )
+            sol.set_solution_variable("Charge transfer resistance [Ohm]", data=Rct)
             solutions.append(sol)
         return solutions
 
@@ -132,32 +138,34 @@ for cell in get_cells():
         cost=pybop.WeightedCost(cost, weights=[1e3]),  # convert Ohm to mOhm
     )
 
-    options = pybop.SciPyDifferentialEvolutionOptions(maxiter=250)
-    optim = pybop.SciPyDifferentialEvolution(problem, options=options)
+    options = pybop.SciPyMinimizeOptions(method="trust-constr", maxiter=maxiter)
+    optim = pybop.SciPyMinimize(problem, options=options)
     result = optim.run()
+    print(result)
+    inputs = result.best_inputs
 
     # Round and display results
-    alpha, omega, sto_e, Rct_typ = simulator.get_model_parameters(result.best_inputs)
-    alpha = np.round(alpha, decimals=2)
-    omega = np.round(omega, decimals=2)
+    alpha, omega, sto_e, Rct_typ = simulator.get_model_parameters(inputs)
     print("Typical charge transfer resistance [mOhm]:", Rct_typ)
     print("Charge transfer coefficient:", alpha)
     print("Charge transfer ideality factor:", omega)
-    print(r"RMSE [m$\Omega$]:", result.best_cost, "\n")
+    print(r"RMSE [m$\Omega$]:", result.best_cost, end="\n\n")
 
     # Use optimisation result to plot the fitted function
-    fig, ax = plt.subplots(1, 1, figsize=(5, 3))
+    fig, ax = plt.subplots(1, 1, figsize=(5, 3), dpi=300)
     ax.set_xlabel(f"{dominant_electrode} electrode stoichiometry")
     ax.set_ylabel(r"Charge transfer resistance [m$\Omega$]")
     ax.scatter(sto_values, Rct_values * 1e3, label="ECM fits")
+    Rct_fit = simulator.solve(inputs)["Charge transfer resistance [Ohm]"].data
     sto_range = np.linspace(0.03, 0.97, 95)
     simulator.domain_data = sto_range
-    solution = simulator.solve(result.best_inputs)
+    solution = simulator.solve(inputs)
     ax.plot(
         sto_range,
         solution["Charge transfer resistance [Ohm]"].data * 1e3,
         label="BV fit",
         linewidth=1,
+        color="black",
     )
     ax.set_title(f"{cell_type}, Butler-Volmer fit")
     ax.legend()
@@ -179,6 +187,7 @@ for cell in get_cells():
     zero = np.finfo(np.float64).eps  # almost zero
     param.update(
         {
+            "Typical charge transfer resistance [Ohm]": Rct_typ,
             dominant_electrode + " electrode charge transfer time scale [s]": tau_ct,
             dominant_electrode + " electrode dimensionless exchange rate": (
                 BaseGroupedModel.get_multiphase_butler_volmer(dominant_electrode)
@@ -193,12 +202,58 @@ for cell in get_cells():
                 BaseGroupedModel.symmetric_butler_volmer
             ),
             other_electrode + " electrode capacitance [F]": zero,
+            "Charge transfer resistance RMSE [mOhm]": result.best_cost,
+            "Charge transfer resistance max. error [mOhm]": np.max(
+                np.abs(Rct_fit - Rct_values) * 1e3
+            ),
         }
     )
+    R0 = param["Series resistance (ECM) [Ohm]"]
+    for electrode, sign in zip(
+        ["Positive electrode", "Negative electrode"], [1, -1], strict=False
+    ):
+        resistance = R0 / 2
+        if electrode.split(" ")[0] == dominant_electrode:
+            dataset = {"Stoichiometry": param[f"{electrode} pOCP [V]"].x}
+            Rct_sim = ChargeTransferResistance(param, dataset, dominant_electrode)
+            Rct_sol = Rct_sim.solve(
+                {"Initial electrolyte mole fraction": 1.0, **inputs}
+            )
+            resistance += Rct_sol["Charge transfer resistance [Ohm]"].data
+        param[f"{electrode} OCP [V]"] = pybop.Interpolant(
+            param[f"{electrode} pOCP [V]"].x,
+            param[f"{electrode} pOCP [V]"].y
+            + (sign * param["pOCV constant current [A]"] * resistance),
+            name=f"{electrode} OCP",
+        )
     with open(cell_path / f"params_{direction}.pickle", "wb") as file:
         pickle.dump(param, file)
 
-    fig.savefig(cell_path / f"{cell_label}_charge_transfer.svg")
+    fig.savefig(cell_path / f"{cell_label}_charge_transfer.png")
+
+    """ Without discharge EIS data, mirror the shift in the charge branch. """
+    other_direction = "discharge" if direction == "charge" else "charge"
+    with open(cell_path / f"params_{other_direction}.pickle", "rb") as file:
+        param = pickle.load(file)
+    for electrode, sign in zip(
+        ["Positive electrode", "Negative electrode"], [1, -1], strict=False
+    ):
+        resistance = R0 / 2
+        if electrode.split(" ")[0] == dominant_electrode:
+            dataset = {"Stoichiometry": param[f"{electrode} pOCP [V]"].x}
+            Rct_sim = ChargeTransferResistance(param, dataset, dominant_electrode)
+            Rct_sol = Rct_sim.solve(
+                {"Initial electrolyte mole fraction": 1.0, **inputs}
+            )
+            resistance += Rct_sol["Charge transfer resistance [Ohm]"].data
+        param[f"{electrode} OCP [V]"] = pybop.Interpolant(
+            param[f"{electrode} pOCP [V]"].x,
+            param[f"{electrode} pOCP [V]"].y
+            + (sign * param["pOCV constant current [A]"] * resistance),
+            name=f"{electrode} OCP",
+        )
+    with open(cell_path / f"params_{other_direction}.pickle", "wb") as file:
+        pickle.dump(param, file)
 
 if args.show_plots:
     plt.show()
