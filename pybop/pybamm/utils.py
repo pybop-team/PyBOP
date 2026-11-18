@@ -141,7 +141,11 @@ class SymbolReplacer:
                     pybamm.logger.verbose(
                         f"Replacing symbols in {variable!r} ({side} bc)"
                     )
-                    if isinstance(typ, tuple) and typ[0] == "Flux" and isinstance(typ[1], pybamm.Symbol):
+                    if (
+                        isinstance(typ, tuple)
+                        and typ[0] == "Flux"
+                        and isinstance(typ[1], pybamm.Symbol)
+                    ):
                         typ = ("Flux", self.process_symbol(typ[1]))
                     processed_bc = (self.process_symbol(bc), typ)
                     boundary_conditions[processed_variable][side] = processed_bc
