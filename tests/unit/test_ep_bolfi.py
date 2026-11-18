@@ -11,7 +11,10 @@ class TestEP_BOLFI:
     """
 
     pytestmark = pytest.mark.unit
-    pytest.importorskip("ep_bolfi")
+
+    @pytest.fixture(autouse=True)
+    def require_ep_bolfi(self):
+        pytest.importorskip("ep_bolfi")
 
     @pytest.fixture
     def dataset(self):
