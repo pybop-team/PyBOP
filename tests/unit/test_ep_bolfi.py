@@ -1,4 +1,5 @@
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
@@ -21,6 +22,10 @@ class TestEP_BOLFI:
                 "Voltage [V]": np.ones(10),
             }
         )
+
+    @pytest.fixture
+    def model(self):
+        return pybamm.lithium_ion.SPM()
 
     @pytest.fixture
     def multivariate_simulator(self, model, dataset):
