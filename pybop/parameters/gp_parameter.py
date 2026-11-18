@@ -8,13 +8,6 @@ from pybop.parameters.distributions import Gaussian
 from pybop.parameters.parameter import Parameter
 from pybop.pybamm.parameter_utils import ParameterValues
 
-try:
-    from FoKL.getKernels import bernoulli, sp500
-
-    FOKL_AVAILABLE = True
-except ImportError:
-    FOKL_AVAILABLE = False
-
 
 class FoKLGP:
     """
@@ -46,11 +39,6 @@ class FoKLGP:
         model : pybamm.BaseModel, optional
             Un-built PyBaMM model used to inspect FunctionParameter inputs.
         """
-        if not FOKL_AVAILABLE:
-            raise ModuleNotFoundError(
-                "The `FoKL` package is required to use FoKLGP objects. "
-                "Please install it using: pip install FoKL"
-            )
         if not isinstance(model, pybamm.BaseModel):
             raise ValueError(
                 "A PyBaMM `model` must be provided to inspect parameter inputs."
@@ -232,6 +220,8 @@ class FoKLGP:
         return damtx
 
     def _set_kernel(self, kernel: str = "Bernoulli Polynomial"):
+        from FoKL.getKernels import bernoulli, sp500
+
         if kernel == "Cubic Splines":
             self.phis = sp500()
         elif kernel == "Bernoulli Polynomial":

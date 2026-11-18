@@ -1,37 +1,25 @@
-from unittest.mock import patch
-
 import pybamm
 import pytest
 
-from pybop.parameters.gp_parameter import FOKL_AVAILABLE, FoKLGP
+from pybop import FoKLGP
 
 
-@pytest.mark.skipif(not FOKL_AVAILABLE, reason="FoKL package is not installed")
 class TestFoKLGP:
     """
-    Unit tests for the FoKLGP class.
+    Unit tests for the FoKLGP class. Skip if the FoKL package is not available.
     """
 
     pytestmark = pytest.mark.unit
+
+    @pytest.fixture(autouse=True)
+    def require_fokl(self):
+        pytest.importorskip("FoKL")
 
     @pytest.fixture
     def model_and_params(self):
         model = pybamm.lithium_ion.DFN()
         params = pybamm.ParameterValues("Chen2020")
         return model, params
-
-    def test_missing_fokl_dependency(self, model_and_params):
-        """Cover the ModuleNotFoundError branch when FoKL is unavailable."""
-        model, params = model_and_params
-        with patch("pybop.parameters.gp_parameter.FOKL_AVAILABLE", False):
-            with pytest.raises(
-                ModuleNotFoundError, match="The `FoKL` package is required"
-            ):
-                FoKLGP(
-                    "Electrolyte diffusivity [m2.s-1]",
-                    parameter_values=params.copy(),
-                    model=model,
-                )
 
     @pytest.mark.parametrize("kernel", ["Bernoulli Polynomial", "Cubic Splines"])
     @pytest.mark.parametrize("exp_flag", [True, False])
