@@ -45,11 +45,9 @@ class TestEP_BOLFI:
                 ),
             }
         )
-        simulator = pybop.pybamm.Simulator(
+        return pybop.pybamm.Simulator(
             model, parameter_values=parameter_values, protocol=dataset
         )
-
-        return simulator
 
     @pytest.fixture
     def multivariate_problem(self, multivariate_simulator, dataset):
@@ -72,11 +70,10 @@ class TestEP_BOLFI:
             time_start=180,
             time_end=360,
         )
-        problem = pybop.MetaProblem(
+        return pybop.MetaProblem(
             pybop.Problem(multivariate_simulator, sqrt_cost_1),
             pybop.Problem(multivariate_simulator, sqrt_cost_2),
         )
-        return problem
 
     def test_ep_bolfi(self, multivariate_problem, gitt_like_problem):
         options = pybop.EPBOLFIOptions()

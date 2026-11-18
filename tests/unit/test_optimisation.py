@@ -117,14 +117,12 @@ class TestOptimisation:
         optim = pybop.XNES(problem)
         optim._logger = logger
 
-        # Construct OptimisationResult
-        result = OptimisationResult(
+        return OptimisationResult(
             optim=optim,
             method_name="Test name",
             time=0.1,
             message="Test message",
         )
-        return result
 
     @pytest.mark.parametrize(
         "optimiser, expected_name, sensitivities",
