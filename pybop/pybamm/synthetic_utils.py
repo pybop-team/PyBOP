@@ -385,7 +385,7 @@ def _solve_eis_experiment(
                 eis_model, f_eval=frequencies, parameter_values=parameter_values
             )
             eis_simulator.debug_mode = True  # return simulation errors to the user
-            impedance = np.asarray(eis_simulator.solve()["Impedance"].data)
+            impedance = np.asarray(eis_simulator.solve()["Impedance [Ohm]"].data)
             initial_point = (
                 (None, None)
                 if latest_solution is None

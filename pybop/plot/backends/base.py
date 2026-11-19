@@ -222,6 +222,21 @@ class PlotBackend(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def equal_aspect(self, fig, ax=None):
+        """
+        Constrain the axes of a subplot to an equal aspect ratio, so that one unit is
+        the same length on both axes. Used for e.g. Nyquist plots.
+
+        Parameters
+        ----------
+        fig : Figure
+            Figure containing the axes to update.
+        ax : tuple, optional
+            Subplot location.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
     def update_axes_ranges(self, fig, ax, xaxis_range, yaxis_range):
         """
         Update the ranges of the axes in the provided figure.

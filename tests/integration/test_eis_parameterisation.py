@@ -83,7 +83,7 @@ class TestEISParameterisation:
         )
 
         # Construct the cost
-        target = "Impedance"
+        target = "Impedance [Ohm]"
         if cost_class is pybop.GaussianLogLikelihood:
             cost = cost_class(
                 dataset, target=target, sigma=self.sigma * 4
@@ -150,7 +150,9 @@ class TestEISParameterisation:
             {
                 "Frequency [Hz]": f_eval,
                 "Current [A]": np.zeros_like(f_eval),
-                "Impedance": pybop.add_noise(solution["Impedance"].data, self.sigma),
+                "Impedance [Ohm]": pybop.add_noise(
+                    solution["Impedance [Ohm]"].data, self.sigma
+                ),
             },
             domain="Frequency [Hz]",
         )
