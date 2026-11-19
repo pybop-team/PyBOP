@@ -207,6 +207,8 @@ class Simulator(BaseSimulator):
 
     def _determine_rebuild_requirement(self, build_every_time: bool | None) -> bool:
         """Determine if model needs rebuilding on each evaluation."""
+        if build_every_time:
+            return True
 
         # If there are no optimisation parameters, model does not need rebuilding
         if not self._input_parameter_names:
@@ -223,9 +225,7 @@ class Simulator(BaseSimulator):
         # Reset
         self._simulation = None
 
-        if requires_model_rebuild or build_every_time:
-            return True
-        return False
+        return requires_model_rebuild
 
     def convert_to_pybamm_initial_state(self, initial_state: dict | None) -> None:
         """

@@ -298,6 +298,7 @@ class TestCoupledEISSimulator:
             protocol=dataset,
             acquisition_indices=acquisitions,
             f_eval=frequencies,
+            build_every_time=True,
         )
         assert simulator._simulator.requires_model_rebuild  # noqa: SLF001
         solution = simulator.solve(inputs)
