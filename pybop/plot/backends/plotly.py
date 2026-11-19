@@ -387,6 +387,29 @@ class PlotlyBackend(PlotBackend):
                     font=dict(size=14),
                 )
 
+    def equal_aspect(self, fig, ax=None):
+        """
+        Constrain the axes of a subplot to an equal aspect ratio.
+
+        Parameters
+        ----------
+        fig : plotly.graph_objects.Figure
+            Figure containing the axes to update.
+        ax : tuple, optional
+            Subplot location.
+        """
+        if ax is None:
+            fig.update_yaxes(scaleanchor="x", scaleratio=1)
+        else:
+            self._check_axis_input(ax)
+            # Each subplot anchors to its own x-axis, e.g. "x5"
+            fig.update_yaxes(
+                scaleanchor=fig.get_subplot(*ax).yaxis.anchor,
+                scaleratio=1,
+                row=ax[0],
+                col=ax[1],
+            )
+
     def update_axes_ranges(self, fig, ax, xaxis_range, yaxis_range):
         """
         Update the ranges of the axes in the provided figure.

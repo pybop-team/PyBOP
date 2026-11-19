@@ -65,7 +65,7 @@ class TestGroupedModels:
             {
                 "Frequency [Hz]": frequencies,
                 "Current [A]": zeros,
-                "Impedance": zeros,
+                "Impedance [Ohm]": zeros,
             },
             domain="Frequency [Hz]",
         )
@@ -144,7 +144,7 @@ class TestGroupedModels:
             f_eval=eis_dataset["Frequency [Hz]"],
         )
         cost = pybop.MeanSquaredError(
-            eis_dataset, target="Impedance", weighting="equal"
+            eis_dataset, target="Impedance [Ohm]", weighting="equal"
         )
         eis_problem = pybop.Problem(simulator, cost)
 

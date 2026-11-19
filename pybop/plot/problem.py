@@ -77,7 +77,6 @@ def problem(
         model_output = problem.simulate(inputs)
         model_domain = target_domain[: len(model_output[target].data)]
 
-    # Create a plot for each output
     # Import plotting backend
     backend = get_backend_from_figure(backend, figures)
 
@@ -85,6 +84,8 @@ def problem(
     figures, axes, create_figure, _ = backend.parse_input_axes(
         figures, axes, num_plots=len(problem.target), allow_single_axis=False
     )
+
+    # Create a plot for each output
     for i, var in enumerate(problem.target):
         ax = axes[i % len(axes)]
         if create_figure:
