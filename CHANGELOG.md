@@ -3,6 +3,7 @@
 ## Features
 
 - [#978](https://github.com/pybop-team/PyBOP/pull/978) - Adds FoKL GPy functionality for parameter estimation.
+- [#975](https://github.com/pybop-team/PyBOP/pull/975) - Adds coupled GITT-EIS parameterisation: `pybop.pybamm.EISSimulator` accepts a `protocol` and computes an impedance spectrum about the state reached at each acquisition time. Adds the example script `gitt_eis.py`, updates `pybop.plot.nyquist` for subplots, and adds `equal_aspect` to the plotting backends.
 - [#1007](https://github.com/pybop-team/PyBOP/pull/1007) - Adds example script for discharge rate parameterisation.
 
 ## Optimisations
@@ -10,6 +11,8 @@
 - [#1010](https://github.com/pybop-team/PyBOP/pull/1010) - Restores the IDA default options to the `pybamm.RecommendedSolver`.
 
 ## Bug Fixes
+
+- [#1003](https://github.com/pybop-team/PyBOP/pull/1003) - Fix synthetic data generation to cope with empty steps.
 
 ## Breaking Changes
 

@@ -172,13 +172,22 @@ def _get_experiment_sequences(
     return step_sequence, description_sequence
 
 
-def _flatten_sequence(sequences: list[tuple[str, ...]]) -> list[str]:
+def _flatten_sequence(
+    sequences: list[tuple[str, ...]], delete_indices: list[int] | None = None
+) -> list[str]:
     """Flatten a list of experiment tuples into a list of per-event descriptions."""
-    return [step for sequence in sequences for step in sequence]
+    delete_indices = (
+        [] if delete_indices is None else sorted(delete_indices, reverse=True)
+    )
+    flattened = [step for sequence in sequences for step in sequence]
+    for index in delete_indices:
+        if 0 <= index < len(flattened):
+            del flattened[index]
+    return flattened
 
 
 def _remap_cycle_info(
-    dataframe: pl.LazyFrame, step_sequence: list[tuple[int, ...]], event_offset: int
+    dataframe: pl.LazyFrame, flattened_step_sequence: list[int], event_offset: int
 ) -> pl.LazyFrame:
     """Map PyBaMM step and cycle numbers back to match the cycle information."""
     step_column = pl.col("Step").cast(pl.Int64)
@@ -202,7 +211,7 @@ def _remap_cycle_info(
         .ravel()
     )
     return dataframe.with_columns(
-        Step=pl.col("Event").replace(event_numbers, _flatten_sequence(step_sequence))
+        Step=pl.col("Event").replace_strict(event_numbers, flattened_step_sequence)
     )
 
 
@@ -240,13 +249,35 @@ def _solution_to_dataframe(
         ]
     )
     pybamm_data["Time [s]"] += start_time
-    try:
-        raw_dataframe = pl.LazyFrame(pybamm_data)
-    except pl.exceptions.ShapeError:
-        # Account for an error where the Step is one longer than the Solution
-        pybamm_data["Step"] = pybamm_data["Step"][:-1]
-        raw_dataframe = pl.LazyFrame(pybamm_data)
-    raw_dataframe = _remap_cycle_info(raw_dataframe, step_sequence, event_offset)
+
+    # Recreate the step and cycle numbers in line with PyBaMM PR 5724
+    cycle_numbers, step_numbers, previous_last_t = [], [], None
+    for i, cycle in enumerate(solution.cycles):
+        for j, step in enumerate(cycle.steps):
+            # a step's first point is dropped when it repeats the previous
+            # step's last point, so don't number it twice
+            repeated = previous_last_t is not None and step.t[0] == previous_last_t
+            previous_last_t = step.t[-1]
+            length = len(step.t) - repeated
+            cycle_numbers.append(np.full(length, i, dtype=float))
+            step_numbers.append(np.full(length, j, dtype=float))
+    pybamm_data["Cycle"] = np.concatenate(cycle_numbers)
+    pybamm_data["Step"] = np.concatenate(step_numbers)
+
+    raw_dataframe = pl.LazyFrame(pybamm_data)
+
+    sub_solutions = [step for cycle in solution.cycles for step in cycle.steps]
+    empty_steps = np.argwhere(
+        [
+            1 if i > 0 and isinstance(step, pybamm.EmptySolution) else 0
+            for i, step in enumerate(sub_solutions)
+        ]
+    ).ravel()
+    raw_dataframe = _remap_cycle_info(
+        raw_dataframe,
+        _flatten_sequence(step_sequence, delete_indices=empty_steps),
+        event_offset,
+    )
     return raw_dataframe.select(
         [
             pl.col("Time [s]"),
@@ -277,7 +308,9 @@ def _solve_time_domain_experiment(
     simulator_kwargs["parameter_values"] = parameter_values
     simulator_kwargs["protocol"] = experiment
 
-    return pybop.pybamm.Simulator(model, **simulator_kwargs).solve()
+    simulator = pybop.pybamm.Simulator(model, **simulator_kwargs)
+    simulator.debug_mode = True  # return simulation errors to the user
+    return simulator.solve()
 
 
 def _build_eis_sweep_dataframe(
@@ -351,7 +384,8 @@ def _solve_eis_experiment(
             eis_simulator = pybop.pybamm.EISSimulator(
                 eis_model, f_eval=frequencies, parameter_values=parameter_values
             )
-            impedance = np.asarray(eis_simulator.solve()["Impedance"].data)
+            eis_simulator.debug_mode = True  # return simulation errors to the user
+            impedance = np.asarray(eis_simulator.solve()["Impedance [Ohm]"].data)
             initial_point = (
                 (None, None)
                 if latest_solution is None

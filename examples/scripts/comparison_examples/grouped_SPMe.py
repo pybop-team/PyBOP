@@ -83,7 +83,7 @@ for model, param, line_style in zip(
         solution = pybop.pybamm.EISSimulator(
             model, parameter_values=param, f_eval=frequencies
         ).solve()
-        impedances[:, ii] = solution["Impedance"].data
+        impedances[:, ii] = solution["Impedance [Ohm]"].data
         ax.plot(np.real(impedances[:, ii]), -np.imag(impedances[:, ii]), line_style)
 
 # Show figure

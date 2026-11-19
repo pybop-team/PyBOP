@@ -309,6 +309,20 @@ class MatplotlibBackend(PlotBackend):
                 title = wrap_text(title, width=max_text_width)
             ax.set_title(title, pad=pad)
 
+    def equal_aspect(self, fig, ax=None):
+        """
+        Constrain the axes of a subplot to an equal aspect ratio.
+
+        Parameters
+        ----------
+        fig : matplotlib.figure.Figure
+            Figure containing the axes to update.
+        ax : matplotlib.axes.Axes, optional
+            The axes to update. Defaults to the current axes of the figure.
+        """
+        ax = ax if ax is not None else fig.gca()
+        ax.set_aspect("equal", adjustable="datalim")
+
     def update_axes_ranges(self, fig, ax=None, xaxis_range=None, yaxis_range=None):
         """
         Update the ranges of the axes in the provided figure.

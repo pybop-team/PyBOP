@@ -59,7 +59,7 @@ class ErrorMeasure(BaseCost):
             # this is the same as a uniform weighting)
             domain_data = self._domain_data
             domain_spacing = domain_data[1:] - domain_data[:-1]
-            mean_spacing = np.mean(domain_spacing)
+            mean_spacing = np.nanmean(domain_spacing)
             self.weighting = np.concatenate(
                 (
                     [(mean_spacing + domain_spacing[0]) / 2],
@@ -189,12 +189,12 @@ class MeanSquaredError(ErrorMeasure):
         dy: np.ndarray | None = None,
         inputs: Inputs | None = None,
     ) -> float | tuple[float, np.ndarray]:
-        e = np.mean((np.abs(r) ** 2) * self.weighting)
+        e = np.nanmean((np.abs(r) ** 2) * self.weighting)
 
         if dy is not None:
             de = {}
             for key, value in dy.items():
-                de[key] = 2 * np.mean((r * self.weighting) * value)
+                de[key] = 2 * np.nanmean((r * self.weighting) * value)
             return e, de
 
         return e
@@ -215,12 +215,12 @@ class RootMeanSquaredError(ErrorMeasure):
         dy: np.ndarray | None = None,
         inputs: Inputs | None = None,
     ) -> float | tuple[float, np.ndarray]:
-        e = np.sqrt(np.mean((np.abs(r) ** 2) * self.weighting))
+        e = np.sqrt(np.nanmean((np.abs(r) ** 2) * self.weighting))
 
         if dy is not None:
             de = {}
             for key, value in dy.items():
-                de[key] = np.mean((r * self.weighting) * value) / (
+                de[key] = np.nanmean((r * self.weighting) * value) / (
                     e + np.finfo(float).eps
                 )
             return e, de
@@ -243,12 +243,12 @@ class MeanAbsoluteError(ErrorMeasure):
         dy: np.ndarray | None = None,
         inputs: Inputs | None = None,
     ) -> float | tuple[float, np.ndarray]:
-        e = np.mean(np.abs(r) * self.weighting)
+        e = np.nanmean(np.abs(r) * self.weighting)
 
         if dy is not None:
             de = {}
             for key, value in dy.items():
-                de[key] = np.mean((np.sign(r) * self.weighting) * value)
+                de[key] = np.nanmean((np.sign(r) * self.weighting) * value)
             return e, de
 
         return e
@@ -269,12 +269,12 @@ class SumSquaredError(ErrorMeasure):
         dy: np.ndarray | None = None,
         inputs: Inputs | None = None,
     ) -> float | tuple[float, np.ndarray]:
-        e = np.sum(np.abs(r) ** 2 * self.weighting)
+        e = np.nansum(np.abs(r) ** 2 * self.weighting)
 
         if dy is not None:
             de = {}
             for key, value in dy.items():
-                de[key] = 2 * np.sum((r * self.weighting) * value)
+                de[key] = 2 * np.nansum((r * self.weighting) * value)
             return e, de
 
         return e
@@ -333,12 +333,12 @@ class Minkowski(ErrorMeasure):
         dy: np.ndarray | None = None,
         inputs: Inputs | None = None,
     ) -> float | tuple[float, np.ndarray]:
-        e = np.sum((np.abs(r) ** self.p) * self.weighting) ** (1 / self.p)
+        e = np.nansum((np.abs(r) ** self.p) * self.weighting) ** (1 / self.p)
 
         if dy is not None:
             de = {}
             for key, value in dy.items():
-                de[key] = np.sum(
+                de[key] = np.nansum(
                     ((np.sign(r) * np.abs(r) ** (self.p - 1)) * self.weighting) * value
                 ) / (e ** (self.p - 1) + np.finfo(float).eps)
             return e, de
@@ -401,12 +401,12 @@ class SumOfPower(ErrorMeasure):
         dy: np.ndarray | None = None,
         inputs: Inputs | None = None,
     ) -> float | tuple[float, np.ndarray]:
-        e = np.sum((np.abs(r) ** self.p) * self.weighting)
+        e = np.nansum((np.abs(r) ** self.p) * self.weighting)
 
         if dy is not None:
             de = {}
             for key, value in dy.items():
-                de[key] = self.p * np.sum(
+                de[key] = self.p * np.nansum(
                     ((np.sign(r) * np.abs(r) ** (self.p - 1)) * self.weighting) * value
                 )
             return e, de
