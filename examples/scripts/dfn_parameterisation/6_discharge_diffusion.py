@@ -157,6 +157,7 @@ for cell in get_cells():
     print(result)
     inputs = result.best_inputs
 
+    sum_squared_error_mV2, domain_length = 0, 0
     for i, (rate, problem) in enumerate(zip(rates, problems, strict=False)):
         problem.simulator.set_output_variables(output_variables)
         solution = problem.simulate(inputs=inputs)
@@ -168,20 +169,16 @@ for cell in get_cells():
         ax.plot(x, y, linewidth=1, color="black", label=label)
 
         # Evaluate the error
-        squared_error_mV2.append(
-            ((solution["Voltage [V]"].data - problem.target_data["Voltage [V]"]) * 1e3)
-            ** 2
-        )
-        rmse_mV = np.sqrt(np.mean(squared_error_mV2[-1]))
+        rmse_mV = problem.cost.evaluate(solution).values.item() * 1e3
+        sum_squared_error_mV2 += rmse_mV**2 * len(problem.domain_data)
+        domain_length += len(problem.domain_data)
         print(rate, "discharge RMSE [mV]:", rmse_mV)
 
     ax.set_title(cell_type)
     ax.legend(loc="best", bbox_to_anchor=(0.5, 0.0, 0.5, 1.0))
 
     # Average error over all discharges
-    squared_error_mV2 = np.concatenate(squared_error_mV2)
-    rmse_mV = np.sqrt(np.mean(squared_error_mV2))
-
+    rmse_mV = np.sqrt(sum_squared_error_mV2 / domain_length)
     print("Mean discharge RMSE [mV]:", rmse_mV)
 
     # Update and save parameters
