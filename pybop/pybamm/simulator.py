@@ -387,6 +387,7 @@ class Simulator(BaseSimulator):
                             FailedSolution(
                                 self.output_variables or self.default_variables,
                                 self._input_parameter_names,
+                                reason=str(e),
                             )
                         )
                 return solutions
