@@ -184,7 +184,6 @@ for cell in get_cells():
 
     # Update and save parameters
     other_electrode = "Positive" if dominant_electrode == "Negative" else "Negative"
-    zero = np.finfo(np.float64).eps  # almost zero
     param.update(
         {
             "Typical charge transfer resistance [Ohm]": Rct_typ,
@@ -201,7 +200,7 @@ for cell in get_cells():
             other_electrode + " electrode dimensionless exchange rate": (
                 BaseGroupedModel.symmetric_butler_volmer
             ),
-            other_electrode + " electrode capacitance [F]": zero,
+            other_electrode + " electrode capacitance [F]": 0,
             "Charge transfer resistance RMSE [mOhm]": result.best_cost,
             "Charge transfer resistance max. error [mOhm]": np.max(
                 np.abs(Rct_fit - Rct_values) * 1e3

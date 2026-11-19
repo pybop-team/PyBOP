@@ -44,11 +44,11 @@ else:
     maxiter = 500
 
 # Set up model
-model = pybop.lithium_ion.GroupedSPM()  # no electrolyte effects
+model_options = {"surface form": "negative differential"}
+model = pybop.lithium_ion.GroupedSPM(options=model_options)  # no electrolyte effects
 x_variable = "Time [h]"  # "Discharge capacity [A.h]"
 output_variables = ["Time [s]", "Voltage [V]", "Discharge capacity [A.h]"]
 model.events = [e for e in model.events if e.name != "Maximum voltage [V]"]
-solver = pybop.pybamm.RecommendedSolver(options={"silence_sundials_errors": True})
 
 
 for cell in get_cells():
@@ -141,7 +141,6 @@ for cell in get_cells():
             parameter_values=model_param,
             protocol=(input_data["Time [s]"], dataset["Time [s]"]),
             remove_voltage_events=False,
-            solver=solver,
         )
         cost = pybop.RootMeanSquaredError(
             dataset, target="Voltage [V]", weighting="domain"
