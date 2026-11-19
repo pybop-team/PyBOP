@@ -33,7 +33,7 @@ dependencies = [
     "numpy>=2.0",
     "scipy>=1.12",
     "pints>=0.6.0",
-    "polars>=1.20",
+    "polars>=1.22",
 ]
 
 [project.optional-dependencies]
