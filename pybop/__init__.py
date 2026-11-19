@@ -30,7 +30,7 @@ from ._utils import add_spaces, add_noise, is_numeric, load_data_dict, save_data
 #
 # Dataset class
 #
-from .processing.dataset import Dataset, import_pybamm_solution, import_pyprobe_result
+from .processing.dataset import Dataset, import_pybamm_solution, Datasets, import_pyprobe_result
 from .processing.interpolate_current import generate_consistent_current, downsample_constant_current
 
 #
@@ -139,6 +139,7 @@ from .optimisers.pints_optimisers import (
     SimulatedAnnealing,
 )
 from .optimisers.ep_bolfi_optimiser import EP_BOLFI, EPBOLFIOptions
+from .optimisers.sober_basq_optimiser import SOBER_BASQ, SOBER_BASQ_Options, SOBER_BASQ_EPLFI, SOBER_BASQ_EPLFI_Options, SOBER_BASQ_GIS, SOBER_BASQ_GIS_Options
 
 #
 # Monte Carlo classes
