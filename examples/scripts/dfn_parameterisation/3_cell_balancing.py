@@ -92,7 +92,7 @@ class OCVBalance(pybop.BaseSimulator):
             voltage_offset = Rc * self.input_data
             voltage = positive_voltage - negative_voltage - voltage_offset
 
-            sol = pybop.Solution()
+            sol = pybop.Solution(inputs)
             sol.set_solution_variable(
                 "Positive electrode voltage [V]", data=positive_voltage
             )

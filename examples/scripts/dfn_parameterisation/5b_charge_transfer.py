@@ -69,7 +69,7 @@ class ChargeTransferResistance(pybop.BaseSimulator):
                 Rct_typ, 2 * j0, out=np.full_like(j0, np.inf), where=j0 != 0
             )
 
-            sol = pybop.Solution()
+            sol = pybop.Solution(inputs)
             sol.set_solution_variable("Dimensionless exchange rate", data=j0)
             sol.set_solution_variable("Charge transfer resistance [Ohm]", data=Rct)
             solutions.append(sol)

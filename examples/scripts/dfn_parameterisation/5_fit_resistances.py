@@ -76,7 +76,7 @@ class R_CPE(pybop.BaseSimulator):
                 1 + R1 * Q1 * np.asarray(1j * 2 * np.pi * f_eval, np.complex128) ** a1
             )
 
-            sol = pybop.Solution()
+            sol = pybop.Solution(inputs)
             sol.set_solution_variable(
                 "Impedance [Ohm]", data=np.asarray(Z, dtype=np.complex128)
             )
