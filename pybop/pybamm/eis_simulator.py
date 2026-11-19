@@ -345,8 +345,10 @@ class EISSimulator(BaseSimulator):
             for x in inputs:
                 try:
                     simulations.append(self._solve(x))
-                except (ZeroDivisionError, RuntimeError, ValueError):
-                    simulations.append(FailedSolution(self.default_variables, x.keys()))
+                except (ZeroDivisionError, RuntimeError, ValueError) as e:
+                    simulations.append(
+                        FailedSolution(self.default_variables, x.keys()), reason=str(e)
+                    )
             return simulations
 
         simulations = []

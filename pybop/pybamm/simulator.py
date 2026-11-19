@@ -355,7 +355,7 @@ class Simulator(BaseSimulator):
             options.update({"t_eval": self._t_eval, "t_interp": self._t_interp})
 
         # The underlying solve method is one of two methods set during initialisation
-        return self._process_solutions(self._catch_errors(inputs, options))
+        return self._catch_errors(inputs, options)
 
     def _catch_errors(self, inputs: "list[Inputs]", options: dict):
         if not self.debug_mode:
@@ -387,6 +387,7 @@ class Simulator(BaseSimulator):
                             FailedSolution(
                                 self.output_variables or self.default_variables,
                                 self._input_parameter_names,
+                                reason=str(e),
                             )
                         )
                 return solutions
@@ -433,22 +434,6 @@ class Simulator(BaseSimulator):
         self._simulation = None
         self._parameter_values = unmodified_parameter_values
         return solutions
-
-    def _process_solutions(
-        self, solutions: list[pybamm.Solution]
-    ) -> list[pybamm.Solution | FailedSolution]:
-        """Convert failed solutions to FailedSolution objects."""
-        processed_solutions = []
-        for solution in solutions:
-            if hasattr(solution, "termination") and solution.termination == "failure":
-                failed_solution = FailedSolution(
-                    self.output_variables or self.default_variables,
-                    self._input_parameter_names,
-                )
-                processed_solutions.append(failed_solution)
-            else:
-                processed_solutions.append(solution)
-        return processed_solutions
 
     @property
     def built_model(self):

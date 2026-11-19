@@ -57,6 +57,25 @@ class TestSimulator:
             BaseSimulator(params)
 
 
+class TestFailedSolution:
+    """
+    A class to test the FailedSolution class.
+    """
+
+    pytestmark = pytest.mark.unit
+
+    def test_failed_solution(self):
+        failed_solution = pybop.FailedSolution(
+            ["Variable name"], ["Parameter name"], reason="Reason"
+        )
+        solution = failed_solution.copy()
+        assert solution.variable_names == ["Variable name"]
+        assert solution.parameter_names == ["Parameter name"]
+        assert solution.reason == "Reason"
+
+        assert solution.save() is None
+
+
 class TestPybammSimulator:
     """
     A class to test the pybamm.Simulator class.

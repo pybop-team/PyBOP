@@ -201,7 +201,10 @@ class Problem:
         # Insert failed solutions for any invalid inputs
         invalid_indices = [i for i, valid in enumerate(validity) if not valid]
         for i in invalid_indices:
-            solutions.insert(i, FailedSolution(self.target, inputs[i].keys()))
+            solutions.insert(
+                i,
+                FailedSolution(self.target, inputs[i].keys(), reason="Invalid inputs."),
+            )
 
         return solutions
 

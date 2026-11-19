@@ -28,7 +28,7 @@ class RecommendedSolver(pybamm.IDAKLUSolver):
             solver_options.update(options)
 
         super().__init__(
-            on_failure="ignore",
+            on_failure="error",
             on_extrapolation="ignore",
             atol=1e-6,
             rtol=1e-6,
