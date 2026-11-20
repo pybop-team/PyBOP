@@ -1,5 +1,4 @@
 import warnings
-from copy import copy
 from typing import TYPE_CHECKING
 
 import casadi
@@ -508,7 +507,3 @@ class EISSimulator(BaseSimulator):
     def debug_mode(self, value: bool):
         self._debug_mode = value
         self._simulator.debug_mode = value
-
-    def copy(self):
-        """Return a copy of the simulation."""
-        return copy(self)

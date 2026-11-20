@@ -1,4 +1,4 @@
-from copy import copy, deepcopy
+from copy import deepcopy
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -496,7 +496,3 @@ class Simulator(BaseSimulator):
         ):
             return False
         return True
-
-    def copy(self):
-        """Return a copy of the simulation."""
-        return copy(self)
