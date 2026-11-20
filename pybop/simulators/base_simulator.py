@@ -35,7 +35,8 @@ class BaseSimulator:
         return parameters
 
     def set_output_variables(self, target: list[str] | None):
-        raise NotImplementedError
+        """Placeholder for function used by the pybamm.Simulator."""
+        return NotImplementedError
 
     def solve(
         self,
