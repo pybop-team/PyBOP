@@ -36,10 +36,22 @@ class GroupedDFN(BaseGroupedModel):
     """
 
     def __init__(self, name="Grouped Doyle Fuller Newman Model", **model_kwargs):
+        options = model_kwargs.get("options", {})
+        surface_form = options.pop("surface form", "algebraic")
+        options["surface form"] = (
+            "differential"
+            if surface_form in ["negative differential", "positive differential"]
+            else surface_form
+        )
         super().__init__(name=name, **model_kwargs)
 
         # Unpack model options
-        include_double_layer = self.options["surface form"] == "differential"
+        negative_double_layer = (
+            True if surface_form in ["differential", "negative differential"] else False
+        )
+        positive_double_layer = (
+            True if surface_form in ["differential", "positive differential"] else False
+        )
 
         pybamm.citations.register(
             """
@@ -219,20 +231,22 @@ class GroupedDFN(BaseGroupedModel):
         ######################
         # Double layer
         ######################
-        if include_double_layer:
-            # Additional parameters
-            C_p = Parameter("Positive electrode capacitance [F]")
-            C_n = Parameter("Negative electrode capacitance [F]")
+        # Note: PyBaMM does not support parameters in the mass matrix
 
-            # Electrode surface potentials
+        # Electrode surface potentials and any additional parameters
+        if negative_double_layer:
+            C_n = Parameter("Negative electrode capacitance [F]")
             self.rhs[v_s_n] = (
                 l_n * Q_e * pybamm.div(i_e_n, no_simplification=True) - 3 * Q_th_n * j_n
             ) / C_n
+        else:
+            self.algebraic[v_s_n] = l_n * Q_e * pybamm.div(i_e_n) - 3 * Q_th_n * j_n
+        if positive_double_layer:
+            C_p = Parameter("Positive electrode capacitance [F]")
             self.rhs[v_s_p] = (
                 l_p * Q_e * pybamm.div(i_e_p, no_simplification=True) - 3 * Q_th_p * j_p
             ) / C_p
         else:
-            self.algebraic[v_s_n] = l_n * Q_e * pybamm.div(i_e_n) - 3 * Q_th_n * j_n
             self.algebraic[v_s_p] = l_p * Q_e * pybamm.div(i_e_p) - 3 * Q_th_p * j_p
 
         self.initial_conditions[v_s_n] = U_n_init
