@@ -422,10 +422,6 @@ class Simulator(BaseSimulator):
         return solutions
 
     @property
-    def built_model(self):
-        return None if self._simulation is None else self._simulation._built_model  # noqa: SLF001
-
-    @property
     def input_parameter_names(self):
         return self._input_parameter_names
 
