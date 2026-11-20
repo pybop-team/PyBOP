@@ -1,5 +1,5 @@
 {
-  "Validation different SOC": {
+  "Validation pulses discharge": {
     "Precondition": {
       "Steps": [
         0,
@@ -22,7 +22,7 @@
         "Rest for 4 hours"
       ]
     },
-    "Validation different SOC": {
+    "Validation pulses discharge": {
       "Steps": [
         5,
         6,
