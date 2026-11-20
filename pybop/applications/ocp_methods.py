@@ -185,7 +185,7 @@ class OCPAverage(BaseApplication):
                 def solve_batch(self, inputs, calculate_sensitivities: bool = False):
                     solutions = []
                     for x in inputs:
-                        sol = pybop.Solution(inputs)
+                        sol = pybop.Solution()
                         sol.set_solution_variable(
                             "Voltage [mV]",
                             data=1e3
@@ -206,7 +206,7 @@ class OCPAverage(BaseApplication):
                 def solve_batch(self, inputs, calculate_sensitivities: bool = False):
                     solutions = []
                     for x in inputs:
-                        sol = pybop.Solution(inputs)
+                        sol = pybop.Solution()
                         sol.set_solution_variable(
                             "Voltage [mV]",
                             data=1e3 * voltage_charge(self.domain_data + x["shift"]),
@@ -336,7 +336,7 @@ class OCPCapacityToStoichiometry(BaseApplication):
             def solve_batch(self, inputs, calculate_sensitivities: bool = False):
                 solutions = []
                 for x in inputs:
-                    sol = pybop.Solution(inputs)
+                    sol = pybop.Solution()
                     sol.set_solution_variable(
                         "Voltage [V]",
                         data=ocv_function(
