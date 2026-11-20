@@ -337,6 +337,7 @@ class EISSimulator(BaseSimulator):
                 stacklevel=2,
             )
 
+        # The underlying solve method is one of two methods set during initialisation
         return self._catch_errors(inputs)
 
     def _catch_errors(self, inputs: "list[Inputs]") -> list[Solution | FailedSolution]:
@@ -346,15 +347,18 @@ class EISSimulator(BaseSimulator):
                 try:
                     simulations.append(self._solve(x))
                 except (ZeroDivisionError, RuntimeError, ValueError) as e:
-                    simulations.append(
-                        FailedSolution(self.default_variables, x.keys()), reason=str(e)
-                    )
+                    simulations.append(self._get_failed_solution(e))
             return simulations
 
         simulations = []
         for x in inputs:
             simulations.append(self._solve(x))
         return simulations
+
+    def _get_failed_solution(self, e) -> FailedSolution:
+        return FailedSolution(
+            self.default_variables, self.input_parameter_names, reason=str(e)
+        )
 
     def _simulate_stationary(self, inputs: "Inputs") -> Solution:
         """

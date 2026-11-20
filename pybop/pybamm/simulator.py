@@ -13,6 +13,8 @@ from pybop.pybamm.utils import RecommendedSolver
 from pybop.simulators.base_simulator import BaseSimulator
 from pybop.simulators.failed_solution import FailedSolution
 
+SOLVER_ERROR = (SolverError, ZeroDivisionError, RuntimeError, ValueError, Exception)
+
 
 class Simulator(BaseSimulator):
     """
@@ -357,42 +359,36 @@ class Simulator(BaseSimulator):
         # The underlying solve method is one of two methods set during initialisation
         return self._catch_errors(inputs, options)
 
-    def _catch_errors(self, inputs: "list[Inputs]", options: dict):
+    def _catch_errors(
+        self, inputs: "list[Inputs]", options: dict
+    ) -> list[pybamm.Solution | FailedSolution]:
         if not self.debug_mode:
             try:
                 return self._solve(inputs, options)
 
-            except (
-                SolverError,
-                ZeroDivisionError,
-                RuntimeError,
-                ValueError,
-                Exception,
-            ):
+            except SOLVER_ERROR as e:
+                if len(inputs) == 1:
+                    return [self._get_failed_solution(e)]
+
                 # Try separately
                 solutions = []
                 for x in inputs:
                     try:
                         solutions += self._solve([x], options)
-                    except (
-                        SolverError,
-                        ZeroDivisionError,
-                        RuntimeError,
-                        ValueError,
-                        Exception,
-                    ) as e:
-                        if self.verbose:
-                            print(f"Ignoring this sample due to: {e}")
-                        solutions.append(
-                            FailedSolution(
-                                self.output_variables or self.default_variables,
-                                self._input_parameter_names,
-                                reason=str(e),
-                            )
-                        )
+                    except SOLVER_ERROR as e:
+                        solutions.append(self._get_failed_solution(e))
                 return solutions
 
         return self._solve(inputs, options)
+
+    def _get_failed_solution(self, e) -> FailedSolution:
+        if self.verbose:
+            print(f"Ignoring this sample due to: {e}")
+        return FailedSolution(
+            self.output_variables or self.default_variables,
+            self.input_parameter_names,
+            reason=str(e),
+        )
 
     def create_simulation(self) -> pybamm.Simulation:
         """Create a simulation with current configuration and optional experiment."""
