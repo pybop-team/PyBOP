@@ -140,6 +140,7 @@ for cell in get_cells():
     ax.set_title(f"{cell_type}, Nyquist plot")
     ax.set_xlabel(r"Re(Z) [m$\Omega$]")
     ax.set_ylabel(r"-Im(Z) [m$\Omega$]")
+    ax.yaxis.set_label_coords(-0.1, 0.5)
     colourmap = colormaps["viridis"].resampled(N_SOC)
 
     # Define shared parameters
