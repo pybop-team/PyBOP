@@ -37,10 +37,12 @@ jobs:
   integration_tests:
     needs: style
     runs-on: ${{ matrix.os }}
+    env:
+      PYBAMM_SOURCE: "pybamm[all] @ git+https://github.com/NicolaCourtier/PyBaMM@flux-conservation#subdirectory=packages/pybamm"
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest]
         python-version: ["3.12", "3.15"]
 
     name: Integration tests (${{ matrix.os }} / Python ${{ matrix.python-version }})
@@ -54,6 +56,16 @@ jobs:
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version: ${{ matrix.python-version }}
+
+      - name: Install pybammsolvers build toolchain
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            sudo apt-get update
+            sudo apt-get install -y libopenblas-dev gcc gfortran make g++ build-essential
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            brew install libomp gcc
+          fi
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip nox[uv]
@@ -65,10 +77,12 @@ jobs:
   unit_tests:
     needs: style
     runs-on: ${{ matrix.os }}
+    env:
+      PYBAMM_SOURCE: "pybamm[all] @ git+https://github.com/NicolaCourtier/PyBaMM@flux-conservation#subdirectory=packages/pybamm"
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-15-intel, macos-latest]
+        os: [ubuntu-latest, macos-15-intel, macos-latest]
         python-version: ["3.11", "3.12", "3.13", "3.14", "3.15"]
         exclude: # We run the coverage tests on macOS (arm64) with Python 3.12
           - os: macos-latest
@@ -85,6 +99,16 @@ jobs:
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version: ${{ matrix.python-version }}
+
+      - name: Install pybammsolvers build toolchain
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            sudo apt-get update
+            sudo apt-get install -y libopenblas-dev gcc gfortran make g++ build-essential
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            brew install libomp gcc
+          fi
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip nox[uv]
@@ -96,10 +120,12 @@ jobs:
   example_scripts:
     needs: style
     runs-on: ${{ matrix.os }}
+    env:
+      PYBAMM_SOURCE: "pybamm[all] @ git+https://github.com/NicolaCourtier/PyBaMM@flux-conservation#subdirectory=packages/pybamm"
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest]
         python-version: ["3.12"]
 
     name: Test examples (${{ matrix.os }} / Python ${{ matrix.python-version }})
@@ -113,6 +139,16 @@ jobs:
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version: ${{ matrix.python-version }}
+
+      - name: Install pybammsolvers build toolchain
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            sudo apt-get update
+            sudo apt-get install -y libopenblas-dev gcc gfortran make g++ build-essential
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            brew install libomp gcc
+          fi
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip nox[uv]
@@ -124,6 +160,8 @@ jobs:
   example_notebooks:
     needs: style
     runs-on: ${{ matrix.os }}
+    env:
+      PYBAMM_SOURCE: "pybamm[all] @ git+https://github.com/NicolaCourtier/PyBaMM@flux-conservation#subdirectory=packages/pybamm"
     strategy:
       fail-fast: false
       matrix:
@@ -141,6 +179,16 @@ jobs:
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version: ${{ matrix.python-version }}
+
+      - name: Install pybammsolvers build toolchain
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            sudo apt-get update
+            sudo apt-get install -y libopenblas-dev gcc gfortran make g++ build-essential
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            brew install libomp gcc
+          fi
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip nox[uv] openpyxl ipywidgets
@@ -153,6 +201,8 @@ jobs:
   check_coverage:
     needs: style
     runs-on: macos-latest
+    env:
+      PYBAMM_SOURCE: "pybamm[all] @ git+https://github.com/NicolaCourtier/PyBaMM@flux-conservation#subdirectory=packages/pybamm"
     strategy:
       fail-fast: false
     name: Coverage tests (macos-latest / Python 3.12)
@@ -171,6 +221,15 @@ jobs:
           cache: 'pip'
           cache-dependency-path: setup.py
 
+      - name: Install pybammsolvers build toolchain
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            sudo apt-get update
+            sudo apt-get install -y libopenblas-dev gcc gfortran make g++ build-essential
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            brew install libomp gcc
+          fi
       - name: Install dependencies
         run: python -m pip install --upgrade pip nox[uv]
 

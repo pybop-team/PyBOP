@@ -10,6 +10,7 @@ nox.needs_version = ">=2024.4.15"
 # Environment variables to control CI behaviour for nox sessions
 PYBOP_SCHEDULED = int(os.environ.get("PYBOP_SCHEDULED", 0))
 PYBAMM_VERSION = os.environ.get("PYBAMM_VERSION", None)
+PYBAMM_SOURCE = os.environ.get("PYBAMM_SOURCE", None)
 PYPROJECT = nox.project.load_toml("pyproject.toml")
 
 
@@ -19,6 +20,8 @@ def unit(session):
     session.install(*nox.project.dependency_groups(PYPROJECT, "dev"), silent=False)
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
+    if PYBAMM_SOURCE:
+        session.install(PYBAMM_SOURCE, silent=False)
     session.run("pytest", "--unit")
 
 
@@ -29,6 +32,8 @@ def coverage(session):
     session.install("pip")
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
+    if PYBAMM_SOURCE:
+        session.install(PYBAMM_SOURCE, silent=False)
     session.run(
         "pytest",
         "--unit",
@@ -53,6 +58,8 @@ def plots(session):
     """Run the tests that generate plots."""
     session.install("-e", ".[plotly]", "--upgrade", silent=False)
     session.install(*nox.project.dependency_groups(PYPROJECT, "dev"), silent=False)
+    if PYBAMM_SOURCE:
+        session.install(PYBAMM_SOURCE, silent=False)
     session.install("pip")
     session.run("pytest", "--plots", "-n", "0")
 
@@ -62,6 +69,8 @@ def integration(session):
     """Run the integration tests."""
     session.install("-e", ".[all]", "--upgrade", silent=False)
     session.install(*nox.project.dependency_groups(PYPROJECT, "dev"), silent=False)
+    if PYBAMM_SOURCE:
+        session.install(PYBAMM_SOURCE, silent=False)
     session.run("pytest", "--integration")
 
 
@@ -70,6 +79,8 @@ def examples(session):
     """Run the example scripts."""
     session.install("-e", ".[all]", "--upgrade", silent=False)
     session.install(*nox.project.dependency_groups(PYPROJECT, "dev"), silent=False)
+    if PYBAMM_SOURCE:
+        session.install(PYBAMM_SOURCE, silent=False)
     session.run("pytest", "--examples")
 
 
@@ -81,6 +92,8 @@ def notebooks(session):
     session.install(*nox.project.dependency_groups(PYPROJECT, "dev"), silent=False)
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
+    if PYBAMM_SOURCE:
+        session.install(PYBAMM_SOURCE, silent=False)
     session.run(
         "pytest",
         "--notebooks",
@@ -98,6 +111,8 @@ def notebooks_overwrite(session):
     session.install(*nox.project.dependency_groups(PYPROJECT, "dev"), silent=False)
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
+    if PYBAMM_SOURCE:
+        session.install(PYBAMM_SOURCE, silent=False)
     session.run(
         "pytest",
         "--notebooks",
@@ -116,6 +131,8 @@ def run_tests(session):
     session.install(*nox.project.dependency_groups(PYPROJECT, "dev"), silent=False)
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
+    if PYBAMM_SOURCE:
+        session.install(PYBAMM_SOURCE, silent=False)
     specific_tests = session.posargs if session.posargs else []
     session.run(
         "pytest",
