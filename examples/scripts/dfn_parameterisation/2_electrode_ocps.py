@@ -60,9 +60,10 @@ for cell in get_cells():
 
     # Prepare a plot
     fig, ax = plt.subplots(1, 2, figsize=(5, 3), dpi=300)
+    fig.suptitle(cell_type)
     ax[0].set_ylabel("Voltage [V]")
     for i in range(2):
-        ax[i].set_xlabel("State of lithiation")
+        ax[i].set_xlabel("Stoichiometry")
     ax[0].xaxis.set_inverted(True)
 
     # Prepare a plot for validation
@@ -90,7 +91,7 @@ for cell in get_cells():
             label=f"{electrode}",
         )
 
-        # Define initial state of lithiation and direction
+        # Define initial stoichiometry and direction
         if "Positive" in electrode:
             # Starts fully lithiated and then delithiates
             direction_order = ["charge", "discharge"]
@@ -147,26 +148,20 @@ for cell in get_cells():
             Q_th = Q_meas / (1.0 - 2 * margin)
             Q_scale = Q_th * DE
 
-            # Define state of lithiation
-            dataset["State of lithiation"] = x0 + charge_throughput / Q_scale
+            # Define stoichiometry (between [margin, 1-margin] state of lithiation)
+            dataset["Stoichiometry"] = x0 + charge_throughput / Q_scale
 
             if direction == "charge":
-                assert (
-                    dataset["State of lithiation"][0]
-                    >= dataset["State of lithiation"][-1]
-                )
+                assert dataset["Stoichiometry"][0] >= dataset["Stoichiometry"][-1]
                 ocp_branch = pybop.Interpolant(
-                    np.flipud(dataset["State of lithiation"]),
+                    np.flipud(dataset["Stoichiometry"]),
                     np.flipud(dataset["Voltage [V]"]),
                     name="pOCP charge branch",
                 )
             else:
-                assert (
-                    dataset["State of lithiation"][0]
-                    <= dataset["State of lithiation"][-1]
-                )
+                assert dataset["Stoichiometry"][0] <= dataset["Stoichiometry"][-1]
                 ocp_branch = pybop.Interpolant(
-                    dataset["State of lithiation"],
+                    dataset["Stoichiometry"],
                     dataset["Voltage [V]"],
                     name="pOCP discharge branch",
                 )
@@ -175,7 +170,7 @@ for cell in get_cells():
             sol = np.linspace(margin, 1.0 - margin, 501)
             colour = "tab:red" if direction == "charge" else "tab:blue"
             ax[i].scatter(
-                dataset["State of lithiation"],
+                dataset["Stoichiometry"],
                 dataset["Voltage [V]"],
                 marker=".",
                 s=4,
@@ -210,7 +205,7 @@ for cell in get_cells():
             with open(cell_path / f"params_{full_cell_direction}.pickle", "wb") as file:
                 pickle.dump(param, file)
 
-        ax[i].title.set_text(electrode)
+        ax[i].set_title(electrode, y=1.01, va="top", fontsize="small")
         ax[i].legend()
 
     fig.savefig(cell_path / f"{cell_label}_electrode_pOCPs.png")

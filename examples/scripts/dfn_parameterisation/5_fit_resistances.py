@@ -76,7 +76,7 @@ class R_CPE(pybop.BaseSimulator):
                 1 + R1 * Q1 * np.asarray(1j * 2 * np.pi * f_eval, np.complex128) ** a1
             )
 
-            sol = pybop.Solution()
+            sol = pybop.Solution(inputs)
             sol.set_solution_variable(
                 "Impedance [Ohm]", data=np.asarray(Z, dtype=np.complex128)
             )
@@ -140,6 +140,7 @@ for cell in get_cells():
     ax.set_title(f"{cell_type}, Nyquist plot")
     ax.set_xlabel(r"Re(Z) [m$\Omega$]")
     ax.set_ylabel(r"-Im(Z) [m$\Omega$]")
+    ax.yaxis.set_label_coords(-0.1, 0.5)
     colourmap = colormaps["viridis"].resampled(N_SOC)
 
     # Define shared parameters

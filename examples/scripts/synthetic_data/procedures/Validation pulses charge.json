@@ -1,5 +1,5 @@
 {
-  "Validation pulses": {
+  "Validation pulses charge": {
     "Precondition": {
       "Steps": [
         0,
@@ -10,7 +10,7 @@
         "Rest for 2 hours"
       ]
     },
-    "Validation pulses": {
+    "Validation pulses charge": {
       "Steps": [
         2,
         3,

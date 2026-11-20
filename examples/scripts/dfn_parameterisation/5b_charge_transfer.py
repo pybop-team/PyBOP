@@ -69,7 +69,7 @@ class ChargeTransferResistance(pybop.BaseSimulator):
                 Rct_typ, 2 * j0, out=np.full_like(j0, np.inf), where=j0 != 0
             )
 
-            sol = pybop.Solution()
+            sol = pybop.Solution(inputs)
             sol.set_solution_variable("Dimensionless exchange rate", data=j0)
             sol.set_solution_variable("Charge transfer resistance [Ohm]", data=Rct)
             solutions.append(sol)
@@ -184,7 +184,6 @@ for cell in get_cells():
 
     # Update and save parameters
     other_electrode = "Positive" if dominant_electrode == "Negative" else "Negative"
-    zero = np.finfo(np.float64).eps  # almost zero
     param.update(
         {
             "Typical charge transfer resistance [Ohm]": Rct_typ,
@@ -201,7 +200,7 @@ for cell in get_cells():
             other_electrode + " electrode dimensionless exchange rate": (
                 BaseGroupedModel.symmetric_butler_volmer
             ),
-            other_electrode + " electrode capacitance [F]": zero,
+            other_electrode + " electrode capacitance [F]": 0,
             "Charge transfer resistance RMSE [mOhm]": result.best_cost,
             "Charge transfer resistance max. error [mOhm]": np.max(
                 np.abs(Rct_fit - Rct_values) * 1e3

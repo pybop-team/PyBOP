@@ -411,8 +411,8 @@
             },
             "cycle_info": []
         },
-        "Validation different SOC": {
-            "lf": "Validation different SOC.parquet",
+        "Validation pulses discharge": {
+            "lf": "Validation pulses discharge.parquet",
             "info": {
                 "Name": "LG M50 Synthetic C02",
                 "Cell type": "LG M50 Synthetic",
@@ -517,7 +517,7 @@
                     ],
                     "Cycles": []
                 },
-                "Validation different SOC": {
+                "Validation pulses discharge": {
                     "Steps": [
                         5,
                         6,
@@ -577,8 +577,8 @@
             },
             "cycle_info": []
         },
-        "Validation pulses": {
-            "lf": "Validation pulses.parquet",
+        "Validation pulses charge": {
+            "lf": "Validation pulses charge.parquet",
             "info": {
                 "Name": "LG M50 Synthetic C02",
                 "Cell type": "LG M50 Synthetic",
@@ -668,7 +668,7 @@
                     ],
                     "Cycles": []
                 },
-                "Validation pulses": {
+                "Validation pulses charge": {
                     "Steps": [
                         2,
                         3,

@@ -39,10 +39,22 @@ class GroupedSPMe(BaseGroupedModel):
     def __init__(
         self, name="Grouped Single Particle Model with Electrolyte", **model_kwargs
     ):
+        options = model_kwargs.get("options", {})
+        surface_form = options.pop("surface form", "algebraic")
+        options["surface form"] = (
+            "differential"
+            if surface_form in ["negative differential", "positive differential"]
+            else surface_form
+        )
         super().__init__(name=name, **model_kwargs)
 
         # Unpack model options
-        include_double_layer = self.options["surface form"] == "differential"
+        negative_double_layer = (
+            True if surface_form in ["differential", "negative differential"] else False
+        )
+        positive_double_layer = (
+            True if surface_form in ["differential", "positive differential"] else False
+        )
 
         pybamm.citations.register("Chen2020")  # for the OCPs
         pybamm.citations.register(
@@ -222,16 +234,18 @@ class GroupedSPMe(BaseGroupedModel):
         ######################
         # Double layer
         ######################
-        if include_double_layer:
-            # Additional parameters
-            C_p = Parameter("Positive electrode capacitance [F]")
-            C_n = Parameter("Negative electrode capacitance [F]")
+        # Note: PyBaMM does not support parameters in the mass matrix
 
-            # Electrode surface potentials
+        # Electrode surface potentials and any additional parameters
+        if negative_double_layer:
+            C_n = Parameter("Negative electrode capacitance [F]")
             self.rhs[v_s_n] = (I - 3 * Q_th_n * pybamm.x_average(j_n)) / C_n
-            self.rhs[v_s_p] = (-I - 3 * Q_th_p * pybamm.x_average(j_p)) / C_p
         else:
             self.algebraic[v_s_n] = I - 3 * Q_th_n * pybamm.x_average(j_n)
+        if positive_double_layer:
+            C_p = Parameter("Positive electrode capacitance [F]")
+            self.rhs[v_s_p] = (-I - 3 * Q_th_p * pybamm.x_average(j_p)) / C_p
+        else:
             self.algebraic[v_s_p] = -I - 3 * Q_th_p * pybamm.x_average(j_p)
 
         self.initial_conditions[v_s_n] = U_n_init

@@ -1,4 +1,4 @@
-from copy import copy, deepcopy
+from copy import deepcopy
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -12,6 +12,8 @@ from pybop.processing.dataset import Dataset
 from pybop.pybamm.utils import RecommendedSolver
 from pybop.simulators.base_simulator import BaseSimulator
 from pybop.simulators.failed_solution import FailedSolution
+
+SOLVER_ERROR = (SolverError, ZeroDivisionError, RuntimeError, ValueError, Exception)
 
 
 class Simulator(BaseSimulator):
@@ -129,7 +131,6 @@ class Simulator(BaseSimulator):
         self._simulation = None
         self._solve = None
         self.debug_mode = False
-        self.verbose = False
 
         # Build
         self._input_parameter_names = self.parameters.names
@@ -355,40 +356,26 @@ class Simulator(BaseSimulator):
             options.update({"t_eval": self._t_eval, "t_interp": self._t_interp})
 
         # The underlying solve method is one of two methods set during initialisation
-        return self._process_solutions(self._catch_errors(inputs, options))
+        return self._catch_errors(inputs, options)
 
-    def _catch_errors(self, inputs: "list[Inputs]", options: dict):
+    def _catch_errors(
+        self, inputs: "list[Inputs]", options: dict
+    ) -> list[pybamm.Solution | FailedSolution]:
         if not self.debug_mode:
             try:
                 return self._solve(inputs, options)
 
-            except (
-                SolverError,
-                ZeroDivisionError,
-                RuntimeError,
-                ValueError,
-                Exception,
-            ):
+            except SOLVER_ERROR as e:
+                if len(inputs) == 1:
+                    return [self.get_failed_solution(e)]
+
                 # Try separately
                 solutions = []
                 for x in inputs:
                     try:
                         solutions += self._solve([x], options)
-                    except (
-                        SolverError,
-                        ZeroDivisionError,
-                        RuntimeError,
-                        ValueError,
-                        Exception,
-                    ) as e:
-                        if self.verbose:
-                            print(f"Ignoring this sample due to: {e}")
-                        solutions.append(
-                            FailedSolution(
-                                self.output_variables or self.default_variables,
-                                self._input_parameter_names,
-                            )
-                        )
+                    except SOLVER_ERROR as e:
+                        solutions.append(self.get_failed_solution(e))
                 return solutions
 
         return self._solve(inputs, options)
@@ -434,26 +421,6 @@ class Simulator(BaseSimulator):
         self._parameter_values = unmodified_parameter_values
         return solutions
 
-    def _process_solutions(
-        self, solutions: list[pybamm.Solution]
-    ) -> list[pybamm.Solution | FailedSolution]:
-        """Convert failed solutions to FailedSolution objects."""
-        processed_solutions = []
-        for solution in solutions:
-            if hasattr(solution, "termination") and solution.termination == "failure":
-                failed_solution = FailedSolution(
-                    self.output_variables or self.default_variables,
-                    self._input_parameter_names,
-                )
-                processed_solutions.append(failed_solution)
-            else:
-                processed_solutions.append(solution)
-        return processed_solutions
-
-    @property
-    def built_model(self):
-        return None if self._simulation is None else self._simulation._built_model  # noqa: SLF001
-
     @property
     def input_parameter_names(self):
         return self._input_parameter_names
@@ -493,8 +460,11 @@ class Simulator(BaseSimulator):
             self._set_up_solution_method(output_variables=value)
 
     @property
-    def default_variables(self):
-        variables: list[str] = []
+    def default_variables(self) -> list[str]:
+        if self._output_variables:
+            return self._output_variables
+
+        variables = []
         for s in self._model.default_quick_plot_variables:
             if isinstance(s, str):
                 variables.append(s)
@@ -503,11 +473,11 @@ class Simulator(BaseSimulator):
         return variables
 
     @property
-    def requires_model_rebuild(self):
+    def requires_model_rebuild(self) -> bool:
         return self._requires_model_rebuild
 
     @property
-    def has_sensitivities(self):
+    def has_sensitivities(self) -> bool:
         if (
             self._initial_state is not None
             or self._experiment is not None
@@ -515,7 +485,3 @@ class Simulator(BaseSimulator):
         ):
             return False
         return True
-
-    def copy(self):
-        """Return a copy of the simulation."""
-        return copy(self)

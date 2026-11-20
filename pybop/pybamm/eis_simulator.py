@@ -1,5 +1,4 @@
 import warnings
-from copy import copy
 from typing import TYPE_CHECKING
 
 import casadi
@@ -337,6 +336,7 @@ class EISSimulator(BaseSimulator):
                 stacklevel=2,
             )
 
+        # The underlying solve method is one of two methods set during initialisation
         return self._catch_errors(inputs)
 
     def _catch_errors(self, inputs: "list[Inputs]") -> list[Solution | FailedSolution]:
@@ -345,8 +345,8 @@ class EISSimulator(BaseSimulator):
             for x in inputs:
                 try:
                     simulations.append(self._solve(x))
-                except (ZeroDivisionError, RuntimeError, ValueError):
-                    simulations.append(FailedSolution(self.default_variables, x.keys()))
+                except (ZeroDivisionError, RuntimeError, ValueError) as e:
+                    simulations.append(self.get_failed_solution(e))
             return simulations
 
         simulations = []
@@ -476,13 +476,13 @@ class EISSimulator(BaseSimulator):
         return self._simulator.parameter_values
 
     @property
-    def input_parameter_names(self):
+    def input_parameter_names(self) -> list[str]:
         return self._simulator.input_parameter_names
 
     @property
-    def default_variables(self):
+    def default_variables(self) -> list[str]:
         variables = ["Impedance [Ohm]"]
-        if self._acquisition_indices is not None:
+        if self._acquisition_indices:
             variables.extend(self._simulator.default_variables)
         return variables
 
@@ -491,18 +491,14 @@ class EISSimulator(BaseSimulator):
         return self._acquisition_indices
 
     @property
-    def has_sensitivities(self):
+    def has_sensitivities(self) -> bool:
         return False
 
     @property
-    def debug_mode(self):
+    def debug_mode(self) -> bool:
         return self._debug_mode
 
     @debug_mode.setter
     def debug_mode(self, value: bool):
         self._debug_mode = value
         self._simulator.debug_mode = value
-
-    def copy(self):
-        """Return a copy of the simulation."""
-        return copy(self)
