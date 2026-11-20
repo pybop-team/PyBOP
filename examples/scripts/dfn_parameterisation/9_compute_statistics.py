@@ -7,7 +7,7 @@ import polars as pl
 from pybop._utils import is_numeric
 
 """
-or each cell type, compute the parameter statistics.
+For each cell type, compute the parameter statistics.
 """
 
 parser = argparse.ArgumentParser()
@@ -49,7 +49,8 @@ for cell_type in results_path.iterdir():
                                     "cell_label": f"{cell_label.stem}",
                                     "direction": direction,
                                     "value": float(value),
-                                }
+                                },
+                                schema=schema,
                             )
                             df_float.vstack(new_row, in_place=True)
                         else:  # str, another class
