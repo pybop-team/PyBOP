@@ -56,6 +56,12 @@ class TestSimulator:
         ):
             BaseSimulator(params)
 
+        with pytest.raises(NotImplementedError):
+            simulator.get_failed_solution("error")
+
+        with pytest.raises(NotImplementedError):
+            simulator.set_output_variables(None)
+
 
 class TestFailedSolution:
     """

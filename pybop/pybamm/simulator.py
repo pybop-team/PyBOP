@@ -131,7 +131,6 @@ class Simulator(BaseSimulator):
         self._simulation = None
         self._solve = None
         self.debug_mode = False
-        self.verbose = False
 
         # Build
         self._input_parameter_names = self.parameters.names
@@ -368,7 +367,7 @@ class Simulator(BaseSimulator):
 
             except SOLVER_ERROR as e:
                 if len(inputs) == 1:
-                    return [self._get_failed_solution(e)]
+                    return [self.get_failed_solution(e)]
 
                 # Try separately
                 solutions = []
@@ -376,19 +375,10 @@ class Simulator(BaseSimulator):
                     try:
                         solutions += self._solve([x], options)
                     except SOLVER_ERROR as e:
-                        solutions.append(self._get_failed_solution(e))
+                        solutions.append(self.get_failed_solution(e))
                 return solutions
 
         return self._solve(inputs, options)
-
-    def _get_failed_solution(self, e) -> FailedSolution:
-        if self.verbose:
-            print(f"Ignoring this sample due to: {e}")
-        return FailedSolution(
-            self.output_variables or self.default_variables,
-            self.input_parameter_names,
-            reason=str(e),
-        )
 
     def create_simulation(self) -> pybamm.Simulation:
         """Create a simulation with current configuration and optional experiment."""
@@ -474,8 +464,11 @@ class Simulator(BaseSimulator):
             self._set_up_solution_method(output_variables=value)
 
     @property
-    def default_variables(self):
-        variables: list[str] = []
+    def default_variables(self) -> list[str]:
+        if self._output_variables:
+            return self._output_variables
+
+        variables = []
         for s in self._model.default_quick_plot_variables:
             if isinstance(s, str):
                 variables.append(s)
@@ -484,11 +477,11 @@ class Simulator(BaseSimulator):
         return variables
 
     @property
-    def requires_model_rebuild(self):
+    def requires_model_rebuild(self) -> bool:
         return self._requires_model_rebuild
 
     @property
-    def has_sensitivities(self):
+    def has_sensitivities(self) -> bool:
         if (
             self._initial_state is not None
             or self._experiment is not None

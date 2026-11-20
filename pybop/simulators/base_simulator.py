@@ -23,6 +23,7 @@ class BaseSimulator:
                 ) from None
 
         self.parameters = parameters
+        self.verbose = False
 
     def get_parameters_from_dict(self, parameter_values: dict):
         """Extract any pybop.Parameter objects and replace with the "[input]" string."""
@@ -33,8 +34,8 @@ class BaseSimulator:
                 parameter_values.update({name: "[input]"})
         return parameters
 
-    def set_output_variables(self, target: list[str]):
-        return NotImplementedError
+    def set_output_variables(self, target: list[str] | None):
+        raise NotImplementedError
 
     def solve(
         self,
@@ -79,8 +80,20 @@ class BaseSimulator:
         """
         return NotImplementedError
 
+    def get_failed_solution(self, e) -> FailedSolution:
+        if self.verbose:
+            print(f"Ignoring this sample due to: {e}")
+        return FailedSolution(
+            self.default_variables, self.input_parameter_names, reason=str(e)
+        )
+
     @property
-    def has_sensitivities(self):
+    def default_variables(self) -> list[str]:
+        """The default variables included in a solution."""
+        raise NotImplementedError
+
+    @property
+    def has_sensitivities(self) -> bool:
         return False
 
     def copy(self):
