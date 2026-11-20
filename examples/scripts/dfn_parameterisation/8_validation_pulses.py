@@ -42,7 +42,8 @@ if args.draft:
 # Set up model
 model_options = {"surface form": "negative differential"}
 model = pybop.lithium_ion.GroupedSPM(options=model_options)
-output_variables = ["Voltage [V]", "Discharge capacity [A.h]"]
+x_variable = "Discharge capacity [A.h]"  # "Time [h]"
+output_variables = ["Time [s]", "Voltage [V]", "Discharge capacity [A.h]"]
 
 for cell in get_cells():
     cell_label = cell.info["Cell label"]
@@ -67,13 +68,16 @@ for cell in get_cells():
         dataset["Discharge capacity [A.h]"] = (
             dataset["Discharge capacity [A.h]"] - initial_capacity
         )
-        sign = 1 if direction == "discharge" else -1
+        dataset["Time [s]"] -= dataset["Time [s]"][0]
+        if direction == "charge" and x_variable == "Discharge capacity [A.h]":
+            x_variable = "Charge capacity [A.h]"
+            dataset[x_variable] = -dataset["Discharge capacity [A.h]"]
 
         # Plot the data
         fig, ax = plt.subplots(1, 1, figsize=(5, 3), dpi=300)
-        ax.set_xlabel(f"{direction.capitalize()} capacity [A.h]")
+        ax.set_xlabel(x_variable.replace("capacity [A.h]", "throughput [A.h]"))
         ax.set_ylabel("Voltage [V]")
-        x_data = dataset["Discharge capacity [A.h]"] * sign
+        x_data = dataset[x_variable]
         x, y = downsample(x_data, dataset["Voltage [V]"], tol_x=np.max(x_data) / 500)
         ax.plot(x, y, ls=":", linewidth=1.4, color="tab:green", label="Data")
 
@@ -118,18 +122,18 @@ for cell in get_cells():
             output_variables=output_variables,
         )
         solution = simulator.solve()
-        if solution.termination != "final time":
-            rmse_mV = np.inf
+        if x_variable == "Charge capacity [A.h]":
+            x_data = -solution["Discharge capacity [A.h]"].data
         else:
-            x_data = solution["Discharge capacity [A.h]"].data * sign
-            x, y = downsample(
-                x_data, solution["Voltage [V]"].data, tol_x=np.max(x_data) / 500
-            )
-            ax.plot(x, y, linewidth=0.7, color="black", alpha=0.8, label="Simulation")
+            x_data = solution[x_variable].data
+        x, y = downsample(
+            x_data, solution["Voltage [V]"].data, tol_x=np.max(x_data) / 500
+        )
+        ax.plot(x, y, linewidth=0.7, color="black", alpha=0.8, label="Simulation")
 
-            # Evaluate the error
-            error_mV = (solution["Voltage [V]"].data - dataset["Voltage [V]"]) * 1e3
-            rmse_mV = np.sqrt(np.mean(error_mV**2))
+        # Evaluate the error
+        cost = pybop.RootMeanSquaredError(dataset, weighting="domain")
+        rmse_mV = cost.evaluate(solution).values.item() * 1e3
 
         ax.set_title(cell_type)
         ax.legend()
