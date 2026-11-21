@@ -68,7 +68,7 @@ class GroupedDFN(BaseGroupedModel):
             }
         """
         )  # Note that the electrode electrolyte timescales have been replaced by relative transport efficiencies
-        # and there is an additional variable (i_e) and associated grouped parameter (gamma_e) compared to the SPMe
+        # and there is an additional variable (i_e) and associated grouped parameter (rho_e) compared to the SPMe
 
         ######################
         # Variables
@@ -177,7 +177,7 @@ class GroupedDFN(BaseGroupedModel):
         beta_n = Parameter("Negative electrode relative transport efficiency")
         beta_p = Parameter("Positive electrode relative transport efficiency")
 
-        gamma_e = Parameter("Reference electrolyte scaled conductivity [V-1.s-1]")
+        rho_e = Parameter("Reference electrolyte conductance [S]")
 
         ######################
         # Input current (positive on discharge)
@@ -221,10 +221,10 @@ class GroupedDFN(BaseGroupedModel):
         j_p = self.j(sto_p_surf, sto_e_p, eta_p / RT_F, "positive") / tau_ct_p
 
         # Electrolyte currents [s-1]
-        i_e_n = (beta_n * gamma_e) * (
+        i_e_n = (beta_n * rho_e) * (
             pybamm.grad(v_s_n) + chiRT_F * pybamm.grad(sto_e_n) / sto_e_n
         )
-        i_e_p = (beta_p * gamma_e) * (
+        i_e_p = (beta_p * rho_e) * (
             pybamm.grad(v_s_p) + chiRT_F * pybamm.grad(sto_e_p) / sto_e_p
         )
 
@@ -237,27 +237,27 @@ class GroupedDFN(BaseGroupedModel):
         if negative_double_layer:
             C_n = Parameter("Negative electrode capacitance [F]")
             self.rhs[v_s_n] = (
-                l_n * Q_e * pybamm.div(i_e_n, no_simplification=True) - 3 * Q_th_n * j_n
+                l_n * pybamm.div(i_e_n, no_simplification=True) - 3 * Q_th_n * j_n
             ) / C_n
         else:
-            self.algebraic[v_s_n] = l_n * Q_e * pybamm.div(i_e_n) - 3 * Q_th_n * j_n
+            self.algebraic[v_s_n] = l_n * pybamm.div(i_e_n) - 3 * Q_th_n * j_n
         if positive_double_layer:
             C_p = Parameter("Positive electrode capacitance [F]")
             self.rhs[v_s_p] = (
-                l_p * Q_e * pybamm.div(i_e_p, no_simplification=True) - 3 * Q_th_p * j_p
+                l_p * pybamm.div(i_e_p, no_simplification=True) - 3 * Q_th_p * j_p
             ) / C_p
         else:
-            self.algebraic[v_s_p] = l_p * Q_e * pybamm.div(i_e_p) - 3 * Q_th_p * j_p
+            self.algebraic[v_s_p] = l_p * pybamm.div(i_e_p) - 3 * Q_th_p * j_p
 
         self.initial_conditions[v_s_n] = U_n_init
         self.initial_conditions[v_s_p] = U_p_init
 
         self.boundary_conditions[v_s_n] = {
             "left": (Scalar(0), ("Flux", i_e_n)),
-            "right": (I / Q_e, ("Flux", i_e_n)),
+            "right": (I, ("Flux", i_e_n)),
         }
         self.boundary_conditions[v_s_p] = {
-            "left": (I / Q_e, ("Flux", i_e_p)),
+            "left": (I, ("Flux", i_e_p)),
             "right": (Scalar(0), ("Flux", i_e_p)),
         }
 
@@ -299,10 +299,10 @@ class GroupedDFN(BaseGroupedModel):
         )
         i_e = pybamm.concatenation(
             i_e_n,
-            PrimaryBroadcastToEdges(I / Q_e, "separator"),
+            PrimaryBroadcastToEdges(I, "separator"),
             i_e_p,
         )
-        N_e = -pybamm.grad(sto_e) * beta / tau_e + t_plus * i_e
+        N_e = -pybamm.grad(sto_e) * beta / tau_e + t_plus * i_e / Q_e
 
         j_e = pybamm.concatenation(
             (3 / Q_e) * Q_th_n * j_n / l_n,
@@ -339,7 +339,7 @@ class GroupedDFN(BaseGroupedModel):
                 - pybamm.log(pybamm.boundary_value(sto_e_n, "right"))
             )
             - eta_e
-            - (1 - l_p - l_n) * I / (gamma_e * Q_e)
+            - (1 - l_p - l_n) * I / rho_e
             - (
                 pybamm.x_average(v_s_p)
                 - pybamm.x_average(v_s_n)
@@ -427,7 +427,7 @@ class GroupedDFN(BaseGroupedModel):
             "Positive electrode potential [V]": V
             + eta_p
             - pybamm.boundary_value(eta_p, "right"),
-            "Electrolyte scaled current density [s-1]": i_e,
+            "Electrolyte current [A]": i_e,
             "Electrolyte flux [s-1]": N_e,
             "Time [s]": pybamm_t,
             "Time [h]": pybamm_t / 3600,
@@ -507,7 +507,7 @@ class GroupedDFN(BaseGroupedModel):
                 "Negative electrode potential [V]",
                 "Negative particle surface voltage [V]",
             },
-            "Electrolyte scaled current density [s-1]",
+            "Electrolyte current [A]",
             {
                 "Positive electrode potential [V]",
                 "Positive particle surface voltage [V]",
@@ -617,8 +617,8 @@ class GroupedDFN(BaseGroupedModel):
         D_n = param["Negative particle diffusivity [m2.s-1]"]
         b_p = param["Positive electrode Bruggeman coefficient (electrolyte)"]
         b_n = param["Negative electrode Bruggeman coefficient (electrolyte)"]
-        Cdl_p = param.get("Positive electrode double-layer capacity [F.m-2]")
-        Cdl_n = param.get("Negative electrode double-layer capacity [F.m-2]")
+        Cdl_p = param.get("Positive electrode double-layer capacity [F.m-2]", 0.0)
+        Cdl_n = param.get("Negative electrode double-layer capacity [F.m-2]", 0.0)
         sigma_p = (
             param["Positive electrode conductivity [S.m-1]"]
             * alpha_p ** param["Positive electrode Bruggeman coefficient (electrode)"]
@@ -683,7 +683,7 @@ class GroupedDFN(BaseGroupedModel):
         # Grouped parameters
         Q_meas = (Q_meas_n + Q_meas_p) / 2
         Q_e = F * epsilon_sep * ce0 * L * A / 3600
-        gamma_e = sigma_e / (F * epsilon_sep * ce0 * L**2)
+        rho_e = sigma_e * A / L
 
         zeta_p = epsilon_p / epsilon_sep
         zeta_n = epsilon_n / epsilon_sep
@@ -732,7 +732,7 @@ class GroupedDFN(BaseGroupedModel):
             "Negative electrode OCP [V]": param["Negative electrode OCP [V]"],
             "Measured cell capacity [A.h]": Q_meas,
             "Reference electrolyte capacity [A.h]": Q_e,
-            "Reference electrolyte scaled conductivity [V-1.s-1]": gamma_e,
+            "Reference electrolyte conductance [S]": rho_e,
             "Positive electrode relative transport efficiency": beta_p,
             "Negative electrode relative transport efficiency": beta_n,
             "Positive electrode relative porosity": zeta_p,
