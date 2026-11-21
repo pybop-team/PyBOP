@@ -288,11 +288,11 @@ class GroupedSPMe(BaseGroupedModel):
             self.tau_e(sto_e_p, T, "positive electrode"),
         )
         i_e = pybamm.concatenation(
-            (I / Q_e) * x_n_edge / l_n,
-            PrimaryBroadcastToEdges(I / Q_e, "separator"),
-            (I / Q_e) * (1 - x_p_edge) / l_p,
+            I * x_n_edge / l_n,
+            PrimaryBroadcastToEdges(I, "separator"),
+            I * (1 - x_p_edge) / l_p,
         )
-        N_e = -pybamm.grad(sto_e) * beta / tau_e + t_plus * i_e
+        N_e = -pybamm.grad(sto_e) * beta / tau_e + t_plus * i_e / Q_e
 
         j_e = pybamm.concatenation(
             (3 / Q_e) * Q_th_n * j_n / l_n,
@@ -407,9 +407,9 @@ class GroupedSPMe(BaseGroupedModel):
             + eta_p
             - pybamm.boundary_value(eta_p, "right"),
             "Electrolyte potential [V]": -v_s_n
-            - (2 * RT_F * (1 - t_plus))
+            - chiRT_F
             * (pybamm.boundary_value(pybamm.log(sto_e_n), "left") - pybamm.log(sto_e)),
-            "Electrolyte scaled current density [s-1]": i_e,
+            "Electrolyte current [A]": i_e,
             "Electrolyte flux [s-1]": N_e,
             "Time [s]": pybamm_t,
             "Time [h]": pybamm_t / 3600,
