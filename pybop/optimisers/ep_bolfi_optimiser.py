@@ -186,8 +186,8 @@ class EP_BOLFI(BaseOptimiser):
     objects, but will be converted to an ep_bolfi.EP_BOLFI instance
     upon instantiation of this class. To change attributes, re-init.
 
-    Only compatible with MultivariateParameters with a MultivariateGaussian
-    distribution, or a MultivariateLogNormal with a LogTransformation.
+    Only compatible with a MultivariateGaussian distribution, or a
+    MultivariateLogNormal with a LogTransformation.
     """
 
     def __init__(
@@ -458,7 +458,7 @@ class BayesianOptimisationResult(OptimisationResult):
         The lower confidence parameter boundaries.
     upper_bounds: ndarray
         The upper confidence parameter boundaries.
-    posterior : MultivariateParameters
+    posterior : Parameters
         The probability distribution of the optimisation.
     maximum_a_posteriori : Inputs or ndarray
         Complementing the best observed value in `x`, this is the

@@ -49,6 +49,7 @@ class FeatureDistance(BaseCost):
         feature: str = None,
         time_start: float = None,
         time_end: float = None,
+        output_variable: str = "Voltage [V]",
     ):
         super().__init__()
         if feature not in self._supported_features:
@@ -68,6 +69,7 @@ class FeatureDistance(BaseCost):
         self.end_index = (
             indices_of(self.domain_data, self.time_end)[0] if self.time_end else None
         )
+        self.output_variable = output_variable
 
         with warnings.catch_warnings():
             # Suppress SciPy's UserWarning about delta_grad == 0.
@@ -155,7 +157,7 @@ class SquareRootFeatureDistance(FeatureDistance):
     - "inverse_slope": 1 over "slope"; may perform better.
     """
 
-    _supported_features = ["offset", "slope", "inverse_slope"]
+    _supported_features = ["offset", "slope", "inverse_slope", "log_slope"]
 
     def __init__(
         self,
@@ -181,6 +183,8 @@ class SquareRootFeatureDistance(FeatureDistance):
             return fit[1]
         elif self.feature == "inverse_slope":
             return 1 / fit[1]
+        elif self.feature == "log_slope":
+            return np.log(fit[1])
 
 
 class ExponentialFeatureDistance(FeatureDistance):
