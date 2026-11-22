@@ -123,7 +123,7 @@ class SymbolReplacer:
 
     def process_boundary_conditions(self, model):
         """
-        Process boundary conditions for a PybaMM model class
+        Process boundary conditions for a PyBaMM model class
         Boundary conditions are dictionaries {"left": left bc, "right": right bc}
         in general, but may be imposed on the tabs (or *not* on the tab) for a
         small number of variables, e.g. {"negative tab": neg. tab bc,
@@ -141,6 +141,12 @@ class SymbolReplacer:
                     pybamm.logger.verbose(
                         f"Replacing symbols in {variable!r} ({side} bc)"
                     )
+                    if (
+                        isinstance(typ, tuple)
+                        and typ[0] == "Flux"
+                        and isinstance(typ[1], pybamm.Symbol)
+                    ):
+                        typ = ("Flux", self.process_symbol(typ[1]))
                     processed_bc = (self.process_symbol(bc), typ)
                     boundary_conditions[processed_variable][side] = processed_bc
                 except KeyError as err:
