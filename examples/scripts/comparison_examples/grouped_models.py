@@ -62,11 +62,11 @@ fig, ax = plt.subplots()
 ax.grid()
 
 # Compare models in the frequency domain
-NSOC = 11
+NSOC = 9
 Nfreq = 60
 fmin = 4e-4
 fmax = 1e3
-SOCs = np.linspace(0, 1, NSOC)
+SOCs = np.linspace(0.1, 0.9, NSOC)
 frequencies = np.logspace(np.log10(fmin), np.log10(fmax), Nfreq)
 for model, param, linestyle in zip(models, params, linestyles, strict=False):
     for i, SOC in enumerate(SOCs):
