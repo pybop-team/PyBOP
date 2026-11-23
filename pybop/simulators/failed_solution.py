@@ -46,10 +46,16 @@ class FailedSolution:
         >>> print(voltage.data)  # np.ndarray([inf])
     """
 
-    def __init__(self, variable_names: Iterable[str], parameter_names: Iterable[str]):
+    def __init__(
+        self,
+        variable_names: Iterable[str],
+        parameter_names: Iterable[str],
+        reason: str,
+    ):
         self._validate_inputs(variable_names, parameter_names)
         self._variable_names = variable_names
         self._parameter_names = parameter_names
+        self._reason = reason
 
         # Solution metadata
         self.cycles: int | None = None
@@ -109,7 +115,9 @@ class FailedSolution:
         return None
 
     def copy(self):
-        return FailedSolution(self._variable_names, self._parameter_names)
+        return FailedSolution(
+            self._variable_names, self._parameter_names, reason=self._reason
+        )
 
     @property
     def t_eval(self) -> np.ndarray:
@@ -125,6 +133,10 @@ class FailedSolution:
     def parameter_names(self) -> list[str]:
         """Get list of parameter names (read-only)."""
         return self._parameter_names.copy()
+
+    @property
+    def reason(self) -> str:
+        return self._reason
 
     def keys(self) -> Iterator[str]:
         """Get all variable names."""

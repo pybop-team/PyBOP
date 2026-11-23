@@ -106,6 +106,7 @@ for cell in get_cells():
 
     # Plot the given OCV
     fig_v, ax_v = plt.subplots(1, 1, figsize=(5, 3), dpi=300)
+    ax_v.set_title(cell_type)
     ax_v.set_xlabel("State of charge")
     ax_v.set_ylabel("Voltage [V]")
     soc = np.linspace(0, 1, 501)

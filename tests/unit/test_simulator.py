@@ -56,6 +56,33 @@ class TestSimulator:
         ):
             BaseSimulator(params)
 
+        out = simulator.set_output_variables(None)
+        assert (
+            out is NotImplementedError
+        )  # raising an error in BaseSimulator breaks Problem.set_target
+
+        with pytest.raises(NotImplementedError):
+            simulator.get_failed_solution("error")
+
+
+class TestFailedSolution:
+    """
+    A class to test the FailedSolution class.
+    """
+
+    pytestmark = pytest.mark.unit
+
+    def test_failed_solution(self):
+        failed_solution = pybop.FailedSolution(
+            ["Variable name"], ["Parameter name"], reason="Reason"
+        )
+        solution = failed_solution.copy()
+        assert solution.variable_names == ["Variable name"]
+        assert solution.parameter_names == ["Parameter name"]
+        assert solution.reason == "Reason"
+
+        assert solution.save() is None
+
 
 class TestPybammSimulator:
     """
@@ -110,6 +137,9 @@ class TestPybammSimulator:
         assert isinstance(simulator.default_variables, list)
         for var in simulator.default_variables:
             assert var in solution.variable_names
+
+        simulator.set_output_variables(["Voltage [V]"])
+        assert simulator.default_variables == ["Voltage [V]"]
 
     def test_remove_voltage_events(self, model):
         simulator = pybop.pybamm.Simulator(model, remove_voltage_events=False)
@@ -229,21 +259,22 @@ class TestCoupledEISSimulator:
             "Negative particle diffusivity [m2.s-1]": 3.0e-14,
         }
 
-        def solve(values, **kwargs):
+        def simulator(values):
             protocol = dataset if coupled else None
             acquisition_indices = acquisitions if coupled else None
-            simulator = pybop.pybamm.EISSimulator(
+            return pybop.pybamm.EISSimulator(
                 model,
                 parameter_values=values,
                 protocol=protocol,
                 acquisition_indices=acquisition_indices,
                 f_eval=frequencies,
             )
-            return simulator.solve(**kwargs)
 
         fixed = copy(parameter_values)
         fixed.update(inputs)
-        expected = solve(fixed)
+        simulator1 = simulator(fixed)
+        assert simulator1.input_parameter_names == []
+        expected = simulator1.solve()
 
         fitted = copy(parameter_values)
         fitted.update(
@@ -252,7 +283,9 @@ class TestCoupledEISSimulator:
                 for name, value in inputs.items()
             }
         )
-        solution = solve(fitted, inputs=inputs)
+        simulator2 = simulator(fitted)
+        assert set(simulator2.input_parameter_names) == set(inputs.keys())
+        solution = simulator2.solve(inputs=inputs)
 
         if coupled:
             for name in solution.variable_names:
@@ -298,6 +331,7 @@ class TestCoupledEISSimulator:
             protocol=dataset,
             acquisition_indices=acquisitions,
             f_eval=frequencies,
+            build_every_time=True,
         )
         assert simulator._simulator.requires_model_rebuild  # noqa: SLF001
         solution = simulator.solve(inputs)

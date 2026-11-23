@@ -51,8 +51,8 @@ procedures = [
     "Temperature experiment.json",
     "GITT.json",
     "Rate capability.json",
-    "Validation different SOC.json",
-    "Validation pulses.json",
+    "Validation pulses discharge.json",
+    "Validation pulses charge.json",
 ]
 cell = pybop.pybamm.simulate_procedure(
     info=cell_info,
