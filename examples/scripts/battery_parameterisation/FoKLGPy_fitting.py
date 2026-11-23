@@ -1,13 +1,34 @@
+"""
+Concentration-dependent electrolyte diffusivity identified using a FoKL
+decomposed Gaussian process (GP).
+
+FoKL (Forward variable selection using Karhunen-Loève decomposed Gaussian
+Processes) represents an unknown function as a weighted sum of basis functions
+(here, Bernoulli polynomials) of the normalised inputs. The weights ("Beta"
+parameters) become standard PyBOP parameters with Gaussian priors, so the
+function can be fitted with any PyBOP optimiser. With "exp" set to True, the
+GP models log(D_e), which guarantees D_e(c_e) > 0.
+
+In this example, synthetic data is generated from a DFN model with the Chen2020
+parameter set. The electrolyte diffusivity D_e(c_e) is fitted to a 2C discharge,
+once as a FoKL GP and once as a constant value. Both fits are then validated on
+a 3C discharge, and the identified diffusivities are compared with the ground
+truth.
+
+Reference:
+    K. Hayes, M.W. Fouts, A. Baheri and D.S. Mebane, "Forward variable selection
+    enables fast and accurate dynamic system identification with Karhunen-Loève
+    decomposed Gaussian processes", arXiv:2205.13676.
+    https://arxiv.org/abs/2205.13676
+
+FoKL package: https://pypi.org/project/FoKL/
+"""
+
 import numpy as np
 import plotly.graph_objects as go
 import pybamm
 
 import pybop
-
-"""
-In this example, we demonstrate the use of FoKL decomposed Gaussian Processes
-for state-dependent estimation of electrolyte diffusivity.
-"""
 
 # Define model and parameter values
 model = pybamm.lithium_ion.DFN()
@@ -92,6 +113,7 @@ training_data = datasets[0]
 cost = pybop.GaussianLogLikelihoodKnownSigma(training_data, sigma=sigma)
 options = pybop.PintsOptions(max_iterations=250, max_unchanged_iterations=50)
 
+fitted = {}
 for name, param, colour in zip(
     ["FoKL GP", "PyBOP Constant"],
     [parameters_gp, parameters_constant],
@@ -116,6 +138,7 @@ for name, param, colour in zip(
 
     # Update the parameter values
     param.update(result.best_inputs)
+    fitted[name] = param
 
     # Evaluate optimised parameters on Training (2C) and Validation (3C) experiments
     for experiment, fig in zip(experiments, figures, strict=True):
@@ -133,6 +156,49 @@ for name, param, colour in zip(
                 line=dict(color=colour),
             )
         )
+
+# Compare the identified electrolyte diffusivity with the ground truth
+c_e = np.linspace(1, 3000, 200)  # matches the GP normalisation range
+
+
+def D_e(parameter_values):
+    return parameter_values.evaluate(
+        pybamm.FunctionParameter(
+            "Electrolyte diffusivity [m2.s-1]",
+            {
+                "Electrolyte concentration [mol.m-3]": pybamm.Vector(c_e),
+                "Temperature [K]": pybamm.Scalar(298.15),
+            },
+        )
+    ).flatten()
+
+
+fig = go.Figure()
+fig.add_trace(
+    go.Scatter(
+        x=c_e,
+        y=D_e(parameter_values),
+        mode="lines",
+        name="Ground truth (Chen2020)",
+        line=dict(color="black", dash="dash"),
+    )
+)
+for (name, param), colour in zip(fitted.items(), ["green", "purple"], strict=True):
+    fig.add_trace(
+        go.Scatter(
+            x=c_e,
+            y=D_e(param),
+            mode="lines",
+            name=name,
+            line=dict(color=colour),
+        )
+    )
+fig.update_layout(
+    xaxis_title="Electrolyte concentration / mol.m-3",
+    yaxis_title="Electrolyte diffusivity / m2.s-1",
+    title="Identified electrolyte diffusivity",
+)
+figures.append(fig)
 
 for fig in figures:
     fig.show()
