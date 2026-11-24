@@ -49,7 +49,7 @@ ep-bolfi = [
 pyprobe = [
     "PyProBE-Data>=2.6.1; python_version < '3.13'"
 ]
-fokl = ["FoKL>=1.2.0"]
+fokl = ["FoKL>=3.5.9"]
 all = ["pybop[plotly,scienceplots,salib,scifem,pyprobe,ep-bolfi,fokl]", "pybamm[bpx]", "polars[calamine]"]
 
 [tool.uv]
